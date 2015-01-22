@@ -1,0 +1,13 @@
+{
+    "require": {
+        "slim/slim": "2.*",
+        "illuminate/database": "4.*",
+        "slim/views": "dev-master",
+        "twig/twig": "1.*",
+        "twig/extensions": "1.*",
+        "smarty/smarty": "3.*",
+        "yusukezzz/slim-debugbar": "1.*",
+        "entomb/slim-json-api": "1.*",
+        "phpmailer/phpmailer": "5.*"
+    }
+}

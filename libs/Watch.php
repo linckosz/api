@@ -1,0 +1,107 @@
+<?php
+//你好 Léo & Luka
+
+namespace libs;
+
+use \libs\Folders;
+
+class Watch {
+
+	//Special functions to see variables
+	/*
+	\libs\Watch::php($var,'$var',__FILE__);
+	*/
+	public static function php($var='yes',$comment='undefined',$filename=__FILE__,$error=false){
+		global $app;
+		if($error){
+			$logPath = $app->lincko->logPath.'/php';
+			$fic = $logPath.'/logPHP_'.date('ymd').'_'.$_SERVER['SERVER_ADDR'].'.txt';
+		} else {
+			$logPath = $app->lincko->logPath;
+			$fic = $logPath.'/watchPHP_'.date('ymd').'_'.$_SERVER['SERVER_ADDR'].'.txt';
+		}
+
+		$folder = new Folders;
+		$folder->createPath($logPath);
+
+		if(file_exists($fic)){
+			if(filesize($fic)>1000000){ //Help to never get a file higher than 1MB, avoid to fulfill the server space in case of heavy bug
+				if($fp = fopen($fic, 'r+')){ //We open the file in read/write, and place the cursor at the beginning
+					@ftruncate($fp,500000); //Cut the file in half (like that it keep all first alerts)
+					fclose($fp); //CLose the file
+				}
+			}
+		}
+		
+		$dt = date("Y-m-d H:i:s (T)");
+		
+		if(is_array($var) || is_object($var)){
+			//$msg = (string)var_export($var,true);
+			$msg = (string)print_r($var,true);
+		} else {
+			$msg = (string)$var;
+		}
+		$comment = (string)$comment;
+		
+		if(is_file($filename)){
+			$path_parts = pathinfo($filename);
+			$basename = $path_parts['basename'];
+		} else {
+			$basename = 'undefined';
+		}
+		
+		$msg = "
+$comment =>
+$basename | $dt 
+-------------------------------------
+$msg
+-------------------------------------
+
+";
+
+		error_log($msg, 3, $fic);
+	}
+
+	//Catch JS error message
+	/*
+	\libs\Watch::js();
+	*/
+	public static function js(){
+		global $app;
+		$logPath = $app->lincko->logPath.'/js';
+		$dt = date("Y-m-d H:i:s (T)");
+		
+		$errmsg = json_decode($app->request->getBody());
+
+		$errid = "unknown"; //User ID
+		$erruser = "unknown"; //User login
+		
+		$errip = $app->request->getIp();
+		
+		$plusdinfos = "";
+		$errip .= $plusdinfos;
+		
+		$err  = "DATE: $dt\n";
+		$err .= "USER: $errid / $erruser / $errip\n";
+		$err .= "$errmsg\n\n\n";
+
+$err = str_replace("\n","
+",$err);
+
+		$folder = new Folders;
+		$folder->createPath($logPath);
+
+		$fic = $logPath.'/logJS_'.date('ymd').'_'.$_SERVER['SERVER_ADDR'].'.txt';
+		if(file_exists($fic)){
+			if(filesize($fic)>1000000){ //Help to never get a file higher than 1MB, avoid to fulfill the server space in case of heavy bug
+				if($fp = fopen($fic, 'r+')){ //We open the file in read/write, and place the cursor at the beginning
+					@ftruncate($fp,500000); //Cut the file in half (like that it keep all first alerts)
+					fclose($fp); //CLose the file
+				}
+			}
+		}
+
+		error_log($err, 3, $fic);
+	}
+
+}
