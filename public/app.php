@@ -24,7 +24,7 @@ function my_autoload($pClassName){
 spl_autoload_register('my_autoload');
 
 require_once $path.'/config/language.php';
-require_once $path.'/config/parameters.php';
+require_once $path.'/param/parameters.php';
 
 // Only invoked if mode is "production"
 $app->configureMode('production', function () use ($app) {

@@ -78,7 +78,7 @@ class Translation {
 				}
 				if($result){
 					foreach ($result as $key => $value) {
-						$list[$bundle][$value->category][$value->phrase] = $value->$lang;
+						$list[$bundle][$value->category][$value->phrase] = self::pushData($value->$lang);
 					}
 				}
 			}
@@ -135,7 +135,12 @@ class Translation {
 		return $text;
 	}
 
-	protected function get($bundle, $category, $phrase){
+	protected function get($bundle, $category, $phrase, $data){
+		$app = \Slim\Slim::getInstance();
+		$app->lincko->translation = array_merge(
+			$app->lincko->translation,
+			$data
+		);
 		$this->bundle = $bundle;
 		$this->setLanguage();
 		if(isset($this->lang[$bundle])){

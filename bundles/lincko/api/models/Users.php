@@ -61,9 +61,17 @@ class Users extends Model {
 
 		$authorize = false;
 		$refresh = false;
+		$authorization = false;
 
 		if(isset($data->public_key) && $authorization = Authorization::find($data->public_key)){
-			//If we are at half of expiration time, we renew the scret_key, but we have to keep the old security_key to avoid any call bug (quick two-clicks)
+			//If we are signing in as a new user, we force to recheck the password.
+			if($this->id!==$authorization->user_id){
+				$authorization = false;
+			}
+		}
+
+		if($authorization){
+			//If we are at half of expiration time, we renew the secret_key, but we have to keep the old security_key to avoid any call bug (quick two-clicks)
 			$expired = new \DateTime($authorization->updated_at);
 			$half_expired = ceil($app->lincko->security['expired']/2);
 			$expired->add(new \DateInterval('PT'.$half_expired.'S'));

@@ -46,7 +46,8 @@ class ControllerUser extends Controller {
 					}
 					if(isset($authorize['public_key'])){
 						$app->flashNow('public_key', $authorize['public_key']);
-						$msg = $app->trans->getBRUT('api', 1, 3); //You are signed in to your account.
+						$app->lincko->translation['user_username'] = ucfirst($user->username);
+						$msg = $app->trans->getBRUT('api', 1, 3); //Hello @@user_username~~, you are signed in to your account.
 					}
 					if(isset($authorize['refresh'])){
 						if($authorize['refresh']){

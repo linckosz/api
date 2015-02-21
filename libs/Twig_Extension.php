@@ -53,9 +53,26 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 		return $app->trans->getClientLanguage();
 	}
 
+	public function get_Language_full(){
+		$app = \Slim\Slim::getInstance();
+		return $app->trans->getClientLanguageFull();
+	}
+
 	public function get_Route(){
 		$app = \Slim\Slim::getInstance();
 		return $app->request->getPath();
+	}
+
+	public function get_Route_name(){
+		$app = \Slim\Slim::getInstance();
+		$route = $app->router->getMatchedRoutes($app->request->getMethod(), $app->request->getResourceUri());
+		if (is_array($route) && count($route) > 0) {
+			$route = $route[0];
+		}
+		if($route){
+			return $route->getName();
+		}
+		return false;
 	}
 
 	public function get_TranslationUri(){
@@ -72,7 +89,9 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 				new \Twig_SimpleFunction('_filelatest', array($this, 'get_Filelatest'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_languages', array($this, 'get_Languages'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_language', array($this, 'get_Language'), array('is_safe' => array('html'))),
+				new \Twig_SimpleFunction('_language_full', array($this, 'get_Language_full'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_route', array($this, 'get_Route'), array('is_safe' => array('html'))),
+				new \Twig_SimpleFunction('_route_name', array($this, 'get_Route_name'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_language_uri', array($this, 'get_TranslationUri'), array('is_safe' => array('html'))),
 			)
 		);
