@@ -156,6 +156,7 @@ class ControllerUser extends Controller {
 					//Send congrat email
 					$mail = new Email();
 					$mail->addAddress($email, $username);
+					$mail->setSubject('Congratulation');
 					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on Arc website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
 					$mail->sendLater();
 
