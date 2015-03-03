@@ -25,6 +25,14 @@ class Users extends Model {
 	
 ////////////////////////////////////////////
 
+	public static function validFirstname($firstname){
+		return preg_match("/^.{1,104}$/u", $firstname);
+	}
+
+	public static function validLastname($lastname){
+		return preg_match("/^.{1,104}$/u", $lastname);
+	}
+
 	public static function validUsername($username){
 		return preg_match("/^\S{1,104}$/u", $username);
 	}

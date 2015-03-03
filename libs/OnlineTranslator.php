@@ -19,7 +19,7 @@ class OnlineTranslator {
 			$this->translator = new MicrosoftTranslator(new AzureMarketplaceAuthenticator($app->lincko->translator['client_id'], $app->lincko->translator['client_secret'] ,self::API_URL));
 		} catch (Exception $obj_exception) {
 			\libs\Watch::php($obj_exception->getMessage(),'OnlineTranslator->__construct() error',__FILE__,true);
-			return '['.$app->trans->getBRUT('default', 0, 0).']'; //The translation failed
+			return '['.$app->trans->getBRUT('default', 1, 1).']'; //The translation failed
 		}
 	}
 
@@ -53,7 +53,7 @@ class OnlineTranslator {
 			return $text;
 		} catch (Exception $obj_exception) {
 			\libs\Watch::php($obj_exception->getMessage(),'OnlineTranslator->autoTranslate() error',__FILE__,true);
-			return '['.$app->trans->getBRUT('default', 0, 0).']'; //The translation failed
+			return '['.$app->trans->getBRUT('default', 1, 1).']'; //The translation failed
 		}
 	}
 

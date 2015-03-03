@@ -4,6 +4,8 @@
 
 namespace libs;
 
+use \libs\File;
+
 class Twig_Extension extends \Slim\Views\TwigExtension {
 
 	public function getName(){
@@ -17,11 +19,7 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 	}
 
 	public function get_Filelatest($file){
-		if(is_file($_SERVER["DOCUMENT_ROOT"].$file)){
-			return $file.'?'.filemtime($_SERVER["DOCUMENT_ROOT"].$file);
-		} else {
-			return $file.'?'.time();
-		}
+		return File::getLatest($file);
 	}
 
 	//Get the translation

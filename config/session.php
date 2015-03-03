@@ -14,8 +14,9 @@ function _close(){
 function _read($id){
 	$sess = Session::find($id);
 	if($sess){
-		$sess->access = time();
-		$sess->save();
+		//It's useless to save this time access
+		//$sess->access = time();
+		//$sess->save();
 		return $sess->data;
 	}
 	return '';
