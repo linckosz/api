@@ -5,6 +5,7 @@ namespace bundles\lincko\api\controllers;
 use \libs\Controller;
 use \libs\Datassl;
 use \libs\STR;
+use \libs\Email;
 use \bundles\lincko\api\models\Users;
 use \bundles\lincko\api\models\Authorization;
 
@@ -150,6 +151,14 @@ class ControllerUser extends Controller {
 				if($user->save()){
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', true);
+					$app->flashNow('username', $user->username);
+					
+					//Send congrat email
+					$mail = new Email();
+					$mail->addAddress($email, $username);
+					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on Arc website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
+					$mail->sendLater();
+
 					$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 1, 7), 'field' => 'undefined'),)); //Account created. check your email for validation code.
 					return true;
 				}
