@@ -8,7 +8,10 @@ class Json {
 		'msg' => '',
 		'error' => true,
 		'status' => 500,
-		'signout' => true,
+		'flash' => array(
+			'signout' => false,
+			'resignin' => false,
+		),
 	);
 
 	public function __construct($msg, $error=true, $status=500, $signout=false, $resignin=false){

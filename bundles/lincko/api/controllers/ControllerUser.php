@@ -36,7 +36,7 @@ class ControllerUser extends Controller {
 
 		$errmsg = $app->trans->getBRUT('api', 1, 0); //Sign in failed. Please try again.
 		$errfield = 'undefined';
-\libs\Watch::php($form,'$form',__FILE__);
+
 		if(Users::isValid('user_signin',$form)){
 			if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
 				if($authorize = $user->authorize($data)){

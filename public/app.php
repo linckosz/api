@@ -53,7 +53,7 @@ require_once $path.'/config/session.php';
 $app->get('/:catchall', function() use ($app) {
 	$app->render(404, array(
 		'error' => true,
-		'msg' => 'Sorry, we could not understand the request.',
+		'msg' => 'Sorry, we could not understand the request.', //Cannot use translation because we don't know which bundle will be loaded
 	));
 })->conditions(array('catchall' => '.*'))
 ->name('catchall');

@@ -160,7 +160,7 @@ class CheckAccess extends \Slim\Middleware {
 		$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 		$error = true;
 		$status = 400;
-		$signout = true;
+		$signout = false;
 		$resignin = false;
 
 		//Check if all necessary fields in header are presents
@@ -172,11 +172,11 @@ class CheckAccess extends \Slim\Middleware {
 		} else if(!$this->checkRoute()) {
 			$msg = $app->trans->getBRUT('api', 0, 1); //Sorry, we could not understand the request.
 			$status = 404;
-			$signout = false;
 
 		//Check if the front application has the right to access to ressources via an API key
 		} else if(!$this->checkAPI()) {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+			$signout = true;
 			$status = 403;
 
 		//Check if the public key provided matchs. There is 2 kinds, one is standard with limited access to credential operations, the other is unique per device connection and correspond to a duo device(client side)/user_id(server side) and has whole access to the user workspace.

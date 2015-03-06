@@ -93,19 +93,19 @@ class SimpleImage {
 		$app->response->headers->set('Expires', 'Fri, 12 Aug 2011 14:57:00 GMT');
 		if( $image_type == IMAGETYPE_JPEG ) {
 			$app->response->headers->set('Content-Type', 'image/jpeg');
-			imagejpeg($this->image,$compression);
+			imagejpeg($this->image,$filename,$compression);
 		} else if( $image_type == IMAGETYPE_GIF ) {
 			$app->response->headers->set('Content-Type', 'image/gif');
-			imagegif($this->image);         
+			imagegif($this->image,$filename);         
 		} else if( $image_type == IMAGETYPE_PNG ) {
 			$app->response->headers->set('Content-Type', 'image/png');
-			imagepng($this->image);
+			imagepng($this->image,$filename);
 		} else if( $image_type == IMAGETYPE_WBMP ) {
 			$app->response->headers->set('Content-Type', 'image/jpeg');
-			imagejpeg($this->image,$compression);
+			imagejpeg($this->image,$filename,$compression);
 		} else if( $image_type == IMAGETYPE_BMP ) {
 			$app->response->headers->set('Content-Type', 'image/jpeg');
-			imagejpeg($this->image,$compression);
+			imagejpeg($this->image,$filename,$compression);
 		}
 	}
 
