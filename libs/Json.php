@@ -30,7 +30,7 @@ class Json {
 	public function render(){
 		ob_clean();
 		header("Content-type: application/json; charset=UTF-8");
-		echo $result = json_encode($this->json);
+		echo json_encode($this->json);
 		return exit(0);
 	}
 	

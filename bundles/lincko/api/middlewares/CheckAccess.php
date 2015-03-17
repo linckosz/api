@@ -163,8 +163,15 @@ class CheckAccess extends \Slim\Middleware {
 		$signout = false;
 		$resignin = false;
 
+		//WARNING: SECURITY ISSUE THAT NEED TO BE SOLVED!
+		//For file uploading, make a specific process
+		if(preg_match("/^file\..*:8443$/ui",$app->request->headers->Host) && preg_match("/^\/file.*$/ui",$app->request->getResourceUri())){
+			if($this->checkRoute()!==false){
+				return $this->next->call();
+			}
+
 		//Check if all necessary fields in header are presents
-		if(!$this->checkFields()){
+		} else if(!$this->checkFields()){
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 			$status = 406;
 
