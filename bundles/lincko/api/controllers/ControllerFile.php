@@ -49,7 +49,7 @@ document.domain = "'.$app->lincko->domain.'";
 <label for="api_file_form_files">
 	<span id="api_file_upload_files">files</span>
 </label>
-<form id="api_file_form" action="https://file.'.$app->lincko->domain.':8443/file" method="post" target="api_file_upload_iframe" enctype="multipart/form-data" onsubmit="alert(\'ok\');return true;">
+<form id="api_file_form" action="https://file.'.$app->lincko->domain.':8443/file" method="post" target="toto" enctype="multipart/form-data" onsubmit="alert(\'ok\');return true;">
 			<input type="file" accept="video/*" capture="camcorder" id="api_file_form_video" name="file_video" />
 			<input type="file" accept="image/*" capture="camera" id="api_file_form_photo" name="file_photo" />
 			<input type="file" id="api_file_form_files" name="file_files" />
