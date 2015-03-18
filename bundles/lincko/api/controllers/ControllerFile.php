@@ -39,6 +39,7 @@ document.domain = "'.$app->lincko->domain.'";
 	public function _get(){
 		$app = $this->app;
 		$msg = '
+<iframe id="api_file_upload_iframe" name="api_file_upload_iframe" frameborder="0" height="0" width="0" scrolling="no" src=""></iframe>
 <form id="api_file_form" action="https://file.'.$app->lincko->domain.':8443/file" method="post" target="toto" enctype="multipart/form-data" onsubmit="alert(\'ok\');return true;">
 	<label for="api_file_form_video">
 		<span id="api_file_upload_video">video</span>
