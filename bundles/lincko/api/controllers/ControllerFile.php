@@ -39,21 +39,20 @@ document.domain = "'.$app->lincko->domain.'";
 	public function _get(){
 		$app = $this->app;
 		$msg = '
-<iframe id="api_file_upload_iframe" name="api_file_upload_iframe" src=""></iframe>
-<label for="api_file_form_video">
-	<span id="api_file_upload_video">video</span>
-</label>
-<label for="api_file_form_photo">
-	<span id="api_file_upload_photo">photo</span>
-</label>
-<label for="api_file_form_files">
-	<span id="api_file_upload_files">files</span>
-</label>
 <form id="api_file_form" action="https://file.'.$app->lincko->domain.':8443/file" method="post" target="toto" enctype="multipart/form-data" onsubmit="alert(\'ok\');return true;">
-			<input type="file" accept="video/*" capture="camcorder" id="api_file_form_video" name="file_video" />
-			<input type="file" accept="image/*" capture="camera" id="api_file_form_photo" name="file_photo" />
-			<input type="file" id="api_file_form_files" name="file_files" />
-			<input type="hidden" value="untruc" name="something" />
+	<label for="api_file_form_video">
+		<span id="api_file_upload_video">video</span>
+		<input type="file" accept="video/*" capture="camcorder" id="api_file_form_video" name="file_video" />
+	</label>
+	<label for="api_file_form_photo">
+		<span id="api_file_upload_photo">photo</span>
+		<input type="file" accept="image/*" capture="camera" id="api_file_form_photo" name="file_photo" />
+	</label>
+	<label for="api_file_form_files">
+		<span id="api_file_upload_files">files</span>
+		<input type="file" id="api_file_form_files" name="file_files" />
+	</label>
+	<input type="hidden" value="untruc" name="something" />
 </form>
 		';
 		return $this->displayHTML($msg);
