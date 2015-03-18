@@ -54,6 +54,8 @@ document.domain = "'.$app->lincko->domain.'";
 	</label>
 	<input type="hidden" value="untruc" name="something" />
 </form>
+<!-- this iframe must be duplicated only because Firefox looks for target in the same iframe, not the main parent document like all others browsers -->
+<iframe id="api_file_upload_iframe" name="api_file_upload_iframe" frameborder="0" height="0" width="0" scrolling="no" src=""></iframe>
 		';
 		return $this->displayHTML($msg);
 	}
