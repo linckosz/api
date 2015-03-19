@@ -24,4 +24,10 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_signout'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/resign',
+		'\bundles\lincko\api\controllers\ControllerUser:resign'.$app->lincko->method_suffix
+	)
+	->name('user_resign'.$app->lincko->method_suffix);
+
 });

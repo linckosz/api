@@ -76,6 +76,13 @@ class ControllerUser extends Controller {
 		return false;
 	}
 
+	public function resign_post(){
+		$app = $this->app;
+		//Do nothing, the middleware CheckAccess will handle automatically the resigning action
+		$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 1, 2), 'field' => 'undefined'),)); //Your session has been extended.
+		return true;
+	}
+
 	public function create_post(){
 		$app = $this->app;
 		$data = $this->data;
@@ -152,6 +159,16 @@ class ControllerUser extends Controller {
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', true);
 					$app->flashNow('username', $user->username);
+
+					//Setup public and private key
+					if($authorize = $user->authorize($data)){
+						if(isset($authorize['private_key'])){
+							$app->flashNow('private_key', $authorize['private_key']);
+						}
+						if(isset($authorize['public_key'])){
+							$app->flashNow('public_key', $authorize['public_key']);
+						}
+					}
 					
 					//Send congrat email
 					$mail = new Email();
