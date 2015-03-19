@@ -20,8 +20,8 @@ class ControllerFile extends Controller {
 
 	protected function displayHTML($msg=''){
 		$app = $this->app;
+		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
 		ob_clean();
-		header("Content-type: text/html; charset=UTF-8");
 		echo '
 <!DOCTYPE html>
 <html>
