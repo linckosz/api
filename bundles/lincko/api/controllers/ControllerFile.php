@@ -107,7 +107,7 @@ document.domain = "'.$app->lincko->domain.'";
 				}
 			}
 		}
-		
+		$msg = $authorized;
 		/*
 		$msg = $authorized;
 		$msg .= var_export($app->request->post(), true);
