@@ -69,12 +69,13 @@ document.domain = "'.$app->lincko->domain.'";
 		$app = $this->app;
 		$post = $app->request->post();
 		$authorized = false;
+		$msg = '';
 
 		if(isset($post['shangzai_puk']) && isset($post['shangzai_cs'])){
 			$shangzai_puk = $this->uncryptData($post['shangzai_puk']);
 			$shangzai_cs = $this->uncryptData($post['shangzai_cs']);
 			if($authorization = Authorization::find($shangzai_puk)){
-				$checksum = md5($authorization->private_key.$shangzai_puk);\libs\Watch::php($checksum,'$checksum',__FILE__);
+				$checksum = md5($authorization->private_key.$shangzai_puk);
 				if($user = Users::find($authorization->user_id) && $checksum === $shangzai_cs){
 					$authorized = true;
 				}
@@ -107,15 +108,14 @@ document.domain = "'.$app->lincko->domain.'";
 				}
 			}
 		}
-		$msg = $authorized;
-		/*
-		$msg = $authorized;
+		
+		$msg .= $authorized;
 		$msg .= var_export($app->request->post(), true);
 		if(isset($_FILES)){
 			$msg .= var_export($_FILES, true);
 		}
 		\libs\Watch::php($msg,'$msg',__FILE__);
-		*/
+		
 
 		return $this->displayHTML($msg);
 	}
