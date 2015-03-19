@@ -6,7 +6,7 @@ require_once $path.'/vendor/autoload.php';
 
 $app = new \Slim\Slim(array(
 	'cookies.encrypt' => true, //Must use $app->getCookie('foo', false);
-	'cookies.secret_key' => 'ysh7GFtsnj74Fg',
+	'cookies.secret_key' => 'au6G7dbSh87Ws',
 	'cookies.lifetime' => '365 days',
 	'cookies.secure' => true,
 	'cookies.path' => '/',

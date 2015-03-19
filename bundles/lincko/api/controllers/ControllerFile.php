@@ -65,7 +65,7 @@ document.domain = "'.$app->lincko->domain.'";
 
 		$folder = new Folders;
 		$folder->createPath($app->lincko->filePath.'/temp/');
-		if(isset($_FILES)){\libs\Watch::php($_FILES,'$name',__FILE__);
+		if(isset($_FILES)){
 			foreach ($_FILES as $file => $fileArray) {
 				
 				if(is_array($fileArray['tmp_name'])){
@@ -88,12 +88,26 @@ document.domain = "'.$app->lincko->domain.'";
 			}
 		}
 
+		
 		$msg = var_export($app->request->post(), true);
 		if(isset($_FILES)){
 			$msg .= var_export($_FILES, true);
 		}
-		//\libs\Watch::php($msg,'$msg',__FILE__);
+		\libs\Watch::php($msg,'$msg',__FILE__);
+		
+
 		return $this->displayHTML($msg);
+	}
+
+	protected uncryptData(){
+		$app = $this->app;
+
+		$value = \Slim\Http\Util::decodeSecureCookie(
+			$value,
+			$app->config('cookies.secret_key'),
+			$app->config('cookies.cipher'),
+			$app->config('cookies.cipher_mode')
+		);
 	}
 
 }
