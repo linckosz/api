@@ -12,9 +12,12 @@ class ControllerFile extends Controller {
 
 	protected $app = NULL;
 	protected $user = NULL;
+	protected $json = NULL;
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
+		$this->json = (object) array('files' => null);
+		$this->json->files = array();
 		return true;
 	}
 
@@ -31,7 +34,7 @@ class ControllerFile extends Controller {
 <script>
 document.domain = "'.$app->lincko->domain.'";
 
-function api_file_upload_action(Obj){
+function app_upload_action(Obj){
 	if("wrapper_upload_action" in window.top){
 		window.top.wrapper_upload_action(Obj);
 	}
@@ -47,30 +50,34 @@ function api_file_upload_action(Obj){
 		return exit(0);
 	}
 
-	public function _get(){
+	public function result(){
 		$app = $this->app;
-		$msg = '
-<form id="api_file_form" action="https://file.'.$app->lincko->domain.':8443/file" method="post" target="api_file_upload_iframe" enctype="multipart/form-data" onsubmit="return true;">
-	<label for="api_file_form_video">
-		<span id="api_file_upload_video">video</span>
-		<input type="file" accept="video/*" capture="camcorder" id="api_file_form_video" name="file_video" multiple />
-	</label>
-	<label for="api_file_form_photo">
-		<span id="api_file_upload_photo">photo</span>
-		<input type="file" accept="image/*" capture="camera" id="api_file_form_photo" name="file_photo" multiple />
-	</label>
-	<label for="api_file_form_files">
-		<span id="api_file_upload_files">files</span>
-		<input type="file" id="api_file_form_files" name="file_files" multiple />
-	</label>
-	<input type="hidden" value="" id="api_file_shangzai_puk" name="shangzai_puk" />
-	<input type="hidden" value="" id="api_file_shangzai_cs" name="shangzai_cs" />
-	<input type="hidden" value="" id="api_file_project_id" name="project_id" />
-</form>
-<!-- this iframe must be duplicated only because Firefox looks for target in the same iframe, not the main parent document like all others browsers -->
-<iframe id="api_file_upload_iframe" name="api_file_upload_iframe" frameborder="0" height="0" width="0" scrolling="no" src=""></iframe>
+		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+		ob_clean();
+		echo '
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>jQuery Iframe Transport Plugin Redirect Page</title>
+</head>
+<body>
+<script>
+document.body.innerText=document.body.textContent=decodeURIComponent(window.location.search.slice(1));
+</script>
+</body>
+</html>
 		';
-		return $this->displayHTML($msg);
+		return exit(0);
+	}
+
+	public function _options(){
+		return $this->displayHTML();
+	}
+
+	public function _get(){
+		return $this->displayHTML('ok');
 	}
 
 	public function _post(){
@@ -87,7 +94,6 @@ function api_file_upload_action(Obj){
 		if(isset($post['shangzai_puk']) && isset($post['shangzai_cs'])){
 			$shangzai_puk = $this->uncryptData($post['shangzai_puk']);
 			$shangzai_cs = $this->uncryptData($post['shangzai_cs']);
-			\libs\Watch::php($shangzai_puk,'$shangzai_puk',__FILE__);
 			if($authorization = Authorization::find($shangzai_puk)){
 				$checksum = md5($authorization->private_key.$shangzai_puk);
 				if($user = Users::find($authorization->user_id) && $checksum === $shangzai_cs){
@@ -125,12 +131,21 @@ function api_file_upload_action(Obj){
 				$json['msg'] = $app->trans->getBRUT('api', 3, 2); //No file selected to upload.
 			}
 		} else {
+			if(isset($_FILES)){
+				\libs\Watch::php(array_merge($post, $_FILES),'Upload failed',__FILE__,true);
+			} else {
+				\libs\Watch::php($post,'Upload failed (no file)',__FILE__,true);
+			}
 			$json['resign'] = true;
 		}
 		
-		$msg = '<script>api_file_upload_action('.json_encode($json).');</script>';
+		$msg = '<script>app_upload_action('.json_encode($json).');</script>';
 
-		return $this->displayHTML($msg);
+		ob_clean();
+		$this->json_push();
+		echo json_encode($this->json);
+		return exit(0);
+
 	}
 
 	//This function only works if the client and the server have the same secret_key
@@ -142,6 +157,22 @@ function api_file_upload_action(Obj){
 			$app->config('cookies.cipher'),
 			$app->config('cookies.cipher_mode')
 		);
+	}
+
+	protected function json_push(){
+		$obj = (object) array(
+			'name' => null,
+			'size' => null,
+			'url' => 'http://icons.iconarchive.com/icons/atti12/tv-series-folder/128/Arrow-icon.png',
+			'thumbnailUrl' => 'http://icons.iconarchive.com/icons/atti12/tv-series-folder/128/The-walking-dead-icon.png',
+			'deleteUrl' => 'http://icons.iconarchive.com/icons/atti12/tv-series-folder/128/Breaking-Bad-icon.png',
+			'deleteType' => 'DELETE',
+			'error' => null,
+		);
+		$obj->name = "picture1.jpg";
+		$obj->size = 902604;
+		//$obj->error = "Filetype not allowed";
+		array_push($this->json->files, $obj); 
 	}
 
 }

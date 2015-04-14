@@ -13,7 +13,15 @@ $app->group('/file', function () use ($app) {
 		'/',
 		'\bundles\lincko\api\controllers\ControllerFile:'.$app->lincko->method_suffix
 	)
-	->via('GET', 'POST')
+	->via('GET', 'POST', 'OPTIONS')
 	->name('file'.$app->lincko->method_suffix);
 
+	$app->map(
+		'/result',
+		'\bundles\lincko\api\controllers\ControllerFile:result'
+	)
+	->via('GET', 'POST', 'OPTIONS', 'HEAD')
+	->name('file_result');
+
 });
+
