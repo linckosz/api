@@ -163,9 +163,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$obj = (object) array(
 			'name' => null,
 			'size' => null,
-			'url' => 'http://icons.iconarchive.com/icons/atti12/tv-series-folder/128/Arrow-icon.png',
-			'thumbnailUrl' => 'http://icons.iconarchive.com/icons/atti12/tv-series-folder/128/The-walking-dead-icon.png',
-			'deleteUrl' => 'http://icons.iconarchive.com/icons/atti12/tv-series-folder/128/Breaking-Bad-icon.png',
+			'url' => null,
+			'thumbnailUrl' => null,
+			'deleteUrl' => null,
 			'deleteType' => 'DELETE',
 			'error' => null,
 		);
