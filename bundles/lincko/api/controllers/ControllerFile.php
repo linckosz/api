@@ -1,7 +1,9 @@
 <?php
+// Category 3
 
 namespace bundles\lincko\api\controllers;
 
+use \libs\Json;
 use \libs\Controller;
 use \libs\Folders;
 use \libs\Datassl;
@@ -12,12 +14,15 @@ class ControllerFile extends Controller {
 
 	protected $app = NULL;
 	protected $user = NULL;
-	protected $json = NULL;
+	protected $msg = '';
+	protected $error = true;
+	protected $resignin = true;
+	protected $status = 401;
+	protected $files = array();
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
-		$this->json = (object) array('files' => null);
-		$this->json->files = array();
+		$this->msg = $app->trans->getBRUT('api', 3, 6); //Server access issue. Please retry.
 		return true;
 	}
 
@@ -33,13 +38,6 @@ class ControllerFile extends Controller {
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <script>
 document.domain = "'.$app->lincko->domain.'";
-
-function app_upload_action(Obj){
-	if("wrapper_upload_action" in window.top){
-		window.top.wrapper_upload_action(Obj);
-	}
-}
-
 </script>
 </head>
 <body>
@@ -83,13 +81,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 	public function _post(){
 		$app = $this->app;
 		$post = $app->request->post();
-		$authorized = false;
-		$msg = '';
-		$json = array(
-			'msg' => $app->trans->getBRUT('api', 3, 1), //An error occurred while uploading the file(s). Please retry.
-			'error' => true,
-			'resign' => false,
-		);
 
 		if(isset($post['shangzai_puk']) && isset($post['shangzai_cs'])){
 			$shangzai_puk = $this->uncryptData($post['shangzai_puk']);
@@ -97,38 +88,32 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			if($authorization = Authorization::find($shangzai_puk)){
 				$checksum = md5($authorization->private_key.$shangzai_puk);
 				if($user = Users::find($authorization->user_id) && $checksum === $shangzai_cs){
-					$authorized = true;
+					$this->resignin = false;
+					$this->status = 412;
 				}
 			}
 		}
 
-		if($authorized){
-			$folder = new Folders;
-			$folder->createPath($app->lincko->filePath.'/temp/');
+		if(!$this->resignin){
 			if(isset($_FILES)){
 				foreach ($_FILES as $file => $fileArray) {
 					if(is_array($fileArray['tmp_name'])){
 						foreach ($fileArray['tmp_name'] as $j => $value) {
-							$array_tmp_name = $fileArray['tmp_name'][$j];
-							$array_name = $fileArray['name'][$j];
-							if($fileArray['size'][$j]>0){
-								copy($array_tmp_name, $folder->getPath().$array_name);
-								$json['msg'] = $app->trans->getBRUT('api', 3, 3); //Upload Successful
-								$json['error'] = false;
-							}
+							$file_tmp = array(
+								'name' => $fileArray['name'][$j],
+								'type' => $fileArray['type'][$j],
+								'tmp_name' => $fileArray['tmp_name'][$j],
+								'error' => $fileArray['error'][$j],
+								'size' => $fileArray['size'][$j],
+							);
+							$this->handleFile($file_tmp);
 						}
 					} else {
-						$array_tmp_name = $fileArray['tmp_name'];
-						$array_name = $fileArray['name'];
-						if($fileArray['size']>0){
-							copy($array_tmp_name, $folder->getPath().$array_name);
-							$json['msg'] = $app->trans->getBRUT('api', 3, 3); //Upload Successful
-							$json['error'] = false;
-						}
+						$this->handleFile($fileArray);
 					}
 				}
 			} else {
-				$json['msg'] = $app->trans->getBRUT('api', 3, 2); //No file selected to upload.
+				$this->msg = $app->trans->getBRUT('api', 3, 2); //No file selected to upload.
 			}
 		} else {
 			if(isset($_FILES)){
@@ -136,15 +121,12 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			} else {
 				\libs\Watch::php($post,'Upload failed (no file)',__FILE__,true);
 			}
-			$json['resign'] = true;
 		}
-		
-		$msg = '<script>app_upload_action('.json_encode($json).');</script>';
 
-		ob_clean();
-		$this->json_push();
-		echo json_encode($this->json);
-		return exit(0);
+		$json = new Json($this->msg, $this->error, $this->status, false, $this->resignin, $this->files);
+		$json->render();
+
+		return false;
 
 	}
 
@@ -159,20 +141,28 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		);
 	}
 
-	protected function json_push(){
+	protected function handleFile($file){
+		$app = $this->app;
+		$this->msg = $app->trans->getBRUT('api', 3, 5); //Upload failed. Please retry.
+		$folder = new Folders;
+		$folder->createPath($app->lincko->filePath.'/temp/');
 		$obj = (object) array(
-			'name' => null,
-			'size' => null,
-			'url' => null,
-			'thumbnailUrl' => null,
-			'deleteUrl' => null,
-			'deleteType' => 'DELETE',
+			'name' => $file['name'],
+			'size' => $file['size'],
 			'error' => null,
 		);
-		$obj->name = "picture1.jpg";
-		$obj->size = 902604;
-		//$obj->error = "Filetype not allowed";
-		array_push($this->json->files, $obj); 
+		$array_tmp_name = $file['tmp_name'];
+		$array_name = $file['name'];
+		if($file['size']<=0){
+			$obj->error = $app->trans->getBRUT('api', 3, 4); //File empty
+		} else {
+			copy($array_tmp_name, $folder->getPath().$array_name);
+			$this->msg = $app->trans->getBRUT('api', 3, 3); //Upload Successful
+			$this->error = false;
+			$this->status = 200;
+		}
+		array_push($this->files, $obj);
+		return true;
 	}
 
 }

@@ -8,22 +8,24 @@ class Json {
 		'msg' => '',
 		'error' => true,
 		'status' => 500,
-		'flash' => array(
-			'signout' => false,
-			'resignin' => false,
-		),
 	);
 
-	public function __construct($msg, $error=true, $status=500, $signout=false, $resignin=false){
+	public function __construct($msg, $error=true, $status=500, $signout=false, $resignin=false, $files=array()){
 		if(!$error){
 			$this->json['error'] = false;
 		}
 		$this->json['status'] = intval($status);
 		$this->json['msg'] = (string)$msg;
-		$this->json['flash'] = array(
-				'signout' => (boolean)$signout,
-				'resignin' => (boolean)$resignin,
-		);
+		//optional parameters for front end server
+		if($signout || $resignin){
+			$this->json['flash'] = array(
+					'signout' => (boolean)$signout,
+					'resignin' => (boolean)$resignin,
+			);
+		}
+		if(count($files)){
+			$this->json['files'] = (array)$files;
+		}
 		return true;
 	}
 
