@@ -157,7 +157,7 @@ class ControllerUser extends Controller {
 				if(isset($form->lastname)){ $user->lastname = $form->lastname; }
 				if($user->save()){
 					$app->flashNow('signout', false);
-					$app->flashNow('resignin', true);
+					$app->flashNow('resignin', false);
 					$app->flashNow('username', $user->username);
 
 					//Setup public and private key
