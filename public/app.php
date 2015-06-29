@@ -18,7 +18,9 @@ $app = new \Slim\Slim(array(
 function my_autoload($pClassName){
 	$app = \Slim\Slim::getInstance();
 	$pClassName = str_replace('\\', '/', $pClassName);
-	include_once($app->lincko->path.'/'.$pClassName.'.php');
+	if(file_exists($app->lincko->path.'/'.$pClassName.'.php')){
+		include_once($app->lincko->path.'/'.$pClassName.'.php');
+	}
 }
 
 spl_autoload_register('my_autoload');

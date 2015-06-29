@@ -6,8 +6,9 @@ use \libs\Controller;
 use \libs\Datassl;
 use \libs\STR;
 use \libs\Email;
-use \bundles\lincko\api\models\Users;
+use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\data\Users;
 
 class ControllerUser extends Controller {
 
@@ -17,7 +18,6 @@ class ControllerUser extends Controller {
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
-		
 		if(isset($this->data->data) && isset($this->data->data->email) && isset($this->data->data->password)){
 			$this->data->data->password = Datassl::decrypt($this->data->data->password, $this->data->data->email);
 		}
@@ -37,32 +37,40 @@ class ControllerUser extends Controller {
 		$errmsg = $app->trans->getBRUT('api', 1, 0); //Sign in failed. Please try again.
 		$errfield = 'undefined';
 
-		if(Users::isValid('user_signin',$form)){
+		if(UsersLog::isValid($form)){
 			if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
-				if($authorize = $user->authorize($data)){
-					$msg = $app->trans->getBRUT('api', 1, 1); //You are already signed in.
-					if(isset($authorize['private_key'])){
-						$app->flashNow('private_key', $authorize['private_key']);
-						$msg = $app->trans->getBRUT('api', 1, 2); //Your session has been extended.
-					}
-					if(isset($authorize['public_key'])){
-						$app->flashNow('public_key', $authorize['public_key']);
-						$app->lincko->translation['user_username'] = ucfirst($user->username);
-						$msg = $app->trans->getBRUT('api', 1, 3); //Hello @@user_username~~, you are signed in to your account.
-					}
-					if(isset($authorize['refresh'])){
-						if($authorize['refresh']){
+				if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->first()){
+					if($authorize = $user_log->authorize($data)){
+						$msg = $app->trans->getBRUT('api', 1, 1); //You are already signed in.
+						if(isset($authorize['private_key'])){
+							$app->flashNow('private_key', $authorize['private_key']);
 							$msg = $app->trans->getBRUT('api', 1, 2); //Your session has been extended.
-						} else {
-							$msg = $app->trans->getBRUT('api', 1, 3); //You are signed in to your account.
 						}
+						if(isset($authorize['public_key'])){
+							$app->flashNow('public_key', $authorize['public_key']);
+							$app->lincko->translation['user_username'] = ucfirst($user->username);
+							$msg = $app->trans->getBRUT('api', 1, 3); //Hello @@user_username~~, you are signed in to your account.
+						}
+						if(isset($authorize['username_sha1'])){
+							$app->flashNow('username_sha1', $authorize['username_sha1']);
+						}
+						if(isset($authorize['uid'])){
+							$app->flashNow('uid', $authorize['uid']);
+						}
+						if(isset($authorize['refresh'])){
+							if($authorize['refresh']){
+								$msg = $app->trans->getBRUT('api', 1, 2); //Your session has been extended.
+							} else {
+								$msg = $app->trans->getBRUT('api', 1, 3); //You are signed in to your account.
+							}
 
+						}
+						$app->flashNow('username', $user->username);
+						$app->render(200, array(
+							'msg' => array('msg' => $msg, 'field' => 'undefined'),
+						));
+						return true;
 					}
-					$app->flashNow('username', $user->username);
-					$app->render(200, array(
-						'msg' => array('msg' => $msg, 'field' => 'undefined'),
-					));
-					return true;
 				}
 			}
 		}
@@ -113,10 +121,10 @@ class ControllerUser extends Controller {
 		} else if(isset($form->email) && !Users::validEmail($form->email)){
 			$errmsg = $app->trans->getBRUT('api', 1, 10); //Account creation failed. We could not valid the Email address format: - 191 characters max
 			$errfield = 'email';
-		} else if(isset($form->password) && !Users::validPassword($form->password)){
+		} else if(isset($form->password) && !UsersLog::validPassword($form->password)){
 			$errmsg = $app->trans->getBRUT('api', 1, 11); //Account creation failed. We could not valid the password format: - Between 6 and 60 characters - Alphanumeric
 			$errfield = 'password';
-		} else if(Users::isValid('user_create',$form)){
+		} else if(UsersLog::isValid($form)){
 
 			$limit = 1;
 			$email = mb_strtolower($form->email);
@@ -128,8 +136,8 @@ class ControllerUser extends Controller {
 				$username = $username_base = mb_strstr($email,'@',true);
 				$username_sha1 = sha1(mb_strtolower($username));
 				$internal_email = $username;
-				$limit = 1; //Limit while loop to 100 iterations to avoid infinity loop
-				while( $limit <= 100 && Users::where('username', '=', $username)->orWhere('internal_email', '=', $username)->orWhere('username_sha1', '=', $username_sha1)->first() ){
+				$limit = 1; //Limit while loop to 1000 iterations to avoid infinite loop
+				while( $limit <= 1000 && Users::where('username', '=', $username)->orWhere('internal_email', '=', $username)->orWhere('username_sha1', '=', $username_sha1)->first() ){
 					$username = $username_base.mt_rand(1, 9999);
 					$username_sha1 = sha1(mb_strtolower($username));
 					$internal_email = $username;
@@ -147,26 +155,34 @@ class ControllerUser extends Controller {
 				$errmsg = $app->trans->getBRUT('api', 1, 6); //Account creation failed. Email address already in use.
 				$errfield = 'email';
 			} else if($limit<=100){
+				$user_log = new UsersLog;
+				$user_log->username_sha1 = $username_sha1;
+				$user_log->password = password_hash($form->password, PASSWORD_BCRYPT);
 				$user = new Users;
 				$user->username = $username;
 				$user->username_sha1 = $username_sha1;
-				$user->password = password_hash($form->password, PASSWORD_BCRYPT);
 				$user->email = $email;
 				$user->internal_email = $internal_email;
 				if(isset($form->firstname)){ $user->firstname = $form->firstname; }
 				if(isset($form->lastname)){ $user->lastname = $form->lastname; }
-				if($user->save()){
+				if($user_log->save() && $user->save()){
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', false);
 					$app->flashNow('username', $user->username);
 
 					//Setup public and private key
-					if($authorize = $user->authorize($data)){
+					if($authorize = $user_log->authorize($data)){
 						if(isset($authorize['private_key'])){
 							$app->flashNow('private_key', $authorize['private_key']);
 						}
 						if(isset($authorize['public_key'])){
 							$app->flashNow('public_key', $authorize['public_key']);
+						}
+						if(isset($authorize['username_sha1'])){
+							$app->flashNow('username_sha1', $authorize['username_sha1']);
+						}
+						if(isset($authorize['uid'])){
+							$app->flashNow('uid', $authorize['uid']);
 						}
 					}
 					
@@ -174,7 +190,7 @@ class ControllerUser extends Controller {
 					$mail = new Email();
 					$mail->addAddress($email, $username);
 					$mail->setSubject('Congratulation');
-					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on Arc website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
+					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
 					$mail->sendLater();
 
 					$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 1, 7), 'field' => 'undefined'),)); //Account created. check your email for validation code.

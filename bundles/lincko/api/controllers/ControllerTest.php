@@ -4,7 +4,13 @@ namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
 use \libs\Email;
-use \bundles\lincko\api\models\Users;
+use \bundles\lincko\api\models\UsersLog;
+use \bundles\lincko\api\models\data\Chats;
+use \bundles\lincko\api\models\data\ChatsComments;
+use \bundles\lincko\api\models\data\Compagnies;
+use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Post;
 
 class ControllerTest extends Controller {
 
@@ -20,6 +26,34 @@ class ControllerTest extends Controller {
 	public function _get(){
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 0); //The application is reading.
+
+		//\libs\Watch::php(Users::getUser()->toJson(),'$user',__FILE__);
+		
+		//$tp = Users::where('email', '=', mb_strtolower('bruno@lincko.net'))->first()->usersLog;
+		//$user = 1;
+		//$user = Users::find(1)->users_log;
+		//$user = UsersLog::find(1)->users;
+
+		//$user = UsersLog::find(1)->users;
+
+		//$tp = Users::getUser()->chatsComments;
+		//$tp = Chats::find(1)->chatsComments;
+		$tp = ChatsComments::find(7)->chats;
+		//$tp = Users::getUser();
+		//$tp = Chats::find(1);
+		//$tp = Users::getUser()->posts_a;
+		//$tp = Users::getUser()->with('posts')->get();
+
+
+
+		\libs\Watch::php($tp->toJson(),'$tp',__FILE__);
+		//\libs\Watch::php($tp,'$tp',__FILE__);
+
+		//$user_log = UsersLog::where('email', '=', mb_strtolower($form->email))->first()
+
+		//OK
+		//$tp = Users::getUser()->chats
+
 		$app->render(200, array('msg' => $msg,));
 		return true;
 	}

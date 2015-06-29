@@ -2,70 +2,51 @@
 
 namespace bundles\lincko\api\models;
 
-use \bundles\lincko\api\models\Authorization;
-
 use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
 
-class Users extends Model {
+use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\data\Users;
+
+class UsersLog extends Model {
 
 	protected $connection = 'api';
 
-	protected $table = 'users';
+	protected $table = 'users_log';
 
 	protected $primaryKey = 'id';
 
 	public $timestamps = true;
 
-	protected $visible = array(
-		'id',
-		'username',
-	);
-	
+	protected $visible = array();
+
 ////////////////////////////////////////////
 
-	public static function validFirstname($firstname){
-		return preg_match("/^.{1,104}$/u", $firstname);
+	//One(UsersLog) to One(Users)
+	//Warning: This does not work because the 2 tables are in 2 different databases
+	public function users(){
+		return $this->hasOne('\\bundles\\lincko\\api\\models\\data\\Users', 'username_sha1');
 	}
 
-	public static function validLastname($lastname){
-		return preg_match("/^.{1,104}$/u", $lastname);
+////////////////////////////////////////////
+
+	public static function validPassword($data){
+		return preg_match("/^[\w\d]{6,60}$/u", $data);
 	}
 
-	public static function validUsername($username){
-		return preg_match("/^\S{1,104}$/u", $username);
+	public static function isValid($form){
+		$optional = true;
+		return
+			   $optional
+			&& isset($form->password) && self::validPassword($form->password)
+			;
 	}
 
-	public static function validPassword($password){
-		return preg_match("/^[\w\d]{6,60}$/u", $password);
-	}
-
-	public static function validEmail($email){
-		return preg_match("/^.{1,191}$/u", $email) && preg_match("/^.{1,100}@.*\..{2,4}$/ui", $email) && preg_match("/^[_a-z0-9-%+]+(\.[_a-z0-9-%+]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", $email);
-	}
-
-	public static function isValid($category, $form){
-		if($category==='user_signin'){
-			return
-				   isset($form->email)
-				&& isset($form->password)
-				&& self::validEmail($form->email)
-				&& self::validPassword($form->password)
-				;
-		} else if($category==='user_create'){
-			return
-				   isset($form->email)
-				&& isset($form->password)
-				&& self::validEmail($form->email)
-				&& self::validPassword($form->password)
-				;
-		}
-		return false;
-	}
+////////////////////////////////////////////
 
 	public function authorize($data){
-		$app = $this->app = \Slim\Slim::getInstance();
+		$app = \Slim\Slim::getInstance();
 
 		$authorize = false;
 		$refresh = false;
@@ -111,6 +92,8 @@ class Users extends Model {
 				return array(
 					'public_key' => $public_key,
 					'private_key' => $private_key,
+					'username_sha1' => $this->username_sha1,
+					'uid' => Users::where('username_sha1', '=', $this->username_sha1)->first()->id,
 					'refresh' => $refresh ,
 				);
 			}

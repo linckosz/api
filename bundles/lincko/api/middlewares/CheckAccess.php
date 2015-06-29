@@ -5,8 +5,9 @@ namespace bundles\lincko\api\middlewares;
 use \libs\Json;
 use \libs\Datassl;
 use \bundles\lincko\api\models\Api;
-use \bundles\lincko\api\models\Users;
+use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\data\Users;
 
 class CheckAccess extends \Slim\Middleware {
 	
@@ -29,13 +30,15 @@ class CheckAccess extends \Slim\Middleware {
 
 		if(isset($form->email) && isset($form->password)){
 			$form->password = Datassl::decrypt($form->password, $form->email);
-			if(Users::isValid('user_signin',$form)){
+			if(UsersLog::isValid($form) && Users::isValid($form)){
 				if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
-					if($authorize = $user->authorize($data)){
-						if(isset($authorize['public_key']) && isset($authorize['private_key'])){
-							$form->password = Datassl::encrypt($form->password, $form->email);
-							$this->app->lincko->securityFlash = $authorize;
-							return $authorize['public_key'];
+					if($user_log = UsersLog::where('username_sha1', '=', mb_strtolower($user->username_sha1))->first()){
+						if($authorize = $user_log->authorize($data)){
+							if(isset($authorize['public_key']) && isset($authorize['private_key'])){
+								$form->password = Datassl::encrypt($form->password, $form->email);
+								$this->app->lincko->securityFlash = $authorize;
+								return $authorize['public_key'];
+							}
 						}
 					}
 				}
@@ -51,12 +54,26 @@ class CheckAccess extends \Slim\Middleware {
 		$authorization = $this->authorization;
 
 		if($authorization){
-			if($user = Users::find($authorization->user_id)){
-				if($authorize = $user->authorize($data)){
+			if($user_log = UsersLog::find($authorization->user_id)){
+				if($authorize = $user_log->authorize($data)){
 					if(isset($authorize['public_key']) && isset($authorize['private_key'])){
 						$this->app->lincko->securityFlash = $authorize;
 						return true;
 					}
+				}
+			}
+		}
+		return false;
+	}
+
+	protected function setUserId(){
+		$app = $this->app;
+		if(isset($app->lincko->data->user_id)){
+			return $app->lincko->data->user_id;
+		} else if(isset($this->authorization->user_id) && $this->authorization->user_id>0){
+			if($user_log = UsersLog::find($this->authorization->user_id)){
+				if($user = Users::where('username_sha1', '=', $user_log->username_sha1)->first()){
+					return $app->lincko->data['uid'] = $user->id;
 				}
 			}
 		}
@@ -92,24 +109,30 @@ class CheckAccess extends \Slim\Middleware {
 	protected function checkPublicKey(){
 		$app = $this->app;
 		$data = $this->data;
+		$valid = false;
 		if($data->public_key === $app->lincko->security['public_key'] && in_array($this->route, $app->lincko->routeFilter)){
+			//This is for any request off log, so without user ID logged in. setUserId() will return false;
 			$this->authorization = new Authorization;
 			$this->authorization->public_key = $app->lincko->security['public_key'];
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorization->created_at = $this->authorization->updated_at = (new \DateTime)->format('Y-m-d H:i:s');
-			return true;
+			$valid = true;
 		} else if($this->authorization = Authorization::find($data->public_key)){
 			$this->authorizeAccess = true;
-			return true;
+			$valid = true;
 		} else if($this->authorization = Authorization::find($this->autoSign())){
 			//Must overwrite by standard keys because the checksum has been calculated with the standard one
 			$this->authorization->public_key = $app->lincko->security['public_key'];
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorizeAccess = true;
-			return true;
+			$valid = true;
 		}
 
-		return false;
+		if($valid){
+			$this->setUserId();
+		}
+
+		return $valid;
 	}
 
 	protected function checkRouteAccess(){

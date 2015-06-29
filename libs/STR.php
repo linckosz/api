@@ -3,11 +3,38 @@
 
 namespace libs;
 
+class Ord_table {
+	// Hold an instance of the class
+	private static $instance;
+
+	private static $table = array();
+ 
+	// The singleton method
+	public static function singleton() {
+		if (!isset(self::$instance)) {
+			self::$instance = self::create_table();
+		}
+		return self::$instance;
+	}
+
+	private static function create_table() {
+		static $tab = array();
+		$entities = get_html_translation_table(HTML_SPECIALCHARS, ENT_HTML5 | ENT_QUOTES, 'UTF-8');
+		foreach( $entities as $k => $v ){
+			$tab[$k] = '&#' . ord($k) . ';';
+		}
+		return $tab;
+	}
+	
+}
+
 class STR {
 
 	//Convert a text to HTML entities, readable by HTML, INPUT, TEXTAREA
-	public static function sql_to_html($text){
-		$text = htmlentities($text, ENT_HTML5 | ENT_QUOTES);
+	public static function sql_to_html($text) {
+		//Cannot use htmlspecialchars because Android 2.3 does not recognizes "named entity" ($quote;), but only "numerical entity" ($#39;)
+		//$text = htmlspecialchars($text, ENT_HTML5 | ENT_QUOTES);
+		$text = self::name_to_numerical($text);
 		$text = nl2br($text);
 		$text = self::break_line_conv($text,'');
 		return $text;
@@ -15,7 +42,7 @@ class STR {
 
 	//Convert a text to JS entities, readable by JS
 	//Note, use quotes "..." around the JS variable while displaying
-	public static function sql_to_js($text){
+	public static function sql_to_js($text) {
 		$text = json_encode($text);
 		$text = str_replace("\\r\\n", "\\n", $text);
 		//Cancel the quote " added by json_encode
@@ -24,9 +51,30 @@ class STR {
 	}
 
 	//Delete any line return
-	public static function break_line_conv($text, $replace){ 
+	public static function break_line_conv($text, $replace) {
 		return str_replace(array("\r\n", "\r", "\n", CHR(10), CHR(13)), $replace, $text); 
 	}
+
+
+	private static function name_to_numerical($string) {
+		$tab = Ord_table::singleton();
+		return strtr($string, $tab);
+	}
+
+	//Convert "any_SHORT description " to "AnyShortDescription"
+	public static function textToFirstUC($text){
+		$text = str_replace('_', ' ', $text);
+		$text = ucwords(strtolower($text));
+		$text = str_replace(' ', '', $text);
+		return $text;
+	}
+
+
+
+
+
+
+
 
 
 
@@ -432,11 +480,11 @@ class STR {
 		$expire = "";
 		foreach ($temp as $i => $value) {
 		  if($i==0){
-		  	if($temp[$i]!=5 && $temp[$i]!=6){
-		  		break;
-		  	}
+			if($temp[$i]!=5 && $temp[$i]!=6){
+				break;
+			}
 		  } if(Odd($i) && array_key_exists($temp[$i],$strtonum)){
-		  	$expire = $expire.$strtonum[$temp[$i]];
+			$expire = $expire.$strtonum[$temp[$i]];
 		  }
 		}
 		$expire = intval($expire);

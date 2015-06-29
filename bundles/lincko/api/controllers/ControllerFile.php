@@ -7,7 +7,7 @@ use \libs\Json;
 use \libs\Controller;
 use \libs\Folders;
 use \libs\Datassl;
-use \bundles\lincko\api\models\Users;
+use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 
 class ControllerFile extends Controller {
@@ -87,7 +87,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$shangzai_cs = $this->uncryptData($post['shangzai_cs']);
 			if($authorization = Authorization::find($shangzai_puk)){
 				$checksum = md5($authorization->private_key.$shangzai_puk);
-				if($user = Users::find($authorization->user_id) && $checksum === $shangzai_cs){
+				if($user_log = UsersLog::find($authorization->user_id) && $checksum === $shangzai_cs){
 					$this->resignin = false;
 					$this->status = 412;
 				}
