@@ -7,10 +7,10 @@ use \libs\Email;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\ChatsComments;
-use \bundles\lincko\api\models\data\Compagnies;
+use \bundles\lincko\api\models\data\Companies;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Users;
-use \bundles\lincko\api\models\data\Post;
+use \bundles\lincko\api\models\data\Tasks;
 
 class ControllerTest extends Controller {
 
@@ -38,7 +38,7 @@ class ControllerTest extends Controller {
 
 		//$tp = Users::getUser()->chatsComments;
 		//$tp = Chats::find(1)->chatsComments;
-		$tp = ChatsComments::find(7)->chats;
+		//$tp = ChatsComments::find(7)->chats;
 		//$tp = Users::getUser();
 		//$tp = Chats::find(1);
 		//$tp = Users::getUser()->posts_a;
@@ -46,13 +46,63 @@ class ControllerTest extends Controller {
 
 
 
-		\libs\Watch::php($tp->toJson(),'$tp',__FILE__);
+		//\libs\Watch::php($tp->toJson(),'$tp',__FILE__);
 		//\libs\Watch::php($tp,'$tp',__FILE__);
 
 		//$user_log = UsersLog::where('email', '=', mb_strtolower($form->email))->first()
 
 		//OK
 		//$tp = Users::getUser()->chats
+
+		$lastvisit = 0;
+		//$lastvisit = (new \DateTime())->format('Y-m-d H:i:s');
+
+		//$tp = Users::getLinked()->get();
+		//$tp = Users::toto()->get();
+		//$tp = ChatsComments::getLinked()->get();
+		//$tp = Users::getUser()->users;
+		//$tp = Companies::getLinked()->where('updated_at', '>=', $lastvisit)->get();
+
+		//$tp = Users::getLinked()->get();
+		//$tp = Tasks::getLinked()->get();
+		//$tp = Users::getUser()->companies;
+		//$tp = Users::toto();
+		//$tp = Users::getUser()->users();
+		//$tp = Users::getUser()->usersInvert();
+		//\libs\Watch::php( $tp ,'$tp',__FILE__);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp',__FILE__);
+
+		//$tp = Tasks::getLinked()->get();
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$get',__FILE__);
+/*
+		$tp = Tasks::getLinked()->get()->each(function($result){
+			//\libs\Watch::php( $result ,'$tp',__FILE__);
+			$tt = $result->tasks;
+			\libs\Watch::php( json_decode($tt->toJson()) ,'$tt',__FILE__);
+		});
+*/
+/*
+		$tp = Tasks::getLinked()->get()->each(function($result){
+			//\libs\Watch::php( $result ,'$tp',__FILE__);
+			$tp = $result->tasks->each(function($result){
+				//\libs\Watch::php( $result ,'$tp',__FILE__);
+				$tp = $result->id;
+				\libs\Watch::php( $tp ,'$tp',__FILE__);
+			});
+		});
+*/
+			
+		//$tp = Tasks::all()->first()->getCompany();
+		//\libs\Watch::php( $tp ,'$tp',__FILE__);
+
+		//$tp = Projects::with('userAccess')->where('projects_x_users_access.access', 1)->get();
+
+		//$tp = Projects::whereCompaniesId(0)->count();
+		$tp = Companies::formatURL('ab cih? 67sj');
+
+		\libs\Watch::php( $tp ,'$data3',__FILE__);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tt',__FILE__);
+
 
 		$app->render(200, array('msg' => $msg,));
 		return true;

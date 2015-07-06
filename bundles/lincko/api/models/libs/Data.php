@@ -6,6 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
 
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\chatsComments;
 
 class Data {
 
@@ -44,21 +45,27 @@ class Data {
 		$this->models = $classes;
 	}
 
-	public function getLatest(){
+	protected function getList($detail=false){
 		$app = $this->app;
-		$storage = new \stdClass;
+		$result = new \stdClass;
 		$this->getModels();
 
-
 //////test
-		$this->lastvisit=0;
+		//$this->lastvisit = 0;
 //////test
-
 
 		foreach($this->models as $key => $value) {
-			$data = $value::where('updated_at', '>=', $this->lastvisit)->get();
+			if($this->lastvisit != 0){
+				$data = $value::getLinked()->where('updated_at', '>=', $this->lastvisit)->get();
+			} else {
+				$data = $value::getLinked()->get();
+			}
 			//Check if there is at least one update
 			if(!$data->isEmpty()){
+				//Add multi ID dependencies (Many to Many)
+				foreach ($data as $key => $value) {
+					$data[$key]->addMultiDependencies();
+				}
 				//Get table name
 				$table_name = (new $value)->getTable();
 				//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
@@ -71,15 +78,47 @@ class Data {
 							$table_tp[$key]->new = 1;
 						}
 					}
-					$table[$table_tp[$key]->id] = $table_tp[$key];
-					//Delete ID property since it becomes the key of the table
-					unset($table[$table_tp[$key]->id]->{'id'});
+					$uid = $app->lincko->data['uid'];
+					$compid = $data[$key]->getCompany();
+					$id = $table_tp[$key]->id;
+					if($detail){
+						$temp = $table_tp[$key];
+						//Delete ID property since it becomes the key of the table
+						unset($temp->{'id'});
+					} else {
+						$temp = new \stdClass;
+					}
+
+					//Use Timestamp for JS
+					if(isset($temp->created_at)){  $temp->created_at = (new \DateTime($temp->created_at))->getTimestamp(); }
+					if(isset($temp->updated_at)){  $temp->updated_at = (new \DateTime($temp->updated_at))->getTimestamp(); }
+					if(isset($temp->deleted_at)){  $temp->deleted_at = (new \DateTime($temp->deleted_at))->getTimestamp(); }
+
+					if(!isset($result->$uid)){
+						$result->$uid = new \stdClass;
+					}
+					if(is_null($compid)){ $compid = '_'; }
+					if(!isset($result->$uid->$compid)){
+						$result->$uid->$compid = new \stdClass;
+					}
+					if(!isset($result->$uid->$compid->$table_name)){
+						$result->$uid->$compid->$table_name = new \stdClass;
+					}
+					//Create object
+					$result->$uid->$compid->$table_name->{$id} = $temp;
 				}
-				//Create storage object
-				$storage->$table_name = $table;
+				unset($data);
 			}
 		}
-		return $storage;
+		return $result;
+	}
+
+	public function getLatest(){
+		return $this->getList(true);
+	}
+
+	public function getSchema(){
+		return $this->getList(false);
 	}
 
 }

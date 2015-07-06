@@ -2,11 +2,11 @@
 
 namespace bundles\lincko\api\models\data;
 
-use Illuminate\Database\Eloquent\Model;
+use \libs\ModelLincko;
 
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
 
-class Users extends Model {
+class Users extends ModelLincko {
 
 	protected $connection = 'data';
 
@@ -37,19 +37,14 @@ class Users extends Model {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'users_x_chats', 'users_id', 'chats_id');
 	}
 
-	//One(Users) to Many(ChatsComments)
-	public function chatsComments(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\ChatsComments', 'users_id');
+	//Many(Users) to Many(Companies)
+	public function companies(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Companies', 'users_x_companies', 'users_id', 'companies_id');
 	}
 
-	//Many(Users) to Many(Compagnies)
-	public function compagnies(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Compagnies', 'users_x_compagnies', 'users_id', 'compagnies_id');
-	}
-
-	//Morph => Many(Users) to Many(Projects)
-	public function projects(){
-		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'link', '_x_projects');
+	//Many(Users) to Many(Users)
+	public function usersContacts(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_contacts');
 	}
 
 ////////////////////////////////////////////
@@ -89,12 +84,24 @@ class Users extends Model {
 
 ////////////////////////////////////////////
 
-	public static function getUser(){
-		$app = \Slim\Slim::getInstance();
-		if(isset($app->lincko->data['uid'])){
-			return self::find($app->lincko->data['uid']);
+	//We have to rewritte the function "scopegetLinked" from parent class, because it's called statically
+	public static function getLinked(){
+		return self::getUser()->usersContacts();
+	}
+
+	//We do not need "addMultiDependencies" since getLinked do this jos already
+
+////////////////////////////////////////////
+
+	public function scopetheUser($query){
+		if(isset(\Slim\Slim::getInstance()->lincko->data['uid'])){
+			return $query->whereId(\Slim\Slim::getInstance()->lincko->data['uid']);
 		}
-		return false;
+		return $query->where(-1); //It will force an error since the user -1 does not exists
+	}
+
+	public static function getUser(){
+		return self::theUser()->first();
 	}
 
 }

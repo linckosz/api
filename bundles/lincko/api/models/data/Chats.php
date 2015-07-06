@@ -2,11 +2,11 @@
 
 namespace bundles\lincko\api\models\data;
 
-use Illuminate\Database\Eloquent\Model;
+use \libs\ModelLincko;
 
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
 
-class Chats extends Model {
+class Chats extends ModelLincko {
 
 	protected $connection = 'data';
 
@@ -32,7 +32,7 @@ class Chats extends Model {
 
 	//Many(Chats) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'users_id', 'chats_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id');
 	}
 
 

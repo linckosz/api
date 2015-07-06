@@ -2,11 +2,11 @@
 
 namespace bundles\lincko\api\models\data;
 
-use Illuminate\Database\Eloquent\Model;
+use \libs\ModelLincko;
 
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
 
-class Projects extends Model {
+class Projects extends ModelLincko {
 
 	protected $connection = 'data';
 
@@ -20,20 +20,27 @@ class Projects extends Model {
 		'id',
 		'created_at',
 		'updated_at',
-		'title',
-		'description',
+		'created_by',
+		'-title',
+		'-description',
+		'personal_private',
 	);
 	
 ////////////////////////////////////////////
 
-	//Morph => Many(Projects) to Many(Users)
-	public function users(){
-		return $this->morphedByMany('\\bundles\\lincko\\api\\models\\data\\Users', 'link', '_x_projects');
+	//Many(Projects) to One(Companies)
+	public function companies(){
+		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Companies', 'companies_id');
 	}
 
-	//Morph => Many(Projects) to Many(Compagnies)
-	public function compagnies(){
-		return $this->morphedByMany('\\bundles\\lincko\\api\\models\\data\\Compagnies', 'link', '_x_projects');
+	//One(Projects) to Many(Tasks)
+	public function tasks(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'projects_id');
+	}
+
+	//Many(Tasks) to Many(Tasks)
+	public function userAccess(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'projects_x_users_access', 'projects_id', 'users_id')->withPivot('access');
 	}
 
 
@@ -58,5 +65,31 @@ class Projects extends Model {
 	}
 
 ////////////////////////////////////////////
+
+	//The projects linked to the company 0 are the 
+	public function scopegetLinked($query){
+		return $query
+		->where(function ($query) {
+			//Get personnal project
+			$query
+			->where('created_by', '=', \Slim\Slim::getInstance()->lincko->data['uid'])
+			->where('personal_private', 1);
+		})
+		->orWhere(function ($query) {
+			//Exclude private project
+			$query
+			->with(['userAccess' => function($query){
+				$query->where('access', 1);
+			}])
+			->where('personal_private', 0)
+			->whereHas('companies', function ($query) {
+				$query->getLinked();
+			});
+		});
+	}
+
+	public function getCompany(){
+		return $this->companies_id;
+	}
 
 }

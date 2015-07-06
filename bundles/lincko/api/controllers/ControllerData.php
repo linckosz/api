@@ -29,4 +29,15 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function schema_get(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 10); //You got the latest schema.
+
+		$data = new Data();
+		$schema = $data->getSchema();
+
+		$app->render(200, array('msg' => array('msg' => $msg, 'schema' => $schema),));
+		return true;
+	}
+
 }

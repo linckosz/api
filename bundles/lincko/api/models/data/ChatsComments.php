@@ -2,11 +2,11 @@
 
 namespace bundles\lincko\api\models\data;
 
-use Illuminate\Database\Eloquent\Model;
+use \libs\ModelLincko;
 
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
 
-class ChatsComments extends Model {
+class ChatsComments extends ModelLincko {
 
 	protected $connection = 'data';
 
@@ -20,26 +20,23 @@ class ChatsComments extends Model {
 		'id',
 		'created_at',
 		'updated_at',
+		'created_by',
+		'updated_by',
 		'chats_id',
-		'users_id',
-		'comment',
+		'-comment',
 	);
 	
 ////////////////////////////////////////////
 
-	//One(ChatsComments) to Many(Chats)
+	//Many(ChatsComments) to One(Chats)
 	public function chats(){
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Chats', 'chats_id');
-	}
-
-	//One(ChatsComments) to Many(Users)
-	public function users(){
-		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'users_id');
 	}
 
 ////////////////////////////////////////////
 
 	public static function validComment($data){
+		if(empty($data)){ return true; }
 		return true;
 	}
 
@@ -53,4 +50,11 @@ class ChatsComments extends Model {
 
 ////////////////////////////////////////////
 
+	//We overwritte this function because it's linked to "chats", not "users" directly
+	public function scopegetLinked($query){
+		return $query->whereHas('chats', function ($query) {
+			$query->getLinked();
+		});
+	}
+	
 }
