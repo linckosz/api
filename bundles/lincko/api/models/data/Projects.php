@@ -25,6 +25,12 @@ class Projects extends ModelLincko {
 		'-description',
 		'personal_private',
 	);
+
+	// CUSTOMIZATION //
+	protected $archive = array(
+		'-title',
+		'-description',
+	);
 	
 ////////////////////////////////////////////
 
@@ -78,9 +84,9 @@ class Projects extends ModelLincko {
 		->orWhere(function ($query) {
 			//Exclude private project
 			$query
-			->with(['userAccess' => function($query){
+			->whereHas('userAccess', function ($query){
 				$query->where('access', 1);
-			}])
+			})
 			->where('personal_private', 0)
 			->whereHas('companies', function ($query) {
 				$query->getLinked();

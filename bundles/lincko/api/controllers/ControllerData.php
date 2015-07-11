@@ -40,4 +40,15 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function missing_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 11); //You got the missing elements.
+
+		$data = new Data();
+		$missing = $data->getMissing();
+
+		$app->render(200, array('msg' => array('msg' => $msg, 'missing' => $missing),));
+		return true;
+	}
+
 }

@@ -11,7 +11,7 @@ class Watch {
 	/*
 	\libs\Watch::php($var,'$var',__FILE__);
 	*/
-	public static function php($var='yes',$comment='undefined',$filename=__FILE__,$error=false){
+	public static function php($var='yes', $comment='undefined', $filename=__FILE__, $error=false, $reset=false){
 		global $app;
 		if($error){
 			$logPath = $app->lincko->logPath.'/php';
@@ -25,9 +25,11 @@ class Watch {
 		$folder->createPath($logPath);
 
 		if(file_exists($fic)){
-			if(filesize($fic)>1000000){ //Help to never get a file higher than 1MB, avoid to fulfill the server space in case of heavy bug
+			$truncate = 500000;
+			if($reset){ $truncate = 0; }
+			if(filesize($fic)>$truncate*2){ //Help to never get a file higher than 1MB, avoid to fulfill the server space in case of heavy bug
 				if($fp = fopen($fic, 'r+')){ //We open the file in read/write, and place the cursor at the beginning
-					@ftruncate($fp,500000); //Cut the file in half (like that it keep all first alerts)
+					@ftruncate($fp,$truncate); //Cut the file in half (like that it keep all first alerts)
 					fclose($fp); //CLose the file
 				}
 			}

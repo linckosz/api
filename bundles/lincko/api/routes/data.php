@@ -18,4 +18,10 @@ $app->group('/data', function () use ($app) {
 	)
 	->name('data_schema'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/missing',
+		'\bundles\lincko\api\controllers\ControllerData:missing'.$app->lincko->method_suffix
+	)
+	->name('data_missing'.$app->lincko->method_suffix);
+
 });

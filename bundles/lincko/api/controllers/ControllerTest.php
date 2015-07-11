@@ -11,6 +11,7 @@ use \bundles\lincko\api\models\data\Companies;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Tasks;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class ControllerTest extends Controller {
 
@@ -98,11 +99,40 @@ class ControllerTest extends Controller {
 		//$tp = Projects::with('userAccess')->where('projects_x_users_access.access', 1)->get();
 
 		//$tp = Projects::whereCompaniesId(0)->count();
-		$tp = Companies::formatURL('ab cih? 67sj');
+		/*
+		$tp = Projects::with(['userAccess' => function ($query){
+			$query->where('access', 1);
+			\libs\Watch::php( $query ,'$tp', __FILE__, false, true);
+		}]);
+		*/
+		//$tp = Projects::with('userAccess')->first();
+/*
+		$tp = Projects::where('personal_private', 0)->with(['userAccess' => function ($query){
+			$query->where('access', 1);
+		}])->first();
 
-		\libs\Watch::php( $tp ,'$data3',__FILE__);
-		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tt',__FILE__);
+		$tp = Projects::where('personal_private', 0)->whereHas('userAccess', function ($query){
+			$query->where('access', 1);
+		})->first();
+*/
+/*
+		$tp = Projects::with(['userAccess' => function ($query){
+			$query->where('access', 1);
+		}])->first();
 
+		$tp = Projects::whereHas('userAccess', function ($query){
+			$query->where('access', 1);
+		})->first();
+*/
+
+		$tp = Projects::getLinked()->get();
+		
+		//\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, true);
+
+		$db = Capsule::connection('data');
+		$data = $db->getQueryLog();
+		\libs\Watch::php( $data ,'$data', __FILE__);
 
 		$app->render(200, array('msg' => $msg,));
 		return true;
