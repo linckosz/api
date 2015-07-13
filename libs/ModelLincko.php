@@ -10,6 +10,10 @@ abstract class ModelLincko extends Model {
 
 	protected $archive = array();
 
+	protected $contactsLock = false; //If true, do not allow to delete the user from the contact list
+
+	protected $contactsVisibility = false; //If true, it will appear in user contact list
+
 	//Note: In relation functions, cannot not use underscore "_", it will not work. And do not use the same name as the Model itself.
 
 	//This function helps to get all instance related to the user itself only
@@ -53,6 +57,33 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		return $history;
+	}
+
+	//Return a list object of users linked to the model in direct relation, It add the value if it's locked or not.
+	public function getUsersContacts(){
+		$contacts = new \stdClass;
+		if(isset($this->created_by)){
+			$contacts->{$this->created_by} = $this->getContactsInfo();
+		}
+		if(isset($this->updated_by)){
+			$contacts->{$this->updated_by} = $this->getContactsInfo();
+		}
+		return $contacts;
+	}
+
+	public function getContactsLock(){
+		return $this->contactsLock;
+	}
+
+	public function getContactsVisibility(){
+		return $this->contactsVisibility;
+	}
+
+	public function getContactsInfo(){
+		$info = new \stdClass;
+		$info->contactsLock = $this->getContactsLock();
+		$info->contactsVisibility = $this->getContactsVisibility();
+		return $info;
 	}
 
 	//When save, it helps to keep track of history

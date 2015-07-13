@@ -23,6 +23,10 @@ class Users extends ModelLincko {
 		'firstname',
 		'lastname',
 	);
+
+	protected $contactsLock = false; //By default do not lock the user
+
+	protected $contactsVisibility = false; //By default do not make the user visible
 	
 ////////////////////////////////////////////
 
@@ -44,7 +48,7 @@ class Users extends ModelLincko {
 
 	//Many(Users) to Many(Users)
 	public function usersContacts(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_contacts');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_contacts')->withPivot('access');;
 	}
 
 ////////////////////////////////////////////
@@ -86,10 +90,25 @@ class Users extends ModelLincko {
 
 	//We have to rewritte the function "scopegetLinked" from parent class, because it's called statically
 	public static function getLinked(){
-		return self::getUser()->usersContacts();
+		return self::theUser();
 	}
 
-	//We do not need "addMultiDependencies" since getLinked do this jos already
+	//Get all users that are added by the user
+	public function getUsersContacts(){
+		$usersContacts = parent::getUsersContacts();
+		$list = Users::getUser()->usersContacts()->where('users_x_users.access', 1)->get();
+		foreach($list as $key => $value) {
+			$id = $value->id;
+			$usersContacts->$id = $this->getContactsInfo();
+		}
+		$id = $this->id;
+		$usersContacts->$id = new \stdClass;
+		$usersContacts->$id->contactsLock = true; //Do not allow to delete the user itself
+		$usersContacts->$id->contactsVisibility = false; //No need to make the user visible in the list
+		return $usersContacts;
+	}
+
+	//We do not need "addMultiDependencies" since getUsersContacts do this job already
 
 ////////////////////////////////////////////
 
@@ -97,7 +116,7 @@ class Users extends ModelLincko {
 		if(isset(\Slim\Slim::getInstance()->lincko->data['uid'])){
 			return $query->whereId(\Slim\Slim::getInstance()->lincko->data['uid']);
 		}
-		return $query->where(-1); //It will force an error since the user -1 does not exists
+		return $query->whereId(-1); //It will force an error since the user -1 does not exists
 	}
 
 	public static function getUser(){

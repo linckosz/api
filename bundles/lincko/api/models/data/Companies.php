@@ -24,6 +24,10 @@ class Companies extends ModelLincko {
 		'url',
 	);
 
+	protected $contactsLock = true; //Do not allow to delete users from contact list
+
+	protected $contactsVisibility = true; //Make all user linked to the company visible by the user into the contact list
+
 ////////////////////////////////////////////
 
 	//Many(Companies) to Many(Users)
@@ -66,11 +70,23 @@ class Companies extends ModelLincko {
 
 ////////////////////////////////////////////
 
-	//We have to include Company 0 because it's a shared one by default
+	
 	public function scopegetLinked($query){
-		return $query->orwhereHas('users', function ($query) {
+		return $query->whereHas('users', function ($query) {
 			$query->theUser();
 		});
+	}
+
+	//Get all users that are added by the user
+	//We have to include Company 0 because it's a shared one by default
+	public function getUsersContacts(){
+		$usersContacts = parent::getUsersContacts();
+		$list = $this->users()->where('users_x_companies.companies_id','<>',0)->get(); //Exclude the shared company "0" which should never actually appear, but it a security
+		foreach($list as $key => $value) {
+			$id = $value->id;
+			$usersContacts->$id = $this->getContactsInfo();
+		}
+		return $usersContacts;
 	}
 
 ////////////////////////////////////////////

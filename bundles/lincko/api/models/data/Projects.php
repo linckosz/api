@@ -75,21 +75,25 @@ class Projects extends ModelLincko {
 	//The projects linked to the company 0 are the 
 	public function scopegetLinked($query){
 		return $query
-		->where(function ($query) {
-			//Get personnal project
+		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php
 			$query
-			->where('created_by', '=', \Slim\Slim::getInstance()->lincko->data['uid'])
-			->where('personal_private', 1);
-		})
-		->orWhere(function ($query) {
-			//Exclude private project
-			$query
-			->whereHas('userAccess', function ($query){
-				$query->where('access', 1);
+			->where(function ($query) {
+				//Get personnal project
+				$query
+				->where('created_by', '=', \Slim\Slim::getInstance()->lincko->data['uid'])
+				->where('personal_private', 1);
 			})
-			->where('personal_private', 0)
-			->whereHas('companies', function ($query) {
-				$query->getLinked();
+			->orWhere(function ($query) {
+				//Exclude private project
+				$query
+				->whereHas('userAccess', function ($query){
+					$uid = \Slim\Slim::getInstance()->lincko->data['uid'];
+					$query->where('users_id', $uid)->where('access', 1);
+				})
+				->where('personal_private', 0)
+				->whereHas('companies', function ($query) {
+					$query->getLinked();
+				});
 			});
 		});
 	}

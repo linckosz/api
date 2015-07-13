@@ -119,21 +119,23 @@ class ControllerTest extends Controller {
 		$tp = Projects::with(['userAccess' => function ($query){
 			$query->where('access', 1);
 		}])->first();
-
+*/
+/*
 		$tp = Projects::whereHas('userAccess', function ($query){
 			$query->where('access', 1);
-		})->first();
+		})->get();
 */
 
-		$tp = Projects::getLinked()->get();
-		
+		$tp = Users::getUser()->usersContacts()->where('users_x_users.access', 1)->get();
+		//$tp = Companies::getLinked()->find(2)->users;
+		//$tp = Companies::getLinked()->find(2)->users()->where('users_x_companies.companies_id','<>','1')->get();
 		//\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
 		\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, true);
 
-		$db = Capsule::connection('data');
-		$data = $db->getQueryLog();
-		\libs\Watch::php( $data ,'$data', __FILE__);
-
+		//$db = Capsule::connection('data');
+		//$data = $db->getQueryLog();
+		//\libs\Watch::php( $data ,'$data', __FILE__);
+		//$msg = time();
 		$app->render(200, array('msg' => $msg,));
 		return true;
 	}
