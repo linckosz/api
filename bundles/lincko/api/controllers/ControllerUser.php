@@ -223,7 +223,7 @@ class ControllerUser extends Controller {
 
 		$msg = $app->trans->getBRUT('api', 1, 8); //You are already signed out.
 
-		if($var = Authorization::find($data->public_key)){
+		if($var = Authorization::find_finger($data->public_key, $data->fingerprint)){
 			$var = $var->delete();
 			$msg = $app->trans->getBRUT('api', 1, 9); //You have signed out of your account.
 		}

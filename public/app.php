@@ -4,16 +4,7 @@ $path = dirname(__FILE__).'/..';
 
 require_once $path.'/vendor/autoload.php';
 
-$app = new \Slim\Slim(array(
-	'cookies.encrypt' => true, //Must use $app->getCookie('foo', false);
-	'cookies.secret_key' => 'au6G7dbSh87Ws',
-	'cookies.lifetime' => '365 days',
-	'cookies.secure' => true,
-	'cookies.path' => '/',
-	'cookies.httponly' => true,
-	'templates.path' => '..',
-	'debug' => false,
-));
+$app = new \Slim\Slim();
 
 function my_autoload($pClassName){
 	$app = \Slim\Slim::getInstance();
@@ -61,3 +52,4 @@ $app->get('/:catchall', function() use ($app) {
 ->name('catchall');
 
 $app->run();
+//Checking $app (print_r) after run can make php crashed out of memory because it contains files data

@@ -13,13 +13,11 @@ class Data {
 	protected $data = NULL;
 	protected $models = array();
 	protected $lastvisit = 0; //Format 'Y-m-d H:i:s'
-	protected $missing = NULL;
+	protected $partial = NULL;
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
-		$this->setLastVisit();
-		$this->setMissing();
 		return true;
 	}
 
@@ -31,13 +29,15 @@ class Data {
 		}
 	}
 
-	protected function setMissing(){
-		if(isset($this->data->data->missing)){
-			if(is_object($this->data->data->missing)){
-				$this->missing = $this->data->data->missing;
+	protected function setPartial(){
+		if(isset($this->data->data->partial)){
+			if(is_object($this->data->data->partial)){
+				$this->partial = $this->data->data->partial;
 			}
 		}
 	}
+
+
 
 	protected function getModels(){
 		$sql = 'SHOW TABLES;';
@@ -54,16 +54,24 @@ class Data {
 		$this->models = $classes;
 	}
 
-	protected function getList($detail=false, $missing=false){
+	protected function getList($action){
 		$app = $this->app;
 		$result = new \stdClass;
 		$usersContacts = new \stdClass;
 		$uid = $app->lincko->data['uid'];
 		$this->getModels();
+		$detail = false;
+		if($action == 'latest' || $action == 'missing'){
+			$detail = true;
+		}
+		$history_detail = false;
+		if($action == 'history'){
+			$history_detail = true;
+		}
 
 		foreach($this->models as $key => $value) {
 			if($this->lastvisit != 0){
-				//Insire that the where is only with AND, not an OR!
+				//Insure that the where is only with AND, not an OR!
 				$data = $value::getLinked()->where('updated_at', '>=', $this->lastvisit)->get();	
 			} else {
 				$data = $value::getLinked()->get();
@@ -71,31 +79,56 @@ class Data {
 			//Check if there is at least one update
 			if(!$data->isEmpty()){
 				//Get table name
-				$table_name = (new $value)->getTable();
-				//Add multi ID dependencies (Many to Many)
-				foreach ($data as $key => $value) {
-					$data[$key]->addMultiDependencies();
+				$model = new $value;
+				$table_name = $model->getTable();
+				//Get the parents list
+				if($action == 'schema' || $action == 'missing'){
+					if(!isset($result->$uid)){
+						$result->$uid = new \stdClass;
+					}
+					if(!isset($result->$uid->{'_'})){
+						$result->$uid->{'_'} = new \stdClass;
+					}
+					if(!isset($result->$uid->{'_'}->{'_relations'})){
+						$result->$uid->{'_'}->{'_relations'} = new \stdClass;
+					}
+					if(!isset($result->$uid->{'_'}->{'_relations'}->$table_name)){
+						$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getParents();
+					}
 				}
-				//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
-				$table = array();
-				$table_tp = json_decode($data->toJson());
-				foreach ($table_tp as $key => $value) {
-					$table_tp[$key]->new = 0;
+				
+				foreach ($data as $key => $value) {
+					if(isset($data[$key]->users()->find($app->lincko->data['uid'])->access) && $data[$key]->users()->find($app->lincko->data['uid'])->access == false){
+						//Delete all item which are with an access at 0 (for example Task could not be done by Query Builder)
+						unset($data[$key]);
+					} else {
+						//Add multi ID dependencies (Many to Many)
+						$data[$key]->addDependencies();
+					}
+				}
+				foreach ($data as $key => $value) {
+					$table_tp = json_decode($value->toJson($detail));
+					//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
+					$table_tp->new = 0;
 					if(isset($value->viewed_by)){
 						if(strpos($value->viewed_by, '-'.$app->lincko->data['uid'].'-') === false){
-							$table_tp[$key]->new = 1;
+							$table_tp->new = 1;
 						}
 					}
-					$compid = $data[$key]->getCompany();
-					$id = $table_tp[$key]->id;
+					$compid = $value->getCompany();
+					$id = $table_tp->id;
 
 					//Create object
 					unset($temp);
-					if($detail){
-						$temp = $table_tp[$key];
+					if($action == 'latest' || $action == 'missing' || $action == 'history'){
+						$temp = $table_tp;
 						if($table_name === 'users'){
 							$temp->contactsLock = true; //By default we lock the user itself
 							$temp->contactsVisibility = false; //By default we do not let the user seeing itself
+							$temp->email = '';
+							if($temp->id == $app->lincko->data['uid']){
+								$temp->email = $value->email;
+							}
 						}
 						//Delete ID property since it becomes the key of the table
 						unset($temp->{'id'});
@@ -109,10 +142,27 @@ class Data {
 					if(isset($temp->deleted_at)){  $temp->deleted_at = (new \DateTime($temp->deleted_at))->getTimestamp(); }
 
 					//Only get History for getLatest() and getMissing()
-					if($detail){
+					if($action == 'latest' || $action == 'missing' || $action == 'history'){
 						//Get history
-						if($history = $data[$key]->getHistory(false)){
-							$temp->history = $history;
+						$temp->history = $value->getHistory($history_detail);
+					}
+
+					//Do not include getLatest adn getHistory because it will always create it, it's useless (CPU overkill)
+					if($action == 'schema' || $action == 'missing'){
+						//Get title for history
+						if(!isset($result->$uid)){
+							$result->$uid = new \stdClass;
+						}
+						if(!isset($result->$uid->{'_'})){
+							$result->$uid->{'_'} = new \stdClass;
+						}
+						if(!isset($result->$uid->{'_'}->{'_history_title'})){
+							$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
+						}
+						if($action == 'schema'){
+							$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
+						} else if(!isset($result->$uid->{'_'}->{'_history_title'}->$table_name)){
+							$result->$uid->{'_'}->{'_history_title'}->$table_name = $value->getHistoryTitles();
 						}
 					}
 
@@ -128,64 +178,77 @@ class Data {
 
 					$result->$uid->$compid->$table_name->$id = $temp;
 
-					//Do not update conatact list when getLatest because it can exclude some contactsLock and contactsVisibility
-					if(!$detail || $missing){
+					//We only update contact list from getSchema, because other can exclude some contactsLock and contactsVisibility
+					if($action == 'schema'){
 						//Get users contacts list as object
-						$contacts = $data[$key]->getUsersContacts();
+						$contacts = $value->getUsersContacts();
 						foreach ($contacts as $contacts_key => $contacts_value) {
-							if(!isset($usersContacts->$contacts_key)){
-								$usersContacts->$contacts_key = new \stdClass;
-								$usersContacts->$contacts_key->contactsLock = false;
-								$usersContacts->$contacts_key->contactsVisibility = false;
-								$usersContacts->$contacts_key->new = 0;
+							if($contacts_key != $app->lincko->data['uid']){ //we do not overwritte the user itself
+								if(!isset($usersContacts->$contacts_key)){
+									$usersContacts->$contacts_key = new \stdClass;
+									$usersContacts->$contacts_key->contactsLock = false;
+									$usersContacts->$contacts_key->contactsVisibility = false;
+									$usersContacts->$contacts_key->new = 0;
+								}
+								$usersContacts->$contacts_key->contactsLock = ($usersContacts->$contacts_key->contactsLock || $contacts_value->contactsLock);
+								$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
 							}
-							$usersContacts->$contacts_key->contactsLock = ($usersContacts->$contacts_key->contactsLock || $contacts_value->contactsLock);
-							$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
 						}
 					}
 				}
 				unset($data);
 			}
 		}
+
+		//Delete to main user to not overwrite its settings
+		unset($usersContacts->{$app->lincko->data['uid']});
 		//Add all users to the main object
 		foreach ($usersContacts as $key => $value) {
 			unset($temp);
-			if($detail && $missing && $user = Users::find($key)){
-				$temp = json_decode($user->toJson());
-				if($history = $user->getHistory(false)){
-					$temp->history = $history;
+			if($key != $app->lincko->data['uid']){ //we do not overwritte the usee itself
+				if($action == 'missing' && $user = Users::find($key)){
+					$temp = json_decode($user->toJson($detail));
+					if($history = $user->getHistory('_')){
+						$temp->history = $history;
+					}
+					$temp->contactsLock = $value->contactsLock;
+					$temp->contactsVisibility = $value->contactsVisibility;
+					//Delete ID property since it becomes the key of the table
+					unset($temp->{'id'});
+				} else {
+					$temp = new \stdClass;
 				}
-				$temp->contactsLock = $value->contactsLock;
-				$temp->contactsVisibility = $value->contactsVisibility;
-				//Delete ID property since it becomes the key of the table
-				unset($temp->{'id'});
-			} else {
-				$temp = new \stdClass;
+
+				//Use Timestamp for JS
+				if(isset($temp->created_at)){  $temp->created_at = (new \DateTime($temp->created_at))->getTimestamp(); }
+				if(isset($temp->updated_at)){  $temp->updated_at = (new \DateTime($temp->updated_at))->getTimestamp(); }
+				if(isset($temp->deleted_at)){  $temp->deleted_at = (new \DateTime($temp->deleted_at))->getTimestamp(); }
+
+				if(!isset($result->$uid)){
+					$result->$uid = new \stdClass;
+				}
+				if(!isset($result->$uid->{'_'})){
+					$result->$uid->{'_'} = new \stdClass;
+				}
+				if(!isset($result->$uid->{'_'}->{'users'})){
+					$result->$uid->{'_'}->{'users'} = new \stdClass;
+				}
+				$result->$uid->{'_'}->{'users'}->$key = $temp;
 			}
-			if(!isset($result->$uid)){
-				$result->$uid = new \stdClass;
-			}
-			if(!isset($result->$uid->{'_'})){
-				$result->$uid->{'_'} = new \stdClass;
-			}
-			if(!isset($result->$uid->{'_'}->{'users'})){
-				$result->$uid->{'_'}->{'users'} = new \stdClass;
-			}
-			$result->$uid->{'_'}->{'users'}->$key = $temp;
 		}
 
-		if($missing){
+		if($action == 'missing'){
 			$temp = new \stdClass;
 			//We need to filter missing here by deleting what's too more, and do not make condition on missing before
 			foreach ($result as $uid => $uid_value) {
-				if(isset($this->missing->$uid) && isset($result->$uid)){
+				if(isset($this->partial->$uid) && isset($result->$uid)){
 					foreach ($uid_value as $compid => $compid_value) {
-						if(isset($this->missing->$uid->$compid) && isset($result->$uid->$compid)){
+						if(isset($this->partial->$uid->$compid) && isset($result->$uid->$compid)){
 							foreach ($compid_value as $catid => $catid_value) {
-								if(isset($this->missing->$uid->$compid->$catid) && isset($result->$uid->$compid->$catid)){
+								if(isset($this->partial->$uid->$compid->$catid) && isset($result->$uid->$compid->$catid)){
 									foreach ($catid_value as $itemid => $itemid_value) {
-										if(isset($this->missing->$uid->$compid->$catid->$itemid) && isset($result->$uid->$compid->$catid->$itemid)){
-											//Build the missing item
+										if(isset($this->partial->$uid->$compid->$catid->$itemid) && isset($result->$uid->$compid->$catid->$itemid)){
+											//Build the partial item
 											if(!isset($temp->$uid)){
 												$temp->$uid = new \stdClass;
 											}
@@ -210,15 +273,43 @@ class Data {
 	}
 
 	public function getLatest(){
-		return $this->getList(true, false);
+		$this->setLastVisit();
+		$this->partial = NULL;
+		return $this->getList('latest');
 	}
 
 	public function getSchema(){
-		return $this->getList(false, false);
+		$this->lastvisit = 0;
+		$this->partial = NULL;
+		return $this->getList('schema');
 	}
 
 	public function getMissing(){
-		return $this->getList(true, true);
+		$this->lastvisit = 0;
+		$this->setPartial();
+		return $this->getList('missing');
+	}
+
+	public function getHistory(){
+		$this->lastvisit = 0;
+		$this->setPartial();
+		return $this->getList('history');
+	}
+
+	public function getForceSchema(){
+		$user = Users::getUser();
+		$force_schema = $user->force_schema;
+		if($force_schema){
+			$user->timestamps = false; //Disable timestamp update_at
+			$user->force_schema = false;
+			$user->save();
+		}
+		return $force_schema;
+	}
+
+	public function setForceSchema(){
+		$user = Users::getUser();
+		return $user->setForceSchema();
 	}
 
 }

@@ -7,12 +7,21 @@ use \libs\Folders;
 
 class Watch {
 
+	//Cleaner help to clean the complete page at the very first call
+	protected static $cleaner = false;
+
 	//Special functions to see variables
 	/*
-	\libs\Watch::php($var, '$var', __FILE__, false, false);
+	\libs\Watch::php($var, '$var', __FILE__, false, false, true);
 	*/
-	public static function php($var='yes', $comment='undefined', $filename=__FILE__, $error=false, $reset=false){
+	public static function php($var='yes', $comment='undefined', $filename=__FILE__, $error=false, $reset=false, $cleaner=false){
 		global $app;
+
+		if($cleaner && !self::$cleaner){
+			self::$cleaner = true;
+			$reset = true;
+		}
+
 		if($error){
 			$logPath = $app->lincko->logPath.'/php';
 			$fic = $logPath.'/logPHP_'.date('ymd').'_'.$_SERVER['SERVER_ADDR'].'.txt';
@@ -107,3 +116,6 @@ $err = str_replace("\n","
 	}
 
 }
+
+//Uncomment to clean the Watch file
+//\libs\Watch::php('-------------------------------------', 'Cleaner', __FILE__, false, true, false);

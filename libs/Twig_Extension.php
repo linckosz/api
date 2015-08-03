@@ -95,4 +95,13 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 		);
 	}
 
+	public function getFilters(){
+		return array_merge(
+			parent::getFunctions(),
+			array(
+				new \Twig_SimpleFilter('ucfirst', 'ucfirst'),
+			)
+		);
+	}
+
 }

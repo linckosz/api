@@ -10,7 +10,7 @@ use \libs\Json;
 $app = \Slim\Slim::getInstance();
 
 //Special functions to manage errors
-function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars){
+function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type){
 	//Hide some warnings of exif_read_data because there is a PHP bug if EXIF are not standard
 	if($errmsg!="" && (mb_strpos($errmsg, "Warning => exif_read_data")===false || mb_strpos($errmsg, "Illegal")===false)){
 		$app = \Slim\Slim::getInstance();
@@ -69,8 +69,8 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars){
 		$err .= "BROW: $infos\n";
 		$err .= "LINE: $linenum\n";
 		$err .= "URL : $filename\n";
-		$err .= "MSG : $errortype[$errno] => $errmsg\n";
-		$err .= "VAR : $var\n\n\n";
+		$err .= "MSG : $type: $errortype[$errno] => $errmsg\n";
+		$err .= "DBT : $var\n\n\n";
 
 $err = str_replace("\n","
 ",$err);
@@ -97,11 +97,14 @@ $err = str_replace("\n","
 
 function shutdownHandler(){
 	$lasterror = error_get_last();
-	userErrorHandler($lasterror['type'], $lasterror['message'], $lasterror['file'], $lasterror['line'], 'shutdownHandler');
+	$exception = new Exception();
+	$dbt = getTraceAsString($exception, 5);
+	userErrorHandler($lasterror['type'], $lasterror['message'], $lasterror['file'], $lasterror['line'], $dbt, 'SDH');
 }
 
 function exceptionHandler(\Exception $exception) {
-	userErrorHandler(E_ERROR, 'Exception: '.$exception->getMessage(), $exception->getFile(), $exception->getLine(), NULL);
+	$dbt = getTraceAsString($exception, 5);
+	userErrorHandler(E_ERROR, 'Exception: '.$exception->getMessage(), $exception->getFile(), $exception->getLine(), $dbt, 'EXH');
 }
 
 function sendMsg(){
@@ -114,6 +117,20 @@ function sendMsg(){
 		echo $msg;
 	}
 	return exit(0);
+}
+
+//http://php.net/manual/fr/function.debug-backtrace.php
+function getTraceAsString($e, $count=0){
+	$trace = explode("\n", $e->getTraceAsString());
+	array_shift($trace); // remove call to this method
+	array_pop($trace); // remove {main}
+	$length = count($trace);
+	if($count > $length){ $count = $length; } //Get maximum of information
+	$result = array();
+	for ($i = 0; $i < $count; $i++){
+		$result[] = ($i + 1)  . ')' . substr($trace[$i], strpos($trace[$i], ' ')); // replace '#someNum' with '$i)', set the right ordering
+	}
+	return "Debug backtrace on $count lines\n\t" . implode("\n\t", $result);
 }
 
 //Start PHP error monitoring

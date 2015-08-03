@@ -1,10 +1,10 @@
 <?php
+// Category 6
 
 namespace bundles\lincko\api\models\data;
 
-use \libs\ModelLincko;
-
-use Illuminate\Database\Eloquent\SoftDeletingTrait;
+use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\data\Projects;
 
 class Tasks extends ModelLincko {
 
@@ -22,15 +22,62 @@ class Tasks extends ModelLincko {
 		'updated_at',
 		'created_by',
 		'updated_by',
+		'projects_id',
+		'note',
 		'title',
 		'comment',
 		'duration',
 		'fixed',
 		'status',
 		'progress',
-		'_tasks_dependency',
-		'_users_incharge',
-		'_users_approver',
+		'_tasks',
+		'_users',
+	);
+
+	// CUSTOMIZATION //
+
+	protected $show_field = 'title';
+
+	protected $search_fields = array(
+		'title',
+		'comment',
+	);
+
+	protected $archive = array(
+		'created_at' => 501, //[{un|ucfirst}] created a new [{nt}].
+		'_' => 502,//[{un|ucfirst}] modified a [{nt}].
+		'title' => 503,//[{un|ucfirst}] changed a [{nt}] title.
+		'comment' => 504, //[{un|ucfirst}] modified a [{nt}] content.
+		'duration' => 502, //[{un|ucfirst}] modified a [{nt}].
+		'fixed' => 502, //[{un|ucfirst}] modified a [{nt}].
+		'status' => 502, //[{un|ucfirst}] modified a [{nt}].
+		'progress' => 502, //[{un|ucfirst}] modified a [{nt}].
+		'projects_id' => 505, //[{un|ucfirst}] moved a [{nt}] to the project "[{pj|ucfirst}]".
+		'_delay' => 550, //[{un|ucfirst}] modified a [{nt}] delay.
+		'_in_charge_0' => 551, //[{cun|ucfirst}] is in charge of a [{nt}].
+		'_in_charge_1' => 552, //[{cun|ucfirst}] is unassigned from a [{nt}].
+		'_approver_ 0' => 553, //[{cun|ucfirst}] becomes an approver to a [{nt}].
+		'_approver_ 1' => 554, //[{cun|ucfirst}] is no longer an approver to a [{nt}].
+		'_access_0' => 596, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a [{nt}].
+		'_access_1' => 597, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a [{nt}].
+		'_restore' => 598,//[{un|ucfirst}] restored a [{nt}].
+		'_delete' => 599,//[{un|ucfirst}] deleted a [{nt}].
+	);
+
+	protected static $foreign_keys = array(
+		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
+		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
+		'projects_id' => '\\bundles\\lincko\\api\\models\\data\\Projects',
+	);
+
+	protected static $parents_keys = array(
+		'users',
+		'projects',
+	);
+
+	protected $dependencies_visible = array(
+		'users',
+		'tasks',
 	);
 	
 ////////////////////////////////////////////
@@ -41,37 +88,39 @@ class Tasks extends ModelLincko {
 	}
 
 	//Many(Tasks) to Many(Tasks)
-	public function tasksDependency(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_tasks_dependency', 'tasks_id', 'tasks_id_dependency')->withPivot('delay');
+	public function tasks(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_tasks', 'tasks_id', 'tasks_id_link')->withPivot('access', 'delay');
 	}
 
 	//Many(Tasks) to Many(Users)
-	public function usersIncharge(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'tasks_x_users_incharge', 'tasks_id', 'users_id');
-	}
-
-	//Many(Tasks) to Many(Users)
-	public function usersApprover(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'tasks_x_users_approver', 'tasks_id', 'users_id');
+	public function users(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_tasks', 'tasks_id', 'users_id')->withPivot('access', 'in_charge', 'approver');
 	}
 
 ////////////////////////////////////////////
-	public static function validTitle($title){
-		return true;
+	
+	public static function validTitle($data){
+		$return = is_string($data) && strlen(trim($data))>0;
+		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	//Optional
+	//empty checks $data if !isset or "", returning true makes the value optional
 	public static function validComment($data){
-		if(empty($data)){ return true; }
-		return true;
+		$return = true;
+		if(empty($data)){ return $return = true; }
+		return self::noValidMessage($return, __FUNCTION__);
 	}
 
+	/*
+		In Note: Only a textarea available (as text note), it's Title only
+		In Task: Title as "Short description", and Comment as "Comments"
+	*/
 	public static function isValid($form){
-		$optional = true;
-		if($optional && isset($form->description)){ $optional = self::validDescription($form->description); }
+		if(!isset($form->title)){ self::noValidMessage(false, 'title'); } //Required
 		return
-			   $optional
-			&& isset($form->title) && self::validTitle($form->title)
+			     isset($form->title) && self::validTitle($form->title)
+			&& (!isset($form->comment) || self::validComment($form->comment)) //Optional
 			;
 	}
 
@@ -81,44 +130,56 @@ class Tasks extends ModelLincko {
 		return $query->whereHas('projects', function ($query) {
 			$query->getLinked();
 		});
+		//Ideally we should cut all Tasks with Access 0, but we cannot by Query Builder, so we do it manually in Data.php	
 	}
 
-	//Insure to place the new properties in 'visible' array
-	public function addMultiDependencies(){
-		unset($result);
-		$result = new \stdClass;
-		$data = $this->tasksDependency;
-		if(!is_null($data)){
-			foreach ($data as $key => $value) {
-				$result->{$value->id} = new \stdClass;
-				$result->{$value->id}->delay = $value->pivot->delay;
-			}
+	//Get all users that are linked to the task
+	public function getUsersContacts(){
+		$contacts = parent::getUsersContacts();
+		$list = $this->users()->get();
+		foreach($list as $key => $value) {
+			$id = $value->id;
+			$contacts->$id = $this->getContactsInfo();
 		}
-		$this->_tasks_dependency = $result;
-		
-		unset($result);
-		$result = new \stdClass;
-		$data = $this->usersIncharge;
-		if(!is_null($data)){
-			foreach ($data as $key => $value) {
-				$result->{$value->id} = new \stdClass;
-			}
-		}
-		$this->_users_incharge = $result;
-
-		unset($result);
-		$result = new \stdClass;
-		$data = $this->usersApprover;
-		if(!is_null($data)){
-			foreach ($data as $key => $value) {
-				$result->{$value->id} = new \stdClass;
-			}
-		}
-		$this->_users_approver = $result;
+		return $contacts;
 	}
 
 	public function getCompany(){
 		return $this->projects->getCompany();
+	}
+
+	protected function get_NoteTask(){
+		$app = self::getApp();
+		if($this->note){
+			return $app->trans->getBRUT('api', 6, 1); //note
+		} else {
+			return $app->trans->getBRUT('api', 6, 2); //task
+		}
+	}
+
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+		$parameters['nt'] = $this->get_NoteTask();
+		if($key == 'projects_id'){
+			if($project = Projects::find($new)){
+				$parameters['pj'] = $project->title;
+			}
+		}
+		parent::setHistory($key, $new, $old, $parameters);
+	}
+
+	protected function getHistoryCreation($history_detail=false, array $parameters = array()){
+		$parameters['nt'] = $this->get_NoteTask();
+		return parent::getHistoryCreation($history_detail, $parameters);
+	}
+
+	public function save(array $options = array()){
+		$app = self::getApp();
+		$new = !isset($this->id);
+		$return = parent::save($options);
+		if($new){
+			$this->setUserPivotValue($app->lincko->data['uid'], 'in_charge', 1, false);
+			$this->setUserPivotValue($app->lincko->data['uid'], 'approver', 1, false);
+		}
 	}
 
 }

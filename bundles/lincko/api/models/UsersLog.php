@@ -31,16 +31,17 @@ class UsersLog extends Model {
 
 ////////////////////////////////////////////
 
+	//Do not call noValidMessage because it's not a child of ModleLincko, but Model directly
 	public static function validPassword($data){
-		return preg_match("/^[\w\d]{6,60}$/u", $data);
+		$return = preg_match("/^[\w\d]{6,60}$/u", $data);
+		return $return;
 	}
 
 	public static function isValid($form){
-		$optional = true;
 		return
-			   $optional
-			&& isset($form->password) && self::validPassword($form->password)
+			     isset($form->password) && self::validPassword($form->password)
 			;
+
 	}
 
 ////////////////////////////////////////////
@@ -51,8 +52,15 @@ class UsersLog extends Model {
 		$authorize = false;
 		$refresh = false;
 		$authorization = false;
+		$fingerprint = null;
 
-		if(isset($data->public_key) && $authorization = Authorization::find($data->public_key)){
+		if(isset($data->fingerprint)){
+			$fingerprint = $data->fingerprint;
+		} else {
+			return false;
+		}
+
+		if(isset($data->public_key) && $authorization = Authorization::find_finger($data->public_key, $fingerprint)){
 			//If we are signing in as a new user, we force to recheck the password.
 			if($this->id!==$authorization->user_id){
 				$authorization = false;
@@ -88,6 +96,7 @@ class UsersLog extends Model {
 			$authorization->private_key = md5(uniqid());
 			$private_key = $authorization->private_key;
 			$authorization->user_id = $this->id;
+			$authorization->fingerprint = $fingerprint;
 			if($authorization->save()){
 				return array(
 					'public_key' => $public_key,

@@ -1,10 +1,9 @@
 <?php
 
+
 namespace bundles\lincko\api\models\data;
 
-use \libs\ModelLincko;
-
-use Illuminate\Database\Eloquent\SoftDeletingTrait;
+use \bundles\lincko\api\models\libs\ModelLincko;
 
 class ChatsComments extends ModelLincko {
 
@@ -23,10 +22,44 @@ class ChatsComments extends ModelLincko {
 		'created_by',
 		'updated_by',
 		'chats_id',
-		'-comment',
+		'comment',
+	);
+
+	// CUSTOMIZATION //
+
+	protected $show_field = 'comment';
+
+	protected $search_fields = array(
+		'comment',
+	);
+
+	protected $archive = array(
+		'created_at' => 201, //[{un|ucfirst}] sent a new message.
+		'_' => 202,//[{un|ucfirst}] modified a message.
+		'comment' => 202,//[{un|ucfirst}] modified a message.
+		'_access_0' => 296, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a message.
+		'_access_1' => 297, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a message.
+		'_restore' => 298,//[{un|ucfirst}] restored a message.
+		'_delete' => 299,//[{un|ucfirst}] deleted a message.
+	);
+
+	protected static $foreign_keys = array(
+		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
+		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
+		'chats_id' => '\\bundles\\lincko\\api\\models\\data\\Chats',
+	);
+
+	protected static $parents_keys = array(
+		'users',
+		'chats',
 	);
 	
 ////////////////////////////////////////////
+
+	//Many(ChatsComments) to One(Users)
+	public function users(){
+		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'created_by');
+	}
 
 	//Many(ChatsComments) to One(Chats)
 	public function chats(){
@@ -36,25 +69,36 @@ class ChatsComments extends ModelLincko {
 ////////////////////////////////////////////
 
 	public static function validComment($data){
-		if(empty($data)){ return true; }
-		return true;
+		$return = is_string($data) && strlen(trim($data))>0;
+		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function isValid($form){
-		$optional = true;
+		if(!isset($form->comment)){ self::noValidMessage(false, 'comment'); } //Required
 		return
-			   $optional
-			&& isset($form->comment) && self::validComment($form->comment)
+			     isset($form->comment) && self::validComment($form->comment)
 			;
 	}
 
 ////////////////////////////////////////////
 
 	//We overwritte this function because it's linked to "chats", not "users" directly
+	//This will not download message owned by the user but that cannot be displayed because not in a chat folder
 	public function scopegetLinked($query){
 		return $query->whereHas('chats', function ($query) {
 			$query->getLinked();
 		});
+	}
+
+	//Get all users that are linked to the comment
+	public function getUsersContacts(){
+		$contacts = parent::getUsersContacts();
+		$list = $this->users()->get();
+		foreach($list as $key => $value) {
+			$id = $value->id;
+			$contacts->$id = $this->getContactsInfo();
+		}
+		return $contacts;
 	}
 	
 }

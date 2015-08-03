@@ -24,4 +24,16 @@ $app->group('/data', function () use ($app) {
 	)
 	->name('data_missing'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/history',
+		'\bundles\lincko\api\controllers\ControllerData:history'.$app->lincko->method_suffix
+	)
+	->name('data_history'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/force_sync',
+		'\bundles\lincko\api\controllers\ControllerData:force_sync'.$app->lincko->method_suffix
+	)
+	->name('data_force_sync'.$app->lincko->method_suffix);
+
 });

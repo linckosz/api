@@ -5,10 +5,13 @@ namespace libs;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
+use \libs\OneSeventySeven;
 
 class Translation {
 
 	const LANG = 'en';
+	//http://www.red-route.org/code/php-international-language-and-locale-codes-demonstration
+	const LOCALE = 'en_US.utf8';
 
 	protected $app = NULL;
 	protected $bundle = NULL;
@@ -16,6 +19,14 @@ class Translation {
 	protected $lang = array();
 	protected $list = array();
 	protected $listfull = array();
+	protected $translation = array();
+
+	protected $default_locale = 'en_US.utf8';
+	protected $default_locale_list = array(
+		'en' => 'en_US.utf8',
+		'fr' => 'fr_FR.utf8',
+		'zh-chs' => 'zh_CN.utf8',
+	);
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
@@ -78,25 +89,45 @@ class Translation {
 				}
 				if($result){
 					foreach ($result as $key => $value) {
-						$list[$bundle][$value->category][$value->phrase] = self::pushData($value->$lang);
+						//Record all sentence, but not with coverted variables to save CPU time
+						$list[$bundle][$value->category][$value->phrase] = $value->$lang;
 					}
 				}
 			}
 		}
+		$this->translation = array_merge(
+			$this->translation,
+			$list
+		);
 		return $list;
 	}
 
 	public function getClientLanguage(){
-		$app = $this->app = \Slim\Slim::getInstance();
+		$app = $this->app;
 		$json = json_decode($app->request->getBody());
 		if(isset($json->language)){
 			return $json->language;
-		} else if($app->getCookie('yuyan', false)){
-			return $app->getCookie('yuyan', false);
+		} else if(OneSeventySeven::get('yuyan')){
+			return OneSeventySeven::get('yuyan');
 		} else if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) && preg_match("/([\w]{2,})(?:$|\W)/ui", $_SERVER['HTTP_ACCEPT_LANGUAGE'], $match)){
 			return $match[1];
 		}
 		return self::LANG;
+	}
+
+	public function getClientLanguageFull($bundle = NULL){
+		$listfull = $this->listfull;
+		$langshort = $this->getClientLanguage();
+		if($bundle){
+			$this->bundle = $bundle;
+			if(!isset($this->list[$bundle])){
+				$listfull = $this->getListfull();
+			}
+		}
+		if(isset($listfull[$langshort])){
+			return $listfull[$langshort];
+		}
+		return NULL;
 	}
 
 	public function getLanguages($bundle = NULL){
@@ -108,26 +139,46 @@ class Translation {
 		}
 	}
 
-	public function setDefaultLanguage($lang = NULL){
-		if(preg_match_all("/^[a-z]{2}[a-z-]{0,6}$/ui", mb_strtolower($lang))){
-			$this->default_lang = mb_strtolower($lang);
-		} else {
-			$this->default_lang = self::LANG;
+	public function setDefaultLanguage($bundle = NULL){
+		if(is_string($bundle) && isset($app->lincko->databases[$bundle])){
+			$this->bundle = $bundle;
+			$this->setLanguage();
 		}
 		return true;
 	}
 
-	protected static function pushData($text){
+	protected function setDefaultLocale($bundle){
+		$app = $this->app;
+		if(isset($app->lincko->databases[$bundle])){
+			$this->bundle;
+			$lang = $this->default_lang;
+			if(array_key_exists($lang, $this->default_locale_list)){
+				$this->default_locale = $this->default_locale_list[$lang];
+			} else {
+				$this->default_locale = self::LOCALE;
+			}
+			setlocale(LC_ALL, $this->default_locale);
+			return true;
+		}
+		return false;
+	}
+
+	protected static function pushData($text, $watch=true){
 		$app = \Slim\Slim::getInstance();
 		$trans = $app->lincko->translation;
 		if(count($trans)>0){
-			preg_match_all("/@@(.+?)~~/u", $text, $matches, PREG_SET_ORDER);
+			preg_match_all("/@@(\S+?)~~/u", $text, $matches, PREG_SET_ORDER);
 			foreach($matches as $value) {
-				if(isset($trans[$value[1]])){
-					$replace = $trans[$value[1]];
-				} else {
-					$replace = '[unknown value]';
-					\libs\Watch::php('The word could not be converted: '.$value[1]." \n".$text,'Translation::get',__FILE__,true);
+				$replace = '[unknown value]';
+				$result = strtolower($value[1]);
+				$array = preg_split("/\|/", $result, 2);
+				if(isset($trans[$array[0]])){ //Get the word
+					$replace = $trans[$array[0]];
+					if(isset($array[1])){ //Active teh filter
+						$replace = self::filter($replace, $array[1]);
+					}
+				} else if($watch){
+					\libs\Watch::php('The word could not be converted: '.$array[0]." \n".$text,'Translation::get',__FILE__,true);
 				}
 				$text = str_replace($value[0], $replace, $text);
 			}
@@ -135,24 +186,51 @@ class Translation {
 		return $text;
 	}
 
-	protected function get($bundle, $category, $phrase, $data){
-		$app = \Slim\Slim::getInstance();
-		$app->lincko->translation = array_merge(
-			$app->lincko->translation,
-			$data
-		);
-		$this->bundle = $bundle;
-		$this->setLanguage();
-		if(isset($this->lang[$bundle])){
-			$lang = $this->lang[$bundle];
-			if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){
-				$value = $value->getAttribute($lang);
-				$value = self::pushData($value);
-				return $value;
+	protected static function filter($text, $filters){
+		$array = preg_split("/\|/", $filters);
+		foreach($array as $filter) {
+			$filter = strtolower($filter);
+			if($filter === 'lower'){
+				$text = strtolower($text);
+			} else if($filter === 'upper'){
+				$text = strtoupper($text);
+			} else if($filter === 'ucfirst'){
+				$text = ucfirst($text);
 			}
 		}
+		return $text;
+	}
+
+	protected function get($bundle, $category, $phrase, $data){
+		$app = $this->app;
+		$value = false;
+		if(!empty($data)){
+			$app->lincko->translation = array_merge(
+				$app->lincko->translation,
+				$data
+			);
+		}
+		if(isset($app->lincko->databases[$bundle])){
+			if(isset($this->translation[$bundle][$category][$phrase])){
+				$value = $this->translation[$bundle][$category][$phrase];
+			} else {
+				$this->getList($bundle);
+				$this->bundle = $bundle;
+				$this->setLanguage();
+				if(isset($this->translation[$bundle][$category][$phrase])){
+					$value = $this->translation[$bundle][$category][$phrase];
+				} else if(isset($this->lang[$bundle])){
+					$lang = $this->lang[$bundle];
+					if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){
+						$value = $value->getAttribute($lang);
+					}
+				}
+			}
+			$value = self::pushData($value);
+			return $value;
+		}
 		\libs\Watch::php('The translation does not exist: '.$bundle.' | '.$category.' | '.$phrase,'Translation::get',__FILE__,true);
-		return false;
+		return flase;
 	}
 
 	protected function setList(){
@@ -207,8 +285,7 @@ class Translation {
 		$app = $this->app;
 		$bundle = $this->bundle;
 		$list = $this->list[$bundle];
-		if($app->getCookie('yuyan', false)){
-			$langlong = $app->getCookie('yuyan', false);
+		if($langlong = OneSeventySeven::get('yuyan')){
 			$langshort = preg_replace("/-.*/ui", '', $langlong);
 			if(isset($list[$langlong])){
 				return $list[$langlong];
@@ -273,7 +350,14 @@ class Translation {
 		} else {
 			$this->lang[$bundle] = self::LANG;
 		}
-		$this->default_lang = $this->lang[$bundle];
+
+		if(preg_match_all("/^[a-z]{2}[a-z-]{0,6}$/ui", mb_strtolower($this->lang[$bundle]))){
+			$this->default_lang = mb_strtolower($this->lang[$bundle]);
+		} else {
+			$this->default_lang = self::LANG;
+		}
+
+		$this->setDefaultLocale($bundle);
 		return true;
 	}
 

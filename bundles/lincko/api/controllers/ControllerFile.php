@@ -83,9 +83,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$post = $app->request->post();
 
 		if(isset($post['shangzai_puk']) && isset($post['shangzai_cs'])){
-			$shangzai_puk = $this->uncryptData($post['shangzai_puk']);
-			$shangzai_cs = $this->uncryptData($post['shangzai_cs']);
-			if($authorization = Authorization::find($shangzai_puk)){
+			$shangzai_puk = Datassl::decrypt($post['shangzai_puk'], $app->lincko->security['private_key']);
+			$shangzai_cs = Datassl::decrypt($post['shangzai_cs'], $app->lincko->security['public_key']);
+			$fingerprint = $post['fingerprint'];
+			if($authorization = Authorization::find_finger($shangzai_puk, $fingerprint)){
 				$checksum = md5($authorization->private_key.$shangzai_puk);
 				if($user_log = UsersLog::find($authorization->user_id) && $checksum === $shangzai_cs){
 					$this->resignin = false;

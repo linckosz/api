@@ -52,7 +52,6 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 		$data = $this->data;
 		$authorization = $this->authorization;
-
 		if($authorization){
 			if($user_log = UsersLog::find($authorization->user_id)){
 				if($authorize = $user_log->authorize($data)){
@@ -68,8 +67,8 @@ class CheckAccess extends \Slim\Middleware {
 
 	protected function setUserId(){
 		$app = $this->app;
-		if(isset($app->lincko->data->user_id)){
-			return $app->lincko->data->user_id;
+		if(isset($app->lincko->data['uid'])){
+			return $app->lincko->data['uid'];
 		} else if(isset($this->authorization->user_id) && $this->authorization->user_id>0){
 			if($user_log = UsersLog::find($this->authorization->user_id)){
 				if($user = Users::where('username_sha1', '=', $user_log->username_sha1)->first()){
@@ -82,7 +81,7 @@ class CheckAccess extends \Slim\Middleware {
 
 	protected function checkFields(){
 		$data = $this->data;
-		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data);
+		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data) && isset($data->fingerprint);
 	}
 
 	protected function checkAPI(){
@@ -116,11 +115,12 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorization->public_key = $app->lincko->security['public_key'];
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorization->created_at = $this->authorization->updated_at = (new \DateTime)->format('Y-m-d H:i:s');
+			$this->authorization->fingerprint = $data->fingerprint;
 			$valid = true;
-		} else if($this->authorization = Authorization::find($data->public_key)){
+		} else if($this->authorization = Authorization::find_finger($data->public_key, $data->fingerprint)){
 			$this->authorizeAccess = true;
 			$valid = true;
-		} else if($this->authorization = Authorization::find($this->autoSign())){
+		} else if($this->authorization = Authorization::find_finger($this->autoSign(), $data->fingerprint)){
 			//Must overwrite by standard keys because the checksum has been calculated with the standard one
 			$this->authorization->public_key = $app->lincko->security['public_key'];
 			$this->authorization->private_key = $app->lincko->security['private_key'];

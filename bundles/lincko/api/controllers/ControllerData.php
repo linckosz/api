@@ -22,10 +22,14 @@ class ControllerData extends Controller {
 		$msg = $app->trans->getBRUT('api', 8888, 9); //You got the latest updates.
 
 		$data = new Data();
-		$storage = $data->getLatest();
+		$partial = $data->getLatest();
+		$schema = NULL;
+		if($data->getForceSchema()){
+			$schema = $data->getSchema();
+		}
 		$lastvisit = time()-1;
 
-		$app->render(200, array('msg' => array('msg' => $msg, 'lastvisit' => $lastvisit, 'storage' => $storage),));
+		$app->render(200, array('msg' => array('msg' => $msg, 'lastvisit' => $lastvisit, 'partial' => $partial, 'schema' => $schema),));
 		return true;
 	}
 
@@ -45,9 +49,31 @@ class ControllerData extends Controller {
 		$msg = $app->trans->getBRUT('api', 8888, 11); //You got the missing elements.
 
 		$data = new Data();
-		$missing = $data->getMissing();
+		$partial = $data->getMissing();
 
-		$app->render(200, array('msg' => array('msg' => $msg, 'missing' => $missing),));
+		$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial),));
+		return true;
+	}
+
+	public function history_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 11); //You got the elements including their full history.
+
+		$data = new Data();
+		$partial = $data->getHistory();
+
+		$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial),));
+		return true;
+	}
+
+	public function force_sync_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 12); //The synchronization will be done for all contacts.
+
+		$data = new Data();
+		$data->setForceSchema();
+
+		$app->render(200, array('msg' => array('msg' => $msg,)));
 		return true;
 	}
 

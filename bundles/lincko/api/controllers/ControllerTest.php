@@ -4,6 +4,7 @@ namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
 use \libs\Email;
+use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\ChatsComments;
@@ -55,7 +56,7 @@ class ControllerTest extends Controller {
 		//OK
 		//$tp = Users::getUser()->chats
 
-		$lastvisit = 0;
+		//$lastvisit = 0;
 		//$lastvisit = (new \DateTime())->format('Y-m-d H:i:s');
 
 		//$tp = Users::getLinked()->get();
@@ -96,7 +97,7 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::all()->first()->getCompany();
 		//\libs\Watch::php( $tp ,'$tp',__FILE__);
 
-		//$tp = Projects::with('userAccess')->where('projects_x_users_access.access', 1)->get();
+		//$tp = Projects::with('userAccess')->where('users_x_projects.access', 1)->get();
 
 		//$tp = Projects::whereCompaniesId(0)->count();
 		/*
@@ -125,17 +126,227 @@ class ControllerTest extends Controller {
 			$query->where('access', 1);
 		})->get();
 */
+		/*
+		$tp = Users::getUser()->username;
+		\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
+*/
 
-		$tp = Users::getUser()->usersContacts()->where('users_x_users.access', 1)->get();
+		//$tp = Users::getUser()->self()->where('users_x_users.access', 1)->get();
 		//$tp = Companies::getLinked()->find(2)->users;
 		//$tp = Companies::getLinked()->find(2)->users()->where('users_x_companies.companies_id','<>','1')->get();
 		//\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, true);
+
+		//$tp = Tasks::find(7)->count();
+		//$tp = Tasks::find(7)->hasColumn('created_by');
+		//\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, true);
+		//\error\sendMsg();
+
+		//$tp = Tasks::find(4);
+		//$tp->comment = "Un autre truc a faire";
+		//$tp->save();
+
+		//$tp = Projects::find(8);
+		//$tp->title = "Test "rand(1, 9);
+		//$tp->save();
+	
+		/*
+		$tp = new Projects();
+		//$tp = Projects::find(5);
+		$tp->description = "Un truc a faire";
+		$tp->title = 'OK DOKI '.rand();
+		$tp->companies_id = 0;
+		$tp->save();
+		*/
+
+		/*
+		$tp = new Tasks();
+		$tp->comment = "Un truc a faire";
+		$tp->title = 'OK DOKI '.rand();
+		$tp->projects_id = 1;
+		$tp->save();
+		*/
+
+		/*
+		$tp = new Chats();
+		$tp->title = 'OK DOKI '.rand();
+		$tp->save();
+		*/
+		/*
+		$tp = new ChatsComments();
+		$tp->comment = 'OK DOKI '.rand();
+		$tp->chats_id = 1;
+		$tp->save();
+		*/
+
+		//$tp = Users::getUser()->force_schema;
+		//$data = new Data();
+		//$tp = $data->getForceSchema();
+		
+
+		//\libs\Watch::php($tp, '$tp', __FILE__, false, false, true);
+
+		//$tp = Users::getUser()->getUsersContacts();
+
+		//$tp = Projects::find(5)->users()->theUser()->first()->pivot;
+		//$tp = Projects::find(5)->getUsersPivot();
+		//$tp = Projects::find(5)->with('users');//->get();
+
+		//$tp = Projects::load('users')->get();
+
+		//$tp = Chats::find(2)->setForceSchema();
+
+		//$tp = Projects::find(5)->setUserAccess(2, 1);
+		//$tp = Users::whereId([1,2,3]);
+		//$tp->update(array('force_schema' => 0));
+		//$tp->saveMany();
+
+		//$tp = Users::where('force_schema', '=', 1)->update(['force_schema' => '0']);
+		//$tp = Users::whereIn('id', [1, 3])->update(['force_schema' => '1']);
+		//$tp = Users::whereIn('id', [1, 2, 3, 4]);
+		//$tp->getQuery()->update(['force_schema' => '1']);
+		//$tp->timestamps = false;
+		//$tp->update(['force_schema' => '0']);
+		
+		
+
+
+
+
+		//$tp = Projects::withTrashed()->find(5)->delete();
+		//$tp = Projects::withTrashed()->find(5)->restore();
+		//$tp = Projects::getLinked()->get();;
+		
+		//$tp = Projects::find(5)->getUsersContacts();
+		//$tp = Tasks::find(4)->getUsersContacts();
+		
+		//$tp = Projects::find(5)->users()->attach(3);
+		//$tp = Projects::find(5)->setUserAccess(3, 1);
+		//$tp = Projects::find(5)->users()->detach(3);
+
+		//$tp = Users::find(1)->getUsersContacts();
+
+		//$tp = Users::find(1)->users()->get();
+		//$tp = Users::find(1)->users()->first();
+		//$tp = $tp->pivot->access;
+
+		//$tp = Projects::find(5)->$temp;
+		//$tp = Companies::find(1)->getUsersContacts();
+
+		//$tp = Projects::find(5)->users()->find(2)->pivot;//->access;
+		//$tp = Users::getUser()->force_schema;
+
+		//$tp->setUserAccess(0);
+		//$tp = Projects::find(5)->getUserAccess();
+		//Projects::find(5)->users()->save($role, array('expires' => $expires));
+		//$tp = Projects::find(5)->users()->find(1);
+		//$tp = Projects::find(5)->users()->theUser()->first();
+		//$tp = Projects::find(5)->users()->find(10);
+		//$tp = Users::find($app->lincko->data['uid'])->getUsersContacts();
+
+
+
+/*
+		$tp = Chats::getLinked()->get();
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Chats', __FILE__, false, false, true);
+
+		$tp = ChatsComments::getLinked()->get();
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$ChatsComments', __FILE__, false, false, true);
+
+		$tp = Companies::getLinked()->get();
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Companies', __FILE__, false, false, true);
+
+		$tp = Projects::getLinked()->get();
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Projects', __FILE__, false, false, true);
+*/
+		//$tp = Tasks::getLinked()->get();
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$Tasks', __FILE__, false, false, true);
+/*
+		$tp = Users::getLinked()->get();
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Users', __FILE__, false, false, true);
+*/
+
+		//$tp = ChatsComments::find(7)->users()->first();
+
+		//\libs\Watch::php($tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, false, true);
+
+		//$tp = new Projects();
+		//$tp = Projects::find(5);
+		//$tp->title = 'Un titre '.rand();
+		//$tp->description = 'Une description';
+		//$tp->companies_id = 0;
+		//$tp->save();
 
 		//$db = Capsule::connection('data');
 		//$data = $db->getQueryLog();
 		//\libs\Watch::php( $data ,'$data', __FILE__);
 		//$msg = time();
+
+		//----------------------------------------
+	
+		//Add new project
+		/*
+		$tp = new Projects();
+		$tp->description = "Something to following";
+		$tp->title = 'toto '.rand();
+		$tp->companies_id = 0;
+		$tp->save();
+		*/
+		
+		//Modif Project title
+		/*
+		$tp = Projects::find(5);
+		$tp->title = '['.rand(1, 99).'] Design '.rand();
+		$tp->save();
+		*/
+		/*
+		$tp = Projects::find(8);
+		$tp->title = 'Test '.rand(1, 9);
+		$tp->save();
+		*/
+
+		//Project access
+		/*
+		$tp = Projects::find(8);
+		//Block
+		//$tp->setUserPivotValue(1, 'access', 0, true);
+		//Authorize
+		$tp->setUserPivotValue(1, 'access', 1, true);
+		*/
+
+		//Add new task
+		/*
+		$tp = new Tasks();
+		$tp->comment = "Something to do quickly";
+		$tp->title = 'A task name '.rand();
+		$tp->projects_id = 5;
+		$tp->save();
+		*/
+
+		//Add new task (with missing argument)
+		/*
+		$tp = new Tasks();
+		$tp->comment = "Something to do quickly";
+		$tp->title = 'B';
+		$tp->projects_id = 5;
+		$tp->save();
+		*/
+
+		//Move a task to another project
+		
+		$tp = Tasks::find(4);
+		if($tp->projects_id==8){
+			$tp->projects_id = 5;
+		} else {
+			$tp->projects_id = 8;
+		}
+		$tp->save();
+		
+
+		//--------------------------------------
+
+
 		$app->render(200, array('msg' => $msg,));
 		return true;
 	}
