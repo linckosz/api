@@ -50,7 +50,7 @@ class ControllerData extends Controller {
 
 		$data = new Data();
 		$partial = $data->getMissing();
-
+		
 		$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial),));
 		return true;
 	}

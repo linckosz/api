@@ -180,6 +180,7 @@ class Tasks extends ModelLincko {
 			$this->setUserPivotValue($app->lincko->data['uid'], 'in_charge', 1, false);
 			$this->setUserPivotValue($app->lincko->data['uid'], 'approver', 1, false);
 		}
+		return $return;
 	}
 
 }

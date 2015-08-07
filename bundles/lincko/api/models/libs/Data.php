@@ -21,12 +21,40 @@ class Data {
 		return true;
 	}
 
+	public function dataUpdateConfirmation($msg, $status=200){
+		$app = $this->app;
+
+		if($this->setLastVisit()){
+			$lastvisit = time()-1;
+			$msg = array_merge(
+				array(
+					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
+					'partial' => $this->getLatest(),
+					'lastvisit' => $lastvisit,
+				),
+				$msg
+			);
+		} else {
+			$msg = array_merge(
+				array(
+					'msg' => $app->trans->getBRUT('api', 8888, 13), //Server OK
+					'partial' => $this->getNewest(),
+				),
+				$msg
+			);
+		}
+
+		$app->render($status, array('msg' => $msg,));
+		return true;
+	}
+
 	protected function setLastVisit(){
 		if(isset($this->data->data->lastvisit)){
 			if(is_int($this->data->data->lastvisit) && $this->data->data->lastvisit>=0){
-				$this->lastvisit = (new \DateTime('@'.$this->data->data->lastvisit))->format('Y-m-d H:i:s');
+				return $this->lastvisit = (new \DateTime('@'.$this->data->data->lastvisit))->format('Y-m-d H:i:s');
 			}
 		}
+		return false;
 	}
 
 	protected function setPartial(){
@@ -179,7 +207,7 @@ class Data {
 					$result->$uid->$compid->$table_name->$id = $temp;
 
 					//We only update contact list from getSchema, because other can exclude some contactsLock and contactsVisibility
-					if($action == 'schema'){
+					if($action == 'schema' || $action == 'missing'){
 						//Get users contacts list as object
 						$contacts = $value->getUsersContacts();
 						foreach ($contacts as $contacts_key => $contacts_value) {
@@ -274,6 +302,13 @@ class Data {
 
 	public function getLatest(){
 		$this->setLastVisit();
+		$this->partial = NULL;
+		return $this->getList('latest');
+	}
+
+	public function getNewest(){
+		$app = $this->app;
+		$this->lastvisit = (new \DateTime('@'.$app->lincko->data['lastvisit']))->format('Y-m-d H:i:s');
 		$this->partial = NULL;
 		return $this->getList('latest');
 	}

@@ -334,7 +334,7 @@ class ControllerTest extends Controller {
 		*/
 
 		//Move a task to another project
-		
+		/*
 		$tp = Tasks::find(4);
 		if($tp->projects_id==8){
 			$tp->projects_id = 5;
@@ -342,7 +342,7 @@ class ControllerTest extends Controller {
 			$tp->projects_id = 8;
 		}
 		$tp->save();
-		
+		*/
 
 		//--------------------------------------
 

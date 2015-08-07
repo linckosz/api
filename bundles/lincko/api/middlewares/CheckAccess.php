@@ -81,7 +81,7 @@ class CheckAccess extends \Slim\Middleware {
 
 	protected function checkFields(){
 		$data = $this->data;
-		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data) && isset($data->fingerprint);
+		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data) && isset($data->fingerprint) && isset($data->company);
 	}
 
 	protected function checkAPI(){
@@ -133,6 +133,25 @@ class CheckAccess extends \Slim\Middleware {
 		}
 
 		return $valid;
+	}
+
+	protected function checkWorkspace(){
+		$app = $this->app;
+		$data = $this->data;
+		//We valid any access to shared workspace
+		if($data->company == ''){
+			return true;
+		}
+		$companies = Users::getUser()->companies;
+		//We check that the user has access to the workspace
+		foreach ($companies as $key => $value) {
+			if($value->url == $data->company){
+				$app->lincko->data['company'] = $value->url;
+				$app->lincko->data['company_id'] = $value->id;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	protected function checkRouteAccess(){
@@ -215,6 +234,14 @@ class CheckAccess extends \Slim\Middleware {
 			$status = 401;
 			$resignin = true;
 
+		
+		//Check the company ID
+		} else if(!$this->checkWorkspace()) {
+			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+			$status = 401;
+			$resignin = true;
+
+		
 		//Check if the route is available for standard public key (limited to credential operations only)
 		} else if(!$this->checkRouteAccess()) {
 			$msg = $app->trans->getBRUT('api', 0, 2); //Please sign in.
