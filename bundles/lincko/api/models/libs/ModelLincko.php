@@ -405,8 +405,8 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected, public is only for test
-	public function setUserPivotValue($user_id, $column, $value=0, $save=true){
-	//protected function setUserPivotValue($user_id, $column, $value=0, $save=true){
+	//public function setUserPivotValue($user_id, $column, $value=0, $save=true){
+	protected function setUserPivotValue($user_id, $column, $value=0, $save=true){
 		$app = self::getApp();
 		$column = strtolower($column);
 		$return = false;

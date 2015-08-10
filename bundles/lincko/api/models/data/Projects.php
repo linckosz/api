@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \libs\Json;
 
 class Projects extends ModelLincko {
 
@@ -100,16 +101,20 @@ class Projects extends ModelLincko {
 	//Insure that we only record 1 personal_private project for each company
 	public function save(array $options = array()){
 		$app = self::getApp();
+		$new = !isset($this->id);
 		if($this->personal_private===1){
 			if(self::where('personal_private', 1)->where('created_by', $app->lincko->data['uid'])->where('companies_id',$this->companies_id)->count() > 1){
 				$msg = $msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project for each company.
 				\libs\Watch::php($msg, 'Projects->save()', __FILE__, true);
-				$json = new Json($msg, $error, $status, $signout, $resignin);
+				$json = new Json($msg, true, 406);
 				$json->render();
 				return false;
 			}
 		}
 		$return = parent::save($options);
+		if($new){
+			$this->setUserPivotValue(1, 'access', 1, false);
+		}
 		return $return;
 	}
 

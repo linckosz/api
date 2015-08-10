@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\data\Projects;
 
 class Users extends ModelLincko {
 
@@ -215,6 +216,21 @@ class Users extends ModelLincko {
 	protected function getHistoryCreation($history_detail=false, array $parameters = array()){
 		$parameters['hh'] = $this->get_HisHer();
 		return parent::getHistoryCreation($history_detail, $parameters);
+	}
+
+	public function save(array $options = array()){
+		$app = self::getApp();
+		$new = !isset($this->id);
+		$return = parent::save($options);
+		if($new){
+			$app->lincko->data['uid'] = $this->id;
+			$project = new Projects();
+			$project->title = 'Private';
+			$project->companies_id = 0;
+			$project->personal_private = 1;
+			$project->save();
+		}
+		return $return;
 	}
 
 }
