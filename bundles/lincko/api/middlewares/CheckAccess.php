@@ -79,6 +79,14 @@ class CheckAccess extends \Slim\Middleware {
 		return false;
 	}
 
+	protected function flashKeys(){
+		$app = $this->app;
+		$data = $this->data;
+		if(isset($data->data->set_shangzai) && $data->data->set_shangzai===true ){
+			$app->lincko->securityFlash = $this->authorization;
+		}
+	}
+
 	protected function checkFields(){
 		$data = $this->data;
 		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data) && isset($data->fingerprint) && isset($data->company);
@@ -130,6 +138,7 @@ class CheckAccess extends \Slim\Middleware {
 
 		if($valid){
 			$this->setUserId();
+			$this->flashKeys();
 		}
 
 		return $valid;

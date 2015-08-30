@@ -283,6 +283,10 @@ class ControllerTest extends Controller {
 		//\libs\Watch::php( $data ,'$data', __FILE__);
 		//$msg = time();
 
+
+		//$tp = Projects::withTrashed()->find(201)->delete();
+		//$tp = Projects::withTrashed()->find(201)->restore();
+
 		//----------------------------------------
 	
 		//Add new project

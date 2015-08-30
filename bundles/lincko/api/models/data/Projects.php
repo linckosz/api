@@ -103,7 +103,7 @@ class Projects extends ModelLincko {
 		$app = self::getApp();
 		$new = !isset($this->id);
 		if($this->personal_private===1){
-			if(self::where('personal_private', 1)->where('created_by', $app->lincko->data['uid'])->where('companies_id',$this->companies_id)->count() > 1){
+			if(self::where('personal_private', 1)->where('created_by', $app->lincko->data['uid'])->where('companies_id', $this->companies_id)->count() > 1){
 				$msg = $msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project for each company.
 				\libs\Watch::php($msg, 'Projects->save()', __FILE__, true);
 				$json = new Json($msg, true, 406);
@@ -119,7 +119,9 @@ class Projects extends ModelLincko {
 	}
 
 	public function scopegetLinked($query){
+		$app = self::getApp();
 		return $query
+		->where('companies_id', $app->lincko->data['company_id']) //Insure to get only the company information
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php
 			$query
 			->where(function ($query) {

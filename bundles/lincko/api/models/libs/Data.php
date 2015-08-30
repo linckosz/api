@@ -135,6 +135,11 @@ class Data {
 					}
 				}
 				foreach ($data as $key => $value) {
+					$compid = $value->getCompany();
+					if($compid != '_' && $compid != $app->lincko->data['company_id']){
+						//If we the element is in another company, we do not need to keep the data
+						continue;
+					}
 					$table_tp = json_decode($value->toJson($detail));
 					//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
 					$table_tp->new = 0;
@@ -143,7 +148,6 @@ class Data {
 							$table_tp->new = 1;
 						}
 					}
-					$compid = $value->getCompany();
 					$id = $table_tp->id;
 
 					//Create object
