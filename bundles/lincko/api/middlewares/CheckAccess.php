@@ -156,7 +156,7 @@ class CheckAccess extends \Slim\Middleware {
 		foreach ($companies as $key => $value) {
 			if($value->url == $data->company){
 				$app->lincko->data['company'] = $value->url;
-				$app->lincko->data['company_id'] = $value->id;
+				$app->lincko->data['company_id'] = intval($value->id);
 				return true;
 			}
 		}
