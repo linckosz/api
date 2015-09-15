@@ -113,7 +113,7 @@ class Projects extends ModelLincko {
 		}
 		$return = parent::save($options);
 		if($new){
-			$this->setUserPivotValue(1, 'access', 1, false);
+			$this->setUserPivotValue($app->lincko->data['uid'], 'access', 1, false);
 		}
 		return $return;
 	}

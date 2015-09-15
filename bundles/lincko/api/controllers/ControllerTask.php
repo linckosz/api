@@ -22,7 +22,7 @@ class ControllerTask extends Controller {
 		$app = $this->app;
 		$data = $this->data;
 		if(!isset($data->data)){
-			$app->render(400, array('msg' => array('msg' => $app->trans->getBRUT('api', 0, 4), 'field' => 'undefined'), 'error' => true,)); //No data form received.
+			$app->render(400, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 0, 4), 'field' => 'undefined'), 'error' => true,)); //No data form received.
 			return true;
 		}
 		$form = $data->data;
@@ -63,7 +63,7 @@ class ControllerTask extends Controller {
 			}
 		}
 
-		$app->render(401, array('msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
 		return false;
 	}
 
