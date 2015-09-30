@@ -3,7 +3,7 @@
         "slim/slim": "2.*",
         "illuminate/database": "4.*",
         "slim/views": "dev-master",
-        "twig/twig": "1.*",
+        "twig/twig": "1.20.*",
         "twig/extensions": "1.*",
         "smarty/smarty": "3.*",
         "yusukezzz/slim-debugbar": "1.*",
