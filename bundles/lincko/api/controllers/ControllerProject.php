@@ -42,10 +42,10 @@ class ControllerProject extends Controller {
 
 		if(isset($form_data->title) && !Projects::validTitle($form_data->title)){
 			$errmsg = $app->trans->getBRUT('api', 8, 2); //Project creation failed. We could not valid the title format: - 104 characters max
-			$errfield = 'title';
+			$errfield = 'project_title_text';
 		} else if(isset($form_data->description) && !Projects::validDescription($form_data->description)){
 			$errmsg = $app->trans->getBRUT('api', 8, 3); //project creation failed. We could not valid the description format: - Unknown error
-			$errfield = 'description';
+			$errfield = 'project_description_textarea';
 		} else if(Projects::isValid($form_data)){
 			$project = new Projects();
 			$project->title = $form_data->title;

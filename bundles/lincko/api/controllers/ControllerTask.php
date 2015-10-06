@@ -45,11 +45,11 @@ class ControllerTask extends Controller {
 		if(!isset($form_data->projects_id)){
 			$errmsg = $app->trans->getBRUT('api', 9, 5); //Task creation failed. We could not valid the project ID.
 		} else if(isset($form_data->title) && !Tasks::validTitle($form_data->title)){
-			$errmsg = $app->trans->getBRUT('api', 9, 2); //Task creation failed. We could not valid the title format: - Unknown error
-			$errfield = 'title';
+			$errmsg = $app->trans->getBRUT('api', 9, 2); //Task creation failed. We could not valid the title format: - 104 characters max
+			$errfield = 'task_title_text';
 		} else if(isset($form_data->comment) && !Tasks::validComment($form_data->comment)){
 			$errmsg = $app->trans->getBRUT('api', 9, 3); //Task creation failed. We could not valid the comment format: - Unknown error
-			$errfield = 'comment';
+			$errfield = 'task_comment_textarea';
 		} else if(Tasks::isValid($form_data)){
 			$task = new Tasks();
 			$task->title = $form_data->title;

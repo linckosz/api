@@ -6,7 +6,7 @@ use \Exception;
 
 class OneSeventySeven {
 
-	//This variable keep track of all cookies set and then run setCookie by a hhok function at alim.after
+	//This variable keep track of all cookies set and then run setCookie by a hook function at alim.after
 	protected static $cookies = array();
 
 	//Help to not run many time the data fetching for cookies
