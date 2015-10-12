@@ -6,6 +6,9 @@
 
 	To get data
 	print_r($data);
+
+	Then open the link (change the domain name according to dev(.net)/stage(.co)/production(.com) server)
+	https://lincko.co/debug
 */
 $app = \Slim\Slim::getInstance();
 //print_r($data);
