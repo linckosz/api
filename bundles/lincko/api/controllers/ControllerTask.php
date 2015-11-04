@@ -30,6 +30,7 @@ class ControllerTask extends Controller {
 
 		// projects_id
 		if(isset($form->projects_id)){ $form_data->projects_id = $form->projects_id; }
+		else if(isset($form->task_projects_id_hidden)){ $form_data->projects_id = $form->task_projects_id_hidden; }
 
 		// title
 		if(isset($form->title)){ $form_data->title = $form->title; }

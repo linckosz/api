@@ -109,7 +109,8 @@ function exceptionHandler(\Exception $exception) {
 
 function sendMsg(){
 	$app = \Slim\Slim::getInstance();
-	$msg = 'An error has occurred while processing your request, the support team has been notified of the problem.';
+	//$msg = 'An error has occurred while processing your request, the support team has been notified of the problem.';
+	$msg = $app->trans->getBRUT('default', 1, 2);
 	if($app->lincko->jsonException){
 		$json = new Json($msg);
 		$json->render();

@@ -33,7 +33,7 @@ class ControllerData extends Controller {
 		return true;
 	}
 
-	public function schema_get(){
+	public function schema_post(){
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 10); //You got the latest schema.
 

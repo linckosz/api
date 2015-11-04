@@ -47,6 +47,23 @@ class Folders {
 			}
 		}
 		return true;
+	}
+
+	public function loopFolder(){
+		$list = array();
+		if($this->folder !== false){
+			if($this->checkPath($this->folder)){
+				$files = glob($this->folder.'/*');
+				if (is_array($files) && count($files) > 0) {
+					foreach($files as $file) {
+						if(!is_dir($file)){
+							$list[] = basename($file);
+						}
+					}
+				}
+			}
+		}
+		return $list;
 	}	
 
 	public function includeRecursive(){

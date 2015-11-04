@@ -78,6 +78,26 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 		return '/language'.$app->request->getPath();
 	}
 
+	public function get_Loop_public_folder($directory){
+		$app = \Slim\Slim::getInstance();
+		$directory = $app->lincko->path.'/public'.$directory;
+		$folder = new Folders($directory);
+		return $folder->loopFolder();
+	}
+
+	public function get_Loop_twig_folder($bundle, $directory){
+		$app = \Slim\Slim::getInstance();
+		$path = $app->lincko->path.'/bundles/'.$bundle.'/templates'.$directory;
+		$folder = new Folders($path);
+		$files = array();
+		foreach($folder->loopFolder() as $file) {
+			if(strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'twig'){
+				$files[] = '/bundles/'.$bundle.'/templates'.$directory.'/'.$file;
+			}
+		}
+		return $files;
+	}
+
 	public function getFunctions(){
 		return array_merge(
 			parent::getFunctions(),
@@ -91,6 +111,8 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 				new \Twig_SimpleFunction('_route', array($this, 'get_Route'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_route_name', array($this, 'get_Route_name'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_language_uri', array($this, 'get_TranslationUri'), array('is_safe' => array('html'))),
+				new \Twig_SimpleFunction('_loop_public_folder', array($this, 'get_Loop_public_folder'), array('is_safe' => array('html'))),
+				new \Twig_SimpleFunction('_loop_twig_folder', array($this, 'get_Loop_twig_folder'), array('is_safe' => array('html'))),
 			)
 		);
 	}

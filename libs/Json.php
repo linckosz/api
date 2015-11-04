@@ -10,12 +10,15 @@ class Json {
 		'status' => 500,
 	);
 
-	public function __construct($msg, $error=true, $status=500, $signout=false, $resignin=false, $files=array()){
+	public function __construct($msg, $error=true, $status=500, $signout=false, $resignin=false, $files=array(), $show=true){
 		if(!$error){
 			$this->json['error'] = false;
 		}
 		$this->json['status'] = intval($status);
 		$this->json['msg'] = (string)$msg;
+
+		$this->json['show'] = $show;
+
 		//optional parameters for front end server
 		if($signout || $resignin){
 			$this->json['flash'] = array(
