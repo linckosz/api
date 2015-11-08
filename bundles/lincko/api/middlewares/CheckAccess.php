@@ -72,6 +72,7 @@ class CheckAccess extends \Slim\Middleware {
 		} else if(isset($this->authorization->user_id) && $this->authorization->user_id>0){
 			if($user_log = UsersLog::find($this->authorization->user_id)){
 				if($user = Users::where('username_sha1', '=', $user_log->username_sha1)->first()){
+					$app->lincko->data['yonghu'] = $user->username; //This variable is used for error logs only
 					return $app->lincko->data['uid'] = $user->id;
 				}
 			}
