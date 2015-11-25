@@ -244,14 +244,12 @@ class CheckAccess extends \Slim\Middleware {
 			$status = 401;
 			$resignin = true;
 
-		
 		//Check the company ID
 		} else if(!$this->checkWorkspace()) {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 			$status = 401;
 			$resignin = true;
 
-		
 		//Check if the route is available for standard public key (limited to credential operations only)
 		} else if(!$this->checkRouteAccess()) {
 			$msg = $app->trans->getBRUT('api', 0, 2); //Please sign in.
