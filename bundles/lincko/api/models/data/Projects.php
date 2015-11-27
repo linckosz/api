@@ -53,8 +53,9 @@ class Projects extends ModelLincko {
 	);
 
 	protected static $parents_keys = array(
-		'users',
+		//'users',
 		'companies',
+		'toto',
 	);
 
 ////////////////////////////////////////////

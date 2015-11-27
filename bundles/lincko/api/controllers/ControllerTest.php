@@ -265,6 +265,25 @@ class ControllerTest extends Controller {
 		$tp = Users::getLinked()->get();
 		\libs\Watch::php( json_decode($tp->toJson()) ,'$Users', __FILE__, false, false, true);
 */
+		//$tp = Projects::find(5)->getParents();
+		//\libs\Watch::php( $tp ,'$Projects', __FILE__, false, false, true);
+
+		//$tp = Projects::find(5);
+		//\libs\Watch::php( $tp->getTable() ,'Object', __FILE__, false, false, true);
+
+		//\libs\Watch::php( (new Data())->getModels() ,'Class', __FILE__, false, false, true);
+
+		$tp1 = (new Projects())->getParents();
+		$tp2 = (new Projects())->getChildren();
+		$tp3 = array('toto', 'tasks');
+		$tp = array_unique(array_merge($tp1, $tp2, $tp3));
+		\libs\Watch::php( $tp1 ,'tp1', __FILE__, false, false, true);
+		\libs\Watch::php( $tp2 ,'tp2', __FILE__, false, false, true);
+		\libs\Watch::php( $tp3 ,'tp3', __FILE__, false, false, true);
+		\libs\Watch::php( $tp  ,'tp ', __FILE__, false, false, true);
+
+		//$tp = new Data();
+		//\libs\Watch::php( $tp->toto() ,'toto', __FILE__, false, false, true);
 
 		//$tp = ChatsComments::find(7)->users()->first();
 

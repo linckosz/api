@@ -67,7 +67,7 @@ class Data {
 
 
 
-	protected function getModels(){
+	public static function getModels(){
 		$sql = 'SHOW TABLES;';
 		$db = Capsule::connection('data');
 		$data = $db->select( $db->raw($sql) );
@@ -79,7 +79,7 @@ class Data {
 				$classes[] = $tp;
 			}
 		}
-		$this->models = $classes;
+		return $classes;
 	}
 
 	protected function getList($action){
@@ -87,7 +87,7 @@ class Data {
 		$result = new \stdClass;
 		$usersContacts = new \stdClass;
 		$uid = $app->lincko->data['uid'];
-		$this->getModels();
+		$this->models = self::getModels();
 		$detail = false;
 		if($action == 'latest' || $action == 'missing'){
 			$detail = true;
@@ -121,7 +121,8 @@ class Data {
 						$result->$uid->{'_'}->{'_relations'} = new \stdClass;
 					}
 					if(!isset($result->$uid->{'_'}->{'_relations'}->$table_name)){
-						$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getParents();
+						//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
+						$result->$uid->{'_'}->{'_relations'}->$table_name = array_unique(array_merge($model->getParents(), $model->getChildren()));
 					}
 				}
 				

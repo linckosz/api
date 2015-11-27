@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\SoftDeletingTrait;
 
+use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\data\Users;
 
@@ -47,7 +48,7 @@ abstract class ModelLincko extends Model {
 	//NOTE: All variables in this array must exist in the database, otherwise an error will be generated during SLQ request.
 	protected static $foreign_keys = array(); //Define a list of foreign keys, it help to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link.
 
-	protected static $parents_keys = array(); //This is a list of parent Models, it helps the front server to know which elements to update without the need of updating all elements and overkilling the CPU usage. This should be accurate and contain at leat foreign key models. Value are Models' name.
+	protected static $parents_keys = array(); //This is a list of parent Models, it helps the front server to know which elements to update without the need of updating all elements and overkilling the CPU usage. This should be accurate using Models' name. We do not have to add foreign keys since it will be added automaticaly by getParents().
 
 	//It should be a array of [key1:val1, key2:val2, etc]
 	//It helps to recover some iformation on client side
@@ -72,6 +73,10 @@ abstract class ModelLincko extends Model {
 			}
 			$this->{'_'.$dependency} = $result;
 		}
+	}
+
+	public static function getTableStatic(){
+		return (new static())->getTable();
 	}
 
 	public static function getApp(){
@@ -127,8 +132,29 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
+	public function getChildren(){
+		$models = Data::getModels();
+		$list_children = array();
+		foreach($models as $key => $value) {
+			$model = new $value();
+			$table_name = $model->getTable();
+			$parents = $model->getParents();
+			if(!in_array($table_name, $list_children) && in_array($this->getTable(), $parents)){
+				$list_children[] = $table_name;
+			}
+		}
+		return $list_children;
+	}
+
 	public function getParents(){
-		return $this::$parents_keys;
+		$list_parents = $this::$parents_keys;
+		foreach($this::$foreign_keys as $key => $value) {
+			$table_name = $value::getTableStatic();
+			if(!in_array($table_name, $list_parents)){
+				$list_parents[] = $table_name;
+			}
+		}
+		return $list_parents;
 	}
 
 	//detail help to get history detail of an item, we do not allow it at the normal use avoiding over quota memory
