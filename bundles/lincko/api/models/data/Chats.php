@@ -45,7 +45,7 @@ class Chats extends ModelLincko {
 		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
 	);
 
-	protected static $parents_keys = array(
+	protected static $relations_keys = array(
 		'users'
 	);
 

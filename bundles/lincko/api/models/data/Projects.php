@@ -52,10 +52,9 @@ class Projects extends ModelLincko {
 		'companies_id' => '\\bundles\\lincko\\api\\models\\data\\Companies',
 	);
 
-	protected static $parents_keys = array(
-		//'users',
+	protected static $relations_keys = array(
+		'users',
 		'companies',
-		'toto',
 	);
 
 ////////////////////////////////////////////

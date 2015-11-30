@@ -48,7 +48,10 @@ abstract class ModelLincko extends Model {
 	//NOTE: All variables in this array must exist in the database, otherwise an error will be generated during SLQ request.
 	protected static $foreign_keys = array(); //Define a list of foreign keys, it help to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link.
 
-	protected static $parents_keys = array(); //This is a list of parent Models, it helps the front server to know which elements to update without the need of updating all elements and overkilling the CPU usage. This should be accurate using Models' name. We do not have to add foreign keys since it will be added automaticaly by getParents().
+	protected static $relations_keys_checked = false; //At false it will help to construct the list only once
+
+	//NOTE: Must exist in child "data"
+	protected static $relations_keys = array(); //This is a list of parent Models, it helps the front server to know which elements to update without the need of updating all elements and overkilling the CPU usage. This should be accurate using Models' name. We do not have to add foreign keys since it will be added automaticaly by getRelations().
 
 	//It should be a array of [key1:val1, key2:val2, etc]
 	//It helps to recover some iformation on client side
@@ -138,23 +141,94 @@ abstract class ModelLincko extends Model {
 		foreach($models as $key => $value) {
 			$model = new $value();
 			$table_name = $model->getTable();
-			$parents = $model->getParents();
-			if(!in_array($table_name, $list_children) && in_array($this->getTable(), $parents)){
+			$relations = $model->getRelations();
+			if(!in_array($table_name, $list_children) && in_array($this->getTable(), $relations)){
 				$list_children[] = $table_name;
 			}
 		}
 		return $list_children;
 	}
 
-	public function getParents(){
-		$list_parents = $this::$parents_keys;
-		foreach($this::$foreign_keys as $key => $value) {
-			$table_name = $value::getTableStatic();
-			if(!in_array($table_name, $list_parents)){
-				$list_parents[] = $table_name;
+	public static function buildRelations(){
+		if(self::$relations_keys_checked === false){
+			$models = Data::getModels();
+			
+			//First we fillin the relation list properly adding foreign keys (parents) for each model
+			foreach($models as $model_name => $model) {
+				foreach($model::$foreign_keys as $key => $value) {
+					$table_name = $value::getTableStatic();
+					if(!in_array($table_name, $model::$relations_keys)){
+						$model::$relations_keys[] = $table_name;
+					}
+				}
+			}
+
+			//UP: Adding parents level
+			foreach($models as $model_name => $model) {
+				$count = 0;
+				while(count($model::$relations_keys) !== $count){
+					foreach($model::$relations_keys as $key => $value) {
+						$model::$relations_keys = array_unique(array_merge($model::$relations_keys, $models[$value]::$relations_keys));
+					}
+					$count = count($model::$relations_keys);
+				}
+			}
+			
+			//DOWN: Adding children level
+			foreach($models as $model_name => $model) {
+				foreach($model::$relations_keys as $key => $value) {
+					if(!in_array($model_name, $models[$value]::$relations_keys)){
+						$models[$value]::$relations_keys[] = $model_name;
+					}
+				}
+			}
+			
+			self::$relations_keys_checked = true;
+		}
+	}
+
+	public function getRelations(){
+		if(self::$relations_keys_checked === false){
+			self::buildRelations();
+		}
+
+		/*
+		if($this::$relations_keys_checked === false){
+			$models = Data::getModels();
+			
+			foreach($this::$foreign_keys as $key => $value) {
+				$table_name = $value::getTableStatic();
+				if(!in_array($table_name, $this::$relations_keys)){
+					$this::$relations_keys[] = $table_name;
+				}
+			}
+			$loop = true;
+			while($loop){
+				$loop = false;
+				$count = count($this::$relations_keys);
+				foreach($models as $key => $value) {
+					$table_name = $value::getTableStatic();
+
+
+				}
+				if($count !== count($this::$relations_keys)){
+					$loop = true;
+				}
+			}
+			$this::$relations_keys_checked = true;
+			//return $this::$relations_keys;
+
+
+			$list_relations = $this::$relations_keys;
+			foreach($this::$foreign_keys as $key => $value) {
+				$table_name = $value::getTableStatic();
+				if(!in_array($table_name, $list_relations)){
+					$list_relations[] = $table_name;
+				}
 			}
 		}
-		return $list_parents;
+		*/
+		return $this::$relations_keys;
 	}
 
 	//detail help to get history detail of an item, we do not allow it at the normal use avoiding over quota memory

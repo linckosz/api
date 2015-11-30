@@ -11,7 +11,7 @@ class Data {
 
 	protected $app = NULL;
 	protected $data = NULL;
-	protected $models = array();
+	protected static $models = NULL;
 	protected $lastvisit = 0; //Format 'Y-m-d H:i:s'
 	protected $partial = NULL;
 
@@ -65,21 +65,22 @@ class Data {
 		}
 	}
 
-
-
 	public static function getModels(){
-		$sql = 'SHOW TABLES;';
-		$db = Capsule::connection('data');
-		$data = $db->select( $db->raw($sql) );
-
-		$classes = array();
-		foreach ($data as $key => $value) {
-			$tp = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC(array_values($value)[0]);
-			if(class_exists($tp)){
-				$classes[] = $tp;
+		if(is_null(self::$models)){
+			$sql = 'SHOW TABLES;';
+			$db = Capsule::connection('data');
+			$data = $db->select( $db->raw($sql) );
+			$classes = array();
+			foreach ($data as $key => $value) {
+				$tp = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC(array_values($value)[0]);
+				if(class_exists($tp)){
+					$table_name = $tp::getTableStatic();
+					$classes[$table_name] = $tp;
+				}
 			}
+			self::$models = $classes;
 		}
-		return $classes;
+		return self::$models;
 	}
 
 	protected function getList($action){
@@ -87,7 +88,7 @@ class Data {
 		$result = new \stdClass;
 		$usersContacts = new \stdClass;
 		$uid = $app->lincko->data['uid'];
-		$this->models = self::getModels();
+		self::getModels();
 		$detail = false;
 		if($action == 'latest' || $action == 'missing'){
 			$detail = true;
@@ -97,7 +98,7 @@ class Data {
 			$history_detail = true;
 		}
 
-		foreach($this->models as $key => $value) {
+		foreach(self::$models as $key => $value) {
 			if($this->lastvisit != 0){
 				//Insure that the where is only with AND, not an OR!
 				$data = $value::getLinked()->where('updated_at', '>=', $this->lastvisit)->get();	
@@ -109,7 +110,7 @@ class Data {
 				//Get table name
 				$model = new $value;
 				$table_name = $model->getTable();
-				//Get the parents list
+				//Get the relations list
 				if($action == 'schema' || $action == 'missing'){
 					if(!isset($result->$uid)){
 						$result->$uid = new \stdClass;
@@ -122,7 +123,9 @@ class Data {
 					}
 					if(!isset($result->$uid->{'_'}->{'_relations'}->$table_name)){
 						//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
-						$result->$uid->{'_'}->{'_relations'}->$table_name = array_unique(array_merge($model->getParents(), $model->getChildren()));
+						$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
+						//$result->$uid->{'_'}->{'_relations'}->$table_name = array_unique(array_merge($model->getRelations(), $model->getChildren()));
+						\libs\Watch::php( $result->$uid->{'_'}->{'_relations'}->$table_name ,$table_name, __FILE__, false, false, true);
 					}
 				}
 				

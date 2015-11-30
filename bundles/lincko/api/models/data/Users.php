@@ -50,6 +50,8 @@ class Users extends ModelLincko {
 		'_restore' => 698,//[{un|ucfirst}] restored [{hh}] profile.
 		'_delete' => 699,//[{un|ucfirst}] deleted [{hh}] profile.
 	);
+
+	protected static $relations_keys = array();
 	
 ////////////////////////////////////////////
 

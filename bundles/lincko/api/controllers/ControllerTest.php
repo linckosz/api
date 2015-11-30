@@ -265,22 +265,48 @@ class ControllerTest extends Controller {
 		$tp = Users::getLinked()->get();
 		\libs\Watch::php( json_decode($tp->toJson()) ,'$Users', __FILE__, false, false, true);
 */
-		//$tp = Projects::find(5)->getParents();
+		//$tp = Projects::find(5)->getRelations();
 		//\libs\Watch::php( $tp ,'$Projects', __FILE__, false, false, true);
 
 		//$tp = Projects::find(5);
 		//\libs\Watch::php( $tp->getTable() ,'Object', __FILE__, false, false, true);
 
-		//\libs\Watch::php( (new Data())->getModels() ,'Class', __FILE__, false, false, true);
+		\libs\Watch::php( (new Data())->getModels() ,'Class', __FILE__, false, false, true);
 
-		$tp1 = (new Projects())->getParents();
-		$tp2 = (new Projects())->getChildren();
-		$tp3 = array('toto', 'tasks');
-		$tp = array_unique(array_merge($tp1, $tp2, $tp3));
-		\libs\Watch::php( $tp1 ,'tp1', __FILE__, false, false, true);
-		\libs\Watch::php( $tp2 ,'tp2', __FILE__, false, false, true);
-		\libs\Watch::php( $tp3 ,'tp3', __FILE__, false, false, true);
-		\libs\Watch::php( $tp  ,'tp ', __FILE__, false, false, true);
+		/*
+		$tp1 = (new Tasks())->getRelations();
+		$tp2 = (new Users())->getRelations();
+		$tp3 = (new Projects())->getRelations();
+		$tp4 = (new Chats())->getRelations();
+		\libs\Watch::php( $tp1 ,'Tasks', __FILE__, false, false, true);
+		\libs\Watch::php( $tp2 ,'Users', __FILE__, false, false, true);
+		\libs\Watch::php( $tp3 ,'Projects', __FILE__, false, false, true);
+		\libs\Watch::php( $tp4 ,'Chats', __FILE__, false, false, true);
+		*/
+
+		\libs\Watch::php( (new Users())->getRelations() , 'Users', __FILE__, false, false, true);
+		\libs\Watch::php( (new Companies())->getRelations() , 'Companies', __FILE__, false, false, true);
+		\libs\Watch::php( (new Projects())->getRelations() , 'Projects', __FILE__, false, false, true);
+		\libs\Watch::php( (new Tasks())->getRelations() , 'Tasks', __FILE__, false, false, true);
+		
+		\libs\Watch::php( (new Chats())->getRelations() , 'Chats', __FILE__, false, false, true);
+		\libs\Watch::php( (new ChatsComments())->getRelations() , 'ChatsComments', __FILE__, false, false, true);
+
+		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, false, false, true);
+		//\libs\Watch::php( Tasks::getRelations() ,'models ', __FILE__, false, false, true);
+		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, false, false, true);
+
+		/*
+		$tp1 = new Projects();
+		$tp2 = new Tasks();
+		$tp2->getRelations();
+		\libs\Watch::php( $tp1::$relations_keys_list ,'Projects', __FILE__, false, false, true);
+		\libs\Watch::php( $tp2::$relations_keys_list ,'Tasks', __FILE__, false, false, true);
+		\libs\Watch::php( $tp1::$relations_keys_list ,'Projects', __FILE__, false, false, true);
+		*/
+		//\libs\Watch::php( Projects::getTableStatic()  ,'Projects', __FILE__, false, false, true);
+		//\libs\Watch::php( Users::getTableStatic()  ,'Users', __FILE__, false, false, true);
+
 
 		//$tp = new Data();
 		//\libs\Watch::php( $tp->toto() ,'toto', __FILE__, false, false, true);

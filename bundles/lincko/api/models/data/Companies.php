@@ -40,7 +40,7 @@ class Companies extends ModelLincko {
 		'_delete' => 399,//[{un|ucfirst}] deleted the workspace.
 	);
 
-	protected static $parents_keys = array(
+	protected static $relations_keys = array(
 		'users',
 	);
 

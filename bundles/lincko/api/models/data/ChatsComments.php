@@ -49,7 +49,7 @@ class ChatsComments extends ModelLincko {
 		'chats_id' => '\\bundles\\lincko\\api\\models\\data\\Chats',
 	);
 
-	protected static $parents_keys = array(
+	protected static $relations_keys = array(
 		'users',
 		'chats',
 	);
