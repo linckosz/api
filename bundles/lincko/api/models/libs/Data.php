@@ -124,7 +124,6 @@ class Data {
 					if(!isset($result->$uid->{'_'}->{'_relations'}->$table_name)){
 						//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
 						$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
-						\libs\Watch::php( $result->$uid->{'_'}->{'_relations'}->$table_name ,$table_name, __FILE__, false, false, true);
 					}
 				}
 				
