@@ -135,21 +135,7 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
-	public function getChildren(){
-		$models = Data::getModels();
-		$list_children = array();
-		foreach($models as $key => $value) {
-			$model = new $value();
-			$table_name = $model->getTable();
-			$relations = $model->getRelations();
-			if(!in_array($table_name, $list_children) && in_array($this->getTable(), $relations)){
-				$list_children[] = $table_name;
-			}
-		}
-		return $list_children;
-	}
-
-	public static function buildRelations(){
+	protected static function buildRelations(){
 		if(self::$relations_keys_checked === false){
 			$models = Data::getModels();
 			
@@ -182,6 +168,11 @@ abstract class ModelLincko extends Model {
 					}
 				}
 			}
+
+			//Reindex all lists, because some list migth not have incremental index
+			foreach($models as $model_name => $model) {
+				$model::$relations_keys = array_merge($model::$relations_keys);
+			}
 			
 			self::$relations_keys_checked = true;
 		}
@@ -191,43 +182,6 @@ abstract class ModelLincko extends Model {
 		if(self::$relations_keys_checked === false){
 			self::buildRelations();
 		}
-
-		/*
-		if($this::$relations_keys_checked === false){
-			$models = Data::getModels();
-			
-			foreach($this::$foreign_keys as $key => $value) {
-				$table_name = $value::getTableStatic();
-				if(!in_array($table_name, $this::$relations_keys)){
-					$this::$relations_keys[] = $table_name;
-				}
-			}
-			$loop = true;
-			while($loop){
-				$loop = false;
-				$count = count($this::$relations_keys);
-				foreach($models as $key => $value) {
-					$table_name = $value::getTableStatic();
-
-
-				}
-				if($count !== count($this::$relations_keys)){
-					$loop = true;
-				}
-			}
-			$this::$relations_keys_checked = true;
-			//return $this::$relations_keys;
-
-
-			$list_relations = $this::$relations_keys;
-			foreach($this::$foreign_keys as $key => $value) {
-				$table_name = $value::getTableStatic();
-				if(!in_array($table_name, $list_relations)){
-					$list_relations[] = $table_name;
-				}
-			}
-		}
-		*/
 		return $this::$relations_keys;
 	}
 

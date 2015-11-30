@@ -271,26 +271,17 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(5);
 		//\libs\Watch::php( $tp->getTable() ,'Object', __FILE__, false, false, true);
 
-		\libs\Watch::php( (new Data())->getModels() ,'Class', __FILE__, false, false, true);
+		$tp = array(
+			0 => 'A',
+			1 => 'B',
+			3 => 'C',
+			4 => 'D',
+		);
 
-		/*
-		$tp1 = (new Tasks())->getRelations();
-		$tp2 = (new Users())->getRelations();
-		$tp3 = (new Projects())->getRelations();
-		$tp4 = (new Chats())->getRelations();
-		\libs\Watch::php( $tp1 ,'Tasks', __FILE__, false, false, true);
-		\libs\Watch::php( $tp2 ,'Users', __FILE__, false, false, true);
-		\libs\Watch::php( $tp3 ,'Projects', __FILE__, false, false, true);
-		\libs\Watch::php( $tp4 ,'Chats', __FILE__, false, false, true);
-		*/
+		$tp = array_merge($tp);
 
-		\libs\Watch::php( (new Users())->getRelations() , 'Users', __FILE__, false, false, true);
-		\libs\Watch::php( (new Companies())->getRelations() , 'Companies', __FILE__, false, false, true);
-		\libs\Watch::php( (new Projects())->getRelations() , 'Projects', __FILE__, false, false, true);
-		\libs\Watch::php( (new Tasks())->getRelations() , 'Tasks', __FILE__, false, false, true);
-		
-		\libs\Watch::php( (new Chats())->getRelations() , 'Chats', __FILE__, false, false, true);
-		\libs\Watch::php( (new ChatsComments())->getRelations() , 'ChatsComments', __FILE__, false, false, true);
+		\libs\Watch::php( $tp ,'tp', __FILE__, false, false, true);
+
 
 		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, false, false, true);
 		//\libs\Watch::php( Tasks::getRelations() ,'models ', __FILE__, false, false, true);

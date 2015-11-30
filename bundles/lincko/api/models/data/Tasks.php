@@ -71,9 +71,9 @@ class Tasks extends ModelLincko {
 		'projects_id' => '\\bundles\\lincko\\api\\models\\data\\Projects',
 	);
 
-	public static $relations_keys = array(
+	protected static $relations_keys = array(
 		'users',
-		//'projects',
+		'projects',
 	);
 
 	protected $dependencies_visible = array(
