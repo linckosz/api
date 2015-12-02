@@ -271,6 +271,7 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(5);
 		//\libs\Watch::php( $tp->getTable() ,'Object', __FILE__, false, false, true);
 
+		/*
 		$tp = array(
 			0 => 'A',
 			1 => 'B',
@@ -281,7 +282,7 @@ class ControllerTest extends Controller {
 		$tp = array_merge($tp);
 
 		\libs\Watch::php( $tp ,'tp', __FILE__, false, false, true);
-
+		*/
 
 		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, false, false, true);
 		//\libs\Watch::php( Tasks::getRelations() ,'models ', __FILE__, false, false, true);
@@ -400,7 +401,7 @@ class ControllerTest extends Controller {
 
 	public function _post(){
 		$app = $this->app;
-		$msg = $app->trans->getBRUT('api', 8888, 1); //The application is saving data.
+		$msg = $app->trans->getBRUT('api', 8888, 1).' => '.json_encode($this->data->data); //The application is saving data.
 		$app->render(200, array('msg' => $msg,));
 		return true;
 	}
