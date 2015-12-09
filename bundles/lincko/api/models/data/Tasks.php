@@ -53,13 +53,14 @@ class Tasks extends ModelLincko {
 		'duration' => 502, //[{un|ucfirst}] modified a [{nt}].
 		'fixed' => 502, //[{un|ucfirst}] modified a [{nt}].
 		'status' => 502, //[{un|ucfirst}] modified a [{nt}].
+		'start' => 502, //[{un|ucfirst}] modified a [{nt}].
 		'progress' => 502, //[{un|ucfirst}] modified a [{nt}].
 		'projects_id' => 505, //[{un|ucfirst}] moved a [{nt}] to the project "[{pj|ucfirst}]".
 		'_delay' => 550, //[{un|ucfirst}] modified a [{nt}] delay.
 		'_in_charge_0' => 551, //[{cun|ucfirst}] is in charge of a [{nt}].
 		'_in_charge_1' => 552, //[{cun|ucfirst}] is unassigned from a [{nt}].
-		'_approver_ 0' => 553, //[{cun|ucfirst}] becomes an approver to a [{nt}].
-		'_approver_ 1' => 554, //[{cun|ucfirst}] is no longer an approver to a [{nt}].
+		'_approver_0' => 553, //[{cun|ucfirst}] becomes an approver to a [{nt}].
+		'_approver_1' => 554, //[{cun|ucfirst}] is no longer an approver to a [{nt}].
 		'_access_0' => 596, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a [{nt}].
 		'_access_1' => 597, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a [{nt}].
 		'_restore' => 598,//[{un|ucfirst}] restored a [{nt}].
