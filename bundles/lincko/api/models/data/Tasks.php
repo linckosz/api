@@ -30,6 +30,7 @@ class Tasks extends ModelLincko {
 		'duration',
 		'fixed',
 		'status',
+		'start',
 		'progress',
 		'_tasks',
 		'_users',
