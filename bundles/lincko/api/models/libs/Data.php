@@ -170,11 +170,6 @@ class Data {
 						$temp = new \stdClass;
 					}
 
-					//Use Timestamp for JS
-					if(isset($temp->created_at)){  $temp->created_at = (new \DateTime($temp->created_at))->getTimestamp(); }
-					if(isset($temp->updated_at)){  $temp->updated_at = (new \DateTime($temp->updated_at))->getTimestamp(); }
-					if(isset($temp->deleted_at)){  $temp->deleted_at = (new \DateTime($temp->deleted_at))->getTimestamp(); }
-
 					//Only get History for getLatest() and getMissing()
 					if($action == 'latest' || $action == 'missing' || $action == 'history'){
 						//Get history
@@ -252,11 +247,6 @@ class Data {
 				} else {
 					$temp = new \stdClass;
 				}
-
-				//Use Timestamp for JS
-				if(isset($temp->created_at)){  $temp->created_at = (new \DateTime($temp->created_at))->getTimestamp(); }
-				if(isset($temp->updated_at)){  $temp->updated_at = (new \DateTime($temp->updated_at))->getTimestamp(); }
-				if(isset($temp->deleted_at)){  $temp->deleted_at = (new \DateTime($temp->deleted_at))->getTimestamp(); }
 
 				if(!isset($result->$uid)){
 					$result->$uid = new \stdClass;

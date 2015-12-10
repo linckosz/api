@@ -41,6 +41,14 @@ abstract class ModelLincko extends Model {
 		'_delete' => 99,//[{un|ucfirst}] deleted an item.
 	);
 
+	//When call toJson, convert fields to timestamp format if the field exists only
+	protected static $class_timestamp = array(
+		'created_at',
+		'updated_at',
+		'deleted_at',
+	);
+	protected $model_timestamp = array();
+
 	protected $contactsLock = false; //If true, do not allow to delete the user from the contact list
 
 	protected $contactsVisibility = false; //If true, it will appear in user contact list
@@ -423,6 +431,15 @@ abstract class ModelLincko extends Model {
 		} else {
 			$temp = parent::toJson($options);
 		}
+		//Convert DateTime to Tiestamp for JS use, it avoid location hour issue.
+		$temp = json_decode($temp);
+		foreach(self::$class_timestamp as $value) {
+			if(isset($temp->$value)){  $temp->$value = (new \DateTime($temp->$value))->getTimestamp(); }
+		}
+		foreach($this->model_timestamp as $value) {
+			if(isset($temp->$value)){  $temp->$value = (new \DateTime($temp->$value))->getTimestamp(); }
+		}
+		$temp = json_encode($temp, $options);
 		return $temp;
 	}
 

@@ -82,6 +82,10 @@ class Tasks extends ModelLincko {
 		'users',
 		'tasks',
 	);
+
+	protected $model_timestamp = array(
+		'start',
+	);
 	
 ////////////////////////////////////////////
 
