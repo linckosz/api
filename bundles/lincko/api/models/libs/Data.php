@@ -345,5 +345,9 @@ class Data {
 		return $user->setForceSchema();
 	}
 
+	public function setForceReset(){
+		return Users::setForceReset();
+	}
+
 }
 

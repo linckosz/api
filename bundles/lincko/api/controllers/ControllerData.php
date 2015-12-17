@@ -86,4 +86,15 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function force_reset_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 14); //The database reset will be done for all contacts.
+
+		$data = new Data();
+		$data->setForceReset();
+
+		$app->render(200, array('msg' => array('msg' => $msg,)));
+		return true;
+	}
+
 }

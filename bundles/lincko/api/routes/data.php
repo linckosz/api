@@ -36,4 +36,10 @@ $app->group('/data', function () use ($app) {
 	)
 	->name('data_force_sync'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/force_reset',
+		'\bundles\lincko\api\controllers\ControllerData:force_reset'.$app->lincko->method_suffix
+	)
+	->name('data_force_reset'.$app->lincko->method_suffix);
+
 });

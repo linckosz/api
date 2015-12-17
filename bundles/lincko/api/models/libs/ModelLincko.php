@@ -141,8 +141,13 @@ abstract class ModelLincko extends Model {
 		}
 		if(!empty($list_users)){
 			// getQuery() helps to not update Timestamps updated_at
-			Users::whereIn('id', $list_users)->getQuery()->update(['force_schema' => '1']);
+			Users::whereIn('id', $list_users)->where('force_schema', 0)->getQuery()->update(['force_schema' => '1']);
 		}
+		return true;
+	}
+
+	public static function setForceReset(){
+		Users::getQuery()->update(['force_schema' => '2']);
 		return true;
 	}
 
