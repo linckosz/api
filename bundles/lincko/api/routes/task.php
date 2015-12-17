@@ -12,4 +12,10 @@ $app->group('/task', function () use ($app) {
 	)
 	->name('task_create'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/delete',
+		'\bundles\lincko\api\controllers\ControllerTask:delete'.$app->lincko->method_suffix
+	)
+	->name('task_delete'.$app->lincko->method_suffix);
+
 });

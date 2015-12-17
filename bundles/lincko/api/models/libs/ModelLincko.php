@@ -68,7 +68,14 @@ abstract class ModelLincko extends Model {
 	//List of relations we want to make available on client side
 	protected $dependencies_visible = array();
 
+	//Return true if the user is allowed to access the model
+	protected $accessibility = null;
+
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
+
+	public function __construct(array $attributes = array()){
+		parent::__construct($attributes);
+	}
 
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
@@ -110,7 +117,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	//This function helps to get all instance related to the user itself only
-	//It needs to redefine the related function user() too
+	//It needs to redefine the related function users() too
 	public function scopegetLinked($query){
 		return $query->whereHas('users', function ($query) {
 			$query->theUser();
@@ -325,8 +332,33 @@ abstract class ModelLincko extends Model {
 		}
 	}
 
+	//It checks if the user has access to it
+	public function checkAccess(){
+		$app = self::getApp();
+		if(is_null($this->accessibility)){
+			//\libs\Watch::php($this->accessibility, $this->table, __FILE__, false, false, true);
+			if(isset($this->id)){
+$this->accessibility = true; //[toto] For debugging
+//				$this->accessibility = (bool) self::getLinked()->find($this->id);
+				//\libs\Watch::php(1, '$var', __FILE__, false, false, true);
+			} else {
+				$this->accessibility = true; //Set to true for any created item
+			}
+		}
+		if($this->accessibility){
+			return true;
+		} else {
+			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+			\libs\Watch::php($msg, 'Access not allowed', __FILE__, true);
+			$json = new Json($msg, true, 406);
+			$json->render();
+			return false;
+		}
+	}
+
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
+		$this->checkAccess();
 		$app = self::getApp();
 		$dirty = $this->getDirty();
 		$original = $this->getOriginal();
@@ -368,7 +400,7 @@ abstract class ModelLincko extends Model {
 			$json->render();
 			return false;
 		}
-		
+
 		$return = parent::save($options);
 		//We do not record any setup for new model, but only change for existing model
 		if(!$new){
@@ -392,6 +424,7 @@ abstract class ModelLincko extends Model {
 	}
 	
 	public function delete(){
+		$this->checkAccess();
 		if(!isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
 			if(array_key_exists('deleted_by', $this->attributes)){
 				$app = self::getApp();
@@ -405,6 +438,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function restore(){
+		$this->checkAccess();
 		if(isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
 			if(array_key_exists('deleted_by', $this->attributes)){
 				$this->deleted_at = null;
@@ -417,6 +451,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function toJson($detail=false, $options = 0){
+		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used
 		if($detail){
 			$temp = json_decode(parent::toJson($options));
 			foreach ($temp as $key => $value) {

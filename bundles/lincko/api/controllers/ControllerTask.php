@@ -68,4 +68,21 @@ class ControllerTask extends Controller {
 		return false;
 	}
 
+	public function delete_post(){
+		$app = $this->app;
+		$data = $this->data;
+
+		$errmsg = $app->trans->getBRUT('api', 9, 6); //Task editing failed. Please try again.
+		$errfield = 'undefined';
+
+
+		//$tp = Tasks::withTrashed()->find(5)->delete();
+		/*
+			process deletion
+		*/
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 }

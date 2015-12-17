@@ -42,7 +42,7 @@ class ControllerTest extends Controller {
 		//$tp = Chats::find(1)->chatsComments;
 		//$tp = ChatsComments::find(7)->chats;
 		//$tp = Users::getUser();
-		$tp = Tasks::find(14);
+		//$tp = Tasks::find(14);
 		//$tp = Users::getUser()->posts_a;
 		//$tp = Users::getUser()->with('posts')->get();
 
@@ -51,7 +51,7 @@ class ControllerTest extends Controller {
 		//\libs\Watch::php($tp->toJson(),'$tp',__FILE__);
 		//\libs\Watch::php($tp,'$tp',__FILE__);
 
-		\libs\Watch::php( json_decode($tp->toJson()) ,'tp', __FILE__, false, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'tp', __FILE__, false, false, true);
 
 		//$user_log = UsersLog::where('email', '=', mb_strtolower($form->email))->first()
 
@@ -261,6 +261,9 @@ class ControllerTest extends Controller {
 		$tp = Projects::getLinked()->get();
 		\libs\Watch::php( json_decode($tp->toJson()) ,'$Projects', __FILE__, false, false, true);
 */
+		//$tp = Tasks::find(8)->users()->get();
+		//\libs\Watch::php( $tp ,'$Tasks', __FILE__, false, false, true);
+		//\libs\Watch::php( Tasks::getLinked()->find($app->lincko->data['uid']) ,'$Tasks', __FILE__, false, false, true);
 		//$tp = Tasks::getLinked()->get();
 		//\libs\Watch::php( json_decode($tp->toJson()) ,'$Tasks', __FILE__, false, false, true);
 /*

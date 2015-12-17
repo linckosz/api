@@ -48,8 +48,10 @@ class Data {
 		return true;
 	}
 
-	protected function setLastVisit(){
-		if(isset($this->data->data->lastvisit)){
+	protected function setLastVisit($timestamp='false'){
+		if(is_int($timestamp) && $timestamp>=0){
+			return $this->lastvisit = (new \DateTime('@'.$timestamp))->format('Y-m-d H:i:s');
+		} else if(isset($this->data->data->lastvisit)){
 			if(is_int($this->data->data->lastvisit) && $this->data->data->lastvisit>=0){
 				return $this->lastvisit = (new \DateTime('@'.$this->data->data->lastvisit))->format('Y-m-d H:i:s');
 			}
@@ -296,8 +298,8 @@ class Data {
 		return $result;
 	}
 
-	public function getLatest(){
-		$this->setLastVisit();
+	public function getLatest($timestamp=false){
+		$this->setLastVisit($timestamp);
 		$this->partial = NULL;
 		return $this->getList('latest');
 	}

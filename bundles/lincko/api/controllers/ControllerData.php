@@ -22,12 +22,21 @@ class ControllerData extends Controller {
 		$msg = $app->trans->getBRUT('api', 8888, 9); //You got the latest updates.
 
 		$data = new Data();
-		$partial = $data->getLatest();
+		$partial = NULL;
 		$schema = NULL;
-		if($data->getForceSchema()){
-			$schema = $data->getSchema();
-		}
+		$forceSchema = $data->getForceSchema();
 		$lastvisit = time()-1;
+
+		if($forceSchema==2){
+			$schema = 'reset';
+			$partial = $data->getLatest(0); //Setting to 0 helps to reset the full local database on client side
+		} else if($forceSchema==1){
+			$schema = $data->getSchema();
+			$partial = $data->getLatest();
+		} else {
+			$partial = $data->getLatest();
+		}
+				
 
 		$app->render(200, array('msg' => array('msg' => $msg, 'lastvisit' => $lastvisit, 'partial' => $partial, 'schema' => $schema),));
 		return true;

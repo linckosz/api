@@ -35,7 +35,7 @@ $app->configureMode('development', function () use ($app) {
 	ini_set('display_errors', '0');
 	ini_set('opcache.enable', '0');
 	//Force to delay (microseconds) to simulate network slow speed
-	//usleep(500000); //500ms
+	usleep(500000); //500ms
 });
 
 require_once $path.'/config/autoload.php' ;
