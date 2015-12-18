@@ -329,6 +329,33 @@ class ControllerTest extends Controller {
 		//$tp = Projects::withTrashed()->find(201)->delete();
 		//$tp = Projects::withTrashed()->find(201)->restore();
 
+		//$tp = new Tasks();
+		//$tp->users()->find($app->lincko->data['uid']);
+		//$tp = Projects::find(5);
+		//$tp = Users::find(2);
+		//$tp = Tasks::find(76)->addDependencies();
+		//$tp1 = ChatsComments::find(7);
+		//$tp1 = Tasks::find(76);
+		//$tp = (bool) $tp->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+		//$tp = Users::getUser()->self()->where('users_x_users.access', 1)->get();
+		//$tp = $tp1->chats()->users();//->first();
+		//$tp = $tp1->getUserAccess();
+		//$tp = Projects::find(5)->getUserAccess();
+
+		//$tp = Tasks::find(76)->hasNot('users');//->get();
+		/*
+		$tp = Tasks::whereHas("users", function($query) {
+			$app = \Slim\Slim::getInstance();
+			$uid = $app->lincko->data['uid'];
+			$query->where('users_id', $uid)->where('access', 0);
+		}, '<', 1)->get();
+		*/
+
+		$tp = Tasks::getLinked()->get();
+		
+		//\libs\Watch::php( $tp , $app->lincko->data['uid'], __FILE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, false, true);
+
 		//----------------------------------------
 	
 		//Add new project

@@ -12,7 +12,7 @@ class Data {
 	protected $app = NULL;
 	protected $data = NULL;
 	protected static $models = NULL;
-	protected $lastvisit = 0; //Format 'Y-m-d H:i:s'
+	protected $lastvisit = false; //Format 'Y-m-d H:i:s'
 	protected $partial = NULL;
 
 	public function __construct(){
@@ -59,6 +59,16 @@ class Data {
 		return false;
 	}
 
+	public function getTimestamp(){
+		if($this->lastvisit){
+			return (new \DateTime($this->lastvisit))->getTimestamp();
+		} else if($this->setLastVisit()){
+			return (new \DateTime($this->lastvisit))->getTimestamp();
+		} else {
+			return 0;
+		}
+	}
+
 	protected function setPartial(){
 		if(isset($this->data->data->partial)){
 			if(is_object($this->data->data->partial)){
@@ -99,9 +109,14 @@ class Data {
 		if($action == 'history'){
 			$history_detail = true;
 		}
+		//We force to get all data because it's a client database full reset stauts
+		$reset = false;
+		if($action == 'latest'&& $this->getTimestamp()<=0){
+			$reset = true;
+		}
 
 		foreach(self::$models as $key => $value) {
-			if($this->lastvisit != 0){
+			if($this->lastvisit !== false){
 				//Insure that the where is only with AND, not an OR!
 				$data = $value::getLinked()->where('updated_at', '>=', $this->lastvisit)->get();	
 			} else {
@@ -113,7 +128,7 @@ class Data {
 				$model = new $value;
 				$table_name = $model->getTable();
 				//Get the relations list
-				if($action == 'schema' || $action == 'missing'){
+				if($reset || $action == 'schema' || $action == 'missing'){
 					if(!isset($result->$uid)){
 						$result->$uid = new \stdClass;
 					}
@@ -129,15 +144,14 @@ class Data {
 					}
 				}
 				
-				foreach ($data as $key => $value) {
-					if(isset($data[$key]->users()->find($app->lincko->data['uid'])->access) && $data[$key]->users()->find($app->lincko->data['uid'])->access == false){
-						//Delete all item which are with an access at 0 (for example Task could not be done by Query Builder)
-						unset($data[$key]);
-					} else {
+				//We do not have to delete if the user do not have access, it's already handled by getLinked
+				if($action !== 'schema'){
+					foreach ($data as $key => $value) {
 						//Add multi ID dependencies (Many to Many)
 						$data[$key]->addDependencies();
 					}
 				}
+
 				foreach ($data as $key => $value) {
 					$compid = $value->getCompany();
 					if($compid != '_' && $compid != $app->lincko->data['company_id']){
@@ -179,7 +193,7 @@ class Data {
 					}
 
 					//Do not include getLatest adn getHistory because it will always create it, it's useless (CPU overkill)
-					if($action == 'schema' || $action == 'missing'){
+					if($reset || $action == 'schema' || $action == 'missing'){
 						//Get title for history
 						if(!isset($result->$uid)){
 							$result->$uid = new \stdClass;
@@ -210,7 +224,7 @@ class Data {
 					$result->$uid->$compid->$table_name->$id = $temp;
 
 					//We only update contact list from getSchema, because other can exclude some contactsLock and contactsVisibility
-					if($action == 'schema' || $action == 'missing'){
+					if($reset || $action == 'schema' || $action == 'missing'){
 						//Get users contacts list as object
 						$contacts = $value->getUsersContacts();
 						foreach ($contacts as $contacts_key => $contacts_value) {
@@ -236,7 +250,7 @@ class Data {
 		//Add all users to the main object
 		foreach ($usersContacts as $key => $value) {
 			unset($temp);
-			if($key != $app->lincko->data['uid']){ //we do not overwritte the usee itself
+			if($key != $app->lincko->data['uid']){ //we do not overwritte the user itself
 				if($action == 'missing' && $user = Users::find($key)){
 					$temp = json_decode($user->toJson($detail));
 					if($history = $user->getHistory('_')){
@@ -312,19 +326,19 @@ class Data {
 	}
 
 	public function getSchema(){
-		$this->lastvisit = 0;
+		$this->lastvisit = false;
 		$this->partial = NULL;
 		return $this->getList('schema');
 	}
 
 	public function getMissing(){
-		$this->lastvisit = 0;
+		$this->lastvisit = false;
 		$this->setPartial();
 		return $this->getList('missing');
 	}
 
 	public function getHistory(){
-		$this->lastvisit = 0;
+		$this->lastvisit = false;
 		$this->setPartial();
 		return $this->getList('history');
 	}

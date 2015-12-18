@@ -134,10 +134,52 @@ class Tasks extends ModelLincko {
 ////////////////////////////////////////////
 
 	public function scopegetLinked($query){
+		/*
 		return $query->whereHas('projects', function ($query) {
 			$query->getLinked();
 		});
-		//Ideally we should cut all Tasks with Access 0, but we cannot by Query Builder, so we do it manually in Data.php	
+		//Ideally we should cut all Tasks with Access 0, but we cannot by Query Builder, so we do it manually in Data.php
+		*/
+		/*
+		return $query
+		->whereHas('users', function ($query){ //Keep only those with access 1
+			$app = self::getApp();
+			$uid = $app->lincko->data['uid'];
+			$query->where('users_id', $uid)->where('access', 1);
+		})
+		->whereHas('projects', function ($query) {
+			$query->getLinked();
+		});
+		*/
+
+		return $query
+		//It will get all task with access 1, and all tasks which are not in the relation table, but teh second has to be in conjonction with projects
+		->whereHas("users", function($query) {
+			$app = self::getApp();
+			$uid = $app->lincko->data['uid'];
+			$query->where('users_id', $uid)->where('access', 0);
+		}, '<', 1)
+		->whereHas('projects', function ($query) {
+			$query->getLinked();
+		});
+
+		/*
+		whereHas("users", function($query) {
+			$query->where('access', 1);
+		}, '<>', 1)->get();
+
+		return $query
+		->whereHas('users', function ($query){ //Keep only those with access 1
+			$app = self::getApp();
+			$uid = $app->lincko->data['uid'];
+			$query->where('users_id', $uid)->where('access', 1);
+		});
+		*/
+		/*
+		->whereHas('projects', function ($query) {
+			$query->getLinked();
+		});
+		*/
 	}
 
 	//Get all users that are linked to the task
@@ -153,6 +195,14 @@ class Tasks extends ModelLincko {
 
 	public function getCompany(){
 		return $this->projects->getCompany();
+	}
+
+	public function getUserAccess(){
+		$app = self::getApp();
+		if(!is_bool($this->accessibility)){
+			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+		}
+		return $this->accessibility;
 	}
 
 	protected function get_NoteTask(){

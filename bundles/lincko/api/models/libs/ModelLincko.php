@@ -118,6 +118,7 @@ abstract class ModelLincko extends Model {
 
 	//This function helps to get all instance related to the user itself only
 	//It needs to redefine the related function users() too
+	//IMPORTANT: getLinked must check if the user has access to it, a good example is Tasks model which include all tasks with access 1 and tasks that belongs to projects with access authorized.
 	public function scopegetLinked($query){
 		return $query->whereHas('users', function ($query) {
 			$query->theUser();
@@ -340,25 +341,27 @@ abstract class ModelLincko extends Model {
 	//It checks if the user has access to it
 	public function checkAccess(){
 		$app = self::getApp();
-		if(is_null($this->accessibility)){
-			//\libs\Watch::php($this->accessibility, $this->table, __FILE__, false, false, true);
+		if(!is_bool($this->accessibility)){
 			if(isset($this->id)){
-$this->accessibility = true; //[toto] For debugging
-//				$this->accessibility = (bool) self::getLinked()->find($this->id);
-				//\libs\Watch::php(1, '$var', __FILE__, false, false, true);
+				$this->getUserAccess(); //This method will assign a boolean to the accessibility property
 			} else {
-				$this->accessibility = true; //Set to true for any created item
+				$this->accessibility = (bool) true; //Set to true for any created item
 			}
 		}
 		if($this->accessibility){
 			return true;
 		} else {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php($msg, 'Access not allowed', __FILE__, true);
+			\libs\Watch::php($this->toJson(), $msg, __FILE__, true);
 			$json = new Json($msg, true, 406);
 			$json->render();
 			return false;
 		}
+	}
+
+	public function getUserAccess(){
+		$this->accessibility = (bool) true; //[toto] For debugging
+		return $this->accessibility;
 	}
 
 	//When save, it helps to keep track of history
@@ -456,7 +459,7 @@ $this->accessibility = true; //[toto] For debugging
 	}
 
 	public function toJson($detail=false, $options = 0){
-		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used
+		//$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used
 		if($detail){
 			$temp = json_decode(parent::toJson($options));
 			foreach ($temp as $key => $value) {

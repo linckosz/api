@@ -156,6 +156,14 @@ class Users extends ModelLincko {
 		return self::theUser();
 	}
 
+	public function getUserAccess(){
+		$app = self::getApp();
+		if(!is_bool($this->accessibility)){
+			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+		}
+		return $this->accessibility;
+	}
+
 	//Get all users that are added as contact by the user
 	public function getUsersContacts(){
 		$contacts = parent::getUsersContacts();

@@ -109,6 +109,14 @@ class Companies extends ModelLincko {
 		});
 	}
 
+	public function getUserAccess(){
+		$app = self::getApp();
+		if(!is_bool($this->accessibility)){
+			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+		}
+		return $this->accessibility;
+	}
+
 	//Get all users that are linked to the company
 	//We have to exclude Company 0 because it's a shared one by default
 	public function getUsersContacts(){

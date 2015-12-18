@@ -95,6 +95,14 @@ class Chats extends ModelLincko {
 		});
 	}
 
+	public function getUserAccess(){
+		$app = self::getApp();
+		if(!is_bool($this->accessibility)){
+			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+		}
+		return $this->accessibility;
+	}
+
 	//Get all users that are linked to the chat
 	public function getUsersContacts(){
 		$contacts = parent::getUsersContacts();

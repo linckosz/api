@@ -24,11 +24,12 @@ class ControllerData extends Controller {
 		$data = new Data();
 		$partial = NULL;
 		$schema = NULL;
+		$info = NULL;
 		$forceSchema = $data->getForceSchema();
 		$lastvisit = time()-1;
 
 		if($forceSchema==2){
-			$schema = 'reset';
+			$info = 'reset';
 			$partial = $data->getLatest(0); //Setting to 0 helps to reset the full local database on client side
 		} else if($forceSchema==1){
 			$schema = $data->getSchema();
@@ -36,9 +37,12 @@ class ControllerData extends Controller {
 		} else {
 			$partial = $data->getLatest();
 		}
-				
+		//If last visit is <0, it's considered as a 'reset' request
+		if($data->getTimestamp()<=0){
+			$info = 'reset';
+		}	
 
-		$app->render(200, array('msg' => array('msg' => $msg, 'lastvisit' => $lastvisit, 'partial' => $partial, 'schema' => $schema),));
+		$app->render(200, array('msg' => array('msg' => $msg, 'lastvisit' => $lastvisit, 'partial' => $partial, 'schema' => $schema, 'info' => $info),));
 		return true;
 	}
 
@@ -59,8 +63,9 @@ class ControllerData extends Controller {
 
 		$data = new Data();
 		$partial = $data->getMissing();
+		$info = 'missing';
 		
-		$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial),));
+		$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial, 'info' => $info),));
 		return true;
 	}
 
