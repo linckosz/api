@@ -116,7 +116,7 @@ function sendMsg(){
 	//$msg = 'An error has occurred while processing your request, the support team has been notified of the problem.';
 	$msg = $app->trans->getBRUT('default', 1, 2);
 	if($app->lincko->jsonException){
-		$json = new Json($msg);
+		$json = new Json($msg, true, 500, false, false, array(), $app->lincko->showError);
 		$json->render();
 	} else {
 		echo $msg;
