@@ -159,7 +159,11 @@ class Users extends ModelLincko {
 	public function getUserAccess(){
 		$app = self::getApp();
 		if(!is_bool($this->accessibility)){
-			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+			if(isset($this->id) && $this->id == $app->lincko->data['uid']){
+				return $this->accessibility = (bool) true;
+			} else {
+				return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+			}
 		}
 		return $this->accessibility;
 	}

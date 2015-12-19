@@ -351,10 +351,11 @@ class ControllerTest extends Controller {
 		}, '<', 1)->get();
 		*/
 
-		$tp = Tasks::getLinked()->get();
+		//$tp = Users::find(2)->getUserAccess();
+		$tp = Users::find(2)->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
 		
 		//\libs\Watch::php( $tp , $app->lincko->data['uid'], __FILE__, false, false, true);
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------
 	
