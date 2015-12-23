@@ -174,7 +174,7 @@ class Data {
 					//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
 					$table_tp->new = 0;
 					if(isset($value->viewed_by)){
-						if(strpos($value->viewed_by, '-'.$app->lincko->data['uid'].'-') === false){
+						if(strpos($value->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 							$table_tp->new = 1;
 						}
 					}

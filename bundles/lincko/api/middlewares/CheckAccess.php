@@ -165,9 +165,7 @@ class CheckAccess extends \Slim\Middleware {
 			//If the user and the company is undefined, we migth be in subscription mode, so we valid this step (it will be block later if it's not a credential operation)
 			return true;
 		}
-			
 		return false;
-		}
 	}
 
 	protected function checkRouteAccess(){
