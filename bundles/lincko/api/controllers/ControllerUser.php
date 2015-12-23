@@ -165,7 +165,7 @@ class ControllerUser extends Controller {
 				$user->email = $email;
 				$user->internal_email = $internal_email;
 				$company = new Companies;
-				$company->personal_private = 1;
+				$company->personal_private = 0;
 				$company->name = $username;
 				if(isset($form->firstname)){ $user->firstname = $form->firstname; }
 				if(isset($form->lastname)){ $user->lastname = $form->lastname; }
@@ -173,6 +173,9 @@ class ControllerUser extends Controller {
 					$app->lincko->data['company'] = $company->url;
 					$app->lincko->data['company_id'] = intval($company->id);
 					if($user_log->save() && $user->save()){
+						$company->timestamps = false; //Disable timestamp update_at
+						$company->personal_private = $user->id;
+						$company->save();
 						//Authorized the user to access to his own workspace, but disable history
 						$company->setUserPivotValue($user->id, 'access', 1, false);
 

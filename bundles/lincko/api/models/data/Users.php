@@ -235,7 +235,7 @@ class Users extends ModelLincko {
 			$project = new Projects();
 			$project->title = 'Private';
 			$project->companies_id = $app->lincko->data['company_id'];
-			$project->personal_private = 1;
+			$project->personal_private = $app->lincko->data['uid'];
 			$project->save();
 		}
 		return $return;

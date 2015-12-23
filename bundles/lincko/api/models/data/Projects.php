@@ -102,8 +102,8 @@ class Projects extends ModelLincko {
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$new = !isset($this->id);
-		if($this->personal_private===1){
-			if(self::where('personal_private', 1)->where('created_by', $app->lincko->data['uid'])->where('companies_id', $this->companies_id)->count() > 1){
+		if($this->personal_private==$app->lincko->data['uid']){
+			if(self::where('personal_private', $app->lincko->data['uid'])->where('created_by', $app->lincko->data['uid'])->where('companies_id', $this->companies_id)->count() > 1){
 				$msg = $msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project for each company.
 				\libs\Watch::php($msg, 'Projects->save()', __FILE__, true);
 				$json = new Json($msg, true, 406);
@@ -130,7 +130,7 @@ class Projects extends ModelLincko {
 				$query
 				->orderBy('created_by', 'asc') //By security, always take the ealiest created private project
 				->where('created_by', '=', $app->lincko->data['uid'])
-				->where('personal_private', 1)
+				->where('personal_private', $app->lincko->data['uid'])
 				->take(1);
 			})
 			->orWhere(function ($query) {
@@ -162,7 +162,8 @@ class Projects extends ModelLincko {
 	}
 
 	public function getHistoryCreation(array $parameters = array()){
-		if($this->personal_private==1){
+		$app = self::getApp();
+		if($this->personal_private==$app->lincko->data['uid']){
 			//Do not record the private project creation since it's created by the framework while user signing
 			return new \stdClass;
 		} else {

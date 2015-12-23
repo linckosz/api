@@ -148,19 +148,26 @@ class CheckAccess extends \Slim\Middleware {
 	protected function checkWorkspace(){
 		$app = $this->app;
 		$data = $this->data;
-		$companies = Users::getUser()->companies;
-		//We check that the user has access to the workspace
-		foreach ($companies as $key => $value) {
-			if($value->personal_private==1 && $data->company == ''){ //Personal company
-				$app->lincko->data['company_id'] = intval($value->id);
-				return true;
-			} else if($value->personal_private==0 &&$value->url == $data->company){
-				$app->lincko->data['company'] = $value->url;
-				$app->lincko->data['company_id'] = intval($value->id);
-				return true;
+		if($user = Users::getUser()){
+			$companies = $user->companies;
+			//We check that the user has access to the workspace
+			foreach ($companies as $key => $value) {
+				if($value->personal_private==$app->lincko->data['uid'] && $data->company == ''){ //Personal company
+					$app->lincko->data['company_id'] = intval($value->id);
+					return true;
+				} else if($value->personal_private==0 &&$value->url == $data->company){
+					$app->lincko->data['company'] = $value->url;
+					$app->lincko->data['company_id'] = intval($value->id);
+					return true;
+				}
 			}
+		} else if($data->company == ''){
+			//If the user and the company is undefined, we migth be in subscription mode, so we valid this step (it will be block later if it's not a credential operation)
+			return true;
 		}
+			
 		return false;
+		}
 	}
 
 	protected function checkRouteAccess(){

@@ -381,8 +381,10 @@ class ControllerTest extends Controller {
 
 		//$tp = Tasks::whereIn('id', [77])->get()->toArray();
 
-		$tp = Companies::find(2);
-		$tp->setUserPivotValue(1, 'access', 1, true);
+		//$tp = Companies::find(2);
+		//$tp->setUserPivotValue(1, 'access', 1, true);
+
+		$tp = Users::getUser();
 
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
