@@ -21,6 +21,7 @@ class Companies extends ModelLincko {
 		'name',
 		'domain',
 		'url',
+		'personal_private',
 	);
 
 	// CUSTOMIZATION //
@@ -117,21 +118,14 @@ class Companies extends ModelLincko {
 		return $this->accessibility;
 	}
 
-	//Get all users that are linked to the company
-	//We have to exclude Company 0 because it's a shared one by default
-	public function getUsersContacts(){
-		$contacts = parent::getUsersContacts();
-		$list = $this->users()->where('companies_id', '<>', 0)->get(); //Exclude the shared company "0" which should never actually appear, but it's an additional security. If not all users will appear on client side (security issue), and thousands of data will take a while to download.
-		foreach($list as $key => $value) {
-			$id = $value->id;
-			$contacts->$id = $this->getContactsInfo();
-		}
-		return $contacts;
-	}
-
 	//We keep "_" because we want to store companies information in teh same folder on client side (easier for JS), not separatly
 	public function getCompany(){
 		return '_';
+	}
+
+	//Do not show creation event
+	public function getHistoryCreation(array $parameters = array()){
+		return new \stdClass;
 	}
 
 ////////////////////////////////////////////

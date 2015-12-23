@@ -4,6 +4,7 @@
 
 namespace bundles\lincko\api\models\libs;
 
+use \Exception;
 use \libs\Json;
 use Illuminate\Database\Eloquent\Model;
 
@@ -77,22 +78,6 @@ abstract class ModelLincko extends Model {
 		parent::__construct($attributes);
 	}
 
-	//For any Many to Many that we want to make dependencies visible
-	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
-	public function addDependencies(){
-		foreach ($this->dependencies_visible as $dependency) {
-			unset($result);
-			$result = new \stdClass;
-			$data = $this->$dependency()->where('access', 1)->get();
-			if(!is_null($data)){
-				foreach ($data as $key => $value) {
-					$result->{$value->id} = $value->pivot;
-				}
-			}
-			$this->{'_'.$dependency} = $result;
-		}
-	}
-
 	public static function getTableStatic(){
 		return (new static())->getTable();
 	}
@@ -125,6 +110,21 @@ abstract class ModelLincko extends Model {
 		});
 	}
 
+	public static function getItems($timestamp=null, $id=null){
+		$request = self::getLinked();
+		if(!is_null($timestamp)){
+			$request = $request->where('updated_at', '>=', $timestamp);
+		}
+		if(!is_null($id)){
+			$request = $request->whereIn('id', $id);
+		}
+		$list = $request->get();
+		foreach($list as $key => $value) {
+			$list[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
+		}
+		return $list;
+	}
+
 	//No need to abstract it, but need to redefined for the Models that use it
 	public function users(){
 		return false;
@@ -141,13 +141,14 @@ abstract class ModelLincko extends Model {
 			$list_users[] = $users_id;
 		}
 		if(!empty($list_users)){
-			// getQuery() helps to not update Timestamps updated_at
+			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
 			Users::whereIn('id', $list_users)->where('force_schema', 0)->getQuery()->update(['force_schema' => '1']);
 		}
 		return true;
 	}
 
 	public static function setForceReset(){
+		// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
 		Users::getQuery()->update(['force_schema' => '2']);
 		return true;
 	}
@@ -206,9 +207,128 @@ abstract class ModelLincko extends Model {
 		return $this::$relations_keys;
 	}
 
+	//For any Many to Many that we want to make dependencies visible
+	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
+	public function addDependencies(){
+		foreach ($this->dependencies_visible as $dependency) {
+			if(method_exists(get_class($this), $dependency)) {
+				unset($result);
+				$result = new \stdClass;
+				$data = $this->$dependency()->where('access', 1)->get();
+				if(!is_null($data)){
+					foreach ($data as $key => $value) {
+						$result->{$value->id} = $value->pivot;
+					}
+				}
+				$this->{'_'.$dependency} = $result;
+			}
+		}
+	}
+
+	//For any Many to Many that we want to make dependencies visible
+	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
+	public static function getDependencies(array $id_list){
+		$model = new static();
+		$dependencies = new \stdClass;
+		foreach ($model->dependencies_visible as $dependency) {
+			if(method_exists(get_class($model), $dependency)) {
+				$data = self::whereIn('id', $id_list)->with($dependency)->get();
+				if(!is_null($data)){
+					foreach ($data as $dep) {
+						foreach ($dep->$dependency as $key => $value) {
+							if($value->pivot->access){
+								if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
+								if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
+								$dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = $value->pivot;
+							}
+						}
+					}
+				}
+			}
+		}
+		return $dependencies;
+	}
+
+	public static function getUsersContactsID(array $id_list){
+		$model = new static();
+		$list = array();
+
+		//Get users list from items themselves
+		$data = array();
+		try {
+			$data = $model->whereIn('id', $id_list)->get(['created_by', 'updated_by'])->toArray();
+		} catch (Exception $obj_exception) {
+			try {
+				$data = $model->whereIn('id', $id_list)->get(['created_by'])->toArray();
+			} catch (Exception $obj_exception) {
+				//Do nothing to continue
+			}
+		}
+		foreach ($data as $item) {
+			foreach ($item as $value) {
+				if(!isset($list[(integer) $value])){
+					$list[(integer) $value] = $model->getContactsInfo();
+				}
+			}
+		}
+
+		//Get users list from items access relationship
+		$data = array();
+		try {
+			$data = $model->whereIn('id', $id_list)->with('users')->get();
+			foreach ($data as $item) {
+				foreach ($item->users as $value) {
+					if(!isset($list[(integer) $value->id])){
+						$list[(integer) $value->id] = $model->getContactsInfo();
+					}
+				}
+			}
+		} catch (Exception $obj_exception) {
+			//Do nothing to continue
+		}
+
+		if(get_class($model)=='users'){
+			//[toto]
+		}
+
+		return $list;
+	}
+
+	//This method helps to avoid too many mysql by storing first all history info of a list of items
+	public static function getHistories(array $id_list, $history_detail=false){
+		$model = new static();
+		$history = new \stdClass;
+		if(count($model->archive)>0){
+			$table_name = $model->getTable();
+			$records = History::whereType($table_name)->whereIn('type_id', $id_list)->get();
+			foreach ($records as $key => $value) {
+				if(array_key_exists($value->attribute, $model->archive)){
+					$prefix = $model->getPrefix($value->attribute);
+					$created_at = (new \DateTime($value->created_at))->getTimestamp();
+					if(!isset($history->{$value->type_id})){ $history->{$value->type_id} = new \stdClass; }
+					if(!isset($history->{$value->type_id}->history)){ $history->{$value->type_id}->history = new \stdClass; }
+					if(!isset($history->{$value->type_id}->history->$created_at)){ $history->{$value->type_id}->history->$created_at = new \stdClass; }
+					if(!isset($history->{$value->type_id}->history->$created_at->{$value->id})){ $history->{$value->type_id}->history->$created_at->{$value->id} = new \stdClass; }
+					$history->{$value->type_id}->history->$created_at->{$value->id}->by = $value->created_by;
+					$history->{$value->type_id}->history->$created_at->{$value->id}->att = $prefix.$value->attribute;
+					if($history_detail){
+						$history->{$value->type_id}->history->$created_at->{$value->id}->old = $value->old;
+						$history->{$value->type_id}->history->$created_at->{$value->id}->new = $value->new;
+					}
+					if(!empty($value->parameters)){
+						$history->{$value->type_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
+					}
+				}
+			}
+		}
+		return $history;
+		
+	}
+
 	//detail help to get history detail of an item, we do not allow it at the normal use avoiding over quota memory
 	public function getHistory($history_detail=false){
-		$history = $this->getHistoryCreation($history_detail);
+		$history = new \stdClass;
+		$parameters = array();
 		if(count($this->archive)>0 && isset($this->id)){
 			$records = History::whereType($this->getTable())->whereTypeId($this->id)->get();
 			foreach ($records as $key => $value) {
@@ -224,15 +344,16 @@ abstract class ModelLincko extends Model {
 						$history->$created_at->{$value->id}->new = $value->new;
 					}
 					if(!empty($value->parameters)){
-						$history->$created_at->{$value->id}->par = json_decode($value->parameters);
+						$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
 					}
 				}
 			}
 		}
+		$history = (object) array_merge((array) $history, (array) $this->getHistoryCreation());
 		return $history;
 	}
 
-	protected function getHistoryCreation($history_detail=false, array $parameters = array()){
+	public function getHistoryCreation(array $parameters = array()){
 		$history = new \stdClass;
 		$created_at = (new \DateTime($this->created_at))->getTimestamp();
 		$history->$created_at = new \stdClass;
@@ -241,14 +362,11 @@ abstract class ModelLincko extends Model {
 		$created_by = null;
 		if(isset($this->created_by)){
 			$created_by = $this->created_by;
-			$parameters['un'] = Users::find($created_by)->username;
 		}
 		$history->$created_at->{'0'}->by = $created_by;
 		$history->$created_at->{'0'}->att = 'created_at';
-		if($history_detail){
-			$history->$created_at->{'0'}->old = null;
-			$history->$created_at->{'0'}->new = null;
-		}
+		$history->$created_at->{'0'}->old = null;
+		$history->$created_at->{'0'}->new = null;
 		if(!empty($parameters)){
 			$history->$created_at->{'0'}->par = (object) $parameters;
 		}
@@ -270,7 +388,6 @@ abstract class ModelLincko extends Model {
 		$history->attribute = $key;
 		if(!is_null($old)){ $history->old = $old; }
 		if(!is_null($new)){ $history->new = $new; }
-		$parameters['un'] = Users::getUser()->username;
 		if(!empty($parameters)){
 			$history->parameters = json_encode($parameters, JSON_FORCE_OBJECT);
 		}
@@ -298,6 +415,8 @@ abstract class ModelLincko extends Model {
 		return $titles;
 	}
 
+
+
 	//Return a list object of users linked to the model in direct relation, It add the value regardless if it's locked or not.
 	public function getUsersContacts(){
 		$contacts = new \stdClass;
@@ -306,6 +425,11 @@ abstract class ModelLincko extends Model {
 		}
 		if(isset($this->updated_by)){
 			$contacts->{$this->updated_by} = $this->getContactsInfo();
+		}
+		$list = $this->users()->get();
+		foreach($list as $key => $value) {
+			$id = $value->id;
+			$contacts->$id = $this->getContactsInfo();
 		}
 		return $contacts;
 	}
@@ -360,7 +484,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getUserAccess(){
-		$this->accessibility = (bool) true; //[toto] For debugging
+		$this->accessibility = (bool) false; //By default do not allow the access to the user
 		return $this->accessibility;
 	}
 
@@ -459,7 +583,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function toJson($detail=false, $options = 0){
-		//$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used
+		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
 		if($detail){
 			$temp = json_decode(parent::toJson($options));
 			foreach ($temp as $key => $value) {
@@ -519,8 +643,8 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected, public is only for test
-	//public function setUserPivotValue($user_id, $column, $value=0, $save=true){
-	protected function setUserPivotValue($user_id, $column, $value=0, $save=true){
+	public function setUserPivotValue($user_id, $column, $value=0, $history=true){ //[toto]
+	//protected function setUserPivotValue($user_id, $column, $value=0, $history=true){
 		$app = self::getApp();
 		$column = strtolower($column);
 		$return = false;
@@ -532,7 +656,7 @@ abstract class ModelLincko extends Model {
 			if($value_old != $value){
 				//Modify a line
 				$users->updateExistingPivot($user_id, array($column => $value));
-				if($save){
+				if($history){
 					$archive_title = $this->getPivotArchiveTitle($column, $value);
 					$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($user_id)->username));
 					$this->touch();
@@ -542,7 +666,7 @@ abstract class ModelLincko extends Model {
 		} else {
 			//Create a new line
 			$users->attach($user_id, array($column => $value));
-			if($save){
+			if($history){
 				$archive_title = $this->getPivotArchiveTitle($column, $value);
 				$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($user_id)->username));
 				$this->touch();

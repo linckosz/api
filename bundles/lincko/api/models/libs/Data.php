@@ -118,20 +118,24 @@ class Data {
 		foreach(self::$models as $key => $value) {
 			if($this->lastvisit !== false){
 				//Insure that the where is only with AND, not an OR!
-				$data = $value::getLinked()->where('updated_at', '>=', $this->lastvisit)->get();	
+				$data = $value::getItems($this->lastvisit);
 			} else {
-				$data = $value::getLinked()->get();
+				$data = $value::getItems();
 			}
+
 			//Check if there is at least one update
 			if(!$data->isEmpty()){
+				$id_list = array();
 				//Get table name
 				$model = new $value;
 				$table_name = $model->getTable();
+
+				if(!isset($result->$uid)){
+					$result->$uid = new \stdClass;
+				}
+
 				//Get the relations list
 				if($reset || $action == 'schema' || $action == 'missing'){
-					if(!isset($result->$uid)){
-						$result->$uid = new \stdClass;
-					}
 					if(!isset($result->$uid->{'_'})){
 						$result->$uid->{'_'} = new \stdClass;
 					}
@@ -143,15 +147,23 @@ class Data {
 						$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
 					}
 				}
-				
-				//We do not have to delete if the user do not have access, it's already handled by getLinked
-				if($action !== 'schema'){
-					foreach ($data as $key => $value) {
-						//Add multi ID dependencies (Many to Many)
-						$data[$key]->addDependencies();
+
+				//Do not include getLatest adn getHistory because it will always create it, it's useless (CPU overkill)
+				if($reset || $action == 'schema' || $action == 'missing'){
+					if(!isset($result->$uid->{'_'})){
+						$result->$uid->{'_'} = new \stdClass;
+					}
+					if(!isset($result->$uid->{'_'}->{'_history_title'})){
+						$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
+					}
+					if($action == 'schema'){
+						$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
+					} else if(!isset($result->$uid->{'_'}->{'_history_title'}->$table_name)){
+						$result->$uid->{'_'}->{'_history_title'}->$table_name = $model->getHistoryTitles();
 					}
 				}
 
+				//Launching any model Method inside this loo migth kill the server (too many mysql requests)
 				foreach ($data as $key => $value) {
 					$compid = $value->getCompany();
 					if($compid != '_' && $compid != $app->lincko->data['company_id']){
@@ -167,6 +179,8 @@ class Data {
 						}
 					}
 					$id = $table_tp->id;
+
+					$id_list[] = $id;
 
 					//Create object
 					unset($temp);
@@ -186,34 +200,12 @@ class Data {
 						$temp = new \stdClass;
 					}
 
-					//Only get History for getLatest() and getMissing()
+					//Only get History for getLatest() and getMissing() and getHistory()
 					if($action == 'latest' || $action == 'missing' || $action == 'history'){
-						//Get history
-						$temp->history = $value->getHistory($history_detail);
+						//Get only creation history to avoid mysql overload
+						$temp->history = $value->getHistoryCreation();
 					}
 
-					//Do not include getLatest adn getHistory because it will always create it, it's useless (CPU overkill)
-					if($reset || $action == 'schema' || $action == 'missing'){
-						//Get title for history
-						if(!isset($result->$uid)){
-							$result->$uid = new \stdClass;
-						}
-						if(!isset($result->$uid->{'_'})){
-							$result->$uid->{'_'} = new \stdClass;
-						}
-						if(!isset($result->$uid->{'_'}->{'_history_title'})){
-							$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
-						}
-						if($action == 'schema'){
-							$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
-						} else if(!isset($result->$uid->{'_'}->{'_history_title'}->$table_name)){
-							$result->$uid->{'_'}->{'_history_title'}->$table_name = $value->getHistoryTitles();
-						}
-					}
-
-					if(!isset($result->$uid)){
-						$result->$uid = new \stdClass;
-					}
 					if(!isset($result->$uid->$compid)){
 						$result->$uid->$compid = new \stdClass;
 					}
@@ -223,6 +215,29 @@ class Data {
 
 					$result->$uid->$compid->$table_name->$id = $temp;
 
+				}
+
+				//We only update contact list from getSchema, because other can exclude some contactsLock and contactsVisibility
+				if($reset || $action == 'schema' || $action == 'missing'){
+					$contacts = $value::getUsersContactsID($id_list);
+					foreach ($contacts as $contacts_key => $contacts_value) {
+						if($contacts_key == $app->lincko->data['uid']){
+							
+						} else {
+							if(!isset($usersContacts->$contacts_key)){
+								$usersContacts->$contacts_key = new \stdClass;
+								$usersContacts->$contacts_key->contactsLock = false;
+								$usersContacts->$contacts_key->contactsVisibility = false;
+								$usersContacts->$contacts_key->new = 0;
+							}
+							//Keep true if at least once
+							$usersContacts->$contacts_key->contactsLock = ($usersContacts->$contacts_key->contactsLock || $contacts_value->contactsLock);
+							$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
+						}
+					}
+				}
+
+				/*
 					//We only update contact list from getSchema, because other can exclude some contactsLock and contactsVisibility
 					if($reset || $action == 'schema' || $action == 'missing'){
 						//Get users contacts list as object
@@ -240,7 +255,29 @@ class Data {
 							}
 						}
 					}
+				*/
+
+				if($action !== 'schema'){
+					//Get dependency (all ManyToMany that have other fields than access)
+					$dependencies = $value::getDependencies($id_list);
+					foreach ($dependencies as $id => $temp) {
+						if(isset($result->$uid->$compid->$table_name->$id)){
+							$result->$uid->$compid->$table_name->$id = (object) array_merge((array) $result->$uid->$compid->$table_name->$id, (array) $temp);
+						}
+					}
 				}
+
+				if($action == 'latest' || $action == 'missing' || $action == 'history'){
+					//Get history
+					$histories = $value::getHistories($id_list, $history_detail);
+					foreach ($histories as $id => $temp) {
+						if(isset($result->$uid->$compid->$table_name->$id)){
+							$result->$uid->$compid->$table_name->$id->history = (object) array_merge((array) $result->$uid->$compid->$table_name->$id->history, (array) $temp->history);
+						}
+					}
+				}
+				
+
 				unset($data);
 			}
 		}
@@ -251,9 +288,10 @@ class Data {
 		foreach ($usersContacts as $key => $value) {
 			unset($temp);
 			if($key != $app->lincko->data['uid']){ //we do not overwritte the user itself
-				if($action == 'missing' && $user = Users::find($key)){
+				if(($reset || $action == 'missing') && $user = Users::find($key)){
 					$temp = json_decode($user->toJson($detail));
-					if($history = $user->getHistory('_')){
+					//Add history for poeple visible in user list only (can get detauls because not heavy data)
+					if($value->contactsVisibility && $history = $user->getHistory(true)){
 						$temp->history = $history;
 					}
 					$temp->contactsLock = $value->contactsLock;

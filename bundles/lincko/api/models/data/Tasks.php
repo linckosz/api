@@ -134,26 +134,8 @@ class Tasks extends ModelLincko {
 ////////////////////////////////////////////
 
 	public function scopegetLinked($query){
-		/*
-		return $query->whereHas('projects', function ($query) {
-			$query->getLinked();
-		});
-		//Ideally we should cut all Tasks with Access 0, but we cannot by Query Builder, so we do it manually in Data.php
-		*/
-		/*
-		return $query
-		->whereHas('users', function ($query){ //Keep only those with access 1
-			$app = self::getApp();
-			$uid = $app->lincko->data['uid'];
-			$query->where('users_id', $uid)->where('access', 1);
-		})
-		->whereHas('projects', function ($query) {
-			$query->getLinked();
-		});
-		*/
-
-		return $query
 		//It will get all task with access 1, and all tasks which are not in the relation table, but teh second has to be in conjonction with projects
+		return $query
 		->whereHas("users", function($query) {
 			$app = self::getApp();
 			$uid = $app->lincko->data['uid'];
@@ -162,35 +144,6 @@ class Tasks extends ModelLincko {
 		->whereHas('projects', function ($query) {
 			$query->getLinked();
 		});
-
-		/*
-		whereHas("users", function($query) {
-			$query->where('access', 1);
-		}, '<>', 1)->get();
-
-		return $query
-		->whereHas('users', function ($query){ //Keep only those with access 1
-			$app = self::getApp();
-			$uid = $app->lincko->data['uid'];
-			$query->where('users_id', $uid)->where('access', 1);
-		});
-		*/
-		/*
-		->whereHas('projects', function ($query) {
-			$query->getLinked();
-		});
-		*/
-	}
-
-	//Get all users that are linked to the task
-	public function getUsersContacts(){
-		$contacts = parent::getUsersContacts();
-		$list = $this->users()->get();
-		foreach($list as $key => $value) {
-			$id = $value->id;
-			$contacts->$id = $this->getContactsInfo();
-		}
-		return $contacts;
 	}
 
 	public function getCompany(){
@@ -201,6 +154,13 @@ class Tasks extends ModelLincko {
 		$app = self::getApp();
 		if(!is_bool($this->accessibility)){
 			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+
+			return $this->accessibility = (bool) (
+				$this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first()
+				//||
+				//$this->projects()->whereId($this->projects_id)->whereAccess(1)->first()
+			);
+
 		}
 		return $this->accessibility;
 	}
@@ -224,9 +184,9 @@ class Tasks extends ModelLincko {
 		parent::setHistory($key, $new, $old, $parameters);
 	}
 
-	protected function getHistoryCreation($history_detail=false, array $parameters = array()){
+	public function getHistoryCreation(array $parameters = array()){
 		$parameters['nt'] = $this->get_NoteTask();
-		return parent::getHistoryCreation($history_detail, $parameters);
+		return parent::getHistoryCreation($parameters);
 	}
 
 	public function save(array $options = array()){

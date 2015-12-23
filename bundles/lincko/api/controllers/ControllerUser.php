@@ -9,6 +9,7 @@ use \libs\Email;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Companies;
 
 class ControllerUser extends Controller {
 
@@ -163,38 +164,48 @@ class ControllerUser extends Controller {
 				$user->username_sha1 = $username_sha1;
 				$user->email = $email;
 				$user->internal_email = $internal_email;
+				$company = new Companies;
+				$company->personal_private = 1;
+				$company->name = $username;
 				if(isset($form->firstname)){ $user->firstname = $form->firstname; }
 				if(isset($form->lastname)){ $user->lastname = $form->lastname; }
-				if($user_log->save() && $user->save()){
-					$app->flashNow('signout', false);
-					$app->flashNow('resignin', false);
-					$app->flashNow('username', $user->username);
+				if($company->save()){
+					$app->lincko->data['company'] = $company->url;
+					$app->lincko->data['company_id'] = intval($company->id);
+					if($user_log->save() && $user->save()){
+						//Authorized the user to access to his own workspace, but disable history
+						$company->setUserPivotValue($user->id, 'access', 1, false);
 
-					//Setup public and private key
-					if($authorize = $user_log->authorize($data)){
-						if(isset($authorize['private_key'])){
-							$app->flashNow('private_key', $authorize['private_key']);
+						$app->flashNow('signout', false);
+						$app->flashNow('resignin', false);
+						$app->flashNow('username', $user->username);
+
+						//Setup public and private key
+						if($authorize = $user_log->authorize($data)){
+							if(isset($authorize['private_key'])){
+								$app->flashNow('private_key', $authorize['private_key']);
+							}
+							if(isset($authorize['public_key'])){
+								$app->flashNow('public_key', $authorize['public_key']);
+							}
+							if(isset($authorize['username_sha1'])){
+								$app->flashNow('username_sha1', $authorize['username_sha1']);
+							}
+							if(isset($authorize['uid'])){
+								$app->flashNow('uid', $authorize['uid']);
+							}
 						}
-						if(isset($authorize['public_key'])){
-							$app->flashNow('public_key', $authorize['public_key']);
-						}
-						if(isset($authorize['username_sha1'])){
-							$app->flashNow('username_sha1', $authorize['username_sha1']);
-						}
-						if(isset($authorize['uid'])){
-							$app->flashNow('uid', $authorize['uid']);
-						}
+						
+						//Send congrat email
+						$mail = new Email();
+						$mail->addAddress($email, $username);
+						$mail->setSubject('Congratulation');
+						$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
+						$mail->sendLater();
+
+						$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 1, 7), 'field' => 'undefined'),)); //Account created. check your email for validation code.
+						return true;
 					}
-					
-					//Send congrat email
-					$mail = new Email();
-					$mail->addAddress($email, $username);
-					$mail->setSubject('Congratulation');
-					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
-					$mail->sendLater();
-
-					$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 1, 7), 'field' => 'undefined'),)); //Account created. check your email for validation code.
-					return true;
 				}
 			}
 		}

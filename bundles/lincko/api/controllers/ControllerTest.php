@@ -5,6 +5,7 @@ namespace bundles\lincko\api\controllers;
 use \libs\Controller;
 use \libs\Email;
 use \bundles\lincko\api\models\libs\Data;
+use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\ChatsComments;
@@ -352,9 +353,37 @@ class ControllerTest extends Controller {
 		*/
 
 		//$tp = Users::find(2)->getUserAccess();
-		$tp = Users::find(2)->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
-		
+		//$tp = Users::find(2)->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
+
+		//$tp = Users::find(22);
+		//$tp = Projects::find(8);
+		//$tp->setUserPivotValue(2, 'access', 1, true);
+		/*
+		$tp = Users::getUser();
+		$tp->setUserPivotValue(22, 'access', 1, true);
+		*/
+
+		//$tp = Tasks::getItemsAccess();
+		//$tp = Tasks::find(4)->getUsersContacts();
+		//$tp = Tasks::find(4)->projects()->get();
+		//$tp = Users::find(2)->getHistory(true);
+		//$tp = Users::find(2)->getItems();
+		//$tp = $tp->projects()->first();
+		//$tp->projects()->whereId($this->projects_id)->whereAccess(1)->first()
 		//\libs\Watch::php( $tp , $app->lincko->data['uid'], __FILE__, false, false, true);
+
+		//$tp = History::whereType('projects')->whereTypeId([8, 201])->get();
+		//$tp = History::whereType('projects')->whereIn('type_id', [8, 201])->get();
+		//$tp = Projects::getHistories([8, 201, 180]);
+		//$tp = Projects::find(8)->getHistory();
+		//$tp = Tasks::getUsersContactsID([54, 77]);
+		//$tp = Companies::getUsersContactsID([0]);
+
+		//$tp = Tasks::whereIn('id', [77])->get()->toArray();
+
+		$tp = Companies::find(2);
+		$tp->setUserPivotValue(1, 'access', 1, true);
+
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------

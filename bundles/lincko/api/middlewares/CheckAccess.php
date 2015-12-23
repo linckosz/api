@@ -148,14 +148,13 @@ class CheckAccess extends \Slim\Middleware {
 	protected function checkWorkspace(){
 		$app = $this->app;
 		$data = $this->data;
-		//We valid any access to shared workspace
-		if($data->company == ''){
-			return true;
-		}
 		$companies = Users::getUser()->companies;
 		//We check that the user has access to the workspace
 		foreach ($companies as $key => $value) {
-			if($value->url == $data->company){
+			if($value->personal_private==1 && $data->company == ''){ //Personal company
+				$app->lincko->data['company_id'] = intval($value->id);
+				return true;
+			} else if($value->personal_private==0 &&$value->url == $data->company){
 				$app->lincko->data['company'] = $value->url;
 				$app->lincko->data['company_id'] = intval($value->id);
 				return true;

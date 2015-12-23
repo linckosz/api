@@ -157,21 +157,17 @@ class Projects extends ModelLincko {
 		return $this->accessibility;
 	}
 
-	//Get all users that are linked to the project
-	public function getUsersContacts(){
-		$contacts = parent::getUsersContacts();
-		$list = $this->users()->get();
-		foreach($list as $key => $value) {
-			$id = $value->id;
-			$contacts->$id = $this->getContactsInfo();
-		}
-		return $contacts;
-	}
-
 	public function getCompany(){
 		return $this->companies_id;
 	}
 
-	
+	public function getHistoryCreation(array $parameters = array()){
+		if($this->personal_private==1){
+			//Do not record the private project creation since it's created by the framework while user signing
+			return new \stdClass;
+		} else {
+			return parent::getHistoryCreation($parameters);
+		}
+	}
 
 }

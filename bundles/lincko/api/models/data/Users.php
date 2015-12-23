@@ -156,13 +156,12 @@ class Users extends ModelLincko {
 		return self::theUser();
 	}
 
-	public function getUserAccess(){
+	public function getUserAccess(){return $this->accessibility = (bool) true;//[toto]
 		$app = self::getApp();
+		//Do only allow modification for the user itself, do not allow to modify other users
 		if(!is_bool($this->accessibility)){
 			if(isset($this->id) && $this->id == $app->lincko->data['uid']){
 				return $this->accessibility = (bool) true;
-			} else {
-				return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
 			}
 		}
 		return $this->accessibility;
@@ -222,9 +221,9 @@ class Users extends ModelLincko {
 		parent::setHistory($key, $new, $old, $parameters);
 	}
 
-	protected function getHistoryCreation($history_detail=false, array $parameters = array()){
-		$parameters['hh'] = $this->get_HisHer();
-		return parent::getHistoryCreation($history_detail, $parameters);
+	//Do not show creation event
+	public function getHistoryCreation(array $parameters = array()){
+		return new \stdClass;
 	}
 
 	public function save(array $options = array()){
@@ -235,7 +234,7 @@ class Users extends ModelLincko {
 			$app->lincko->data['uid'] = $this->id;
 			$project = new Projects();
 			$project->title = 'Private';
-			$project->companies_id = 0;
+			$project->companies_id = $app->lincko->data['company_id'];
 			$project->personal_private = 1;
 			$project->save();
 		}

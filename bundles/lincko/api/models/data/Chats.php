@@ -103,15 +103,4 @@ class Chats extends ModelLincko {
 		return $this->accessibility;
 	}
 
-	//Get all users that are linked to the chat
-	public function getUsersContacts(){
-		$contacts = parent::getUsersContacts();
-		$list = $this->users()->get();
-		foreach($list as $key => $value) {
-			$id = $value->id;
-			$contacts->$id = $this->getContactsInfo();
-		}
-		return $contacts;
-	}
-
 }
