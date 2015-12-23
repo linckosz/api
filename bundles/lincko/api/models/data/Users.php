@@ -6,6 +6,8 @@ namespace bundles\lincko\api\models\data;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Projects;
 
+use Illuminate\Database\Capsule\Manager as Capsule;
+
 class Users extends ModelLincko {
 
 	protected $connection = 'data';
@@ -228,15 +230,36 @@ class Users extends ModelLincko {
 
 	public function save(array $options = array()){
 		$app = self::getApp();
-		$new = !isset($this->id);
-		$return = parent::save($options);
-		if($new){
-			$app->lincko->data['uid'] = $this->id;
-			$project = new Projects();
-			$project->title = 'Private';
-			$project->companies_id = $app->lincko->data['company_id'];
-			$project->personal_private = $app->lincko->data['uid'];
-			$project->save();
+		$return = null;
+		$db = Capsule::connection($this->connection);
+		$db->beginTransaction();
+		try {
+			if(isset($this->id)){
+				$return = parent::save($options);
+			} else {
+				$return = parent::save($options);
+				$app->lincko->data['uid'] = $this->id;
+
+				$company = new Companies();
+				$company->personal_private = $this->id;
+				$company->name = $this->username;
+				$company->save();
+				
+				$app->lincko->data['company'] = $company->url;
+				$app->lincko->data['company_id'] = intval($company->id);
+				
+				$project = new Projects();
+				$project->title = 'Private';
+				$project->companies_id = $company->id;
+				$project->personal_private = $this->id;
+				$project->save();
+
+				$app->lincko->data['user_log']->save();
+			}
+			$db->commit();
+		} catch(\Exception $e){
+			$return = null;
+			$db->rollback();
 		}
 		return $return;
 	}

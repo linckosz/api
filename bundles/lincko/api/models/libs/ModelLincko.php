@@ -621,7 +621,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected
-	protected function getUserPivotValue($user_id, $column){
+	public function getUserPivotValue($user_id, $column){//[toto]
 		$column = strtolower($column);
 		if($users = $this->users()){
 			if($user = $users->find($user_id)){

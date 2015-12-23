@@ -156,59 +156,46 @@ class ControllerUser extends Controller {
 				$errmsg = $app->trans->getBRUT('api', 1, 6); //Account creation failed. Email address already in use.
 				$errfield = 'email';
 			} else if($limit<=100){
-				$user_log = new UsersLog;
-				$user_log->username_sha1 = $username_sha1;
-				$user_log->password = password_hash($form->password, PASSWORD_BCRYPT);
-				$user = new Users;
+				$app->lincko->data['user_log'] = new UsersLog();
+				$app->lincko->data['user_log']->username_sha1 = $username_sha1;
+				$app->lincko->data['user_log']->password = password_hash($form->password, PASSWORD_BCRYPT);
+				$user = new Users();
 				$user->username = $username;
 				$user->username_sha1 = $username_sha1;
 				$user->email = $email;
 				$user->internal_email = $internal_email;
-				$company = new Companies;
-				$company->personal_private = 0;
-				$company->name = $username;
 				if(isset($form->firstname)){ $user->firstname = $form->firstname; }
 				if(isset($form->lastname)){ $user->lastname = $form->lastname; }
-				if($company->save()){
-					$app->lincko->data['company'] = $company->url;
-					$app->lincko->data['company_id'] = intval($company->id);
-					if($user_log->save() && $user->save()){
-						$company->timestamps = false; //Disable timestamp update_at
-						$company->personal_private = $user->id;
-						$company->save();
-						//Authorized the user to access to his own workspace, but disable history
-						$company->setUserPivotValue($user->id, 'access', 1, false);
+				if($user->save()){
+					$app->flashNow('signout', false);
+					$app->flashNow('resignin', false);
+					$app->flashNow('username', $user->username);
 
-						$app->flashNow('signout', false);
-						$app->flashNow('resignin', false);
-						$app->flashNow('username', $user->username);
-
-						//Setup public and private key
-						if($authorize = $user_log->authorize($data)){
-							if(isset($authorize['private_key'])){
-								$app->flashNow('private_key', $authorize['private_key']);
-							}
-							if(isset($authorize['public_key'])){
-								$app->flashNow('public_key', $authorize['public_key']);
-							}
-							if(isset($authorize['username_sha1'])){
-								$app->flashNow('username_sha1', $authorize['username_sha1']);
-							}
-							if(isset($authorize['uid'])){
-								$app->flashNow('uid', $authorize['uid']);
-							}
+					//Setup public and private key
+					if($authorize = $app->lincko->data['user_log']->authorize($data)){
+						if(isset($authorize['private_key'])){
+							$app->flashNow('private_key', $authorize['private_key']);
 						}
-						
-						//Send congrat email
-						$mail = new Email();
-						$mail->addAddress($email, $username);
-						$mail->setSubject('Congratulation');
-						$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
-						$mail->sendLater();
-
-						$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 1, 7), 'field' => 'undefined'),)); //Account created. check your email for validation code.
-						return true;
+						if(isset($authorize['public_key'])){
+							$app->flashNow('public_key', $authorize['public_key']);
+						}
+						if(isset($authorize['username_sha1'])){
+							$app->flashNow('username_sha1', $authorize['username_sha1']);
+						}
+						if(isset($authorize['uid'])){
+							$app->flashNow('uid', $authorize['uid']);
+						}
 					}
+						
+					//Send congrat email
+					$mail = new Email();
+					$mail->addAddress($email, $username);
+					$mail->setSubject('Congratulation');
+					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br />Some other text...<br /><br />Best regards,<br /><br />Arc team</body></html>');
+					$mail->sendLater();
+
+					$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 1, 7), 'field' => 'undefined'),)); //Account created. check your email for validation code.
+					return true;
 				}
 			}
 		}

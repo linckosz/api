@@ -97,16 +97,39 @@ class Companies extends ModelLincko {
 	public function delete(){}
 	public function restore(){}
 
+	//Insure that we only record 1 personal_private project for each company
+	public function save(array $options = array()){
+		$app = self::getApp();
+		$new = !isset($this->id);
+		if($this->personal_private==$app->lincko->data['uid']){
+			if(self::where('personal_private', $app->lincko->data['uid'])->count() > 1){
+				$msg = $msg = $app->trans->getBRUT('api', 5, 2); //Cannot save more than one private workspace per user.
+				\libs\Watch::php($msg, 'Companies->save()', __FILE__, true);
+				$json = new Json($msg, true, 406);
+				$json->render();
+				return false;
+			}
+		}
+		$return = parent::save($options);
+		if($new){
+			$this->setUserPivotValue($app->lincko->data['uid'], 'access', 1, false);
+		}
+		return $return;
+	}
+
 	public function scopegetLinked($query){
 		return $query
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php
+		->whereHas('users', function ($query) {
+			$app = self::getApp();
 			$query
-			->whereHas('users', function ($query) {
-				$app = self::getApp();
-				$uid = $app->lincko->data['uid'];
-				$query->where('users_id', $uid)->where('access', 1);
-			})
-			->orWhere('id', 0); //Need to include the public folder (company 0) by default
+			->where('users_id', $app->lincko->data['uid'])
+			->where('access', 1);
+		})
+		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php
+			$app = self::getApp();
+			$query
+			->where('personal_private', $app->lincko->data['uid'])
+			->orWhere('personal_private', 0);
 		});
 	}
 
