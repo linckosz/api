@@ -364,7 +364,7 @@ class ControllerTest extends Controller {
 		*/
 
 		//$tp = Tasks::getItemsAccess();
-		//$tp = Tasks::find(4)->getUsersContacts();
+		$tp = Tasks::find(4)->getUsersContacts();
 		//$tp = Tasks::find(4)->projects()->get();
 		//$tp = Users::find(2)->getHistory(true);
 		//$tp = Users::find(2)->getItems();
@@ -385,41 +385,6 @@ class ControllerTest extends Controller {
 		//$tp->setUserPivotValue(1, 'access', 1, true);
 
 		//$tp = Companies::getLinked()->get()->toArray();
-
-		//$db = Capsule::connection('data');
-
-		/*
-		$app->lincko->data['tp'] = 'noooo';
-		Capsule::transaction(function(){
-			$app = \Slim\Slim::getInstance();
-			$tp1 = Projects::find(200);
-			$tp1->setUserPivotValue(1, 'access', 0, false);
-			$tp1 = Projects::find(199);
-			$tp1->setUserPivotValue(1, 'accesss', 1, false);
-			$app->lincko->data['tp'] = 'ok';
-		});
-		$tp = $app->lincko->data['tp'];
-		*/
-
-		$val = 0;
-		$tp = 'aaa';
-		$db = Capsule::connection('data');
-		$db->beginTransaction();
-		try {
-			$tp1 = Projects::find(200);
-			\libs\Watch::php( $tp1->getUserPivotValue(1, 'access') ,'get', __FILE__, false, false, true);
-			$tp1->setUserPivotValue(1, 'access', $val, false);
-			\libs\Watch::php( $tp1->getUserPivotValue(1, 'access') ,'get', __FILE__, false, false, true);
-			$tp1 = Projects::find(199);
-			$tp1->setUserPivotValue(1, 'access', $val, false);
-			$db->commit();
-		} catch(\Exception $e){
-			$db->rollback();
-		}
-
-		$tp1 = Projects::find(198);
-		$tp1->setUserPivotValue(1, 'access', $val, false);
-		
 
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
