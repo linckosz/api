@@ -93,6 +93,11 @@ class Users extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_link')->withPivot('access');
 	}
 
+	//Many(Users) to Many(Users)
+	public function usersLinked(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id_link', 'users_id')->withPivot('access');
+	}
+
 ////////////////////////////////////////////
 
 	public static function validEmail($data){
@@ -153,37 +158,67 @@ class Users extends ModelLincko {
 	public function delete(){}
 	public function restore(){}
 
-	//We have to rewritte the function "scopegetLinked" from parent class, because it's called statically
-	public static function getLinked(){
-		return self::theUser();
+	public function scopegetLinked($query){
+		$app = self::getApp();
+		return $query
+		->whereHas('usersLinked', function ($query) {
+			$app = self::getApp();
+			$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
+		})
+		->orWhere('id', $app->lincko->data['uid']);
 	}
 
 	public function getUserAccess(){return $this->accessibility = (bool) true;//[toto]
 		$app = self::getApp();
-		//Do only allow modification for the user itself, do not allow to modify other users
 		if(!is_bool($this->accessibility)){
-			if(isset($this->id) && $this->id == $app->lincko->data['uid']){
-				return $this->accessibility = (bool) true;
-			}
+			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
 		}
 		return $this->accessibility;
 	}
 
+	public function getUserEdit(){
+		$app = self::getApp();
+		if(!is_bool($this->editability)){
+			$this->editability = (bool) false;
+			//Only allow the modification for the user itself
+			if(isset($this->id) && $this->id == $app->lincko->data['uid']){
+				$this->editability = (bool) true;
+			}
+			
+		}
+		return $this->editability;
+	}
+
+	public function getContactsLock(){
+		$app = self::getApp();
+		if($this->id == $app->lincko->data['uid']){
+			$this->contactsLock = true; //Do not allow to delete the user itself on client side
+		}
+		return $this->contactsLock;
+	}
+
+	public function getContactsVisibility(){
+		$app = self::getApp();
+		if($this->id == $app->lincko->data['uid']){
+			$this->contactsVisibility = false; //No need to make the user visible in the list on client side
+		}
+		return $this->contactsVisibility;
+	}
+
 	//Get all users that are added as contact by the user
 	public function getUsersContacts(){
+		$app = self::getApp();
 		$contacts = parent::getUsersContacts();
+		$id = $this->id;
+		$contacts->$id = $this->getContactsInfo();
 		$list = $this->users()->get();
 		foreach($list as $key => $value) {
 			$id = $value->id;
 			$contacts->$id = $this->getContactsInfo();
-			if(isset($value->pivot) && $value->pivot->access){
+			if($this->id != $app->lincko->data['uid'] && isset($value->pivot) && $value->pivot->access){
 				$contacts->$id->contactsVisibility = true;
 			}
 		}
-		$id = $this->id;
-		$contacts->$id = new \stdClass;
-		$contacts->$id->contactsLock = true; //Do not allow to delete the user itself on cliet side
-		$contacts->$id->contactsVisibility = false; //No need to make the user visible in the list on client side
 		return $contacts;
 	}
 
@@ -262,6 +297,20 @@ class Users extends ModelLincko {
 			$db->rollback();
 		}
 		return $return;
+	}
+
+	public function toJson($detail=false, $options = 0){
+		$app = self::getApp();
+		$temp = parent::toJson($detail, $options);
+		$temp = json_decode($temp);
+		$temp->contactsLock = $this->getContactsLock();
+		$temp->contactsVisibility = $this->getContactsVisibility();
+		//Do not show email for all other users
+		if($this->id != $app->lincko->data['uid']){
+			$temp->email = "";
+		}
+		$temp = json_encode($temp, $options);
+		return $temp;
 	}
 
 }

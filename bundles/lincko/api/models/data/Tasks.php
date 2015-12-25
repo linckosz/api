@@ -134,7 +134,7 @@ class Tasks extends ModelLincko {
 ////////////////////////////////////////////
 
 	public function scopegetLinked($query){
-		//It will get all task with access 1, and all tasks which are not in the relation table, but teh second has to be in conjonction with projects
+		//It will get all task with access 1, and all tasks which are not in the relation table, but the second has to be in conjonction with projects
 		return $query
 		->whereHas("users", function($query) {
 			$app = self::getApp();
@@ -153,12 +153,10 @@ class Tasks extends ModelLincko {
 	public function getUserAccess(){
 		$app = self::getApp();
 		if(!is_bool($this->accessibility)){
-			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
-
 			return $this->accessibility = (bool) (
 				$this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first()
-				//||
-				//$this->projects()->whereId($this->projects_id)->whereAccess(1)->first()
+				||
+				$this->projects()->whereId($this->projects_id)->first()->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first()
 			);
 
 		}

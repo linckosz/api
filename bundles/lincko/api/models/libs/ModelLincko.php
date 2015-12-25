@@ -69,8 +69,11 @@ abstract class ModelLincko extends Model {
 	//List of relations we want to make available on client side
 	protected $dependencies_visible = array();
 
-	//Return true if the user is allowed to access the model
+	//Return true if the user is allowed to access(read) the model
 	protected $accessibility = null;
+
+	//Return true if the user is allowed to modify(edit) the model
+	protected $editability = null;
 
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
 
@@ -287,10 +290,6 @@ abstract class ModelLincko extends Model {
 			//Do nothing to continue
 		}
 
-		if(get_class($model)=='users'){
-			//[toto]
-		}
-
 		return $list;
 	}
 
@@ -488,6 +487,11 @@ abstract class ModelLincko extends Model {
 		return $this->accessibility;
 	}
 
+	public function getUserEdit(){
+		$this->editability = (bool) false; //By default do not allow the modification to the user
+		return $this->editability;
+	}
+
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
 		$this->checkAccess();
@@ -584,6 +588,7 @@ abstract class ModelLincko extends Model {
 
 	public function toJson($detail=false, $options = 0){
 		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
+		$app = self::getApp();
 		if($detail){
 			$temp = json_decode(parent::toJson($options));
 			foreach ($temp as $key => $value) {
@@ -606,6 +611,13 @@ abstract class ModelLincko extends Model {
 		foreach($this->model_timestamp as $value) {
 			if(isset($temp->$value)){  $temp->$value = (new \DateTime($temp->$value))->getTimestamp(); }
 		}
+		//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
+		$temp->new = 0;
+		if(isset($this->viewed_by)){
+			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
+				$temp->new = 1;
+			}
+		}
 		$temp = json_encode($temp, $options);
 		return $temp;
 	}
@@ -622,6 +634,7 @@ abstract class ModelLincko extends Model {
 
 	//By preference, keep it protected
 	public function getUserPivotValue($user_id, $column){//[toto]
+	//protected function getUserPivotValue($user_id, $column){
 		$column = strtolower($column);
 		if($users = $this->users()){
 			if($user = $users->find($user_id)){

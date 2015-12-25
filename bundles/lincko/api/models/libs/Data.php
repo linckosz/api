@@ -170,38 +170,22 @@ class Data {
 						//If we the element is in another company, we do not need to keep the data
 						continue;
 					}
-					$table_tp = json_decode($value->toJson($detail));
-					//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
-					$table_tp->new = 0;
-					if(isset($value->viewed_by)){
-						if(strpos($value->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
-							$table_tp->new = 1;
-						}
-					}
-					$id = $table_tp->id;
-
-					$id_list[] = $id;
 
 					//Create object
 					unset($temp);
+					
+					$id = $value->id;
+					$id_list[] = $id;
 					if($action == 'latest' || $action == 'missing' || $action == 'history'){
-						$temp = $table_tp;
-						if($table_name === 'users'){
-							$temp->contactsLock = true; //By default we lock the user itself
-							$temp->contactsVisibility = false; //By default we do not let the user seeing itself
-							$temp->email = '';
-							if($temp->id == $app->lincko->data['uid']){
-								$temp->email = $value->email;
-							}
-						}
-						//Delete ID property since it becomes the key of the table
-						unset($temp->{'id'});
+						
+						$temp = json_decode($value->toJson($detail));
 					} else {
 						$temp = new \stdClass;
 					}
 
 					//Only get History for getLatest() and getMissing() and getHistory()
-					if($action == 'latest' || $action == 'missing' || $action == 'history'){
+					if(isset($temp->id)){
+						unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
 						//Get only creation history to avoid mysql overload
 						$temp->history = $value->getHistoryCreation();
 					}
@@ -235,27 +219,8 @@ class Data {
 							$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
 						}
 					}
+					\libs\Watch::php( $usersContacts ,'$usersContacts', __FILE__, false, false, true);
 				}
-
-				/*
-					//We only update contact list from getSchema, because other can exclude some contactsLock and contactsVisibility
-					if($reset || $action == 'schema' || $action == 'missing'){
-						//Get users contacts list as object
-						$contacts = $value->getUsersContacts();
-						foreach ($contacts as $contacts_key => $contacts_value) {
-							if($contacts_key != $app->lincko->data['uid']){ //we do not overwritte the user itself
-								if(!isset($usersContacts->$contacts_key)){
-									$usersContacts->$contacts_key = new \stdClass;
-									$usersContacts->$contacts_key->contactsLock = false;
-									$usersContacts->$contacts_key->contactsVisibility = false;
-									$usersContacts->$contacts_key->new = 0;
-								}
-								$usersContacts->$contacts_key->contactsLock = ($usersContacts->$contacts_key->contactsLock || $contacts_value->contactsLock);
-								$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
-							}
-						}
-					}
-				*/
 
 				if($action !== 'schema'){
 					//Get dependency (all ManyToMany that have other fields than access)

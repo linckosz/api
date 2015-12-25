@@ -364,7 +364,7 @@ class ControllerTest extends Controller {
 		*/
 
 		//$tp = Tasks::getItemsAccess();
-		$tp = Tasks::find(4)->getUsersContacts();
+		//$tp = Tasks::find(4)->getUsersContacts();
 		//$tp = Tasks::find(4)->projects()->get();
 		//$tp = Users::find(2)->getHistory(true);
 		//$tp = Users::find(2)->getItems();
@@ -385,6 +385,17 @@ class ControllerTest extends Controller {
 		//$tp->setUserPivotValue(1, 'access', 1, true);
 
 		//$tp = Companies::getLinked()->get()->toArray();
+
+		//$tp = Tasks::find(16);
+		//$tp = $tp->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->get()->toArray();
+		//$tp = $tp->projects()->whereId($tp->projects_id)->whereAccess(1)->get()->toArray();
+		//$tp = $tp->projects()->whereId($tp->projects_id)->get()->toArray();
+		//$tp = $tp->users()->whereAccess(1)->get()->toArray();
+
+		$tp = Users::find(1);
+		$tp = $tp->getLinked()->get()->toArray();
+		//$tp = $tp->getUsersContacts();
+		//$tp = $tp->theUser()->users()->get()->toArray();
 
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
