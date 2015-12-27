@@ -130,14 +130,6 @@ class Companies extends ModelLincko {
 		->orWhere('personal_private', $app->lincko->data['uid']);
 	}
 
-	public function getUserAccess(){
-		$app = self::getApp();
-		if(!is_bool($this->accessibility)){
-			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
-		}
-		return $this->accessibility;
-	}
-
 	//We keep "_" because we want to store companies information in teh same folder on client side (easier for JS), not separatly
 	public function getCompany(){
 		return '_';

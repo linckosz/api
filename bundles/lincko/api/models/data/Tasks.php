@@ -155,19 +155,6 @@ class Tasks extends ModelLincko {
 		return $this->projects->getCompany();
 	}
 
-	public function getUserAccess(){
-		$app = self::getApp();
-		if(!is_bool($this->accessibility)){
-			return $this->accessibility = (bool) (
-				$this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first()
-				||
-				$this->projects()->whereId($this->projects_id)->first()->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first()
-			);
-
-		}
-		return $this->accessibility;
-	}
-
 	protected function get_NoteTask(){
 		$app = self::getApp();
 		if($this->note){

@@ -22,8 +22,8 @@ class Json {
 		//optional parameters for front end server
 		if($signout || $resignin){
 			$this->json['flash'] = array(
-					'signout' => (boolean)$signout,
-					'resignin' => (boolean)$resignin,
+					'signout' => (bool) $signout,
+					'resignin' => (bool) $resignin,
 			);
 		}
 		if(count($files)){

@@ -72,11 +72,8 @@ abstract class ModelLincko extends Model {
 	//List the fields that will be shown on client side
 	protected $dependencies_fields = array();
 
-	//Return true if the user is allowed to access(read) the model
+	//Return true if the user is allowed to access(read) the model. We use an attribute to avoid too many mysql request in Data.php
 	protected $accessibility = null;
-
-	//Return true if the user is allowed to modify(edit) the model
-	protected $editability = null;
 
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
 
@@ -221,7 +218,14 @@ abstract class ModelLincko extends Model {
 		if(!empty($model->dependencies_fields)){
 			foreach ($model->dependencies_visible as $dependency) {
 				if(method_exists(get_class($model), $dependency)) {
-					$data = self::whereIn('id', $id_list)->with($dependency)->get();
+					$data = null;
+					try { //In case access in not available for the model
+						$data = self::whereIn('id', $id_list)->whereHas($dependency, function ($query){
+							$query->where('access', 1);
+						})->get(['id']);
+					} catch (Exception $obj_exception) {
+						//Do nothing to continue
+					}
 					if(!is_null($data)){
 						foreach ($data as $dep) {
 							if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
@@ -457,8 +461,11 @@ abstract class ModelLincko extends Model {
 	public function checkAccess(){
 		$app = self::getApp();
 		if(!is_bool($this->accessibility)){
+			$this->accessibility = (bool) false; //By default, for security reason, we do not allow the access
 			if(isset($this->id)){
-				$this->getUserAccess(); //This method will assign a boolean to the accessibility property
+				if($this->getLinked()->count() > 0){
+					$this->accessibility = (bool) true;
+				}
 			} else {
 				$this->accessibility = (bool) true; //Set to true for any created item
 			}
@@ -477,11 +484,6 @@ abstract class ModelLincko extends Model {
 	public function getUserAccess(){
 		$this->accessibility = (bool) false; //By default do not allow the access to the user
 		return $this->accessibility;
-	}
-
-	public function getUserEdit(){
-		$this->editability = (bool) false; //By default do not allow the modification to the user
-		return $this->editability;
 	}
 
 	//When save, it helps to keep track of history

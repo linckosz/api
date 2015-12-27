@@ -149,14 +149,6 @@ class Projects extends ModelLincko {
 		});
 	}
 
-	public function getUserAccess(){
-		$app = self::getApp();
-		if(!is_bool($this->accessibility)){
-			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
-		}
-		return $this->accessibility;
-	}
-
 	public function getCompany(){
 		return $this->companies_id;
 	}

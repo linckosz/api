@@ -391,10 +391,17 @@ class ControllerTest extends Controller {
 		//$tp = $tp->projects()->whereId($tp->projects_id)->get()->toArray();
 		//$tp = $tp->users()->whereAccess(1)->get()->toArray();
 
-		$tp = Projects::getLinked()->get()->toArray();
 		//$tp = $tp->getUsersContacts();
 		//$tp = $tp->theUser()->users()->get()->toArray();
+		/*
+		$tp = Projects::where('personal_private', null)->whereHas('users', function ($query){
+			$query->where('access', 1);
+		})->get(['id'])->toArray();
+		*/
 
+		//$tp = (bool) Chats::getLinked()->get();
+		$tp = Chats::getLinked()->count();
+		
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------

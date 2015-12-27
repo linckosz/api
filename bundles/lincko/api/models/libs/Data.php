@@ -240,7 +240,6 @@ class Data {
 						}
 					}
 				}
-				
 
 				unset($data);
 			}
@@ -252,7 +251,7 @@ class Data {
 		foreach ($usersContacts as $key => $value) {
 			unset($temp);
 			if($key != $app->lincko->data['uid']){ //we do not overwritte the user itself
-				if(($reset || $action == 'missing') && $user = Users::find($key)){
+				if($user = Users::find($key)){
 					$temp = json_decode($user->toJson($detail));
 					//Add history for poeple visible in user list only (can get detauls because not heavy data)
 					if($value->contactsVisibility && $history = $user->getHistory(true)){
@@ -262,20 +261,17 @@ class Data {
 					$temp->contactsVisibility = $value->contactsVisibility;
 					//Delete ID property since it becomes the key of the table
 					unset($temp->{'id'});
-				} else {
-					$temp = new \stdClass;
-				}
-
-				if(!isset($result->$uid)){
-					$result->$uid = new \stdClass;
-				}
-				if(!isset($result->$uid->{'_'})){
-					$result->$uid->{'_'} = new \stdClass;
-				}
-				if(!isset($result->$uid->{'_'}->{'users'})){
-					$result->$uid->{'_'}->{'users'} = new \stdClass;
-				}
-				$result->$uid->{'_'}->{'users'}->$key = $temp;
+					if(!isset($result->$uid)){
+						$result->$uid = new \stdClass;
+					}
+					if(!isset($result->$uid->{'_'})){
+						$result->$uid->{'_'} = new \stdClass;
+					}
+					if(!isset($result->$uid->{'_'}->{'users'})){
+						$result->$uid->{'_'}->{'users'} = new \stdClass;
+					}
+					$result->$uid->{'_'}->{'users'}->$key = $temp;
+				}	
 			}
 		}
 

@@ -168,27 +168,6 @@ class Users extends ModelLincko {
 		->orWhere('id', $app->lincko->data['uid']);
 	}
 
-	public function getUserAccess(){return $this->accessibility = (bool) true;//[toto]
-		$app = self::getApp();
-		if(!is_bool($this->accessibility)){
-			return $this->accessibility = (bool) $this->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
-		}
-		return $this->accessibility;
-	}
-
-	public function getUserEdit(){
-		$app = self::getApp();
-		if(!is_bool($this->editability)){
-			$this->editability = (bool) false;
-			//Only allow the modification for the user itself
-			if(isset($this->id) && $this->id == $app->lincko->data['uid']){
-				$this->editability = (bool) true;
-			}
-			
-		}
-		return $this->editability;
-	}
-
 	public function getContactsLock(){
 		$app = self::getApp();
 		if($this->id == $app->lincko->data['uid']){
