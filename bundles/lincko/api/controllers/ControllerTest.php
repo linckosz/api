@@ -334,7 +334,6 @@ class ControllerTest extends Controller {
 		//$tp->users()->find($app->lincko->data['uid']);
 		//$tp = Projects::find(5);
 		//$tp = Users::find(2);
-		//$tp = Tasks::find(76)->addDependencies();
 		//$tp1 = ChatsComments::find(7);
 		//$tp1 = Tasks::find(76);
 		//$tp = (bool) $tp->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->first();
@@ -392,8 +391,7 @@ class ControllerTest extends Controller {
 		//$tp = $tp->projects()->whereId($tp->projects_id)->get()->toArray();
 		//$tp = $tp->users()->whereAccess(1)->get()->toArray();
 
-		$tp = Users::find(1);
-		$tp = $tp->getLinked()->get()->toArray();
+		$tp = Projects::getLinked()->get()->toArray();
 		//$tp = $tp->getUsersContacts();
 		//$tp = $tp->theUser()->users()->get()->toArray();
 

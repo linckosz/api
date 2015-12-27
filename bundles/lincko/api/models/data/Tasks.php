@@ -83,6 +83,11 @@ class Tasks extends ModelLincko {
 		'tasks',
 	);
 
+	protected $dependencies_fields = array(
+		'in_charge',
+		'approver',
+	);
+
 	protected $model_timestamp = array(
 		'start',
 	);

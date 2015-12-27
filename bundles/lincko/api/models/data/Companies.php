@@ -118,6 +118,7 @@ class Companies extends ModelLincko {
 	}
 
 	public function scopegetLinked($query){
+		$app = self::getApp();
 		return $query
 		->whereHas('users', function ($query) {
 			$app = self::getApp();
@@ -125,12 +126,8 @@ class Companies extends ModelLincko {
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 1);
 		})
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php
-			$app = self::getApp();
-			$query
-			->where('personal_private', $app->lincko->data['uid'])
-			->orWhere('personal_private', 0);
-		});
+		->where('personal_private', null)
+		->orWhere('personal_private', $app->lincko->data['uid']);
 	}
 
 	public function getUserAccess(){

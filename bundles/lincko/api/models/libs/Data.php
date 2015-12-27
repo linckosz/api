@@ -219,7 +219,6 @@ class Data {
 							$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
 						}
 					}
-					\libs\Watch::php( $usersContacts ,'$usersContacts', __FILE__, false, false, true);
 				}
 
 				if($action !== 'schema'){

@@ -8,6 +8,7 @@ use \bundles\lincko\api\models\Api;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Companies;
 
 class CheckAccess extends \Slim\Middleware {
 	
@@ -149,13 +150,14 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 		$data = $this->data;
 		if($user = Users::getUser()){
-			$companies = $user->companies;
+			$companies = Companies::getLinked()->get();
 			//We check that the user has access to the workspace
 			foreach ($companies as $key => $value) {
 				if($value->personal_private==$app->lincko->data['uid'] && $data->company == ''){ //Personal company
+					$app->lincko->data['company'] = '';
 					$app->lincko->data['company_id'] = intval($value->id);
 					return true;
-				} else if($value->personal_private==0 &&$value->url == $data->company){
+				} else if(is_null($value->personal_private) && $value->url == $data->company){
 					$app->lincko->data['company'] = $value->url;
 					$app->lincko->data['company_id'] = intval($value->id);
 					return true;

@@ -69,6 +69,9 @@ abstract class ModelLincko extends Model {
 	//List of relations we want to make available on client side
 	protected $dependencies_visible = array();
 
+	//List the fields that will be shown on client side
+	protected $dependencies_fields = array();
+
 	//Return true if the user is allowed to access(read) the model
 	protected $accessibility = null;
 
@@ -212,37 +215,26 @@ abstract class ModelLincko extends Model {
 
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
-	public function addDependencies(){
-		foreach ($this->dependencies_visible as $dependency) {
-			if(method_exists(get_class($this), $dependency)) {
-				unset($result);
-				$result = new \stdClass;
-				$data = $this->$dependency()->where('access', 1)->get();
-				if(!is_null($data)){
-					foreach ($data as $key => $value) {
-						$result->{$value->id} = $value->pivot;
-					}
-				}
-				$this->{'_'.$dependency} = $result;
-			}
-		}
-	}
-
-	//For any Many to Many that we want to make dependencies visible
-	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
 	public static function getDependencies(array $id_list){
-		$model = new static();
 		$dependencies = new \stdClass;
-		foreach ($model->dependencies_visible as $dependency) {
-			if(method_exists(get_class($model), $dependency)) {
-				$data = self::whereIn('id', $id_list)->with($dependency)->get();
-				if(!is_null($data)){
-					foreach ($data as $dep) {
-						foreach ($dep->$dependency as $key => $value) {
-							if($value->pivot->access){
-								if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
-								if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
-								$dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = $value->pivot;
+		$model = new static();
+		if(!empty($model->dependencies_fields)){
+			foreach ($model->dependencies_visible as $dependency) {
+				if(method_exists(get_class($model), $dependency)) {
+					$data = self::whereIn('id', $id_list)->with($dependency)->get();
+					if(!is_null($data)){
+						foreach ($data as $dep) {
+							if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
+							if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
+							foreach ($dep->$dependency as $key => $value) {
+								if($value->pivot->access){
+									foreach ($model->dependencies_fields as $field) {
+										if(isset($value->pivot->{$field})){
+											if(!isset($dependencies->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
+											$dependencies->{$dep->id}->{'_'.$dependency}->{$value->id}->{$field} = $value->pivot->{$field};
+										}
+									}
+								}
 							}
 						}
 					}
@@ -663,7 +655,6 @@ abstract class ModelLincko extends Model {
 		$return = false;
 		$users = $this->users();
 		if($users === false || !method_exists($users,'updateExistingPivot') || !method_exists($users,'attach')){ return false; } //If the pivot doesn't exist, we exit
-		if($value!==1){ $value = 0; }
 		$value_old = $this->getUserPivotValue($user_id, $column);
 		if($value_old !== false){
 			if($value_old != $value){

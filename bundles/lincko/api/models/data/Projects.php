@@ -141,7 +141,7 @@ class Projects extends ModelLincko {
 					$uid = $app->lincko->data['uid'];
 					$query->where('users_id', $uid)->where('access', 1);
 				})
-				->where('personal_private', 0)
+				->where('personal_private', null)
 				->whereHas('companies', function ($query) {
 					$query->getLinked();
 				});
