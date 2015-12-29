@@ -41,6 +41,10 @@ class Companies extends ModelLincko {
 		'_delete' => 399,//[{un|ucfirst}] deleted the workspace.
 	);
 
+	protected static $foreign_keys = array(
+		'personal_private' => '\\bundles\\lincko\\api\\models\\data\\Users',
+	);
+
 	protected static $relations_keys = array(
 		'users',
 	);
@@ -55,6 +59,11 @@ class Companies extends ModelLincko {
 	//One(Companies) to Many(Projects)
 	public function projects(){
 		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'companies_id');
+	}
+
+	//One(Companies) to Many(Roles)
+	public function roles(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'companies_id')->withPivot('roles_id');
 	}
 
 ////////////////////////////////////////////
@@ -118,7 +127,6 @@ class Companies extends ModelLincko {
 	}
 
 	public function scopegetLinked($query){
-		$app = self::getApp();
 		return $query
 		->whereHas('users', function ($query) {
 			$app = self::getApp();
@@ -126,8 +134,12 @@ class Companies extends ModelLincko {
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 1);
 		})
-		->where('personal_private', null)
-		->orWhere('personal_private', $app->lincko->data['uid']);
+		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+			$app = self::getApp();
+			$query
+			->where('personal_private', null)
+			->orWhere('personal_private', $app->lincko->data['uid']);
+		});
 	}
 
 	//We keep "_" because we want to store companies information in teh same folder on client side (easier for JS), not separatly

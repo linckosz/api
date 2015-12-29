@@ -54,9 +54,11 @@ class Data {
 		} else if(isset($this->data->data->lastvisit)){
 			if(is_int($this->data->data->lastvisit) && $this->data->data->lastvisit>=0){
 				return $this->lastvisit = (new \DateTime('@'.$this->data->data->lastvisit))->format('Y-m-d H:i:s');
+			} else {
+				return $this->lastvisit = false;
 			}
 		}
-		return false;
+		return $this->lastvisit = (new \DateTime())->format('Y-m-d H:i:s');
 	}
 
 	public function getTimestamp(){
@@ -113,6 +115,7 @@ class Data {
 		$reset = false;
 		if($action == 'latest'&& $this->getTimestamp()<=0){
 			$reset = true;
+			$this->lastvisit = false;
 		}
 
 		foreach(self::$models as $key => $value) {
@@ -129,6 +132,10 @@ class Data {
 				//Get table name
 				$model = new $value;
 				$table_name = $model->getTable();
+
+				if($action == 'schema' && $table_name == 'roles'){
+					\libs\Watch::php($data->toArray(), '$data', __FILE__, false, false, true);
+				}
 
 				if(!isset($result->$uid)){
 					$result->$uid = new \stdClass;
@@ -221,7 +228,7 @@ class Data {
 					}
 				}
 
-				if($action !== 'schema'){
+				if($action != 'schema'){
 					//Get dependency (all ManyToMany that have other fields than access)
 					$dependencies = $value::getDependencies($id_list);
 					foreach ($dependencies as $id => $temp) {
@@ -245,6 +252,9 @@ class Data {
 			}
 		}
 
+		if($action === 'schema'){
+			\libs\Watch::php($result, '$result', __FILE__, false, false, true);
+		}
 		//Delete to main user to not overwrite its settings
 		unset($usersContacts->{$app->lincko->data['uid']});
 		//Add all users to the main object
@@ -344,9 +354,9 @@ class Data {
 	public function getForceSchema(){
 		$user = Users::getUser();
 		$force_schema = $user->force_schema;
-		if($force_schema){
+		if($force_schema>0){
 			$user->timestamps = false; //Disable timestamp update_at
-			$user->force_schema = false;
+			$user->force_schema = 0;
 			$user->save();
 		}
 		return $force_schema;

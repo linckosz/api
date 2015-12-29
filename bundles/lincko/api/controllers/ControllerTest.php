@@ -13,6 +13,7 @@ use \bundles\lincko\api\models\data\Companies;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Tasks;
+use \bundles\lincko\api\models\data\Roles;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class ControllerTest extends Controller {
@@ -400,8 +401,35 @@ class ControllerTest extends Controller {
 		*/
 
 		//$tp = (bool) Chats::getLinked()->get();
-		$tp = Chats::getLinked()->count();
+		//$tp = Chats::getLinked()->count();
+
+		//$tp = Tasks::find(16);
+		//$tp->setUserPivotValue(1, 'access', 0, false);
+		//$tp = $tp->checkAccess();
 		
+		//$tp = Users::find(1);
+		//$tp = $tp->roles()->get(['id'])->toArray();
+		/*
+		$tp = Roles::
+			where('users_id', $app->lincko->data['uid'])
+			->orWhere('companies_id', $app->lincko->data['company_id'])
+			->orWhere('companies_id', null)
+			->get(['id'])->toArray();
+		*/
+		//$tp = Users::getUser()->roles()->where('users_x_companies.companies_id', $app->lincko->data['company_id'])->first();//->toArray();
+		/*
+		$tp = Users::getUser()->whereHas('roles', function ($query){
+			$app = \Slim\Slim::getInstance();
+			$query->where('users_x_companies.companies_id', $app->lincko->data['company_id']);
+		})->get()->toArray();
+		*/
+		
+		//$tp = Users::getUser()->with('roles')->get()->toArray();
+
+		$tp = Roles::getItems()->toArray();
+		//$tp = Roles::whereIn('companies_id', [$app->lincko->data['company_id'], null])->get()->toArray();
+		//$tp = Roles::where('companies_id', null)->get()->toArray();
+
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------

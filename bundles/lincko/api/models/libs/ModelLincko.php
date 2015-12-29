@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletingTrait;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Roles;
 
 abstract class ModelLincko extends Model {
 
@@ -55,7 +56,7 @@ abstract class ModelLincko extends Model {
 	protected $contactsVisibility = false; //If true, it will appear in user contact list
 
 	//NOTE: All variables in this array must exist in the database, otherwise an error will be generated during SLQ request.
-	protected static $foreign_keys = array(); //Define a list of foreign keys, it help to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link.
+	protected static $foreign_keys = array(); //Define a list of foreign keys, it helps to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link.
 
 	protected static $relations_keys_checked = false; //At false it will help to construct the list only once
 
@@ -163,7 +164,7 @@ abstract class ModelLincko extends Model {
 	protected static function buildRelations(){
 		if(self::$relations_keys_checked === false){
 			$models = Data::getModels();
-			
+				
 			//First we fillin the relation list properly adding foreign keys (parents) for each model
 			foreach($models as $model_name => $model) {
 				foreach($model::$foreign_keys as $key => $value) {
@@ -175,15 +176,13 @@ abstract class ModelLincko extends Model {
 			}
 
 			//UP: Adding parents level
+			$parents = array();
 			foreach($models as $model_name => $model) {
-				$count = 0;
-				while(count($model::$relations_keys) !== $count){
-					foreach($model::$relations_keys as $key => $value) {
-						$model::$relations_keys = array_unique(array_merge($model::$relations_keys, $models[$value]::$relations_keys));
-					}
-					$count = count($model::$relations_keys);
+				foreach($model::$relations_keys as $key => $value) {
+					$parents = array_unique(array_merge($model::$relations_keys, $models[$value]::$relations_keys));
 				}
 			}
+			$model::$relations_keys = array_unique(array_merge($model::$relations_keys, $parents));
 			
 			//DOWN: Adding children level
 			foreach($models as $model_name => $model) {
@@ -410,8 +409,6 @@ abstract class ModelLincko extends Model {
 		return $titles;
 	}
 
-
-
 	//Return a list object of users linked to the model in direct relation, It add the value regardless if it's locked or not.
 	public function getUsersContacts(){
 		$contacts = new \stdClass;
@@ -474,21 +471,38 @@ abstract class ModelLincko extends Model {
 			return true;
 		} else {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php($this->toJson(), $msg, __FILE__, true);
+			\libs\Watch::php(parent::toJson(), $msg, __FILE__, true);
 			$json = new Json($msg, true, 406);
 			$json->render();
 			return false;
 		}
 	}
 
-	public function getUserAccess(){
-		$this->accessibility = (bool) false; //By default do not allow the access to the user
-		return $this->accessibility;
+	//It checks if the user has access to it
+	public function checkRole($role_suffix){
+		$app = self::getApp();
+		$table = $this->getTable();
+		$role = Users::getUser()->roles()->where('users_x_companies.companies_id', $app->lincko->data['company_id'])->first();
+		$allow = false; //Disallow by default
+		if(isset($role->{$table.'_'.$role_suffix})){ //Per model
+			$allow = $role->{$table.'_'.$role_suffix};
+		} else if(isset($role->{'_'.$role_suffix})){ //General
+			$allow = $role->{'_'.$role_suffix};
+		}
+		if($allow){
+			return true;
+		} else {
+			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+			\libs\Watch::php(parent::toJson(), $role_suffix.' : '.$msg, __FILE__, true);
+			$json = new Json($msg, true, 406);
+			$json->render();
+			return false;
+		}
 	}
 
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
-		$this->checkAccess();
+		$this->checkRole('edit');
 		$app = self::getApp();
 		$dirty = $this->getDirty();
 		$original = $this->getOriginal();
@@ -554,7 +568,7 @@ abstract class ModelLincko extends Model {
 	}
 	
 	public function delete(){
-		$this->checkAccess();
+		$this->checkRole('delete');
 		if(!isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
 			if(array_key_exists('deleted_by', $this->attributes)){
 				$app = self::getApp();
@@ -568,7 +582,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function restore(){
-		$this->checkAccess();
+		$this->checkRole('delete');
 		if(isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
 			if(array_key_exists('deleted_by', $this->attributes)){
 				$this->deleted_at = null;
@@ -581,7 +595,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function toJson($detail=false, $options = 0){
-		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
+		//$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
 		$app = self::getApp();
 		if($detail){
 			$temp = json_decode(parent::toJson($options));

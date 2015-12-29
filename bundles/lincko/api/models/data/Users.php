@@ -88,6 +88,11 @@ class Users extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'users_x_tasks', 'users_id', 'tasks_id')->withPivot('access', 'in_charge', 'approver');
 	}
 
+	//Many(Users) to Many(Tasks)
+	public function roles(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_companies', 'users_id', 'roles_id')->withPivot('companies_id', 'roles_id');
+	}
+
 	//Many(Users) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_link')->withPivot('access');
@@ -159,13 +164,16 @@ class Users extends ModelLincko {
 	public function restore(){}
 
 	public function scopegetLinked($query){
-		$app = self::getApp();
 		return $query
-		->whereHas('usersLinked', function ($query) {
+		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
 			$app = self::getApp();
-			$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
-		})
-		->orWhere('id', $app->lincko->data['uid']);
+			$query
+			->whereHas('usersLinked', function ($query) {
+				$app = self::getApp();
+				$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
+			})
+			->orWhere('id', $app->lincko->data['uid']);
+		});
 	}
 
 	public function getContactsLock(){

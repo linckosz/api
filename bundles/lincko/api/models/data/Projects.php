@@ -49,6 +49,7 @@ class Projects extends ModelLincko {
 	protected static $foreign_keys = array(
 		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
 		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
+		'personal_private' => '\\bundles\\lincko\\api\\models\\data\\Users',
 		'companies_id' => '\\bundles\\lincko\\api\\models\\data\\Companies',
 	);
 
@@ -122,7 +123,7 @@ class Projects extends ModelLincko {
 		$app = self::getApp();
 		return $query
 		->where('companies_id', $app->lincko->data['company_id']) //Insure to get only the company information
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php
+		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$query
 			->where(function ($query) {
 				//Get personal project
