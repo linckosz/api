@@ -168,6 +168,7 @@ class Users extends ModelLincko {
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
 			$app = self::getApp();
 			$query
+			->with('usersLinked')
 			->whereHas('usersLinked', function ($query) {
 				$app = self::getApp();
 				$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
@@ -286,14 +287,16 @@ class Users extends ModelLincko {
 		return $return;
 	}
 
-	public function toJson($detail=false, $options = 0){
+	public function toJson($detail=true, $options = 0){
 		$app = self::getApp();
 		$temp = parent::toJson($detail, $options);
 		$temp = json_decode($temp);
 		$temp->contactsLock = $this->getContactsLock();
 		$temp->contactsVisibility = $this->getContactsVisibility();
 		//Do not show email for all other users
-		if($this->id != $app->lincko->data['uid']){
+		if($this->id == $app->lincko->data['uid']){
+			$temp->email = $this->email;
+		} else {
 			$temp->email = "";
 		}
 		$temp = json_encode($temp, $options);

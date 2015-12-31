@@ -128,6 +128,7 @@ class Companies extends ModelLincko {
 
 	public function scopegetLinked($query){
 		return $query
+		->with('users')
 		->whereHas('users', function ($query) {
 			$app = self::getApp();
 			$query

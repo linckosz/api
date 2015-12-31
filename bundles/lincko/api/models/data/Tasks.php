@@ -141,6 +141,8 @@ class Tasks extends ModelLincko {
 	public function scopegetLinked($query){
 		//It will get all task with access 1, and all tasks which are not in the relation table, but the second has to be in conjonction with projects
 		return $query
+		->with('projects') //(Many to One) This helps to acces project data by ->projects->
+		->with('users')
 		->whereHas("users", function($query) {
 			$app = self::getApp();
 			$uid = $app->lincko->data['uid'];
@@ -152,7 +154,10 @@ class Tasks extends ModelLincko {
 	}
 
 	public function getCompany(){
-		return $this->projects->getCompany();
+		if(isset($this->projects->companies_id)){
+			return $this->projects->companies_id;
+		}
+		return $this->projects->getCompany(); //This will not call a mysql request if item is returned previously with projects as attribute
 	}
 
 	protected function get_NoteTask(){

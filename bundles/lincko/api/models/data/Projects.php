@@ -137,6 +137,8 @@ class Projects extends ModelLincko {
 			->orWhere(function ($query) {
 				//Exclude private project, and be sure to have access to the project (because the user whom created the project does not necessary have access to it)
 				$query
+				->with('users')
+				->with('companies')
 				->whereHas('users', function ($query){
 					$app = self::getApp();
 					$uid = $app->lincko->data['uid'];

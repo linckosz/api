@@ -109,14 +109,16 @@ abstract class ModelLincko extends Model {
 	//It needs to redefine the related function users() too
 	//IMPORTANT: getLinked must check if the user has access to it, a good example is Tasks model which include all tasks with access 1 and tasks that belongs to projects with access authorized.
 	public function scopegetLinked($query){
-		return $query->whereHas('users', function ($query) {
+		return $query
+		->with('users')
+		->whereHas('users', function ($query) {
 			$query->theUser();
 		});
 	}
 
-	public static function getItems($timestamp=null, $id=null){
+	public static function getItems($timestamp=false, $id=null){
 		$request = self::getLinked();
-		if(!is_null($timestamp)){
+		if($timestamp!==false){
 			$request = $request->where('updated_at', '>=', $timestamp);
 		}
 		if(!is_null($id)){
@@ -219,7 +221,7 @@ abstract class ModelLincko extends Model {
 				if(method_exists(get_class($model), $dependency)) {
 					$data = null;
 					try { //In case access in not available for the model
-						$data = self::whereIn('id', $id_list)->whereHas($dependency, function ($query){
+						$data = self::whereIn('id', $id_list)->with($dependency)->whereHas($dependency, function ($query){
 							$query->where('access', 1);
 						})->get(['id']);
 					} catch (Exception $obj_exception) {
@@ -250,41 +252,33 @@ abstract class ModelLincko extends Model {
 	public static function getUsersContactsID(array $id_list){
 		$model = new static();
 		$list = array();
-
-		//Get users list from items themselves
-		$data = array();
-		try {
-			$data = $model->whereIn('id', $id_list)->get(['created_by', 'updated_by'])->toArray();
-		} catch (Exception $obj_exception) {
-			try {
-				$data = $model->whereIn('id', $id_list)->get(['created_by'])->toArray();
-			} catch (Exception $obj_exception) {
-				//Do nothing to continue
-			}
-		}
+		$data = $model->whereIn('id', $id_list)->with('users')->get();
+		
 		foreach ($data as $item) {
-			foreach ($item as $value) {
-				if(!isset($list[(integer) $value])){
-					$list[(integer) $value] = $model->getContactsInfo();
+			//Get users list from items themselves
+			if(isset($item->created_by)){
+				if(!isset($list[(integer) $item->created_by])){
+						$list[(integer) $item->created_by] = $model->getContactsInfo();
 				}
 			}
-		}
-
-		//Get users list from items access relationship
-		$data = array();
-		try {
-			$data = $model->whereIn('id', $id_list)->with('users')->get();
-			foreach ($data as $item) {
+			if(isset($item->updated_by)){
+				if(!isset($list[(integer) $item->updated_by])){
+						$list[(integer) $item->updated_by] = $model->getContactsInfo();
+				}
+			}
+			//Get users list from items access relationship
+			if(isset($item->users)){
+				if(isset($item->users->id) && !isset($list[(integer) $item->users->id])){
+					$list[(integer) $item->users->id] = $model->getContactsInfo();
+				}
 				foreach ($item->users as $value) {
-					if(!isset($list[(integer) $value->id])){
+					if(isset($value->id) && !isset($list[(integer) $value->id])){
 						$list[(integer) $value->id] = $model->getContactsInfo();
 					}
 				}
 			}
-		} catch (Exception $obj_exception) {
-			//Do nothing to continue
+			
 		}
-
 		return $list;
 	}
 
@@ -594,8 +588,8 @@ abstract class ModelLincko extends Model {
 		}
 	}
 
-	public function toJson($detail=false, $options = 0){
-		//$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
+	public function toJson($detail=true, $options = 0){
+		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
 		$app = self::getApp();
 		if($detail){
 			$temp = json_decode(parent::toJson($options));

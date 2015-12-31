@@ -426,11 +426,31 @@ class ControllerTest extends Controller {
 		
 		//$tp = Users::getUser()->with('roles')->get()->toArray();
 
-		$tp = Roles::getItems()->toArray();
+		//$tp = Roles::getItems()->toArray();
 		//$tp = Roles::whereIn('companies_id', [$app->lincko->data['company_id'], null])->get()->toArray();
 		//$tp = Roles::where('companies_id', null)->get()->toArray();
+		
+		//$tp = Roles::with('users')->find(6);
+		//$tp = Roles::getUsersContactsID([1, 5, 6]);
+
+		//$tp = (new Roles)->whereIn('id', ['1,4,6'])->with('users')->get();
+
+		//$tp = Roles::whereIn('id', [1, 6])->with('users')->get();
+
+		//$tp = Users::getItems();
+		//$tp = Users::find(1);
+		//$tp = $tp->toJson();
+
+		$tp = Tasks::find(62);
+		$tp->title = '['.rand(1, 99).'] Test '.rand();
+		$tp->save();
 
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
+
+		//----------------------------------------
+
+		//Display mysql requests
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'$data', __FILE__, false, false, true);
 
 		//----------------------------------------
 	

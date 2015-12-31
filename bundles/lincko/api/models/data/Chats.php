@@ -88,7 +88,9 @@ class Chats extends ModelLincko {
 ////////////////////////////////////////////
 
 	public function scopegetLinked($query){
-		return $query->whereHas('users', function ($query) {
+		return $query
+		->with('users')
+		->whereHas('users', function ($query) {
 			$app = self::getApp();
 			$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
 		});

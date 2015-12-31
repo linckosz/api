@@ -85,7 +85,9 @@ class ChatsComments extends ModelLincko {
 	//We overwritte this function because it's linked to "chats", not "users" directly
 	//This will not download message owned by the user but that cannot be displayed because not in a chat folder
 	public function scopegetLinked($query){
-		return $query->whereHas('chats', function ($query) {
+		return $query
+		->with('chats')
+		->whereHas('chats', function ($query) {
 			$query->getLinked();
 		});
 	}
