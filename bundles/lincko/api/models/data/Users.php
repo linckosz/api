@@ -13,6 +13,7 @@ class Users extends ModelLincko {
 	protected $connection = 'data';
 
 	protected $table = 'users';
+	protected $morphClass = 'users';
 
 	protected $primaryKey = 'id';
 
@@ -88,11 +89,6 @@ class Users extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'users_x_tasks', 'users_id', 'tasks_id')->withPivot('access', 'in_charge', 'approver');
 	}
 
-	//Many(Users) to Many(Tasks)
-	public function roles(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_companies', 'users_id', 'roles_id')->withPivot('companies_id', 'roles_id');
-	}
-
 	//Many(Users) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_link')->withPivot('access');
@@ -101,6 +97,11 @@ class Users extends ModelLincko {
 	//Many(Users) to Many(Users)
 	public function usersLinked(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id_link', 'users_id')->withPivot('access');
+	}
+
+	//Many(Users) to Many(Companies)
+	public function roles(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'roles_id', 'companies_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////
@@ -168,7 +169,7 @@ class Users extends ModelLincko {
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
 			$app = self::getApp();
 			$query
-			->with('usersLinked')
+			//->with('usersLinked')
 			->whereHas('usersLinked', function ($query) {
 				$app = self::getApp();
 				$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);

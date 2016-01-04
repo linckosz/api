@@ -10,6 +10,7 @@ class ChatsComments extends ModelLincko {
 	protected $connection = 'data';
 
 	protected $table = 'chats_comments';
+	protected $morphClass = 'chats_comments';
 
 	protected $primaryKey = 'id';
 
@@ -86,7 +87,7 @@ class ChatsComments extends ModelLincko {
 	//This will not download message owned by the user but that cannot be displayed because not in a chat folder
 	public function scopegetLinked($query){
 		return $query
-		->with('chats')
+		//->with('chats')
 		->whereHas('chats', function ($query) {
 			$query->getLinked();
 		});

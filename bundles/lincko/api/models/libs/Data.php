@@ -90,10 +90,11 @@ class Data {
 		if(is_null(self::$models)){
 			$sql = 'SHOW TABLES;';
 			$db = Capsule::connection('data');
+			$db->enableQueryLog();
 			$data = $db->select( $db->raw($sql) );
 			$classes = array();
 			foreach ($data as $key => $value) {
-				$tp = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC(array_values($value)[0]);
+				$tp = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC(array_values((array) $value)[0]);
 				if(class_exists($tp)){
 					$table_name = $tp::getTableStatic();
 					$classes[$table_name] = $tp;
@@ -104,6 +105,10 @@ class Data {
 		return self::$models;
 	}
 
+	/*
+	TIPS (31 dec 2015):
+		A way to accelerate the code should be to do only one SQL request (like $tp = Companies::with('projects.tasks')->find(3)->toJson() ), but this do not call toJson for child items, and we migth need to rebuild the client side database, this is a heavy rewriting to do only if we really need to speedup the code execution. It can also exclude the possibility to link a task to 2 projectss
+	*/
 	protected function getList(){
 		$app = $this->app;
 		$result = new \stdClass;
@@ -216,6 +221,7 @@ class Data {
 				}
 
 				if(!empty($id_list)){
+					
 					if($full_data){
 						$contacts = $value::getUsersContactsID($id_list);
 						foreach ($contacts as $contacts_key => $contacts_value) {
@@ -305,7 +311,7 @@ class Data {
 		}
 		
 		//Enable this code to see if there is any bootle neck (time) doing mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'$data', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'$data', __FILE__, false, false, true);
 		
 		return $result;
 	}

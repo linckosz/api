@@ -4,7 +4,7 @@ namespace bundles\lincko\api\models;
 
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\SoftDeletingTrait;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Test extends Model {
 
@@ -16,7 +16,7 @@ class Test extends Model {
 
 	public $timestamps = true;
 	
-	use SoftDeletingTrait;
+	use SoftDeletes;
 	protected $dates = ['deleted_at'];
 
 	protected $visible = array();

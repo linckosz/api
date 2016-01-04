@@ -5,13 +5,14 @@ namespace bundles\lincko\api\models\libs;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
 
-use Illuminate\Database\Eloquent\SoftDeletingTrait;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class History extends ModelLincko {
 
 	protected $connection = 'data';
 
 	protected $table = 'history';
+	protected $morphClass = 'history';
 
 	protected $primaryKey = 'id';
 

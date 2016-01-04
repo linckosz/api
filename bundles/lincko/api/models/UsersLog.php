@@ -4,7 +4,7 @@ namespace bundles\lincko\api\models;
 
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\SoftDeletingTrait;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;

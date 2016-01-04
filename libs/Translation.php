@@ -249,15 +249,15 @@ class Translation {
 			$db = Capsule::connection($bundle);
 			$data = $db->select( $db->raw($sql) );
 			foreach ($data as $key => $value) {
-				$keylong = $value['Field'];
+				$keylong = $value->Field;
 				$keyshort = preg_replace("/-.*/ui", '', $keylong);
 				if(!isset($list[$keylong])){
-					$list[$keylong] = $value['Field'];
+					$list[$keylong] = $value->Field;
 				}
 				if(!isset($list[$keyshort])){
-					$list[$keyshort] = $value['Field'];
+					$list[$keyshort] = $value->Field;
 				}
-				$this->listfull[$value['Field']] = $value['Comment'];
+				$this->listfull[$value->Field] = $value->Comment;
 			}
 		}
 		return true;
@@ -370,7 +370,7 @@ class Translation {
 			$db = Capsule::connection($bundle);
 			$data = $db->select( $db->raw($sql) );
 			foreach ($data as $key => $value) {
-				$listfull[$value['Field']] = $value['Comment'];
+				$listfull[$value->Field] = $value->Comment;
 			}
 		}
 		return $listfull;

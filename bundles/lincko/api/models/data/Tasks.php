@@ -11,6 +11,7 @@ class Tasks extends ModelLincko {
 	protected $connection = 'data';
 
 	protected $table = 'tasks';
+	protected $morphClass = 'tasks';
 
 	protected $primaryKey = 'id';
 
@@ -81,11 +82,13 @@ class Tasks extends ModelLincko {
 	protected $dependencies_visible = array(
 		'users',
 		'tasks',
+		'roles',
 	);
 
 	protected $dependencies_fields = array(
 		'in_charge',
 		'approver',
+		'delay',
 	);
 
 	protected $model_timestamp = array(
@@ -141,8 +144,8 @@ class Tasks extends ModelLincko {
 	public function scopegetLinked($query){
 		//It will get all task with access 1, and all tasks which are not in the relation table, but the second has to be in conjonction with projects
 		return $query
-		->with('projects') //(Many to One) This helps to acces project data by ->projects->
-		->with('users')
+		->with('projects') //(Many to One) This helps to acces project data by ->projects-> in getCompany
+		//->with('users')
 		->whereHas("users", function($query) {
 			$app = self::getApp();
 			$uid = $app->lincko->data['uid'];

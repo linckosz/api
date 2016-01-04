@@ -10,6 +10,7 @@ class Companies extends ModelLincko {
 	protected $connection = 'data';
 
 	protected $table = 'companies';
+	protected $morphClass = 'companies';
 
 	protected $primaryKey = 'id';
 
@@ -59,11 +60,6 @@ class Companies extends ModelLincko {
 	//One(Companies) to Many(Projects)
 	public function projects(){
 		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'companies_id');
-	}
-
-	//One(Companies) to Many(Roles)
-	public function roles(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'companies_id')->withPivot('roles_id');
 	}
 
 ////////////////////////////////////////////
@@ -128,7 +124,7 @@ class Companies extends ModelLincko {
 
 	public function scopegetLinked($query){
 		return $query
-		->with('users')
+		//->with('users')
 		->whereHas('users', function ($query) {
 			$app = self::getApp();
 			$query

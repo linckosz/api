@@ -8,7 +8,8 @@ use \Exception;
 use \libs\Json;
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\SoftDeletingTrait;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
@@ -19,7 +20,7 @@ abstract class ModelLincko extends Model {
 
 	protected static $app = null;
 
-	use SoftDeletingTrait;
+	use SoftDeletes;
 	protected $dates = ['deleted_at'];
 
 	protected $guarded = array('*');
@@ -73,13 +74,31 @@ abstract class ModelLincko extends Model {
 	//List the fields that will be shown on client side
 	protected $dependencies_fields = array();
 
+	protected static $access_list = array(1); //At (1) it only get readable items, at (1, 0) it returns editable
+
 	//Return true if the user is allowed to access(read) the model. We use an attribute to avoid too many mysql request in Data.php
 	protected $accessibility = null;
 
+	//Return true if the user is potentially allowed to modify the model.
+	protected $editability = null;
+
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
+
+		//No need to abstract it, but need to redefined for the Models that use it
+	public function users(){
+		return false;
+	}
+
+	//Many(Roles) to Many Poly (Users)
+	public function roles(){
+		$app = self::getApp();
+		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $app->lincko->data['uid']);
+	}
 
 	public function __construct(array $attributes = array()){
 		parent::__construct($attributes);
+		$db = Capsule::connection($this->connection);
+		$db->enableQueryLog();
 	}
 
 	public static function getTableStatic(){
@@ -110,7 +129,7 @@ abstract class ModelLincko extends Model {
 	//IMPORTANT: getLinked must check if the user has access to it, a good example is Tasks model which include all tasks with access 1 and tasks that belongs to projects with access authorized.
 	public function scopegetLinked($query){
 		return $query
-		->with('users')
+		//->with('users')
 		->whereHas('users', function ($query) {
 			$query->theUser();
 		});
@@ -129,11 +148,6 @@ abstract class ModelLincko extends Model {
 			$list[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
 		}
 		return $list;
-	}
-
-	//No need to abstract it, but need to redefined for the Models that use it
-	public function users(){
-		return false;
 	}
 
 	public function getCompany(){
@@ -216,28 +230,27 @@ abstract class ModelLincko extends Model {
 	public static function getDependencies(array $id_list){
 		$dependencies = new \stdClass;
 		$model = new static();
-		if(!empty($model->dependencies_fields)){
-			foreach ($model->dependencies_visible as $dependency) {
-				if(method_exists(get_class($model), $dependency)) {
-					$data = null;
-					try { //In case access in not available for the model
-						$data = self::whereIn('id', $id_list)->with($dependency)->whereHas($dependency, function ($query){
-							$query->where('access', 1);
-						})->get(['id']);
-					} catch (Exception $obj_exception) {
-						//Do nothing to continue
-					}
-					if(!is_null($data)){
-						foreach ($data as $dep) {
-							if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
-							if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
-							foreach ($dep->$dependency as $key => $value) {
-								if($value->pivot->access){
-									foreach ($model->dependencies_fields as $field) {
-										if(isset($value->pivot->{$field})){
-											if(!isset($dependencies->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
-											$dependencies->{$dep->id}->{'_'.$dependency}->{$value->id}->{$field} = $value->pivot->{$field};
-										}
+		foreach ($model->dependencies_visible as $dependency) {
+			if(method_exists(get_class($model), $dependency)) {
+				$data = null;
+				try { //In case access in not available for the model
+					$data = self::whereIn('id', $id_list)->with($dependency)->whereHas($dependency, function ($query){
+						$query->where('access', 1);
+					})->get(['id']);
+				} catch (Exception $obj_exception) {
+					//Do nothing to continue
+				}
+				\libs\Watch::php( $data->toArray() , $dependency, __FILE__, false, false, true);
+				if(!is_null($data)){
+					foreach ($data as $dep) {
+						if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
+						if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
+						foreach ($dep->$dependency as $key => $value) {
+							if($value->pivot->access){
+								if(!isset($dependencies->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
+								foreach ($model->dependencies_fields as $field) {
+									if(isset($value->pivot->{$field})){
+										$dependencies->{$dep->id}->{'_'.$dependency}->{$value->id}->{$field} = $value->pivot->{$field};
 									}
 								}
 							}
@@ -252,32 +265,33 @@ abstract class ModelLincko extends Model {
 	public static function getUsersContactsID(array $id_list){
 		$model = new static();
 		$list = array();
-		$data = $model->whereIn('id', $id_list)->with('users')->get();
-		
-		foreach ($data as $item) {
-			//Get users list from items themselves
-			if(isset($item->created_by)){
-				if(!isset($list[(integer) $item->created_by])){
-						$list[(integer) $item->created_by] = $model->getContactsInfo();
-				}
-			}
-			if(isset($item->updated_by)){
-				if(!isset($list[(integer) $item->updated_by])){
-						$list[(integer) $item->updated_by] = $model->getContactsInfo();
-				}
-			}
-			//Get users list from items access relationship
-			if(isset($item->users)){
-				if(isset($item->users->id) && !isset($list[(integer) $item->users->id])){
-					$list[(integer) $item->users->id] = $model->getContactsInfo();
-				}
-				foreach ($item->users as $value) {
-					if(isset($value->id) && !isset($list[(integer) $value->id])){
-						$list[(integer) $value->id] = $model->getContactsInfo();
+		if($data = $model->whereIn('id', $id_list)->with('users')){
+			$data = $data->get();
+			foreach ($data as $item) {
+				//Get users list from items themselves
+				if(isset($item->created_by)){
+					if(!isset($list[(integer) $item->created_by])){
+							$list[(integer) $item->created_by] = $model->getContactsInfo();
 					}
 				}
+				if(isset($item->updated_by)){
+					if(!isset($list[(integer) $item->updated_by])){
+							$list[(integer) $item->updated_by] = $model->getContactsInfo();
+					}
+				}
+				//Get users list from items access relationship
+				if(isset($item->users)){
+					if(isset($item->users->id) && !isset($list[(integer) $item->users->id])){
+						$list[(integer) $item->users->id] = $model->getContactsInfo();
+					}
+					foreach ($item->users as $value) {
+						if(isset($value->id) && !isset($list[(integer) $value->id])){
+							$list[(integer) $value->id] = $model->getContactsInfo();
+						}
+					}
+				}
+				
 			}
-			
 		}
 		return $list;
 	}
@@ -449,19 +463,21 @@ abstract class ModelLincko extends Model {
 	}
 
 	//It checks if the user has access to it
-	public function checkAccess(){
+	public function checkAccess($all=false){
 		$app = self::getApp();
-		if(!is_bool($this->accessibility)){
-			$this->accessibility = (bool) false; //By default, for security reason, we do not allow the access
+		$ability = 'accessibility';
+		if($all){ $ability = 'editability'; }
+		if(!is_bool($this->$ability)){
+			$this->$ability = (bool) false; //By default, for security reason, we do not allow the access
 			if(isset($this->id)){
-				if($this->getLinked()->count() > 0){
-					$this->accessibility = (bool) true;
+				if($this->getLinked($all)->count() > 0){
+					$this->$ability = (bool) true;
 				}
 			} else {
-				$this->accessibility = (bool) true; //Set to true for any created item
+				$this->$ability = (bool) true; //Set to true for any created item
 			}
 		}
-		if($this->accessibility){
+		if($this->$ability){
 			return true;
 		} else {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
@@ -476,7 +492,7 @@ abstract class ModelLincko extends Model {
 	public function checkRole($role_suffix){
 		$app = self::getApp();
 		$table = $this->getTable();
-		$role = Users::getUser()->roles()->where('users_x_companies.companies_id', $app->lincko->data['company_id'])->first();
+		$role = Users::getUser()->roles()->where('users_x_companies.companies_id', $app->lincko->data['company_id'])->first(); //[toto] Need to rewrite
 		$allow = false; //Disallow by default
 		if(isset($role->{$table.'_'.$role_suffix})){ //Per model
 			$allow = $role->{$table.'_'.$role_suffix};

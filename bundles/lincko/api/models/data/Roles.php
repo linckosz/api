@@ -10,6 +10,7 @@ class Roles extends ModelLincko {
 	protected $connection = 'data';
 
 	protected $table = 'roles';
+	protected $morphClass = 'roles';
 
 	protected $primaryKey = 'id';
 
@@ -20,6 +21,7 @@ class Roles extends ModelLincko {
 		'created_at',
 		'created_by',
 		'role',
+		'shared',
 		'companies_id',
 		'users_id',
 		'_edit',
@@ -43,23 +45,17 @@ class Roles extends ModelLincko {
 		'_delete' => 799,//[{un|ucfirst}] deleted a role.
 	);
 
-	protected static $foreign_keys = array(
-		'companies_id' => '\\bundles\\lincko\\api\\models\\data\\Companies',
-		'users_id' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
-
 ////////////////////////////////////////////
 
-	//Many(Roles) to One(Users)
+	//Many(Companies) to Many(Users)
 	public function users(){
-		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'users_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_roles_x', 'roles_id', 'users_id');
 	}
 
-	//Many(Roles) to One(Companies)
+	//Many(Companies) to Many(Users)
 	public function companies(){
-		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Companies', 'companies_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Companies', 'users_x_roles_x', 'roles_id', 'relation_id')->wherePivot('relation_type', '=', 'companies');
 	}
-
 
 ////////////////////////////////////////////
 	public static function validName($data){
@@ -78,21 +74,24 @@ class Roles extends ModelLincko {
 
 	public function scopegetLinked($query){
 		return $query
+		//->with('companies')
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$app = self::getApp();
 			$query
-			->where('companies_id', $app->lincko->data['company_id'])
-			->orWhere('companies_id', null);
+			->whereHas("companies", function($query) {
+				$app = self::getApp();
+				$query
+				->where('users_id', $app->lincko->data['uid'])
+				->where('relation_type', 'companies')
+				->where('relation_id', $app->lincko->data['company_id']);
+			})
+			->orWhere('shared', 1);
 		});
 	}
 
 	public function getCompany(){
 		$app = self::getApp();
-		if(!is_null($this->companies_id)){
-			return $this->companies_id;
-		} else {
-			return $app->lincko->data['company_id'];
-		}
+		return $app->lincko->data['company_id'];
 	}
 
 }

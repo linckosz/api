@@ -30,6 +30,7 @@ class ControllerTest extends Controller {
 	public function _get(){
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 0); //The application is reading.
+		Capsule::connection('data')->enableQueryLog();
 
 		//\libs\Watch::php(Users::getUser()->toJson(),'$user',__FILE__);
 		
@@ -441,16 +442,19 @@ class ControllerTest extends Controller {
 		//$tp = Users::find(1);
 		//$tp = $tp->toJson();
 
-		$tp = Tasks::find(62);
-		$tp->title = '['.rand(1, 99).'] Test '.rand();
-		$tp->save();
+		//$tp = Companies::with('projects.tasks')->find(3)->toJson();
+
+		//$tp = Companies::find(1)->roles()->get();
+
+		//$tp = Companies::find(1)->roles()->get()->toArray();
+		$tp = Tasks::getDependencies([4]);
 
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'$data', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'$data', __FILE__, false, false, true);
 
 		//----------------------------------------
 	
