@@ -79,12 +79,12 @@ abstract class ModelLincko extends Model {
 	//Return true if the user is allowed to access(read) the model. We use an attribute to avoid too many mysql request in Data.php
 	protected $accessibility = null;
 
-	//Return true if the user is potentially allowed to modify the model.
-	protected $editability = null;
+	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
+	protected $role_parent = false;
 
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
 
-		//No need to abstract it, but need to redefined for the Models that use it
+	//No need to abstract it, but need to redefined for the Models that use it
 	public function users(){
 		return false;
 	}
@@ -92,7 +92,7 @@ abstract class ModelLincko extends Model {
 	//Many(Roles) to Many Poly (Users)
 	public function roles(){
 		$app = self::getApp();
-		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $app->lincko->data['uid']);
+		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $app->lincko->data['uid'])->withPivot('access', 'single_edit')->take(1);
 	}
 
 	public function __construct(array $attributes = array()){
@@ -240,13 +240,12 @@ abstract class ModelLincko extends Model {
 				} catch (Exception $obj_exception) {
 					//Do nothing to continue
 				}
-				\libs\Watch::php( $data->toArray() , $dependency, __FILE__, false, false, true);
-				if(!is_null($data)){
+				if(!empty($data->toArray())){
 					foreach ($data as $dep) {
-						if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
-						if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
 						foreach ($dep->$dependency as $key => $value) {
 							if($value->pivot->access){
+								if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
+								if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
 								if(!isset($dependencies->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
 								foreach ($model->dependencies_fields as $field) {
 									if(isset($value->pivot->{$field})){
@@ -463,21 +462,19 @@ abstract class ModelLincko extends Model {
 	}
 
 	//It checks if the user has access to it
-	public function checkAccess($all=false){
+	public function checkAccess(){
 		$app = self::getApp();
-		$ability = 'accessibility';
-		if($all){ $ability = 'editability'; }
-		if(!is_bool($this->$ability)){
-			$this->$ability = (bool) false; //By default, for security reason, we do not allow the access
+		if(!is_bool($this->accessibility)){
+			$this->accessibility = (bool) false; //By default, for security reason, we do not allow the access
 			if(isset($this->id)){
-				if($this->getLinked($all)->count() > 0){
-					$this->$ability = (bool) true;
+				if($this->getLinked()->count() > 0){
+					$this->accessibility = (bool) true;
 				}
 			} else {
-				$this->$ability = (bool) true; //Set to true for any created item
+				$this->accessibility = (bool) true; //Set to true for any created item
 			}
 		}
-		if($this->$ability){
+		if($this->accessibility){
 			return true;
 		} else {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
@@ -492,12 +489,14 @@ abstract class ModelLincko extends Model {
 	public function checkRole($role_suffix){
 		$app = self::getApp();
 		$table = $this->getTable();
+
 		$role = Users::getUser()->roles()->where('users_x_companies.companies_id', $app->lincko->data['company_id'])->first(); //[toto] Need to rewrite
+		
 		$allow = false; //Disallow by default
 		if(isset($role->{$table.'_'.$role_suffix})){ //Per model
 			$allow = $role->{$table.'_'.$role_suffix};
-		} else if(isset($role->{'_'.$role_suffix})){ //General
-			$allow = $role->{'_'.$role_suffix};
+		} else if(isset($role->{'all_'.$role_suffix})){ //General
+			$allow = $role->{'all_'.$role_suffix};
 		}
 		if($allow){
 			return true;
@@ -651,17 +650,17 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected
-	public function getUserPivotValue($user_id, $column){//[toto]
-	//protected function getUserPivotValue($user_id, $column){
+	//public function getUserPivotValue($user_id, $column){
+	protected function getUserPivotValue($user_id, $column){
 		$column = strtolower($column);
 		if($users = $this->users()){
 			if($user = $users->find($user_id)){
-				if(isset($user->$column)){
-					return $user->$column;
+				if(isset($user->pivot->$column)){
+					return array(true, $user->pivot->$column);
 				}
 			}
 		}
-		return false;
+		return array(false, null);
 	}
 
 	protected function getPivotArchiveTitle($column, $value){
@@ -681,8 +680,9 @@ abstract class ModelLincko extends Model {
 		$return = false;
 		$users = $this->users();
 		if($users === false || !method_exists($users,'updateExistingPivot') || !method_exists($users,'attach')){ return false; } //If the pivot doesn't exist, we exit
-		$value_old = $this->getUserPivotValue($user_id, $column);
-		if($value_old !== false){
+		$pivot = $this->getUserPivotValue($user_id, $column);
+		$value_old = $pivot[1];
+		if($pivot[0]){
 			if($value_old != $value){
 				//Modify a line
 				$users->updateExistingPivot($user_id, array($column => $value));

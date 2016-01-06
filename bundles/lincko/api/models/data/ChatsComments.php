@@ -54,6 +54,8 @@ class ChatsComments extends ModelLincko {
 		'users',
 		'chats',
 	);
+
+	protected $role_parent = 'chats';
 	
 ////////////////////////////////////////////
 

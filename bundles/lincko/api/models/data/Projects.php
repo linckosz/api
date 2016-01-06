@@ -59,8 +59,14 @@ class Projects extends ModelLincko {
 		'companies',
 	);
 
+	protected $role_parent = 'companies';
+
 	protected $dependencies_visible = array(
 		'roles',
+	);
+
+	protected $dependencies_fields = array(
+		'single_edit',
 	);
 
 ////////////////////////////////////////////

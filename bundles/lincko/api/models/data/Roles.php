@@ -16,16 +16,10 @@ class Roles extends ModelLincko {
 
 	public $timestamps = true;
 
-	protected $visible = array(
-		'id',
-		'created_at',
-		'created_by',
-		'role',
-		'shared',
-		'companies_id',
-		'users_id',
-		'_edit',
-		'_delete',
+	protected $hidden = array(
+		'deleted_at',
+		'updated_by',
+		'deleted_by',
 	);
 
 	// CUSTOMIZATION //
@@ -44,6 +38,8 @@ class Roles extends ModelLincko {
 		'_restore' => 798,//[{un|ucfirst}] restored a role.
 		'_delete' => 799,//[{un|ucfirst}] deleted a role.
 	);
+
+	protected $role_parent = 'companies';
 
 ////////////////////////////////////////////
 

@@ -447,14 +447,27 @@ class ControllerTest extends Controller {
 		//$tp = Companies::find(1)->roles()->get();
 
 		//$tp = Companies::find(1)->roles()->get()->toArray();
-		$tp = Tasks::getDependencies([4]);
+		//$tp = Tasks::getDependencies([4]);
+		
+		//$tp = Projects::find(1)->roles()->get()->toArray();
 
+		$tp = Tasks::find(16);
+		$tp->setUserPivotValue(1, 'access', 1, false);
+		$tp = $tp->getUserPivotValue(1, 'access');
+		//$tp = $tp->whereHas('users');
+		//$tp = $tp->get()->toArray();
+		\libs\Watch::php( $tp[1] ,'$tp', __FILE__, false, false, true);
+		if($tp[0]){
+			$tp = 'exist';
+		} else {
+			$tp = 'no';
+		}
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'$data', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 
 		//----------------------------------------
 	

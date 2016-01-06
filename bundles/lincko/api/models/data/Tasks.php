@@ -79,6 +79,8 @@ class Tasks extends ModelLincko {
 		'projects',
 	);
 
+	protected $role_parent = 'projects';
+
 	protected $dependencies_visible = array(
 		'users',
 		'tasks',
@@ -89,6 +91,7 @@ class Tasks extends ModelLincko {
 		'in_charge',
 		'approver',
 		'delay',
+		'single_edit',
 	);
 
 	protected $model_timestamp = array(

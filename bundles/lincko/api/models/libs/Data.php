@@ -24,6 +24,13 @@ class Data {
 		return true;
 	}
 
+	public function reinit(){
+		$this->lastvisit = false;
+		$this->partial = NULL;
+		$this->item_detail = true;
+		$this->history_detail = false;
+	}
+
 	public function dataUpdateConfirmation($msg, $status=200){
 		$app = $this->app;
 
@@ -219,7 +226,7 @@ class Data {
 					$result->$uid->$compid->$table_name->$id = $temp;
 
 				}
-
+				
 				if(!empty($id_list)){
 					
 					if($full_data){
@@ -311,18 +318,20 @@ class Data {
 		}
 		
 		//Enable this code to see if there is any bootle neck (time) doing mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'$data', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 		
 		return $result;
 	}
 
 	public function getLatest($timestamp=false){
+		$this->reinit();
 		$this->setLastVisit($timestamp);
 		$this->partial = NULL;
 		return $this->getList();
 	}
 
 	public function getNewest(){
+		$this->reinit();
 		$app = $this->app;
 		$this->lastvisit = (new \DateTime('@'.$app->lincko->data['lastvisit']))->format('Y-m-d H:i:s');
 		$this->partial = NULL;
@@ -330,6 +339,7 @@ class Data {
 	}
 
 	public function getSchema(){
+		$this->reinit();
 		$this->lastvisit = false;
 		$this->partial = NULL;
 		$this->item_detail = false;
@@ -337,12 +347,14 @@ class Data {
 	}
 
 	public function getMissing(){
+		$this->reinit();
 		$this->lastvisit = false;
 		$this->setPartial();
 		return $this->getList();
 	}
 
 	public function getHistory(){
+		$this->reinit();
 		$this->lastvisit = false;
 		$this->history_detail = true;
 		$this->setPartial();

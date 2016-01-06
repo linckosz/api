@@ -50,6 +50,8 @@ class Chats extends ModelLincko {
 		'users'
 	);
 
+	protected $role_parent = 'companies';
+
 ////////////////////////////////////////////
 
 	//Many(Chats) to Many(Users)
