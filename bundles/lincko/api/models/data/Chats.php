@@ -50,7 +50,7 @@ class Chats extends ModelLincko {
 		'users'
 	);
 
-	protected $role_parent = 'companies';
+	protected $parent = 'companies';
 
 ////////////////////////////////////////////
 
@@ -97,6 +97,22 @@ class Chats extends ModelLincko {
 			$app = self::getApp();
 			$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
 		});
+	}
+
+	//We allow creation, and editing for the creator only
+	public function checkRole($level){
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+		if(isset($this->id) && $level<=1 && $this->created_by==$app->lincko->data['uid']){ //Allow editing for creator only
+			return true;
+		} else if(isset($this->id) && $level<=0){ //Allow only read for others
+			return true;
+		} else if(!isset($this->id) && $level<=1){ //Allow creation
+			return true;
+		} else {
+			$level = 3; //force to error, disable the deletion
+		}
+		return parent::checkRole($level); //this will only launch error, since $level = 3
 	}
 
 }

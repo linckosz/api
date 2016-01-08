@@ -39,18 +39,18 @@ class Roles extends ModelLincko {
 		'_delete' => 799,//[{un|ucfirst}] deleted a role.
 	);
 
-	protected $role_parent = 'companies';
+	protected $parent = 'companies';
 
 ////////////////////////////////////////////
 
 	//Many(Companies) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_roles_x', 'roles_id', 'users_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_roles_x', 'roles_id', 'users_id')->withPivot('access', 'single', 'relation_id', 'relation_type');
 	}
 
 	//Many(Companies) to Many(Users)
 	public function companies(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Companies', 'users_x_roles_x', 'roles_id', 'relation_id')->wherePivot('relation_type', '=', 'companies');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Companies', 'users_x_roles_x', 'roles_id', 'relation_id')->wherePivot('relation_type', '=', 'companies')->withPivot('access', 'single', 'relation_id', 'relation_type');
 	}
 
 ////////////////////////////////////////////

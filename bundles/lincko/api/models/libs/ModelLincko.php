@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\libs;
 
 use \Exception;
 use \libs\Json;
+use \libs\STR;
 use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -74,13 +75,14 @@ abstract class ModelLincko extends Model {
 	//List the fields that will be shown on client side
 	protected $dependencies_fields = array();
 
-	protected static $access_list = array(1); //At (1) it only get readable items, at (1, 0) it returns editable
-
 	//Return true if the user is allowed to access(read) the model. We use an attribute to avoid too many mysql request in Data.php
 	protected $accessibility = null;
 
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
-	protected $role_parent = false;
+	protected $parent = null;
+	protected $parent_id = null;
+	//This enable or disable the ability to give a permission to a single element with it's children.
+	protected $allow_single = false;
 
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
 
@@ -92,7 +94,13 @@ abstract class ModelLincko extends Model {
 	//Many(Roles) to Many Poly (Users)
 	public function roles(){
 		$app = self::getApp();
-		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $app->lincko->data['uid'])->withPivot('access', 'single_edit')->take(1);
+		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $app->lincko->data['uid'])->withPivot('access', 'single', 'relation_id', 'relation_type')->take(1);
+	}
+
+	//Many(Roles) to Many Poly (Users)
+	public function rolesUsers(){
+		$app = self::getApp();
+		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'relation', 'users_x_roles_x', 'relation_id', 'users_id')->withPivot('access', 'single', 'roles_id', 'relation_id', 'relation_type')->take(1);
 	}
 
 	public function __construct(array $attributes = array()){
@@ -152,6 +160,45 @@ abstract class ModelLincko extends Model {
 
 	public function getCompany(){
 		return '_';
+	}
+
+	public function getParent(){
+		if($this->parent && $this->parent_id && $class = $this->getClass($this->parent)){
+			return $class::find($this->parent_id);
+		}
+		if($this->parent && method_exists(get_class($this), $this->parent)){
+			if($model = $this->{$this->parent}()->first()){
+				$this->parent_id = $model->id;
+				return $model;
+			}
+		}
+		$this->parent = false;
+		$this->parent_id = false;
+		return false;
+	}
+
+	public function getParentID(){
+		if($this->parent_id){
+			return $this->parent_id;
+		}
+		if($this->parent && isset($this->{$this->parent.'_id'})){
+			$this->parent_id = $this->{$this->parent.'_id'};
+			return $this->parent_id;
+		}
+		if($model = $this->getParent()){
+			return $this->parent_id;
+		}
+		$this->parent = false;
+		$this->parent_id = false;
+		return false;
+	}
+
+	public static function getClass($class){
+		$tp = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC($class);
+		if(class_exists($tp)){
+			return $tp;
+		}
+		return false;
 	}
 
 	public function setForceSchema(){
@@ -230,7 +277,7 @@ abstract class ModelLincko extends Model {
 	public static function getDependencies(array $id_list){
 		$dependencies = new \stdClass;
 		$model = new static();
-		foreach ($model->dependencies_visible as $dependency) {
+		foreach ($model->dependencies_visible as $dependency => $dependencies_fields) {
 			if(method_exists(get_class($model), $dependency)) {
 				$data = null;
 				try { //In case access in not available for the model
@@ -239,15 +286,16 @@ abstract class ModelLincko extends Model {
 					})->get(['id']);
 				} catch (Exception $obj_exception) {
 					//Do nothing to continue
+					return $dependencies;
 				}
-				if(!empty($data->toArray())){
+				if(!is_null($data) && !empty($data->toArray())){
 					foreach ($data as $dep) {
 						foreach ($dep->$dependency as $key => $value) {
 							if($value->pivot->access){
 								if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
 								if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
 								if(!isset($dependencies->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
-								foreach ($model->dependencies_fields as $field) {
+								foreach ($dependencies_fields as $field) {
 									if(isset($value->pivot->{$field})){
 										$dependencies->{$dep->id}->{'_'.$dependency}->{$value->id}->{$field} = $value->pivot->{$field};
 									}
@@ -279,7 +327,7 @@ abstract class ModelLincko extends Model {
 					}
 				}
 				//Get users list from items access relationship
-				if(isset($item->users)){
+				if(isset($item->users) && is_object($item->user)){
 					if(isset($item->users->id) && !isset($list[(integer) $item->users->id])){
 						$list[(integer) $item->users->id] = $model->getContactsInfo();
 					}
@@ -485,28 +533,66 @@ abstract class ModelLincko extends Model {
 		}
 	}
 
-	//It checks if the user has access to it
-	public function checkRole($role_suffix){
-		$app = self::getApp();
-		$table = $this->getTable();
-
-		$role = Users::getUser()->roles()->where('users_x_companies.companies_id', $app->lincko->data['company_id'])->first(); //[toto] Need to rewrite
-		
-		$allow = false; //Disallow by default
-		if(isset($role->{$table.'_'.$role_suffix})){ //Per model
-			$allow = $role->{$table.'_'.$role_suffix};
-		} else if(isset($role->{'all_'.$role_suffix})){ //General
-			$allow = $role->{'all_'.$role_suffix};
+	protected function formatLevel($level){
+		if(is_string($level)){
+			if(strtolower($level) == 'edit'){ $level = 1; } //edit
+			else if(strtolower($level) == 'delete'){ $level = 2; } //delete
+			else if(strtolower($level) == 'error'){ $level = 3; } //force error
+			else { $level = 0; } //read
+		} else if(is_integer($level)){
+			if($level <0 && $level > 3){ $level = 3; }
+		} else {
+			$level = 3;
 		}
-		if($allow){
+		return $level;
+	}
+
+	//It checks if the user has access to edit it
+	public function checkRole($level){
+		$this->checkAccess();
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+
+		$model = $this;
+		$suffix = $model->getTable();
+		$role = false;
+		$allow = 0; //Only allow reading
+
+		if($level >=1 && $level <= 2){
+			$table = array();
+			$loop = true;
+			while($loop){
+				if(!in_array($model->getTable(), $table) && !$role = $model->roles()->first()){
+					$table[] = $model->getTable();
+					if($model = $model->getParent()){
+						continue;
+					}
+				}
+				$loop = false;
+				break;
+			}
+			
+			if($role){
+				if($role->perm_grant){ //Grant permission
+					$allow = 2;
+				} else if(isset($role->{'perm_'.$suffix})){ //Per model
+					$allow = $role->{'perm_'.$suffix};
+				} else { //General
+					$allow = $role->perm_all;
+				}
+			}
+		}
+		
+		if($level <= $allow){
 			return true;
 		} else {
-			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php(parent::toJson(), $role_suffix.' : '.$msg, __FILE__, true);
+			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allow to edit the server data.
+			\libs\Watch::php(parent::toJson(), $suffix.' : '.$msg, __FILE__, true);
 			$json = new Json($msg, true, 406);
 			$json->render();
 			return false;
 		}
+		return false;
 	}
 
 	//When save, it helps to keep track of history
@@ -650,11 +736,11 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected
-	//public function getUserPivotValue($user_id, $column){
-	protected function getUserPivotValue($user_id, $column){
+	//public function getUserPivotValue($users_id, $column){
+	protected function getUserPivotValue($users_id, $column){
 		$column = strtolower($column);
 		if($users = $this->users()){
-			if($user = $users->find($user_id)){
+			if($user = $users->find($users_id)){
 				if(isset($user->pivot->$column)){
 					return array(true, $user->pivot->$column);
 				}
@@ -673,32 +759,99 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected, public is only for test
-	public function setUserPivotValue($user_id, $column, $value=0, $history=true){ //[toto]
-	//protected function setUserPivotValue($user_id, $column, $value=0, $history=true){
+	public function setUserPivotValue($users_id, $column, $value=0, $history=true){ //[toto]
+	//protected function setUserPivotValue($users_id, $column, $value=0, $history=true){
 		$app = self::getApp();
 		$column = strtolower($column);
 		$return = false;
 		$users = $this->users();
 		if($users === false || !method_exists($users,'updateExistingPivot') || !method_exists($users,'attach')){ return false; } //If the pivot doesn't exist, we exit
-		$pivot = $this->getUserPivotValue($user_id, $column);
+		$pivot = $this->getUserPivotValue($users_id, $column);
 		$value_old = $pivot[1];
 		if($pivot[0]){
 			if($value_old != $value){
 				//Modify a line
-				$users->updateExistingPivot($user_id, array($column => $value));
+				$users->updateExistingPivot($users_id, array($column => $value));
 				if($history){
 					$archive_title = $this->getPivotArchiveTitle($column, $value);
-					$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($user_id)->username));
+					$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($users_id)->username));
 					$this->touch();
 				}
 				$return = true;
 			}
 		} else {
 			//Create a new line
-			$users->attach($user_id, array($column => $value));
+			$users->attach($users_id, array($column => $value));
 			if($history){
 				$archive_title = $this->getPivotArchiveTitle($column, $value);
-				$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($user_id)->username));
+				$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($users_id)->username));
+				$this->touch();
+			}
+			$return = true;
+		}
+		if($return){
+			//Force all linked users to recheck their Schema
+			$this->setForceSchema();
+		}
+		//Do not change anything, it's the same
+		return $return;
+	}
+
+
+	//By preference, keep it protected
+	public function getRolePivotValue($users_id){
+	//protected function getRolePivotValue($users_id){
+		if($roles = $this->rolesUsers()){
+			if($role = $roles->wherePivot('users_id', $users_id)->first()){
+				return array(true, $role->pivot->roles_id, $role->pivot->single);
+			}
+		}
+		return array(false, null, null);
+	}
+
+	//By preference, keep it protected, public is only for test
+	public function setRolePivotValue($users_id, $roles_id=3, $single=null, $history=true){ //[toto]
+		$app = self::getApp();
+		$return = false;
+		$user = $this->rolesUsers();
+		if($user === false || !method_exists($user,'updateExistingPivot') || !method_exists($user,'attach')){ return false; } //If the pivot doesn't exist, we exit
+		$pivot = $this->getRolePivotValue($users_id);
+		$roles_id_old = $pivot[1];
+		$single_old = $pivot[2];
+		if(!$this->allow_single){
+			$single=null;
+		}
+		if($pivot[0]){
+			if($roles_id_old != $roles_id || $single_old != $single){
+				//Modify a line
+				$user->updateExistingPivot($users_id, array('roles_id' => $roles_id, 'single' => $single));
+				if($history){
+					if($roles_id_old != $roles_id){
+						$value = $roles_id;
+						$value_old = $roles_id_old;
+					}
+					if($single_old != $single){
+						$value = $single;
+						$value_old = $single_old;
+					}
+					$this->setHistory('_', $value, $value_old, array('cun' => Users::find($users_id)->username));
+					$this->touch();
+				}
+				$return = true;
+			}
+		} else {
+			//Create a new line
+			$user->attach($users_id, array('roles_id' => $roles_id, 'single' => $single));
+			if($history){
+				if($roles_id_old != $roles_id){
+						$value = $roles_id;
+						$value_old = $roles_id_old;
+					}
+					if($single_old != $single){
+						$value = $single;
+						$value_old = $single_old;
+					}
+				$this->setHistory('_', $value, $value_old, array('cun' => Users::find($users_id)->username));
 				$this->touch();
 			}
 			$return = true;

@@ -99,9 +99,9 @@ class Users extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id_link', 'users_id')->withPivot('access');
 	}
 
-	//Many(Users) to Many(Companies)
+	//Many(Users) to Many(Roles)
 	public function roles(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'roles_id', 'companies_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'users_id', 'roles_id')->withPivot('relation_id', 'relation_type', 'access', 'single');
 	}
 
 ////////////////////////////////////////////
@@ -176,6 +176,20 @@ class Users extends ModelLincko {
 			})
 			->orWhere('id', $app->lincko->data['uid']);
 		});
+	}
+
+	//We allow creation, and editing for the creator only
+	public function checkRole($level){
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+		if(isset($this->id) && $level<=1 && $this->id==$app->lincko->data['uid']){ //Allow editing for creator only
+			return true;
+		} else if(isset($this->id) && $level<=0){ //Allow only read for others
+			return true;
+		} else if(!isset($this->id) && $level<=1){ //Allow creation
+			return true;
+		}
+		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 
 	public function getContactsLock(){

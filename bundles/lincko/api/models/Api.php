@@ -4,8 +4,6 @@ namespace bundles\lincko\api\models;
 
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 class Api extends Model {
 
 	protected $connection = 'api';
@@ -20,7 +18,8 @@ class Api extends Model {
 
 	/////////////////////////////////////
 
-
-
+	//Add these functions to insure that nobody can make them disappear
+	public function delete(){}
+	public function restore(){}
 
 }

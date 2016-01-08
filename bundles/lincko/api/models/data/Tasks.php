@@ -79,24 +79,19 @@ class Tasks extends ModelLincko {
 		'projects',
 	);
 
-	protected $role_parent = 'projects';
+	protected $parent = 'projects';
 
 	protected $dependencies_visible = array(
-		'users',
-		'tasks',
-		'roles',
-	);
-
-	protected $dependencies_fields = array(
-		'in_charge',
-		'approver',
-		'delay',
-		'single_edit',
+		'users' => array(),
+		'tasks' => array('in_charge', 'delay'),
+		'roles' => array('single'),
 	);
 
 	protected $model_timestamp = array(
 		'start',
 	);
+
+	protected $allow_single = true;
 	
 ////////////////////////////////////////////
 

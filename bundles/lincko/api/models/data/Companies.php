@@ -42,10 +42,6 @@ class Companies extends ModelLincko {
 		'_delete' => 399,//[{un|ucfirst}] deleted the workspace.
 	);
 
-	protected static $foreign_keys = array(
-		'personal_private' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
-
 	protected static $relations_keys = array(
 		'users',
 	);
@@ -117,7 +113,8 @@ class Companies extends ModelLincko {
 		}
 		$return = parent::save($options);
 		if($new){
-			$this->setUserPivotValue($app->lincko->data['uid'], 'access', 1, false);
+			//Set the role to administrator for teh Company creator
+			$this->setRolePivotValue($app->lincko->data['uid'], 1, null, false);
 		}
 		return $return;
 	}
@@ -137,6 +134,16 @@ class Companies extends ModelLincko {
 			->where('personal_private', null)
 			->orWhere('personal_private', $app->lincko->data['uid']);
 		});
+	}
+
+	//We allow creation only
+	public function checkRole($level){
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+		if(!isset($this->id) && $level<=1){ //Allow creation
+			return true;
+		}
+		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 
 	//We keep "_" because we want to store companies information in teh same folder on client side (easier for JS), not separatly

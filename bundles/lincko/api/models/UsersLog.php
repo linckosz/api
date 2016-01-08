@@ -4,8 +4,6 @@ namespace bundles\lincko\api\models;
 
 use Illuminate\Database\Eloquent\Model;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
 
@@ -30,6 +28,10 @@ class UsersLog extends Model {
 	}
 
 ////////////////////////////////////////////
+
+	//Add these functions to insure that nobody can make them disappear
+	public function delete(){}
+	public function restore(){}
 
 	//Do not call noValidMessage because it's not a child of ModleLincko, but Model directly
 	public static function validPassword($data){

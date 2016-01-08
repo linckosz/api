@@ -5,22 +5,16 @@ namespace bundles\lincko\api\models\libs;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
 
-class History extends ModelLincko {
+class PivotUsersRoles extends ModelLincko {
 
 	protected $connection = 'data';
 
-	protected $table = 'history';
-	protected $morphClass = 'history';
+	protected $table = 'users_x_roles_x';
+	protected $morphClass = 'users_x_roles_x';
 
 	protected $primaryKey = 'id';
 
-	public $timestamps = true;
-
 	protected $visible = array();
-
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
 	
 ////////////////////////////////////////////
 
@@ -28,9 +22,11 @@ class History extends ModelLincko {
 	public function delete(){}
 	public function restore(){}
 
-	//Always allow editing
-	public function checkRole($level){
-		return true;
+////////////////////////////////////////////
+
+	public function scopegetLinked($query){
+		$app = self::getApp();
+		return $query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
 	}
 
 }

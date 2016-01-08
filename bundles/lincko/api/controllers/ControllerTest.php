@@ -6,6 +6,7 @@ use \libs\Controller;
 use \libs\Email;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
+use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\ChatsComments;
@@ -15,6 +16,8 @@ use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Tasks;
 use \bundles\lincko\api\models\data\Roles;
 use Illuminate\Database\Capsule\Manager as Capsule;
+
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class ControllerTest extends Controller {
 
@@ -450,18 +453,53 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::getDependencies([4]);
 		
 		//$tp = Projects::find(1)->roles()->get()->toArray();
-
-		$tp = Tasks::find(16);
-		$tp->setUserPivotValue(1, 'access', 1, false);
-		$tp = $tp->getUserPivotValue(1, 'access');
-		//$tp = $tp->whereHas('users');
-		//$tp = $tp->get()->toArray();
-		\libs\Watch::php( $tp[1] ,'$tp', __FILE__, false, false, true);
-		if($tp[0]){
-			$tp = 'exist';
-		} else {
-			$tp = 'no';
+/*
+		$tp = Users::getUser()->roles()->get(); //This is not optimized because need jointure
+		\libs\Watch::php( $tp->toArray() ,'$tp', __FILE__, false, false, true);
+		$list_roles = array();
+		foreach ($tp as $value){
+			$type = $value->pivot->relation_type;
+			$id = $value->pivot->relation_id;
+			if( !isset($list_roles[$type]) ){ $list_roles[$type] = array(); }
+			if( !isset($list_roles[$type][$id]) ){ $list_roles[$type][$id] = array(); }
+			$list_roles[$type][$id] = array(
+				'role' => $value->pivot->roles_id,
+				'edit' => $value->pivot->single,
+			);
 		}
+
+		$tp = $list_roles;
+*/
+		//$tp = PivotUsersRoles::getLinked()->get()->toArray();
+
+		//$tp = Users::find(1);
+		//$tp = Tasks::find(4);
+
+		//$tp = Roles::find(1);
+		//$tp = Projects::find(5);
+
+		//$tp = Companies::find(3);
+	
+		//$tp = chatsComments::find(7);
+		//$tp = Chats::find(1);
+
+		//$tp = $tp->setRolePivotValue(1, 2);
+
+		//$tp = Projects::find(8)->users();
+		//Block
+		//$tp->updateExistingPivot(1, array('access' => 0));
+		//$tp->updateExistingPivot(1, array('access' => 1));
+
+		$tp = Tasks::find(4);
+		//$tp = $tp->rolesUsers()->where('pivot_users_id', 40)->first();
+		//$tp = $tp->rolesUsers()->wherePivot('users_id', '=', 40)->get();
+		//$tp = $tp->getRolePivotValue(1);
+		//$tp = $tp->newExistingPivot();
+		//$tp->setRolePivotValue(40, 2);
+		//$tp->attach(40, array('users_id' => 40, 'roles_id' => 4, 'single' => null, 'relation_type' => 'tasks', 'relation_id' => 4));
+
+		$tp = new Pivot($tp, array('users_id' => 1), 'users_x_roles_x', true);
+
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------
@@ -476,7 +514,7 @@ class ControllerTest extends Controller {
 		$tp = new Projects();
 		$tp->description = "Something to following";
 		$tp->title = 'toto '.rand();
-		$tp->companies_id = 0;
+		$tp->companies_id = $app->lincko->data['company_id'];
 		$tp->save();
 		*/
 		
@@ -502,6 +540,7 @@ class ControllerTest extends Controller {
 		*/
 
 		//Add new task
+		
 		/*
 		$tp = new Tasks();
 		$tp->comment = "Something to do quickly";
@@ -514,7 +553,7 @@ class ControllerTest extends Controller {
 		/*
 		$tp = new Tasks();
 		$tp->comment = "Something to do quickly";
-		$tp->title = 'B';
+		//$tp->title = 'B';
 		$tp->projects_id = 5;
 		$tp->save();
 		*/

@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\data\Companies;
 use \libs\Json;
 
 class Projects extends ModelLincko {
@@ -50,7 +51,6 @@ class Projects extends ModelLincko {
 	protected static $foreign_keys = array(
 		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
 		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'personal_private' => '\\bundles\\lincko\\api\\models\\data\\Users',
 		'companies_id' => '\\bundles\\lincko\\api\\models\\data\\Companies',
 	);
 
@@ -59,14 +59,10 @@ class Projects extends ModelLincko {
 		'companies',
 	);
 
-	protected $role_parent = 'companies';
+	protected $parent = 'companies';
 
 	protected $dependencies_visible = array(
-		'roles',
-	);
-
-	protected $dependencies_fields = array(
-		'single_edit',
+		'roles' => array(),
 	);
 
 ////////////////////////////////////////////
@@ -124,9 +120,6 @@ class Projects extends ModelLincko {
 			}
 		}
 		$return = parent::save($options);
-		if($new){
-			$this->setUserPivotValue($app->lincko->data['uid'], 'access', 1, false);
-		}
 		return $return;
 	}
 
@@ -161,6 +154,18 @@ class Projects extends ModelLincko {
 				});
 			});
 		});
+	}
+
+	//We allow creation only
+	public function checkRole($level){
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+		if(is_integer($this->personal_private) && !isset($this->id) && $level<=1){ //Allow creation
+			if(Companies::find($this->companies_id)->projects->count()<=0){ //Only if no project attached (= user creation process)
+				return true;	
+			}
+		}
+		return parent::checkRole($level);
 	}
 
 	public function getCompany(){

@@ -55,7 +55,7 @@ class ChatsComments extends ModelLincko {
 		'chats',
 	);
 
-	protected $role_parent = 'chats';
+	protected $parent = 'chats';
 	
 ////////////////////////////////////////////
 
@@ -93,6 +93,18 @@ class ChatsComments extends ModelLincko {
 		->whereHas('chats', function ($query) {
 			$query->getLinked();
 		});
+	}
+
+	//We allow creation only
+	public function checkRole($level){
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+		if(isset($this->id) && $level<=0){ //Allow only read
+			return true;
+		} else if(!isset($this->id) && $level<=1){ //Allow creation
+			return true;
+		} 
+		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 	
 }
