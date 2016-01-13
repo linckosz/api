@@ -16,6 +16,7 @@ use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Tasks;
 use \bundles\lincko\api\models\data\Roles;
 use Illuminate\Database\Capsule\Manager as Capsule;
+use Illuminate\Database\Schema\Builder as Schema;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -470,27 +471,69 @@ class ControllerTest extends Controller {
 
 		$tp = $list_roles;
 */
-		//$tp = PivotUsersRoles::getLinked()->get()->toArray();
 
+
+
+		/*
+		$tp = PivotUsersRoles::getLinked()->get()->toArray();
+
+		$roles = PivotUsersRoles::getLinked()->get();
+		$roles_list = array();
+		//Get list of all role rules
+		foreach($roles as $value) {
+			if(!isset($roles_list[$value->relation_type])){ $roles_list[$value->relation_type] = array(); }
+			$roles_list[$value->relation_type][$value->relation_id] = array(
+				'roles_id' => $value->roles_id,
+				'single' => $value->single,
+			);
+		}
+		//Clean the list according to what is allowed
+		foreach($roles_list as $value) {
+
+		}
+		$tp = $roles_list;
+		*/
+
+
+		/*
 		//$tp = Users::find(1);
-		//$tp = Tasks::find(4);
+		//$tp1 = Tasks::find(4);
+		$tp1 = Projects::find(5);
+		$tp = $tp1->getRolePivotValue($app->lincko->data['uid']);
+		\libs\Watch::php( $tp ,'$getRolePivotValue', __FILE__, false, false, true);
+		$tp = $tp1->checkRole(1);
+		*/
+		//$tp = Projects::find(5)->getRolePivotValue($app->lincko->data['uid']);
 
-		//$tp = Roles::find(1);
+		//$tp = Companies::find(1);
+		//$tp = new Companies();
+		//$tp = $tp->getCompanyGrant();
+		$tp = intval(true);
+		//$tp = Companies::find(1)->roles;
+		//$tp = Companies::with('rolesMany')->get();
+		//$tp = Companies::with('rolesPoly')->get();
+
+		//$tp = Tasks::find(4);
+		//$tp = isset($tp->created_byy);
+		//$tp = new Tasks();
+		//$tp = Tasks::getColumns();
+		//$tp = (new Schema((new Tasks())->connexion))->getColumnListing(Tasks::getClass());
 		//$tp = Projects::find(5);
 
 		//$tp = Companies::find(3);
-	
+		//$tp = Companies::find(3)->roles()->first()->perm_grant;
 		//$tp = chatsComments::find(7);
 		//$tp = Chats::find(1);
 
-		//$tp = $tp->setRolePivotValue(1, 2);
+		//$tp = $tp->setRolePivotValue(40, 3, 3);
+		//$tp = Companies::find(1);//->roles()->first()->perm_grant;
 
 		//$tp = Projects::find(8)->users();
 		//Block
 		//$tp->updateExistingPivot(1, array('access' => 0));
 		//$tp->updateExistingPivot(1, array('access' => 1));
 
-		$tp = Tasks::find(4);
+		//$tp = Tasks::find(4);
 		//$tp = $tp->rolesUsers()->where('pivot_users_id', 40)->first();
 		//$tp = $tp->rolesUsers()->wherePivot('users_id', '=', 40)->get();
 		//$tp = $tp->getRolePivotValue(1);
@@ -498,14 +541,14 @@ class ControllerTest extends Controller {
 		//$tp->setRolePivotValue(40, 2);
 		//$tp->attach(40, array('users_id' => 40, 'roles_id' => 4, 'single' => null, 'relation_type' => 'tasks', 'relation_id' => 4));
 
-		$tp = new Pivot($tp, array('users_id' => 1), 'users_x_roles_x', true);
+		//$tp = new Pivot($tp, array('users_id' => 1), 'users_x_roles_x', true);
 
 		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
 
 		//----------------------------------------
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 
 		//----------------------------------------
 	

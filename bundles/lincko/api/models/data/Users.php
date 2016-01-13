@@ -100,7 +100,7 @@ class Users extends ModelLincko {
 	}
 
 	//Many(Users) to Many(Roles)
-	public function roles(){
+	public function perm(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'users_id', 'roles_id')->withPivot('relation_id', 'relation_type', 'access', 'single');
 	}
 
@@ -179,12 +179,19 @@ class Users extends ModelLincko {
 	}
 
 	//We allow creation, and editing for the creator only
+	/*
+				View Create Edit Delete
+		Owner	X X X -
+		Admin	X - - -
+		other	X - - -
+	*/
 	public function checkRole($level){
 		$app = self::getApp();
 		$level = $this->formatLevel($level);
-		if(isset($this->id) && $level<=1 && $this->id==$app->lincko->data['uid']){ //Allow editing for creator only
+		if($level<=0){ //Allow only read for all
 			return true;
-		} else if(isset($this->id) && $level<=0){ //Allow only read for others
+		}
+		if(isset($this->id) && $level<=1 && $this->id==$app->lincko->data['uid']){ //Allow editing for creator only
 			return true;
 		} else if(!isset($this->id) && $level<=1){ //Allow creation
 			return true;
@@ -288,7 +295,6 @@ class Users extends ModelLincko {
 				
 				$project = new Projects();
 				$project->title = 'Private';
-				$project->companies_id = $company->id;
 				$project->personal_private = $this->id;
 				$project->save();
 

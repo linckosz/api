@@ -62,8 +62,10 @@ class Projects extends ModelLincko {
 	protected $parent = 'companies';
 
 	protected $dependencies_visible = array(
-		'roles' => array(),
+		'perm' => array(),
 	);
+
+	protected static $allow_role = true;
 
 ////////////////////////////////////////////
 
@@ -110,6 +112,11 @@ class Projects extends ModelLincko {
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$new = !isset($this->id);
+		if($new){
+			$this->companies_id = intval($app->lincko->data['company_id']);
+		} else {
+			$this->companies_id = intval($this->getCompany());
+		}
 		if($this->personal_private==$app->lincko->data['uid']){
 			if(self::where('personal_private', $app->lincko->data['uid'])->where('created_by', $app->lincko->data['uid'])->where('companies_id', $this->companies_id)->count() > 1){
 				$msg = $msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project for each company.
@@ -156,14 +163,30 @@ class Projects extends ModelLincko {
 		});
 	}
 
-	//We allow creation only
+	//We allow creation, and all rigths to admin
+	/*
+				View Create Edit Delete
+		Owner	X X - -
+		Admin	X X X X
+		other	X R R R
+	*/
 	public function checkRole($level){
 		$app = self::getApp();
 		$level = $this->formatLevel($level);
-		if(is_integer($this->personal_private) && !isset($this->id) && $level<=1){ //Allow creation
+		if($level<=0){ //Allow only read for all
+			return true;
+		}
+		$grant = $this->getCompanyGrant();
+		//Only allow one personal_private creation
+		if(intval($this->personal_private)>0 && !isset($this->id) && $level<=1){ //Allow creation
 			if(Companies::find($this->companies_id)->projects->count()<=0){ //Only if no project attached (= user creation process)
 				return true;	
 			}
+			return parent::checkRole(3); //this will only launch error, since $level = 3
+		} else if((!isset($this->id) || $this->getCompanyGrant()>=1) && $level<=1){ //Allow creation
+			return true;
+		} else if($grant>=1){ //Allow for administrator (grant access)
+			return true;
 		}
 		return parent::checkRole($level);
 	}

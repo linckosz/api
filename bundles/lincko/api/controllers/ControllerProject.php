@@ -50,7 +50,6 @@ class ControllerProject extends Controller {
 			$project = new Projects();
 			$project->title = $form_data->title;
 			if(isset($form_data->description)){ $project->description = $form_data->description; }
-			$project->companies_id = $app->lincko->data['company_id'];
 			if($project->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 8, 4), 'field' => 'undefined'); //Project created.
 				$data = new Data();

@@ -46,6 +46,8 @@ class Companies extends ModelLincko {
 		'users',
 	);
 
+	protected static $allow_role = true;
+
 ////////////////////////////////////////////
 
 	//Many(Companies) to Many(Users)
@@ -56,6 +58,12 @@ class Companies extends ModelLincko {
 	//One(Companies) to Many(Projects)
 	public function projects(){
 		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'companies_id');
+	}
+
+	//Many(Roles) to Many Poly (Users)
+	public function roles(){
+		$app = self::getApp();
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'companies_id');
 	}
 
 ////////////////////////////////////////////
@@ -113,10 +121,19 @@ class Companies extends ModelLincko {
 		}
 		$return = parent::save($options);
 		if($new){
-			//Set the role to administrator for teh Company creator
+			//Set the role to administrator for the Company creator
 			$this->setRolePivotValue($app->lincko->data['uid'], 1, null, false);
 		}
 		return $return;
+	}
+
+	public function getCompanyGrant(){
+		if(!isset($this->id)){
+			return 1;
+		} else if($role = $this->perm()->first()){
+			return $role->perm_grant;
+		}
+		return 0;
 	}
 
 	public function scopegetLinked($query){
@@ -137,10 +154,19 @@ class Companies extends ModelLincko {
 	}
 
 	//We allow creation only
+	/*
+				View Create Edit Delete
+		Owner	X X - -
+		Admin	X - X -
+		other	X - - -
+	*/
 	public function checkRole($level){
 		$app = self::getApp();
 		$level = $this->formatLevel($level);
-		if(!isset($this->id) && $level<=1){ //Allow creation
+		if($level<=0){ //Allow only read for all
+			return true;
+		}
+		if((!isset($this->id) || $this->getCompanyGrant()>=1) && $level==1){ //Allow creation
 			return true;
 		}
 		return parent::checkRole(3); //this will only launch error, since $level = 3

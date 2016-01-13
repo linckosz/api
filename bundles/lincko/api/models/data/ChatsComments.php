@@ -96,12 +96,19 @@ class ChatsComments extends ModelLincko {
 	}
 
 	//We allow creation only
+	/*
+				View Create Edit Delete
+		Owner	X X - -
+		Admin	X - - -
+		other	X - - -
+	*/
 	public function checkRole($level){
 		$app = self::getApp();
 		$level = $this->formatLevel($level);
-		if(isset($this->id) && $level<=0){ //Allow only read
+		if($level<=0){ //Allow only read for all
 			return true;
-		} else if(!isset($this->id) && $level<=1){ //Allow creation
+		}
+		if(!isset($this->id) && $level<=1){ //Allow creation
 			return true;
 		} 
 		return parent::checkRole(3); //this will only launch error, since $level = 3

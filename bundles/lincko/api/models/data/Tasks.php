@@ -84,14 +84,14 @@ class Tasks extends ModelLincko {
 	protected $dependencies_visible = array(
 		'users' => array(),
 		'tasks' => array('in_charge', 'delay'),
-		'roles' => array('single'),
+		'perm' => array('single'),
 	);
 
 	protected $model_timestamp = array(
 		'start',
 	);
 
-	protected $allow_single = true;
+	protected static $allow_single = true;
 	
 ////////////////////////////////////////////
 
@@ -194,6 +194,28 @@ class Tasks extends ModelLincko {
 			$this->setUserPivotValue($app->lincko->data['uid'], 'approver', 1, false);
 		}
 		return $return;
+	}
+
+	//We allow creation, and all rigths to admin
+	/*
+				View Create Edit Delete
+		Owner	X X - -
+		Admin	X X X X
+		other	X R R R
+	*/
+	public function checkRole($level){
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+		if($level<=0){ //Allow only read for all
+			return true;
+		}
+		$grant = $this->getCompanyGrant();
+		if((!isset($this->id) || $grant>=1) && $level<=1){ //Allow creation
+			return true;
+		} else if($grant>=1){ //Allow for administrator (grant access)
+			return true;
+		}
+		return parent::checkRole($level);
 	}
 
 }

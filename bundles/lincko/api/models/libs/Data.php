@@ -6,6 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
 
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\libs\PivotUsersRoles;
 
 class Data {
 
@@ -128,6 +129,15 @@ class Data {
 		//If the lastvisit is not set, and we do not work with partial database, we force to get all details
 		if(!$this->lastvisit && is_null($this->partial) && !$this->history_detail){
 			$full_data = true;
+		}
+		$roles = PivotUsersRoles::getLinked()->get();
+		$roles_list = array();
+		foreach($roles as $value) {
+			if(isset($roles_list[$value->relation_type])){ $roles_list[$value->relation_type] = array(); }
+			$roles_list[$value->relation_type][$value->relation_id] = array(
+				'roles_id' => $value->roles_id,
+				'single' => $value->single,
+			);
 		}
 
 		foreach(self::$models as $key => $value) {

@@ -11,10 +11,12 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Capsule\Manager as Capsule;
+use Illuminate\Database\Schema\Builder as Schema;
 
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Companies;
 use \bundles\lincko\api\models\data\Roles;
 
 abstract class ModelLincko extends Model {
@@ -58,7 +60,7 @@ abstract class ModelLincko extends Model {
 	protected $contactsVisibility = false; //If true, it will appear in user contact list
 
 	//NOTE: All variables in this array must exist in the database, otherwise an error will be generated during SLQ request.
-	protected static $foreign_keys = array(); //Define a list of foreign keys, it helps to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link.
+	protected static $foreign_keys = array(); //Define a list of foreign keys, it helps to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link. It's also used to build relationships.
 
 	protected static $relations_keys_checked = false; //At false it will help to construct the list only once
 
@@ -81,8 +83,10 @@ abstract class ModelLincko extends Model {
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
 	protected $parent = null;
 	protected $parent_id = null;
-	//This enable or disable the ability to give a permission to a single element with it's children.
-	protected $allow_single = false;
+	//This enable or disable the ability to give a permission to a single element.
+	protected static $allow_single = false;
+	//This enable or disable the ability to give a role permission to a single element with it's children.
+	protected static $allow_role = false;
 
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
 
@@ -92,7 +96,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	//Many(Roles) to Many Poly (Users)
-	public function roles(){
+	public function perm(){
 		$app = self::getApp();
 		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $app->lincko->data['uid'])->withPivot('access', 'single', 'relation_id', 'relation_type')->take(1);
 	}
@@ -141,6 +145,12 @@ abstract class ModelLincko extends Model {
 		->whereHas('users', function ($query) {
 			$query->theUser();
 		});
+	}
+
+	public static function getColumns(){
+		$model = new static();		
+		$schema = $model->getConnection()->getSchemaBuilder();
+		return $schema->getColumnListing($model->getTable());
 	}
 
 	public static function getItems($timestamp=false, $id=null){
@@ -193,7 +203,10 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
-	public static function getClass($class){
+	public static function getClass($class=false){
+		if(!$class){
+			$class = self::getTableStatic();
+		}
 		$tp = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC($class);
 		if(class_exists($tp)){
 			return $tp;
@@ -554,44 +567,71 @@ abstract class ModelLincko extends Model {
 		$level = $this->formatLevel($level);
 
 		$model = $this;
+		$current = true;
 		$suffix = $model->getTable();
 		$role = false;
 		$allow = 0; //Only allow reading
 
-		if($level >=1 && $level <= 2){
+		//We scan only if the element can have separate role, and if the level is editing or delete
+		if($level >=1 && $level <= 2 && ($model::$allow_role || $model::$allow_single)){
 			$table = array();
 			$loop = true;
 			while($loop){
-				if(!in_array($model->getTable(), $table) && !$role = $model->roles()->first()){
+				$role = false;
+				if(!in_array($model->getTable(), $table)){
+					if($model::$allow_role || $model::$allow_single){
+						$pivot = $model->getRolePivotValue($app->lincko->data['uid']);
+						if($pivot[0]){
+							//Using this procedure, we allow one administrator to modify permissions of another adminsitrator, we lock some part of a workspace
+							if($current && $model::$allow_single && $pivot[2]){ //We only check single of the model itself, not its parents
+								$allow = $pivot[2];
+								$loop = false;
+								break;
+							} else if($model::$allow_role && $pivot[1]){
+								if($role = Roles::find($pivot[1])){
+									if($role->perm_grant){ //Grant permission
+										$allow = 2;
+									} else if(isset($role->{'perm_'.$suffix})){ //Per model
+										$allow = $role->{'perm_'.$suffix};
+									} else { //General
+										$allow = $role->perm_all;
+									}
+									$loop = false;
+									break;
+								}
+							}
+						}
+					}
 					$table[] = $model->getTable();
 					if($model = $model->getParent()){
+						$current = false;
 						continue;
 					}
+
 				}
 				$loop = false;
 				break;
 			}
-			
-			if($role){
-				if($role->perm_grant){ //Grant permission
-					$allow = 2;
-				} else if(isset($role->{'perm_'.$suffix})){ //Per model
-					$allow = $role->{'perm_'.$suffix};
-				} else { //General
-					$allow = $role->perm_all;
-				}
-			}
 		}
-		
+		//For editing without grant permission, we only allow 
+		if($allow == 1 && isset($this->created_by) && $this->created_by != $app->lincko->data['uid']){
+			$allow = 0;
+		}
 		if($level <= $allow){
 			return true;
 		} else {
-			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allow to edit the server data.
-			\libs\Watch::php(parent::toJson(), $suffix.' : '.$msg, __FILE__, true);
-			$json = new Json($msg, true, 406);
-			$json->render();
+			$this::errorMsg($suffix." :\n".parent::toJson());
 			return false;
 		}
+		return false;
+	}
+
+	protected static function errorMsg($detail=''){
+		$app = self::getApp();
+		$msg = $app->trans->getBRUT('api', 0, 5); //You are not allow to edit the server data.
+		\libs\Watch::php($detail, $msg, __FILE__, true);
+		$json = new Json($detail, true, 406);//[toto]
+		$json->render();
 		return false;
 	}
 
@@ -607,14 +647,18 @@ abstract class ModelLincko extends Model {
 		}
 		//Only check foreign keys for new items
 		if($new){
+			$columns = self::getColumns();
+			if(in_array('created_by', $columns)){
+				$this->created_by = $app->lincko->data['uid'];
+			}
+			if(in_array('updated_by', $columns)){
+				$this->updated_by = $app->lincko->data['uid'];
+			}
+
 			$missing_arguments = array();
 			foreach($this::$foreign_keys as $key => $value) {
 				if(!isset($this->$key)){
-					if($key=='created_by' || $key=='updated_by'){
-						$this->$key = $app->lincko->data['uid'];
-					} else {
-						$missing_arguments[] = $key;
-					}
+					$missing_arguments[] = $key;
 				}
 			}
 			if(!empty($missing_arguments)){
@@ -624,6 +668,10 @@ abstract class ModelLincko extends Model {
 				$json = new Json($msg, true, 406);
 				$json->render();
 				return false;
+			}
+		} else {
+			if(isset($this->updated_by)){
+				$this->updated_by = $app->lincko->data['uid'];
 			}
 		}
 		$app->lincko->translation['fields_not_valid'] = $app->trans->getBRUT('api', 4, 3); //[unknwon]
@@ -798,28 +846,89 @@ abstract class ModelLincko extends Model {
 	}
 
 
+	public static function getRoleAllow(){
+		return array($this::$allow_single, $this::$allow_role);
+	}
+
 	//By preference, keep it protected
 	public function getRolePivotValue($users_id){
 	//protected function getRolePivotValue($users_id){
 		if($roles = $this->rolesUsers()){
 			if($role = $roles->wherePivot('users_id', $users_id)->first()){
-				return array(true, $role->pivot->roles_id, $role->pivot->single);
+				$roles_id = null;
+				$single = null;
+				if($this::$allow_role){
+					$roles_id = $role->pivot->roles_id;
+				}
+				if($this::$allow_single){
+					$single = $role->pivot->single;
+				}
+				return array(true, $roles_id, $single);
 			}
 		}
 		return array(false, null, null);
 	}
 
+	public function getCompanyGrant(){
+		$grant = 0;
+		$company_id = $this->getCompany();
+		if($company_id != '_'){
+			$company_id = intval($company_id);
+			if($company = Companies::find($company_id)){
+				if($role = $company->perm()->first()){
+					$grant = $role->perm_grant;
+				}
+			}
+		}
+		return intval($grant);
+	}
+
 	//By preference, keep it protected, public is only for test
-	public function setRolePivotValue($users_id, $roles_id=3, $single=null, $history=true){ //[toto]
+	public function setRolePivotValue($users_id, $roles_id=null, $single=null, $history=true){ //[toto]
 		$app = self::getApp();
 		$return = false;
+		
+		//We cannot modify it's own permission
+		if($users_id == $app->lincko->data['uid']){
+			$this::errorMsg('Same user issue');
+			return false;
+		}
+
+		//It's useless to insert an element wich cannot be checked
+		if(!$this::$allow_role && !$this::$allow_single){
+			$this::errorMsg('Allow issue');
+			return false;
+		}
+
+		
+		$company_id = $this->getCompany();
+		//We don't allow to modify role for non-workspace elements
+		if($company_id == '_'){
+			$this::errorMsg('Non-workspace issue');
+			return false;
+		}
+		
+		//We don't allow non-administrator to modify user permission
+		if($this->getCompanyGrant() == 0){
+			$this::errorMsg('Non-grant issue');
+			return false;
+		}
+
+		//If the pivot doesn't exist, we exit
 		$user = $this->rolesUsers();
-		if($user === false || !method_exists($user,'updateExistingPivot') || !method_exists($user,'attach')){ return false; } //If the pivot doesn't exist, we exit
+		if($user === false || !method_exists($user,'updateExistingPivot') || !method_exists($user,'attach')){
+			$this::errorMsg('Method issue');
+			return false;
+		}
+
 		$pivot = $this->getRolePivotValue($users_id);
 		$roles_id_old = $pivot[1];
 		$single_old = $pivot[2];
-		if(!$this->allow_single){
-			$single=null;
+		if(!$this::$allow_role){
+			$roles_id = null;
+		}
+		if(!$this::$allow_single){
+			$single = null;
 		}
 		if($pivot[0]){
 			if($roles_id_old != $roles_id || $single_old != $single){
@@ -839,7 +948,7 @@ abstract class ModelLincko extends Model {
 				}
 				$return = true;
 			}
-		} else {
+		} else if($roles_id!=null || $single!=null){
 			//Create a new line
 			$user->attach($users_id, array('roles_id' => $roles_id, 'single' => $single));
 			if($history){
@@ -859,7 +968,10 @@ abstract class ModelLincko extends Model {
 		if($return){
 			//Force all linked users to recheck their Schema
 			$this->setForceSchema();
+		} else {
+			$this::errorMsg('No change issue'); //[toto]	
 		}
+		
 		//Do not change anything, it's the same
 		return $return;
 	}

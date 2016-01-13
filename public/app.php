@@ -6,16 +6,7 @@ require_once $path.'/vendor/autoload.php';
 
 $app = new \Slim\Slim();
 
-function my_autoload($pClassName){
-	$app = \Slim\Slim::getInstance();
-	$pClassName = str_replace('\\', '/', $pClassName);
-	if(file_exists($app->lincko->path.'/'.$pClassName.'.php')){
-		include_once($app->lincko->path.'/'.$pClassName.'.php');
-	}
-}
-
-spl_autoload_register('my_autoload');
-
+require_once $path.'/config/global.php';
 require_once $path.'/config/language.php';
 require_once $path.'/param/parameters.php';
 

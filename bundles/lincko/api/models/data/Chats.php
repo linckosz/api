@@ -100,9 +100,18 @@ class Chats extends ModelLincko {
 	}
 
 	//We allow creation, and editing for the creator only
+	/*
+				View Create Edit Delete
+		Owner	X X X -
+		Admin	X - - -
+		other	X - - -
+	*/
 	public function checkRole($level){
 		$app = self::getApp();
 		$level = $this->formatLevel($level);
+		if($level<=0){ //Allow only read for all
+			return true;
+		}
 		if(isset($this->id) && $level<=1 && $this->created_by==$app->lincko->data['uid']){ //Allow editing for creator only
 			return true;
 		} else if(isset($this->id) && $level<=0){ //Allow only read for others
