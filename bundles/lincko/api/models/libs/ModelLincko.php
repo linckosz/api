@@ -614,7 +614,7 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		//For editing without grant permission, we only allow 
-		if($allow == 1 && isset($this->created_by) && $this->created_by != $app->lincko->data['uid']){
+		if($allow == 1 && (isset($this->created_by) || (isset($this->created_by) && $this->created_by != $app->lincko->data['uid']))){
 			$allow = 0;
 		}
 		if($level <= $allow){
@@ -888,8 +888,8 @@ abstract class ModelLincko extends Model {
 		$app = self::getApp();
 		$return = false;
 		
-		//We cannot modify it's own permission
-		if($users_id == $app->lincko->data['uid']){
+		//We cannot modify own's permission
+		if(isset($this->id) && $users_id == $app->lincko->data['uid']){
 			$this::errorMsg('Same user issue');
 			return false;
 		}
