@@ -128,7 +128,7 @@ class Companies extends ModelLincko {
 	}
 
 	public function getCompanyGrant(){
-		if(!isset($this->id)){
+		if(!isset($this->id) || $this->new_model){ //We considerate grant access by default for new company
 			return 1;
 		} else if($role = $this->perm()->first()){
 			return $role->perm_grant;
@@ -172,9 +172,9 @@ class Companies extends ModelLincko {
 		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 
-	//We keep "_" because we want to store companies information in teh same folder on client side (easier for JS), not separatly
+	//We keep "_" because we want to store companies information in the same folder on client side (easier for JS), not separatly
 	public function getCompany(){
-		return '_';
+		return $this->id;
 	}
 
 	//Do not show creation event

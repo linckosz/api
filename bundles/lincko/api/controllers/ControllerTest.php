@@ -505,10 +505,9 @@ class ControllerTest extends Controller {
 		*/
 		//$tp = Projects::find(5)->getRolePivotValue($app->lincko->data['uid']);
 
-		//$tp = Companies::find(1);
-		//$tp = new Companies();
-		//$tp = $tp->getCompanyGrant();
-		$tp = intval(true);
+		$tp = Companies::find(17);
+		$tp = $tp->getCompanyGrant();
+
 		//$tp = Companies::find(1)->roles;
 		//$tp = Companies::with('rolesMany')->get();
 		//$tp = Companies::with('rolesPoly')->get();
@@ -548,7 +547,7 @@ class ControllerTest extends Controller {
 		//----------------------------------------
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 
 		//----------------------------------------
 	

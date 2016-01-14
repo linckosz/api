@@ -88,6 +88,9 @@ abstract class ModelLincko extends Model {
 	//This enable or disable the ability to give a role permission to a single element with it's children.
 	protected static $allow_role = false;
 
+	//Is true when when are saving a new model
+	protected $new_model = false;
+
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
 
 	//No need to abstract it, but need to redefined for the Models that use it
@@ -689,6 +692,9 @@ abstract class ModelLincko extends Model {
 		}
 
 		$return = parent::save($options);
+		if($new){
+			$this->new_model = true;
+		}
 		//We do not record any setup for new model, but only change for existing model
 		if(!$new){
 			foreach($dirty as $key => $value) {
@@ -887,9 +893,10 @@ abstract class ModelLincko extends Model {
 	public function setRolePivotValue($users_id, $roles_id=null, $single=null, $history=true){ //[toto]
 		$app = self::getApp();
 		$return = false;
-		
+		$pivot = $this->getRolePivotValue($users_id);
+
 		//We cannot modify own's permission
-		if(isset($this->id) && $users_id == $app->lincko->data['uid']){
+		if(!$this->new_model && $users_id == $app->lincko->data['uid']){
 			$this::errorMsg('Same user issue');
 			return false;
 		}
@@ -900,7 +907,6 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 
-		
 		$company_id = $this->getCompany();
 		//We don't allow to modify role for non-workspace elements
 		if($company_id == '_'){
@@ -921,7 +927,6 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 
-		$pivot = $this->getRolePivotValue($users_id);
 		$roles_id_old = $pivot[1];
 		$single_old = $pivot[2];
 		if(!$this::$allow_role){

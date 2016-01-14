@@ -199,7 +199,12 @@ class Data {
 				foreach ($data as $key => $value) {
 					unset($temp);
 					$id = $value->id;
-					$compid = $value->getCompany();
+					//On client side we store companies in shared folder '_'
+					if($table_name == 'companies'){
+						$compid = '_';
+					} else {
+						$compid = $value->getCompany();
+					}
 					//If we the element is in another company, we do not need to keep the data
 					if($compid != '_' && $compid != $app->lincko->data['company_id']){
 						continue;

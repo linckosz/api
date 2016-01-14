@@ -2,7 +2,7 @@
 
 function time_checkpoint($msg=''){
 	global $app;
-	if(isset($app->lincko) && class_exists('\\libs\\Watch')){
+	if(isset($app->lincko) && $app->lincko->time_record && class_exists('\\libs\\Watch')){
 		$milliseconds = round(microtime(true) * 1000);
 		if(is_bool($app->lincko->time_record)){ //initialization
 			$app->lincko->time_record = $milliseconds;
