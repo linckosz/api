@@ -29,4 +29,9 @@ class PivotUsersRoles extends ModelLincko {
 		return $query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
 	}
 
+	public function scopesameCompany($query){
+		$app = self::getApp();
+		return $query->where('relation_type', 'companies')->where('relation_id', $app->lincko->data['company_id'])->where('access', 1);
+	}
+
 }

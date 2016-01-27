@@ -50,8 +50,6 @@ class Chats extends ModelLincko {
 		'users'
 	);
 
-	protected $parent = 'companies';
-
 ////////////////////////////////////////////
 
 	//Many(Chats) to Many(Users)
@@ -101,27 +99,33 @@ class Chats extends ModelLincko {
 
 	//We allow creation, and editing for the creator only
 	/*
-				View Create Edit Delete
-		Owner	X X X -
-		Admin	X - - -
-		other	X - - -
+			'chats' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 1 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 1 ), //outsider
+				1	=> array( 1 , 0 , 0 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 1 ), //manager
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
 	*/
 	public function checkRole($level){
 		$app = self::getApp();
+		$this->checkUser();
 		$level = $this->formatLevel($level);
+		if(isset($this->permission_allowed[$level])){
+			return $this->permission_allowed[$level];
+		}
 		if($level<=0){ //Allow only read for all
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		if(isset($this->id) && $level<=1 && $this->created_by==$app->lincko->data['uid']){ //Allow editing for creator only
-			return true;
-		} else if(isset($this->id) && $level<=0){ //Allow only read for others
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		} else if(!isset($this->id) && $level<=1){ //Allow creation
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
-		} else {
-			$level = 3; //force to error, disable the deletion
 		}
-		return parent::checkRole($level); //this will only launch error, since $level = 3
+		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 
 }

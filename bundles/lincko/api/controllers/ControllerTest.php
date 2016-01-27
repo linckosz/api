@@ -4,6 +4,7 @@ namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
 use \libs\Email;
+use \libs\Json;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
@@ -33,6 +34,10 @@ class ControllerTest extends Controller {
 
 	public function _get(){
 		$app = $this->app;
+		if($app->config('mode') != 'development'){
+			$app->render(200, array('msg' => 'Unauthorized access',));
+			return true;
+		}
 		$msg = $app->trans->getBRUT('api', 8888, 0); //The application is reading.
 		Capsule::connection('data')->enableQueryLog();
 
@@ -505,8 +510,8 @@ class ControllerTest extends Controller {
 		*/
 		//$tp = Projects::find(5)->getRolePivotValue($app->lincko->data['uid']);
 
-		$tp = Companies::find(17);
-		$tp = $tp->getCompanyGrant();
+		//$tp = Companies::find(17);
+		//$tp = $tp->getCompanyGrant();
 
 		//$tp = Companies::find(1)->roles;
 		//$tp = Companies::with('rolesMany')->get();
@@ -540,14 +545,26 @@ class ControllerTest extends Controller {
 		//$tp->setRolePivotValue(40, 2);
 		//$tp->attach(40, array('users_id' => 40, 'roles_id' => 4, 'single' => null, 'relation_type' => 'tasks', 'relation_id' => 4));
 
+		$tp = 'ok';
+		
+		$projects = Projects::all();
+		
+		foreach ($projects as $key => $value) {
+			$value->toto();
+			break;
+		}
+		
+
 		//$tp = new Pivot($tp, array('users_id' => 1), 'users_x_roles_x', true);
 
-		\libs\Watch::php( $tp ,'$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp , '$tp', __FILE__, false, false, true);
 
 		//----------------------------------------
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+
+		
 
 		//----------------------------------------
 	
@@ -647,6 +664,212 @@ class ControllerTest extends Controller {
 			$app->render(400, array('msg' => $msg, 'error' => true,));
 			return true;
 		}
+	}
+
+	// Test role rules
+	// Must log as an adminsitrator in perso workspace (invite at least a manager and a viewer)
+	public function role_get(){
+		$app = $this->app;
+		Capsule::connection('data')->enableQueryLog();
+		$theuser = Users::find($app->lincko->data['uid']);
+		$theuser::setDebugMode(true);
+
+		$models = new \stdClass;
+		$models->companies = Companies::whereId($app->lincko->data['company_id'])->where('created_by', $app->lincko->data['uid'])->first();
+		$models->roles = (new Roles)->getLinked()->where('shared', 0)->where('created_by', $app->lincko->data['uid'])->where('companies_id', $app->lincko->data['company_id'])->first();
+		$models->chats = $theuser->chats()->where('created_by', $app->lincko->data['uid'])->first();
+		$models->chats_comments = $models->chats->chatsComments()->where('created_by', $app->lincko->data['uid'])->first();
+		$models->projects = $theuser->projects()->where('created_by', $app->lincko->data['uid'])->first();
+		$models->tasks = $models->projects->tasks()->where('created_by', $app->lincko->data['uid'])->first();
+
+		//Clean if some model doesn't exists
+		foreach ($models as $key => $model) {
+			if(!$model){
+				unset($models->$key);
+			}
+		}
+
+		$pivots = (new PivotUsersRoles)->sameCompany()->get();
+
+		$users = array();
+		foreach ($pivots as $pivot) {
+			//Allow only to work with standard roles for debugging purpose, their ID must be 1, 2, 3
+			$roles_id = intval($pivot->roles_id);
+			if($roles_id>=1 && $roles_id<=3){
+				$users[$roles_id] = $pivot->users_id;
+				foreach ($models as $model) {
+					if($model){
+						$model->setUserPivotValue($pivot->users_id, 'access', 1, false);
+						if($model->getTable() != 'companies'){
+							$model->setRolePivotValue($pivot->users_id, null, null, false);
+						}
+					}
+				}
+				//Role initialization for companies
+				if($pivot->users_id != $app->lincko->data['uid']){
+					//Be care full manager must be 2, and viewer must be 3
+					$role_id = 2;
+					if(Users::find($pivot->users_id)->username == 'viewer'){ $role_id = 3; }
+					$models->companies->setRolePivotValue($pivot->users_id, $role_id, null, false);
+				}
+			}
+		}
+
+		//Set the outsider user, he should be rejected by everything
+		$users[0] = Users::whereHas('companies', function ($query){
+			$app = \Slim\Slim::getInstance();
+			$query->where('companies_id', $app->lincko->data['company_id'])->where('access', 1);
+		}, '<', 1)->first()->id;
+		
+
+		ksort($users);
+
+		/*
+		Roles
+		[
+			-1:owner	=> [ read , edit , delete , create ]
+			0 :outsider (don't share anything)
+			1 :admin (share smae company, same chat room)
+			2 :manager (share smae company, same chat room)
+			3 :viewer (share smae company, same chat room)
+		]
+		*/
+		$accept = array(
+			/*
+				 0: cannot
+				 1: can
+				-1: can only if creator
+			*/
+			'companies' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 1 ), //outsider
+				1	=> array( 1 , 1 , 0 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 1 ), //manager
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
+			'roles' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 0 ), //outsider
+				1	=> array( 1 , 1 , 1 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 0 ), //manager
+				3	=> array( 1 , 0 , 0 , 0 ), //viewer
+			),
+			'chats' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 1 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 1 ), //outsider
+				1	=> array( 1 , 0 , 0 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 1 ), //manager
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
+			'chats_comments' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 1 ), //outsider
+				1	=> array( 1 , 0 , 0 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 1 ), //manager
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
+			'projects' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 0 ), //outsider
+				1	=> array( 1 , 1 , 1 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 0 ), //manager
+				3	=> array( 1 , 0 , 0 , 0 ), //viewer
+			),
+			'tasks' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 1 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 0 ), //outsider
+				1	=> array( 1 , 1 , 1 , 1 ), //administrator
+				2	=> array( 1 ,-1 , 0 , 1 ), //manager (can edit only if creator)
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
+		);
+		
+		//Role 1 is also the owner, so we regroup owner+administrator
+		foreach ($accept as $i => $tab_i) {
+			foreach ($accept[$i][1] as $j => $tab_j) {
+				$accept[$i][1][$j] = intval($accept[$i][-1][$j] || $accept[$i][1][$j]);
+			}
+		}
+
+		\libs\Watch::php( '!!!!!!!!!! START !!!!!!!!!!' , 'Permissions', __FILE__, false, false, true);
+
+		foreach ($users as $role_id => $user_id) {
+			$app->lincko->data['uid'] = $user_id;
+
+			foreach ($accept as $key => $table) {	
+				if(!isset($models->{$key})){
+					continue;
+				}
+				$model = $models->{$key};
+				$new_model = $model->newinstance();
+
+				if($key == 'companies'){
+					$new_model->name = $model->name = '_Company '.rand();
+					$model->allowCompanyCreation();
+					$new_model->allowCompanyCreation();
+				} else if($key == 'roles'){
+					$new_model->name = $model->name = '_Role '.rand();
+				}  else if($key == 'chats'){
+					$new_model->title = $model->title = '_Chat '.rand();
+				} else if($key == 'chats_comments'){
+					$new_model->chats_id = $model->chats_id;
+					$new_model->comment = $model->comment = '_Comment '.rand();
+				} else if($key == 'projects'){
+					$new_model->title = $model->title = '_Project '.rand();
+				} else if($key == 'tasks'){
+					$new_model->projects_id = $model->projects_id;
+					$new_model->title = $model->title = '_Task '.rand();
+				}
+
+				//Reinitialize variables
+				$model->checkUser();
+				$new_model->checkUser();
+
+				//Read
+				if( $a=intval($model->checkAccess()) xor $b=intval($accept[ $key ][ $role_id ][ 0 ]) ){
+					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
+						$c = intval($model->checkAccess());
+						$d = intval($model->checkRole('read'));
+						\libs\Watch::php( $a.'...BUG READ...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->access() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+					}
+				}
+
+				//Edit
+				if( $a=intval($model->save()) xor $b=intval($accept[ $key ][ $role_id ][ 1 ]) ){
+					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
+						$c = intval($model->checkAccess());
+						$d = intval($model->checkRole('edit'));
+						\libs\Watch::php( $a.'...BUG EDIT...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->edit() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+					}
+				}
+
+				//Delete
+				if( $a=intval($model->delete()) xor $b=intval($accept[ $key ][ $role_id ][ 2 ]) ){
+					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
+						$c = intval($model->checkAccess());
+						$d = intval($model->checkRole('delete'));
+						\libs\Watch::php( $a.'...BUG DELETE...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->delete() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+					}
+				}
+
+				//Creation
+				if( $a=intval($new_model->save()) xor $b=intval($accept[ $key ][ $role_id ][ 3 ]) ){
+					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
+						$c = intval($new_model->checkAccess());
+						$d = intval($new_model->checkRole('edit'));
+						\libs\Watch::php( $a.'...BUG CREATION...'.$b.': '.$c.'|'.$d , '[*] '.$new_model->getTable().'->create() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+					}
+				}
+
+			}
+
+		}
+
+		\libs\Watch::php( '!!!!!!!!!!  END  !!!!!!!!!!' , 'Permissions', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		$json = new Json('OK', false);
+		$json->render();
+		return true;
 	}
 
 }

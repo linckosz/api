@@ -45,6 +45,11 @@ class Watch {
 		}
 		
 		$dt = date("Y-m-d H:i:s (T)");
+
+		$userid = null;
+		if(isset($app->lincko->data['uid'])){
+			$userid = $app->lincko->data['uid'];
+		}
 		
 		if(is_array($var) || is_object($var)){
 			//$msg = (string)var_export($var,true);
@@ -63,7 +68,7 @@ class Watch {
 		
 		$msg = "
 $comment =>
-$basename | $dt 
+$basename | $dt | $userid
 -------------------------------------
 $msg
 -------------------------------------

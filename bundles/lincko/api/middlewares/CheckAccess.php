@@ -163,7 +163,7 @@ class CheckAccess extends \Slim\Middleware {
 					return true;
 				}
 			}
-		} else if($data->company == ''){
+		} else if($data->company == '' && $data->public_key === $app->lincko->security['public_key']){
 			//If the user and the company is undefined, we migth be in subscription mode, so we valid this step (it will be block later if it's not a credential operation)
 			return true;
 		}

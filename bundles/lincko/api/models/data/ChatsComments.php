@@ -22,7 +22,6 @@ class ChatsComments extends ModelLincko {
 		'updated_at',
 		'created_by',
 		'updated_by',
-		'chats_id',
 		'comment',
 	);
 
@@ -97,20 +96,29 @@ class ChatsComments extends ModelLincko {
 
 	//We allow creation only
 	/*
-				View Create Edit Delete
-		Owner	X X - -
-		Admin	X - - -
-		other	X - - -
+			'chats_comments' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 1 ), //outsider
+				1	=> array( 1 , 0 , 0 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 1 ), //manager
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
 	*/
 	public function checkRole($level){
 		$app = self::getApp();
+		$this->checkUser();
 		$level = $this->formatLevel($level);
+		if(isset($this->permission_allowed[$level])){
+			return $this->permission_allowed[$level];
+		}
 		if($level<=0){ //Allow only read for all
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		if(!isset($this->id) && $level<=1){ //Allow creation
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
-		} 
+		}
 		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 	

@@ -24,7 +24,6 @@ class Tasks extends ModelLincko {
 		'done_at',
 		'created_by',
 		'updated_by',
-		'projects_id',
 		'note',
 		'title',
 		'comment',
@@ -84,7 +83,6 @@ class Tasks extends ModelLincko {
 	protected $dependencies_visible = array(
 		'users' => array(),
 		'tasks' => array('in_charge', 'delay'),
-		'perm' => array('single'),
 	);
 
 	protected $model_timestamp = array(
@@ -198,21 +196,31 @@ class Tasks extends ModelLincko {
 
 	//We allow creation, and all rigths to admin
 	/*
-				View Create Edit Delete
-		Owner	X X - -
-		Admin	X X X X
-		other	X R R R
+			'tasks' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 1 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 0 ), //outsider
+				1	=> array( 1 , 1 , 1 , 1 ), //administrator
+				2	=> array( 1 ,-1 , 0 , 1 ), //manager (can edit only if creator)
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
 	*/
 	public function checkRole($level){
 		$app = self::getApp();
+		$this->checkUser();
 		$level = $this->formatLevel($level);
+		if(isset($this->permission_allowed[$level])){
+			return $this->permission_allowed[$level];
+		}
 		if($level<=0){ //Allow only read for all
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		$grant = $this->getCompanyGrant();
-		if((!isset($this->id) || $grant>=1) && $level<=1){ //Allow creation
+		if((!isset($this->id) || $grant>=1) && $level<=1){ //Allow creation/edit
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
-		} else if($grant>=1){ //Allow for administrator (grant access)
+		} else if($grant>=1 || $this->created_by==$app->lincko->data['uid']){ //Allow deletion for administrator (grant access) or owner
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		return parent::checkRole($level);

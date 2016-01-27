@@ -24,4 +24,10 @@ $app->group('/test', function () use ($app) {
 	)
 	->name('test_user'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/role',
+		'\bundles\lincko\api\controllers\ControllerTest:role'.$app->lincko->method_suffix
+	)
+	->name('test_role'.$app->lincko->method_suffix);
+
 });

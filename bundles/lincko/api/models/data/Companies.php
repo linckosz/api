@@ -48,6 +48,9 @@ class Companies extends ModelLincko {
 
 	protected static $allow_role = true;
 
+	//Turn true for paid account only the time the account is created
+	protected $allow_company_creation = false;
+
 ////////////////////////////////////////////
 
 	//Many(Companies) to Many(Users)
@@ -102,6 +105,10 @@ class Companies extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	public function allowCompanyCreation(){
+		$this->allow_company_creation = true;
+	}
+
 	//Add these functions to insure that nobody can make them disappear
 	public function delete(){}
 	public function restore(){}
@@ -110,21 +117,25 @@ class Companies extends ModelLincko {
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$new = !isset($this->id);
-		if($this->personal_private==$app->lincko->data['uid']){
-			if(self::where('personal_private', $app->lincko->data['uid'])->count() > 1){
-				$msg = $msg = $app->trans->getBRUT('api', 5, 2); //Cannot save more than one private workspace per user.
-				\libs\Watch::php($msg, 'Companies->save()', __FILE__, true);
-				$json = new Json($msg, true, 406);
-				$json->render();
-				return false;
-			}
-		}
 		$return = parent::save($options);
 		if($new){
 			//Set the role to administrator for the Company creator
 			$this->setRolePivotValue($app->lincko->data['uid'], 1, null, false);
 		}
 		return $return;
+	}
+
+	public function checkAccess(){
+		$app = self::getApp();
+		$this->accessibility = (bool) false;
+		if(!isset($this->id)){ //Allow access for new company with authorization
+			if($this->allow_company_creation){
+				$this->accessibility = (bool) true;
+			}
+		} else if( $this->users()->where('users_id', $app->lincko->data['uid'])->where('access', 1)->count() > 0 ){
+			$this->accessibility = (bool) true;
+		}
+		return parent::checkAccess();
 	}
 
 	public function getCompanyGrant(){
@@ -155,18 +166,38 @@ class Companies extends ModelLincko {
 
 	//We allow creation only
 	/*
-				View Create Edit Delete
-		Owner	X X - -
-		Admin	X - X -
-		other	X - - -
+			'companies' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 1 ), //outsider
+				1	=> array( 1 , 1 , 0 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 1 ), //manager
+				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			),
 	*/
 	public function checkRole($level){
 		$app = self::getApp();
+		$this->checkUser();
 		$level = $this->formatLevel($level);
+		if(isset($this->permission_allowed[$level])){
+			return $this->permission_allowed[$level];
+		}
 		if($level<=0){ //Allow only read for all
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
-		if((!isset($this->id) || $this->getCompanyGrant()>=1) && $level==1){ //Allow creation
+		//Only allow one personal_private creation
+		if(intval($this->personal_private)>0 && !isset($this->id) && $level<=1){ //Allow creation
+			if($this->personal_private==$app->lincko->data['uid'] && self::where('personal_private', $app->lincko->data['uid'])->take(1)->count() <= 0){
+				$this->permission_allowed[$level] = (bool) true;
+				return true;
+			}
+			$msg = $msg = $app->trans->getBRUT('api', 5, 2); //Cannot save more than one private workspace per user.
+			return parent::checkRole(3); //this will only launch error, since $level = 3
+		} else if(!isset($this->id) && $level<=1 && $this->allow_company_creation){ //Allow creation (for paid account)
+			$this->permission_allowed[$level] = (bool) true;
+			return true;
+		} else if(isset($this->id) && $this->getCompanyGrant()>=1 && $level<=1){ //Allow edit
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		return parent::checkRole(3); //this will only launch error, since $level = 3
@@ -174,12 +205,27 @@ class Companies extends ModelLincko {
 
 	//We keep "_" because we want to store companies information in the same folder on client side (easier for JS), not separatly
 	public function getCompany(){
-		return $this->id;
+		if(isset($this->id)){
+			return $this->id;
+		} else {
+			return -1; //this insure that we cannot find the company
+		}
 	}
 
 	//Do not show creation event
 	public function getHistoryCreation(array $parameters = array()){
 		return new \stdClass;
+	}
+
+	public static function setPersonal(){
+		$app = self::getApp();
+		if(self::where('personal_private', $app->lincko->data['uid'])->take(1)->count() <= 0){
+			$company = new self();
+			$company->personal_private = $app->lincko->data['uid'];
+			$company->name = $app->lincko->data['username'];
+			$company->save();
+		}
+		return false;
 	}
 
 ////////////////////////////////////////////
@@ -189,7 +235,7 @@ class Companies extends ModelLincko {
 		$data = preg_replace("/[^a-z0-9]/ui", '', $data);
 		$temp = $data = trim($data);
 		$i = 0;
-		while(!self::validURL($temp) && self::whereUrl($temp)->count()>0 && $i<10){
+		while(!self::validURL($temp) && self::whereUrl($temp)->take(1)->count()>0 && $i<10){
 			$temp = $temp.rand(1,9);
 			if(strlen($temp)>16){
 				$temp = $data;

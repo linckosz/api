@@ -6,6 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
 
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 
 class Data {
@@ -115,7 +116,7 @@ class Data {
 
 	/*
 	TIPS (31 dec 2015):
-		A way to accelerate the code should be to do only one SQL request (like $tp = Companies::with('projects.tasks')->find(3)->toJson() ), but this do not call toJson for child items, and we migth need to rebuild the client side database, this is a heavy rewriting to do only if we really need to speedup the code execution. It can also exclude the possibility to link a task to 2 projectss
+		A way to accelerate the code should be to do only one SQL request (like $tp = Companies::with('projects.tasks')->find(3)->toJson() ), but this do not call toJson for child items, and we migth need to rebuild the client side database, this is a heavy rewriting to do only if we really need to speedup the code execution. It can also exclude the possibility to link a task to 2 projects
 	*/
 	protected function getList(){
 		$app = $this->app;
@@ -129,15 +130,26 @@ class Data {
 		//If the lastvisit is not set, and we do not work with partial database, we force to get all details
 		if(!$this->lastvisit && is_null($this->partial) && !$this->history_detail){
 			$full_data = true;
+			//We check if the user has a personnal project, if not we create one
+			Projects::setPersonal();
 		}
+
 		$roles = PivotUsersRoles::getLinked()->get();
 		$roles_list = array();
 		foreach($roles as $value) {
-			if(isset($roles_list[$value->relation_type])){ $roles_list[$value->relation_type] = array(); }
-			$roles_list[$value->relation_type][$value->relation_id] = array(
-				'roles_id' => $value->roles_id,
-				'single' => $value->single,
-			);
+			if($value->roles_id!=null || $value->single!=null){
+				if(isset($roles_list[$value->relation_type])){ $roles_list[$value->relation_type] = array(); }
+				if($value->roles_id!=null){
+					$roles_list[$value->relation_type][$value->relation_id] = array(
+						'roles_id' => $value->roles_id,
+					);
+				}
+				if($value->single!=null){
+					$roles_list[$value->relation_type][$value->relation_id] = array(
+						'single' => $value->single,
+					);
+				}
+			}
 		}
 
 		foreach(self::$models as $key => $value) {
@@ -231,6 +243,19 @@ class Data {
 						$temp->history = $value->getHistoryCreation();
 					}
 
+					//Set parent information
+					if(!is_null($value->getParentName())){
+						$temp->parent = $value->getParentName();
+						$temp->parent_id = $value->{$temp->parent.'_id'};
+					} else {
+						$temp->parent = null;
+					}
+					
+					//Set Role information
+					if(isset($roles_list[$table_name][$id])){
+						$temp->_perm = $roles_list[$table_name][$id];
+					}
+					
 					if(!isset($result->$uid->$compid)){
 						$result->$uid->$compid = new \stdClass;
 					}

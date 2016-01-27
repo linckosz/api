@@ -102,12 +102,12 @@ $err = str_replace("\n","
 function shutdownHandler(){
 	$lasterror = error_get_last();
 	$exception = new Exception();
-	$dbt = getTraceAsString($exception, 5);
+	$dbt = getTraceAsString($exception, 10);
 	userErrorHandler($lasterror['type'], $lasterror['message'], $lasterror['file'], $lasterror['line'], $dbt, 'SDH');
 }
 
 function exceptionHandler(\Exception $exception) {
-	$dbt = getTraceAsString($exception, 5);
+	$dbt = getTraceAsString($exception, 10);
 	userErrorHandler(E_ERROR, 'Exception: '.$exception->getMessage(), $exception->getFile(), $exception->getLine(), $dbt, 'EXH');
 }
 

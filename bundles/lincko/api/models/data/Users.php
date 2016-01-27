@@ -187,13 +187,20 @@ class Users extends ModelLincko {
 	*/
 	public function checkRole($level){
 		$app = self::getApp();
+		$this->checkUser();
 		$level = $this->formatLevel($level);
+		if(isset($this->permission_allowed[$level])){
+			return $this->permission_allowed[$level];
+		}
 		if($level<=0){ //Allow only read for all
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		if(isset($this->id) && $level<=1 && $this->id==$app->lincko->data['uid']){ //Allow editing for creator only
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		} else if(!isset($this->id) && $level<=1){ //Allow creation
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		return parent::checkRole(3); //this will only launch error, since $level = 3
@@ -284,19 +291,14 @@ class Users extends ModelLincko {
 			} else {
 				$return = parent::save($options);
 				$app->lincko->data['uid'] = $this->id;
+				$app->lincko->data['username'] = $this->username;
 
-				$company = new Companies();
-				$company->personal_private = $this->id;
-				$company->name = $this->username;
-				$company->save();
+				Companies::setPersonal();
 				
 				$app->lincko->data['company'] = $company->url;
 				$app->lincko->data['company_id'] = intval($company->id);
 				
-				$project = new Projects();
-				$project->title = 'Private';
-				$project->personal_private = $this->id;
-				$project->save();
+				Projects::setPersonal();
 
 				$app->lincko->data['user_log']->save();
 			}

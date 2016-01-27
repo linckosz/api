@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\data\Companies;
 
 class Roles extends ModelLincko {
 
@@ -24,10 +25,10 @@ class Roles extends ModelLincko {
 
 	// CUSTOMIZATION //
 
-	protected $show_field = 'role';
+	protected $show_field = 'name';
 
 	protected $search_fields = array(
-		'role',
+		'name',
 	);
 
 	protected $archive = array(
@@ -85,9 +86,22 @@ class Roles extends ModelLincko {
 		});
 	}
 
+	public function checkAccess(){
+		if(!Companies::find($this->getCompany())->checkAccess()){
+			$this->accessibility = (bool) false;
+		}
+		return parent::checkAccess();
+	}
+
 	public function getCompany(){
 		$app = self::getApp();
-		return $this->companies_id;
+		if(is_null($this->companies_id)){ //This is for the shared roles
+			$compid = $app->lincko->data['company_id'];
+		} else {
+			$compid = $this->companies_id;
+		}
+		return $compid;
+		
 	}
 
 	public function save(array $options = array()){
@@ -107,18 +121,27 @@ class Roles extends ModelLincko {
 
 	//We allow all for admin, only view for other
 	/*
-				View Create Edit Delete
-		Owner	X - - -
-		Admin	X X X X
-		other	X - - -
+			'roles' => array( //[ read , edit , delete , create ]
+				-1	=> array( 1 , 0 , 0 , 0 ), //owner
+				0	=> array( 0 , 0 , 0 , 0 ), //outsider
+				1	=> array( 1 , 1 , 1 , 1 ), //administrator
+				2	=> array( 1 , 0 , 0 , 0 ), //manager
+				3	=> array( 1 , 0 , 0 , 0 ), //viewer
+			),
 	*/
 	public function checkRole($level){
 		$app = self::getApp();
+		$this->checkUser();
 		$level = $this->formatLevel($level);
+		if(isset($this->permission_allowed[$level])){
+			return $this->permission_allowed[$level];
+		}
 		if($level<=0){ //Allow only read for all
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		if($this->getCompanyGrant()>=1){ //Allow for administrator (grant access)
+			$this->permission_allowed[$level] = (bool) true;
 			return true;
 		}
 		return parent::checkRole(3); //this will only launch error, since $level = 3
