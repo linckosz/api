@@ -56,7 +56,7 @@ if(isset($_SERVER["SERVER_HOST"])){
 //Do not enable debug when we are using json ajax respond
 $app->config(array(
 	'debug' => false,
-	'mode' => 'development',
+	'mode' => 'production',
 	'cookies.encrypt' => true, //Must use $app->getCookie('foo', false);
 	'cookies.secret_key' => 'au6G7dbSh87Ws',
 	'cookies.lifetime' => '365 days',
