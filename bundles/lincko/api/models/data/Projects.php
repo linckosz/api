@@ -63,6 +63,12 @@ class Projects extends ModelLincko {
 
 	protected static $allow_role = true;
 
+	protected static $permission_sheet = array(
+		0, //[R] owner
+		3, //[RCUD] grant
+		0, //[R] max allow
+	);
+
 ////////////////////////////////////////////
 
 	//Many(Projects) to Many(Users)
@@ -147,41 +153,19 @@ class Projects extends ModelLincko {
 		});
 	}
 
-	//We allow creation, and all rigths to admin
-	/*
-			'projects' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 0 ), //outsider
-				1	=> array( 1 , 1 , 1 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 0 ), //manager
-				3	=> array( 1 , 0 , 0 , 0 ), //viewer
-			),
-	*/
-	public function checkRole($level){
+	public function checkRole($level, $msg=false){
 		$app = self::getApp();
 		$this->checkUser();
 		$level = $this->formatLevel($level);
-		if(isset($this->permission_allowed[$level])){
-			return $this->permission_allowed[$level];
-		}
-		if($level<=0){ //Allow only read for all
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
-		$grant = $this->getCompanyGrant();
 		//Only allow one personal_private creation
-		if(intval($this->personal_private)>0 && !isset($this->id) && $level<=1){ //Allow creation
+		if(intval($this->personal_private)>0 && !isset($this->id) && $level==1){ //Allow creation
 			//Only if no project attached for the user itself
 			if($this->personal_private==$app->lincko->data['uid'] && self::where('personal_private', $app->lincko->data['uid'])->where('companies_id', $this->companies_id)->take(1)->count() <= 0){
-				$this->permission_allowed[$level] = (bool) true;
 				return true;
 			}
-			$msg = $msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project for each company.
+			$msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project for each company.
 			\libs\Watch::php($msg, 'Projects->save()', __FILE__, true);
-			return parent::checkRole(3); //this will only launch error, since $level = 3
-		} else if($grant>=1){ //Allow for administrator (grant access)
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
+			return parent::checkRole(4, $msg); //this will only launch error, since $level = 3
 		}
 		return parent::checkRole($level);
 	}

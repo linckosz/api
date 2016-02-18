@@ -6,6 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
 
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Companies;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 
@@ -134,7 +135,16 @@ class Data {
 			Projects::setPersonal();
 		}
 
-		$roles = PivotUsersRoles::getLinked()->get();
+		$comp_users = Companies::find($app->lincko->data['company_id'])->users()->get();
+		$users_list = array();
+		foreach ($comp_users as $comp_user) {
+			$users_list[] = $comp_user->getKey();
+		}
+
+		$roles = PivotUsersRoles::getCompanyRoles();
+
+		\libs\Watch::php( $roles->toArray() , '$roles', __FILE__, false, false, true);
+
 		$roles_list = array();
 		foreach($roles as $value) {
 			if($value->roles_id!=null || $value->single!=null){
@@ -152,17 +162,128 @@ class Data {
 			}
 		}
 
+		//Build the tree
+		//We use teh prefix "tree_" to avoid variable conflict.
+		$tree_asc = new \stdClass;
+		$tree = new \stdClass;
+		/*
+		if(true || $full_data){
+			foreach(self::$models as $key => $value) {
+				$model = new $value;
+
+				//Ascendant
+				$child = 'tree_'.$model->getTable();
+				if( !isset(${$child}) ){
+					${$child} = new \stdClass;
+				}
+				if($model->getParentName() == null){
+					$parent = 'tree_asc';
+				} else {
+					$parent = 'tree_'.$model->getParentName();
+				}
+				if( !isset(${$parent}) ){
+					${$parent} = new \stdClass;
+				}
+				//${$parent}->{$child} = ${$child};
+
+				$root_child = $model->getTable();
+				${$parent}->{$child} = ${$child};
+				unset(${$parent}->{$child}); //This helps to delete the prefix 'tree'
+				${$parent}->{$root_child} = ${$child};
+			}
+		}
+		*/
+		if($full_data || !is_null($this->partial)){
+			foreach(self::$models as $key => $value) {
+				$model = new $value;
+				$tree->{$model->getTable()} = $model->getParentName();
+			}
+		}
+
+		//Get the relations list
+		if($full_data){
+			if(!isset($result->$uid)){
+				$result->$uid = new \stdClass;
+			}
+			if(!isset($result->$uid->{'_'})){
+				$result->$uid->{'_'} = new \stdClass;
+			}	
+			$result->$uid->{'_'}->{'_tree'} = $tree;
+			$result->$uid->{'_'}->{'_relations'} = new \stdClass;
+			$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
+		}
+
+		if(!is_null($this->partial) && isset($this->partial->$uid) && isset($this->partial->$uid->{'_'})){
+			if(!isset($result->$uid)){
+				$result->$uid = new \stdClass;
+			}
+			if(!isset($result->$uid->{'_'})){
+				$result->$uid->{'_'} = new \stdClass;
+			}
+			if(isset($this->partial->$uid->{'_'}->{'_tree'})){
+				$result->$uid->{'_'}->{'_tree'} = $tree;
+			}
+			if(isset($this->partial->$uid->{'_'}->{'_relations'})){
+				$result->$uid->{'_'}->{'_relations'} = new \stdClass;
+			}
+			if(isset($this->partial->$uid->{'_'}->{'_history_title'})){
+				$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
+			}
+		}
+
 		foreach(self::$models as $key => $value) {
 			//Insure that the where is only with AND, not an OR!
 			$data = $value::getItems($this->lastvisit);
 
+			//Get table name
+			$model = new $value;
+			$table_name = $model->getTable();
+
+			//Get the relations list
+			if($full_data){
+				if(!isset($result->$uid->{'_'}->{'_relations'}->$table_name)){
+					if($this->item_detail){
+						//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
+						$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
+					} else {
+						$result->$uid->{'_'}->{'_relations'}->$table_name = new \stdClass;
+					}
+				}
+				if(!isset($result->$uid->{'_'}->{'_history_title'}->$table_name)){
+					if($this->item_detail){
+						$result->$uid->{'_'}->{'_history_title'}->$table_name = $model->getHistoryTitles();
+					} else {
+						$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
+					}
+				}
+			}
+
+			if(!is_null($this->partial) && isset($this->partial->$uid) && isset($this->partial->$uid->{'_'})){
+				if(isset($this->partial->$uid->{'_'}->{'_relations'})){
+					if(isset($this->partial->$uid->{'_'}->{'_relations'}->$table_name)){
+						if($this->item_detail){
+							//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
+							$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
+						} else {
+							$result->$uid->{'_'}->{'_relations'}->$table_name = new \stdClass;
+						}
+					}
+				}
+				if(isset($this->partial->$uid->{'_'}->{'_history_title'})){
+					if(isset($this->partial->$uid->{'_'}->{'_history_title'}->$table_name)){
+						if($this->item_detail){
+							$result->$uid->{'_'}->{'_history_title'}->$table_name = $model->getHistoryTitles();
+						} else {
+							$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
+						}
+					}
+				}
+			}
+
 			//Check if there is at least one update
 			if(!$data->isEmpty()){
 				$id_list = array();
-				//Get table name
-				$model = new $value;
-				$table_name = $model->getTable();
-
+				
 				if(!is_null($this->partial)){
 					$comp = array('_', $app->lincko->data['company_id']);
 					foreach($comp as $compid) {
@@ -174,36 +295,6 @@ class Data {
 
 				if(!isset($result->$uid)){
 					$result->$uid = new \stdClass;
-				}
-
-				//Get the relations list
-				if($full_data){
-					if(!isset($result->$uid->{'_'})){
-						$result->$uid->{'_'} = new \stdClass;
-					}
-
-					if(!isset($result->$uid->{'_'}->{'_relations'})){
-						$result->$uid->{'_'}->{'_relations'} = new \stdClass;
-					}
-					if(!isset($result->$uid->{'_'}->{'_relations'}->$table_name)){
-						if($this->item_detail){
-							//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
-							$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
-						} else {
-							$result->$uid->{'_'}->{'_relations'}->$table_name = new \stdClass;
-						}
-					}
-
-					if(!isset($result->$uid->{'_'}->{'_history_title'})){
-						$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
-					}
-					if(!isset($result->$uid->{'_'}->{'_history_title'}->$table_name)){
-						if($this->item_detail){
-							$result->$uid->{'_'}->{'_history_title'}->$table_name = $model->getHistoryTitles();
-						} else {
-							$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
-						}
-					}
 				}
 
 				$compid = false;
@@ -223,8 +314,10 @@ class Data {
 					}
 
 					//If the items doesn't exist in partial, no need to record it
-					if(!is_null($this->partial) && !isset($this->partial->$uid->$compid->$table_name->$id)){
-						continue;
+					if(!is_null($this->partial)){
+						if(!isset($this->partial->$uid) || !isset($this->partial->$uid->$compid) || !isset($this->partial->$uid->$compid->$table_name) || !isset($this->partial->$uid->$compid->$table_name->$id)){
+							continue;
+						}
 					}
 
 					//Create object
@@ -243,17 +336,19 @@ class Data {
 						$temp->history = $value->getHistoryCreation();
 					}
 
+					if(!$full_data){
+						$temp->_perm = new \stdClass;
+						foreach ($users_list as $comp_user_id) {
+							$temp->_perm->$comp_user_id = $value->getPermissionMax($comp_user_id);
+						}
+					}
+
 					//Set parent information
 					if(!is_null($value->getParentName())){
 						$temp->parent = $value->getParentName();
 						$temp->parent_id = $value->{$temp->parent.'_id'};
 					} else {
 						$temp->parent = null;
-					}
-					
-					//Set Role information
-					if(isset($roles_list[$table_name][$id])){
-						$temp->_perm = $roles_list[$table_name][$id];
 					}
 					
 					if(!isset($result->$uid->$compid)){
@@ -282,6 +377,30 @@ class Data {
 								//Keep true if at least once
 								$usersContacts->$contacts_key->contactsLock = ($usersContacts->$contacts_key->contactsLock || $contacts_value->contactsLock);
 								$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
+							}
+						}
+					}
+
+					//Get comments
+					$comments = $value::getComments($id_list);
+					foreach ($comments as $id => $temp) {
+						if(isset($result->$uid->$compid->$table_name->$id)){
+							foreach ($temp as $comment_id => $comment) {
+								if(!isset($result->$uid->$compid->$table_name->$id->comments)){
+									$result->$uid->$compid->$table_name->$id->comments = array();
+								}
+								$result->$uid->$compid->$table_name->$id->comments[] = $comment_id;
+								if(!isset($result->$uid->{'_'})){
+									$result->$uid->{'_'} = new \stdClass;
+								}
+								if(!isset($result->$uid->{'_'}->{'comments'})){
+									$result->$uid->{'_'}->{'comments'} = new \stdClass;
+								}
+								if($this->item_detail){
+									$result->$uid->{'_'}->{'comments'}->$comment_id = json_decode($comment->toJson());
+								} else {
+									$result->$uid->{'_'}->{'comments'}->$comment_id = new \stdClass;
+								}
 							}
 						}
 					}

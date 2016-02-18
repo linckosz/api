@@ -48,6 +48,12 @@ class Roles extends ModelLincko {
 
 	protected $parent = 'companies';
 
+	protected static $permission_sheet = array(
+		0, //[R] owner
+		3, //[RCUD] grant
+		0, //[R] max allow
+	);
+
 ////////////////////////////////////////////
 
 	//Many(Roles) to Many(Users)
@@ -116,35 +122,8 @@ class Roles extends ModelLincko {
 		$this->perm_grant = 0;
 		$this->perm_companies = 0;
 		$return = parent::save($options);
+		self::setForceReset(true);
 		return $return;
-	}
-
-	//We allow all for admin, only view for other
-	/*
-			'roles' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 0 ), //outsider
-				1	=> array( 1 , 1 , 1 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 0 ), //manager
-				3	=> array( 1 , 0 , 0 , 0 ), //viewer
-			),
-	*/
-	public function checkRole($level){
-		$app = self::getApp();
-		$this->checkUser();
-		$level = $this->formatLevel($level);
-		if(isset($this->permission_allowed[$level])){
-			return $this->permission_allowed[$level];
-		}
-		if($level<=0){ //Allow only read for all
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
-		if($this->getCompanyGrant()>=1){ //Allow for administrator (grant access)
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
-		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 
 }

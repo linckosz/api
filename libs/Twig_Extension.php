@@ -5,6 +5,7 @@
 namespace libs;
 
 use \libs\File;
+use \libs\Folders;
 
 class Twig_Extension extends \Slim\Views\TwigExtension {
 

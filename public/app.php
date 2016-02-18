@@ -8,7 +8,8 @@ $app = new \Slim\Slim();
 
 require_once $path.'/config/global.php';
 require_once $path.'/config/language.php';
-require_once $path.'/param/parameters.php';
+require_once $path.'/param/common.php';
+require_once $path.'/param/unique/parameters.php';
 
 // Only invoked if mode is "production"
 $app->configureMode('production', function () use ($app) {
@@ -35,13 +36,14 @@ require_once $path.'/error/errorPHP.php';
 require_once $path.'/config/eloquent.php';
 require_once $path.'/config/session.php';
 
-$app->get('/:catchall', function() use ($app) {
+$app->map('/:catchall', function() use ($app) {
 	$app->render(404, array(
 		'error' => true,
 		'msg' => 'Sorry, we could not understand the request.', //Cannot use translation because we don't know which bundle will be loaded
 	));
 })->conditions(array('catchall' => '.*'))
-->name('catchall');
+->name('catchall')
+->via('GET', 'POST', 'PUT', 'DELETE');
 
 $app->run();
 //Checking $app (print_r) after run can make php crashed out of memory because it contains files data

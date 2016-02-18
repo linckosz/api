@@ -50,6 +50,12 @@ class Companies extends ModelLincko {
 
 	//Turn true for paid account only the time the account is created
 	protected $allow_company_creation = false;
+	
+	protected static $permission_sheet = array(
+		0, //[R] owner
+		2, //[RCU] grant
+		1, //[RC] max allow
+	);
 
 ////////////////////////////////////////////
 
@@ -138,11 +144,15 @@ class Companies extends ModelLincko {
 		return parent::checkAccess();
 	}
 
-	public function getCompanyGrant(){
-		if(!isset($this->id) || $this->new_model){ //We considerate grant access by default for new company
+	public function getCompanyGrant($user_id=false){
+		$app = self::getApp();
+		if(!$user_id){
+			$user_id = $app->lincko->data['uid'];
+		}
+		if(!isset($this->id) || $this->new_model || $this->personal_private==$user_id){ //We considerate grant access by default for new company
 			return 1;
-		} else if($role = $this->perm()->first()){
-			return $role->perm_grant;
+		} else if($role = $this->perm($user_id)->first()){
+			return intval($role->perm_grant);
 		}
 		return 0;
 	}
@@ -155,52 +165,24 @@ class Companies extends ModelLincko {
 			$query
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 1);
-		})
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-			$app = self::getApp();
-			$query
-			->where('personal_private', null)
-			->orWhere('personal_private', $app->lincko->data['uid']);
 		});
 	}
 
-	//We allow creation only
-	/*
-			'companies' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 1 ), //outsider
-				1	=> array( 1 , 1 , 0 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 1 ), //manager
-				3	=> array( 1 , 0 , 0 , 1 ), //viewer
-			),
-	*/
-	public function checkRole($level){
+	public function checkRole($level, $msg=false){
 		$app = self::getApp();
 		$this->checkUser();
 		$level = $this->formatLevel($level);
-		if(isset($this->permission_allowed[$level])){
-			return $this->permission_allowed[$level];
-		}
-		if($level<=0){ //Allow only read for all
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
 		//Only allow one personal_private creation
-		if(intval($this->personal_private)>0 && !isset($this->id) && $level<=1){ //Allow creation
+		if(intval($this->personal_private)>0 && !isset($this->id) && $level==1){ //Allow creation
 			if($this->personal_private==$app->lincko->data['uid'] && self::where('personal_private', $app->lincko->data['uid'])->take(1)->count() <= 0){
-				$this->permission_allowed[$level] = (bool) true;
 				return true;
 			}
-			$msg = $msg = $app->trans->getBRUT('api', 5, 2); //Cannot save more than one private workspace per user.
-			return parent::checkRole(3); //this will only launch error, since $level = 3
-		} else if(!isset($this->id) && $level<=1 && $this->allow_company_creation){ //Allow creation (for paid account)
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		} else if(isset($this->id) && $this->getCompanyGrant()>=1 && $level<=1){ //Allow edit
-			$this->permission_allowed[$level] = (bool) true;
+			$msg = $app->trans->getBRUT('api', 5, 2); //Cannot save more than one private workspace per user.
+			return parent::checkRole(4, $msg); //this will only launch error, since $level = 3
+		} else if(!isset($this->id) && $level==1 && $this->allow_company_creation){ //Allow creation (for paid account)
 			return true;
 		}
-		return parent::checkRole(3); //this will only launch error, since $level = 3
+		return parent::checkRole($level);
 	}
 
 	//We keep "_" because we want to store companies information in the same folder on client side (easier for JS), not separatly

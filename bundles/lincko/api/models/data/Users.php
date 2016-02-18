@@ -55,6 +55,15 @@ class Users extends ModelLincko {
 	);
 
 	protected static $relations_keys = array();
+
+	protected static $permission_sheet = array(
+		2, //[RCU] owner
+		1, //[RC] grant
+		1, //[RC] max allow
+	);
+
+	//Authorized by default since it's not part of a company
+	protected static $permission_grant = 1;
 	
 ////////////////////////////////////////////
 
@@ -100,7 +109,9 @@ class Users extends ModelLincko {
 	}
 
 	//Many(Users) to Many(Roles)
-	public function perm(){
+	public function perm($user_id=false){
+		$app = self::getApp();
+		$user_id = $app->lincko->data['uid'];
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'users_id', 'roles_id')->withPivot('relation_id', 'relation_type', 'access', 'single');
 	}
 
@@ -178,34 +189,6 @@ class Users extends ModelLincko {
 		});
 	}
 
-	//We allow creation, and editing for the creator only
-	/*
-				View Create Edit Delete
-		Owner	X X X -
-		Admin	X - - -
-		other	X - - -
-	*/
-	public function checkRole($level){
-		$app = self::getApp();
-		$this->checkUser();
-		$level = $this->formatLevel($level);
-		if(isset($this->permission_allowed[$level])){
-			return $this->permission_allowed[$level];
-		}
-		if($level<=0){ //Allow only read for all
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
-		if(isset($this->id) && $level<=1 && $this->id==$app->lincko->data['uid']){ //Allow editing for creator only
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		} else if(!isset($this->id) && $level<=1){ //Allow creation
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
-		return parent::checkRole(3); //this will only launch error, since $level = 3
-	}
-
 	public function getContactsLock(){
 		$app = self::getApp();
 		if($this->id == $app->lincko->data['uid']){
@@ -280,6 +263,10 @@ class Users extends ModelLincko {
 		return new \stdClass;
 	}
 
+	public function createdBy(){
+		return $this->id;
+	}
+
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$return = null;
@@ -312,7 +299,13 @@ class Users extends ModelLincko {
 
 	public function toJson($detail=true, $options = 0){
 		$app = self::getApp();
+
+		//the play with accessibility allow Data.php to gather information about some other users that are not in the user contact list
+		$accessibility = $this->accessibility;
+		$this->accessibility = true;
 		$temp = parent::toJson($detail, $options);
+		$this->accessibility = $accessibility;
+		
 		$temp = json_decode($temp);
 		$temp->contactsLock = $this->getContactsLock();
 		$temp->contactsVisibility = $this->getContactsVisibility();
@@ -324,6 +317,10 @@ class Users extends ModelLincko {
 		}
 		$temp = json_encode($temp, $options);
 		return $temp;
+	}
+
+	public function getUsername(){
+		return $this->username;
 	}
 
 }

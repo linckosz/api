@@ -10,7 +10,7 @@ use \libs\Json;
 $app = \Slim\Slim::getInstance();
 
 //Special functions to manage errors
-function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type){
+function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UNK'){
 	//Hide some warnings of exif_read_data because there is a PHP bug if EXIF are not standard
 	if($errmsg!="" && (mb_strpos($errmsg, "Warning => exif_read_data")===false || mb_strpos($errmsg, "Illegal")===false)){
 		$app = \Slim\Slim::getInstance();

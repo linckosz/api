@@ -153,11 +153,15 @@ class CheckAccess extends \Slim\Middleware {
 			$companies = Companies::getLinked()->get();
 			//We check that the user has access to the workspace
 			foreach ($companies as $key => $value) {
-				if($value->personal_private==$app->lincko->data['uid'] && $data->company == ''){ //Personal company
+				if(!is_null($value->personal_private) && $value->personal_private==$app->lincko->data['uid'] && $data->company == ''){ //Personal workspace
 					$app->lincko->data['company'] = '';
 					$app->lincko->data['company_id'] = intval($value->id);
 					return true;
-				} else if(is_null($value->personal_private) && $value->url == $data->company){
+				} else if(!is_null($value->personal_private) && $data->company != '' && $value->personal_private==$data->company){ //Someone workspace
+					$app->lincko->data['company'] = '';
+					$app->lincko->data['company_id'] = intval($value->id);
+					return true;
+				} else if(is_null($value->personal_private) && $data->company != '' && $value->url == $data->company){ //Company workspace
 					$app->lincko->data['company'] = $value->url;
 					$app->lincko->data['company_id'] = intval($value->id);
 					return true;

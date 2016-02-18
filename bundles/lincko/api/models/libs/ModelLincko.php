@@ -15,6 +15,7 @@ use Illuminate\Database\Schema\Builder as Schema;
 
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
+use \bundles\lincko\api\models\libs\Comments;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Companies;
 use \bundles\lincko\api\models\data\Roles;
@@ -80,7 +81,6 @@ abstract class ModelLincko extends Model {
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
 	protected $parent = null;
 	protected $parent_id = null; //Unique parent ID
-	protected $children = null; //Array of all children
 	//This enable or disable the ability to give a permission to a single element.
 	protected static $allow_single = false;
 	//This enable or disable the ability to give a role permission to a single element with it's children.
@@ -93,6 +93,33 @@ abstract class ModelLincko extends Model {
 	protected static $debugMode = false;
 
 	/*
+	Roles
+	[
+		0 :owner	=> additional feature if you are the owner
+		1 :outsider (don't share anything)
+		2 :grant (share same company, same chat room)
+		2 :max allow (share same company, same chat room)
+	]
+	0: read
+	1: read + create
+	2: read + create + edit
+	3: read + create + edit + delete
+	*/
+	protected static $permission_sheet = array(
+		0, //[R] owner
+		0, //[R] grant
+		0, //[R] max allow
+	);
+
+	//Interger 1 if all users have grant access to the element
+	//If an array, tell grant access for each user
+	protected static $permission_grant = array();
+
+	//It record the permission found to speed up calculation in Data.php
+	//Level of perission for the model (0: R, 1: RC, 2: RCU, 3: RCUD)
+	protected static $permission_users = array();
+
+	/*
 		Model variables linked to the user ID
 		START
 	*/
@@ -102,12 +129,6 @@ abstract class ModelLincko extends Model {
 
 		//Record the current user ID, will reset some variable if the user ID change
 		protected $record_user = null;
-
-		//Level of perission for the model (0: read, 1: edit, 2: delete)
-		protected $permission_allowed = array();
-
-		//True if the user has grant access
-		protected $permission_grant = null;
 
 	/*
 		Model variables linked to the user ID
@@ -122,9 +143,17 @@ abstract class ModelLincko extends Model {
 	}
 
 	//Many(Roles) to Many Poly (Users)
-	public function perm(){
+	public function perm($user_id=false){
 		$app = self::getApp();
-		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $app->lincko->data['uid'])->withPivot('access', 'single', 'relation_id', 'relation_type')->take(1);
+		if(!$user_id){
+			$user_id = $app->lincko->data['uid'];
+		}
+		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $user_id)->withPivot('access', 'single', 'relation_id', 'relation_type')->take(1);
+	}
+
+	//One(?) to Many(Comments)
+	public function comments(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\libs\\Comments', 'type_id')->where('type', $this->getTable());
 	}
 
 	//Many(Roles) to Many Poly (Users)
@@ -217,6 +246,13 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
+	public function createdBy(){
+		if(isset($this->created_by)){
+			return $this->created_by;
+		}
+		return false;
+	}
+
 	public function getParentName(){
 		return $this->parent;
 	}
@@ -265,9 +301,21 @@ abstract class ModelLincko extends Model {
 		return true;
 	}
 
-	public static function setForceReset(){
-		// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
-		Users::getQuery()->update(['force_schema' => '2']);
+	public static function setForceReset($company=false){
+		if($company){
+			$list_users = array();
+			$users = Company::find($app->lincko->data['company_id'])->getUsersContacts();
+			foreach ($users as $users_id => $user) {
+				$list_users[] = $users_id;
+			}
+			if(!empty($list_users)){
+				// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
+				Users::whereIn('id', $list_users)->getQuery()->update(['force_schema' => '2']);
+			}
+		} else {
+			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
+			Users::getQuery()->update(['force_schema' => '2']);;
+		}
 		return true;
 	}
 
@@ -409,7 +457,7 @@ abstract class ModelLincko extends Model {
 					if(!isset($history->{$value->type_id}->history)){ $history->{$value->type_id}->history = new \stdClass; }
 					if(!isset($history->{$value->type_id}->history->$created_at)){ $history->{$value->type_id}->history->$created_at = new \stdClass; }
 					if(!isset($history->{$value->type_id}->history->$created_at->{$value->id})){ $history->{$value->type_id}->history->$created_at->{$value->id} = new \stdClass; }
-					$history->{$value->type_id}->history->$created_at->{$value->id}->by = $value->created_by;
+					$history->{$value->type_id}->history->$created_at->{$value->id}->by = $value->createdBy();
 					$history->{$value->type_id}->history->$created_at->{$value->id}->att = $prefix.$value->attribute;
 					if($history_detail){
 						$history->{$value->type_id}->history->$created_at->{$value->id}->old = $value->old;
@@ -437,7 +485,7 @@ abstract class ModelLincko extends Model {
 					$created_at = (new \DateTime($value->created_at))->getTimestamp();
 					if(!isset($history->$created_at)){ $history->$created_at = new \stdClass; }
 					if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
-					$history->$created_at->{$value->id}->by = $value->created_by;
+					$history->$created_at->{$value->id}->by = $value->createdBy();
 					$history->$created_at->{$value->id}->att = $prefix.$value->attribute;
 					if($history_detail){
 						$history->$created_at->{$value->id}->old = $value->old;
@@ -566,12 +614,101 @@ abstract class ModelLincko extends Model {
 		if(!isset($app->lincko->data['uid']) || $this->record_user != $app->lincko->data['uid']){
 			$this->record_user = null;
 			$this->accessibility = null;
-			$this->permission_allowed = array();
-			$this->permission_grant = null;
 			if(isset($app->lincko->data['uid'])){
 				$this->record_user = $app->lincko->data['uid'];
 			}
 		}
+	}
+
+	public function getPermissionMax($user_id = false){
+		$app = self::getApp();
+		if(!$user_id){
+			$user_id = $app->lincko->data['uid'];
+		}
+		$this->checkUser();
+		if( !isset(self::$permission_users[$user_id]) ){ self::$permission_users[$user_id] = array(); }
+		if( !isset(self::$permission_users[$user_id][$this->getTable()]) ){ self::$permission_users[$user_id][$this->getTable()] = array(); }
+		if(  isset(self::$permission_users[$user_id][$this->getTable()][$this->id]) ){
+			return self::$permission_users[$user_id][$this->getTable()][$this->id];
+		}
+		//Check in order or speed code priority
+		$perm = 0;
+		//Check ownership
+		if(static::$permission_sheet[0] > $perm && $this->createdBy() == $user_id){
+			$perm = static::$permission_sheet[0];
+		}
+		//Check grant (as priority over singular role, it means that one administrator cannot retrict another administrator with grant permission)
+		if(static::$permission_sheet[1] > $perm && $this->getCompanyGrant($user_id)){
+			$perm = static::$permission_sheet[1];
+		}
+		//Check role
+		if(static::$permission_sheet[2] > $perm){
+			$role_perm = $this->getRole($user_id);
+			if($role_perm > static::$permission_sheet[2]){ //There is a limitation allowed per model that can be different than the database setup.
+				$role_perm = static::$permission_sheet[2];
+			}
+			if($role_perm > $perm){
+				$perm = $role_perm;
+			}
+		}
+
+		$perm = intval($perm);
+		self::$permission_users[$user_id][$this->getTable()][$this->id] = $perm;
+
+		return $perm;
+	}
+
+	//It checks if the user has access to edit it
+	public function getRole($user_id = false){
+		$app = self::getApp();
+		if(!$user_id){
+			$user_id = $app->lincko->data['uid'];
+		}
+		$this->checkUser();
+		if( isset(self::$permission_users[$user_id]) && isset(self::$permission_users[$user_id][$this->getTable()]) && isset(self::$permission_users[$user_id][$this->getTable()][$this->id]) ){
+			return self::$permission_users[$user_id][$this->getTable()][$this->id];
+		}
+		$model = $this;
+		$check_single = true; //We only check single of the model itself, not its parents
+		$suffix = $this->getTable();
+		$role = false;
+		$perm = 0; //Only allow reading
+		$table = array();
+		$loop = 20; //It avoids infinite loop
+		while($loop>=0){
+			$loop--;
+			$role = false;
+			if(!in_array($model->getTable(), $table)){ //It avoids to loop the same model
+				if($model::$allow_role || $model::$allow_single){
+					$pivot = $model->getRolePivotValue($user_id);
+					if($pivot[0]){
+						if($check_single && $model::$allow_single && $pivot[2]){
+							$perm = $pivot[2];
+							$loop = 0;
+							break;
+						} else if($model::$allow_role && $pivot[1]){
+							if($role = Roles::find($pivot[1])){
+								if(isset($role->{'perm_'.$suffix})){ //Per model
+									$perm = $role->{'perm_'.$suffix};
+								} else { //General
+									$perm = $role->perm_all;
+								}
+							}
+							$loop = 0;
+							break;
+						}
+					}
+				}
+				$table[] = $model->getTable();
+				if($model = $model->getParent()){
+					$check_single = false;
+					continue;
+				}
+			}
+			$loop = 0;
+			break;
+		}
+		return $perm;
 	}
 
 	//It checks if the user has access to it
@@ -605,92 +742,46 @@ abstract class ModelLincko extends Model {
 
 	protected function formatLevel($level){
 		if(is_string($level)){
-			if(strtolower($level) == 'edit'){ $level = 1; } //edit
-			else if(strtolower($level) == 'delete'){ $level = 2; } //delete
-			else if(strtolower($level) == 'error'){ $level = 3; } //force error
+			if(strtolower($level) == 'create'){ $level = 1; } //create
+			else if(strtolower($level) == 'delete'){ $level = 2; } //edit
+			else if(strtolower($level) == 'delete'){ $level = 3; } //delete
+			else if(strtolower($level) == 'error'){ $level = 4; } //force error
 			else { $level = 0; } //read
 		} else if(is_integer($level)){
-			if($level <0 && $level > 3){ $level = 3; }
+			if($level <0 && $level > 4){ $level = 4; }
 		} else {
-			$level = 3;
+			$level = 4;
 		}
 		return $level;
 	}
 
 	//It checks if the user has access to edit it
-	public function checkRole($level){
+	public function checkRole($level, $msg=false){
 		$app = self::getApp();
 		$this->checkUser();
+		$allow = false;
 		$level = $this->formatLevel($level);
-		if(isset($this->permission_allowed[$level])){
-			return $this->permission_allowed[$level];
-		}
-		if(!$this->checkAccess()){
-			return $this->permission_allowed[$level] = (bool) false;
-		}
-		$model = $this;
-		$current = true;
-		$suffix = $model->getTable();
-		$role = false;
-		$allow = 0; //Only allow reading
-		//We scan only if the element can have separate role, and if the level is editing or delete
-		if($level >=1 && $level <= 2 && ($model::$allow_role || $model::$allow_single)){
-			$table = array();
-			$loop = true;
-			while($loop){
-				$role = false;
-				if(!in_array($model->getTable(), $table)){
-					if($model::$allow_role || $model::$allow_single){
-						$pivot = $model->getRolePivotValue($app->lincko->data['uid']);
-						if($pivot[0]){
-							//This part must be the same on client side for consistency
-							//Using this procedure, we allow one administrator to modify permissions of another adminsitrator, we lock some part of a workspace
-							if($current && $model::$allow_single && $pivot[2]){ //We only check single of the model itself, not its parents
-								$allow = $pivot[2];
-								$loop = false;
-								break;
-							} else if($model::$allow_role && $pivot[1]){
-								if($role = Roles::find($pivot[1])){
-									if($role->perm_grant){ //Grant permission
-										$allow = 2;
-									} else if(isset($role->{'perm_'.$suffix})){ //Per model
-										$allow = $role->{'perm_'.$suffix};
-									} else { //General
-										$allow = $role->perm_all;
-									}
-									$loop = false;
-									break;
-								}
-							}
-						}
-					}
-					$table[] = $model->getTable();
-					if($model = $model->getParent()){
-						$current = false;
-						continue;
-					}
-
-				}
-				$loop = false;
-				break;
+		if($level<=0){
+			$allow = true;
+		} else if($level<4){
+			$perm = $this->getPermissionMax();
+			if($level<=$perm){
+				$allow = true;
 			}
 		}
-		//For editing/deletion without grant permission, we only allow the creator
-		if($this->getCompanyGrant()!=1 && (!isset($this->created_by) || (isset($this->created_by) && $this->created_by != $app->lincko->data['uid']))){
-			$allow = 0;
+		if($allow){
+			return true;
 		}
-		if($level <= $allow){
-			$this->permission_allowed[$level] = (bool) true;
-		} else {
-			$this->permission_allowed[$level] = (bool) false;
-			$this::errorMsg($suffix." :\n".parent::toJson());
-		}
-		return $this->permission_allowed[$level];
+		$suffix = $this->getTable();
+		$this::errorMsg($suffix." :\n".parent::toJson(), $msg);
+		return false;
 	}
 
-	protected static function errorMsg($detail=''){
+	protected static function errorMsg($detail='', $msg=false){
 		$app = self::getApp();
-		$msg = $app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
+		if(!$msg){
+			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
+		}
 		\libs\Watch::php($detail, $msg, __FILE__, true);
 		if(!self::$debugMode){
 			$json = new Json($msg, true, 406);
@@ -943,6 +1034,34 @@ abstract class ModelLincko extends Model {
 		return $return;
 	}
 
+	public function setComment($text){
+		$app = self::getApp();
+		if(!$this->checkAccess()){
+			$this::errorMsg('Access issue');
+			return false;
+		}
+		$comment = new Comments;
+		$comment->created_by = $app->lincko->data['uid'];
+		$comment->type_id = $this->id;
+		$comment->type = $this->getTable();
+		$comment->comment = $text;
+		$comment->save();
+		$this->touch();
+		return true;
+	}
+
+	//This method helps to avoid too many mysql by storing first all history info of a list of items
+	public static function getComments(array $id_list, $history_detail=false){
+		$model = new static();
+		$comments = new \stdClass;
+		$table_name = $model->getTable();
+		$records = Comments::whereType($table_name)->whereIn('type_id', $id_list)->get();
+		foreach ($records as $key => $value) {
+			if(!isset($comments->{$value->type_id})){ $comments->{$value->type_id} = new \stdClass; }
+			$comments->{$value->type_id}->{$value->id} = $value;
+		}
+		return $comments;		
+	}
 
 	public static function getRoleAllow(){
 		return array($this::$allow_single, $this::$allow_role);
@@ -967,35 +1086,35 @@ abstract class ModelLincko extends Model {
 		return array(false, null, null);
 	}
 
-	public function getCompanyGrant(){
-		if(!is_int($this->permission_grant)){
-			$app = self::getApp();
-			$this->permission_grant = 0;
-			$company_id = $this->getCompany();
-			if($company_id != '_'){
-				$company_id = intval($company_id);
-				if($company = Companies::find($company_id)){
-					if($role = $company->perm()->first()){
-						$this->permission_grant = intval($role->perm_grant);
-					}
-				}
-			} else if(isset($this->created_by) && $this->created_by == $app->lincko->data['uid']){
-				//For share folder, allow grant access to creator only
-				$this->permission_grant = 1;
+	public function getCompanyGrant($user_id=false){
+		$app = self::getApp();
+		if(!$user_id){
+			$user_id = $app->lincko->data['uid'];
+		}
+		if(is_integer(static::$permission_grant)){
+			return static::$permission_grant;
+		}
+		if(is_array(static::$permission_grant)){
+			if(isset(static::$permission_grant[$user_id])){
+				return static::$permission_grant[$user_id];
+			} else if($company = Companies::find($app->lincko->data['company_id'])){
+				return static::$permission_grant[$user_id] = $company->getCompanyGrant($user_id);
 			}
 		}
-		return $this->permission_grant;
+		return 0;
 	}
 
 	//By preference, keep it protected, public is only for test
 	public function setRolePivotValue($users_id, $roles_id=null, $single=null, $history=true){
 		$app = self::getApp();
 		if($this->getCompanyGrant() == 0){
+			$this::errorMsg('No grant permission');
 			$this->checkRole(3);
 			return false;
 		}
 		//We don't record if the model doesn't exists in the database
 		if(!isset($this->id)){
+			$this::errorMsg('The model does not exists');
 			return false;
 		}
 		$return = false;
@@ -1077,8 +1196,8 @@ abstract class ModelLincko extends Model {
 			$return = true;
 		}
 		if($return){
-			//Force all linked users to recheck their Schema
-			$this->setForceSchema();
+			//Force all linked users to reupload the full data
+			self::setForceReset(true);
 		}
 		
 		//Do not change anything, it's the same

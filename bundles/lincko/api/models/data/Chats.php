@@ -50,16 +50,20 @@ class Chats extends ModelLincko {
 		'users'
 	);
 
+	protected static $permission_sheet = array(
+		2, //[RCU] owner
+		1, //[RC] grant
+		1, //[RC] max allow
+	);
+
+	//Authorized by default since it's not part of a company
+	protected static $permission_grant = 1;
+
 ////////////////////////////////////////////
 
 	//Many(Chats) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access');
-	}
-
-	//One(Chats) to Many(ChatsComments)
-	public function chatsComments(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\ChatsComments', 'chats_id');
 	}
 
 
@@ -95,37 +99,6 @@ class Chats extends ModelLincko {
 			$app = self::getApp();
 			$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
 		});
-	}
-
-	//We allow creation, and editing for the creator only
-	/*
-			'chats' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 1 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 1 ), //outsider
-				1	=> array( 1 , 0 , 0 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 1 ), //manager
-				3	=> array( 1 , 0 , 0 , 1 ), //viewer
-			),
-	*/
-	public function checkRole($level){
-		$app = self::getApp();
-		$this->checkUser();
-		$level = $this->formatLevel($level);
-		if(isset($this->permission_allowed[$level])){
-			return $this->permission_allowed[$level];
-		}
-		if($level<=0){ //Allow only read for all
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
-		if(isset($this->id) && $level<=1 && $this->created_by==$app->lincko->data['uid']){ //Allow editing for creator only
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		} else if(!isset($this->id) && $level<=1){ //Allow creation
-			$this->permission_allowed[$level] = (bool) true;
-			return true;
-		}
-		return parent::checkRole(3); //this will only launch error, since $level = 3
 	}
 
 }

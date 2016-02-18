@@ -7,10 +7,10 @@ use \libs\Email;
 use \libs\Json;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
+use \bundles\lincko\api\models\libs\Comments;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
-use \bundles\lincko\api\models\data\ChatsComments;
 use \bundles\lincko\api\models\data\Companies;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Users;
@@ -545,24 +545,34 @@ class ControllerTest extends Controller {
 		//$tp->setRolePivotValue(40, 2);
 		//$tp->attach(40, array('users_id' => 40, 'roles_id' => 4, 'single' => null, 'relation_type' => 'tasks', 'relation_id' => 4));
 
-		$tp = 'ok';
-		
-		$projects = Projects::all();
-		
-		foreach ($projects as $key => $value) {
-			$value->toto();
-			break;
-		}
-		
+		$tp = Companies::getLinked()->get()->toArray();
+		//$tp = Chats::getComments(array(1));
+		$tp = Companies::getUsersContactsID(array(1, 22));
 
-		//$tp = new Pivot($tp, array('users_id' => 1), 'users_x_roles_x', true);
+		/*
+		$user = Users::find($app->lincko->data['uid']);
+		$user = Users::find(48);
+		$tp = (object) $user->toArray();
+		\libs\Watch::php( $tp , '$toArray', __FILE__, false, false, true);
+		$tp = json_decode($user->toJson());
+		\libs\Watch::php( $tp , '$toJson', __FILE__, false, false, true);
+		*/
+
+		$tp = new \stdClass;
+		$tp->a = new \stdClass;
+		$tp->b = new \stdClass;
+		$obj = $tp->b;
+
+		$obj->c = new \stdClass;
+		$tp->b->c->d = true;
 
 		\libs\Watch::php( $tp , '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $obj , '$obj', __FILE__, false, false, true);
 
 		//----------------------------------------
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 
 		
 
@@ -678,7 +688,7 @@ class ControllerTest extends Controller {
 		$models->companies = Companies::whereId($app->lincko->data['company_id'])->where('created_by', $app->lincko->data['uid'])->first();
 		$models->roles = (new Roles)->getLinked()->where('shared', 0)->where('created_by', $app->lincko->data['uid'])->where('companies_id', $app->lincko->data['company_id'])->first();
 		$models->chats = $theuser->chats()->where('created_by', $app->lincko->data['uid'])->first();
-		$models->chats_comments = $models->chats->chatsComments()->where('created_by', $app->lincko->data['uid'])->first();
+		$models->comments = $models->chats->comments()->where('created_by', $app->lincko->data['uid'])->first();
 		$models->projects = $theuser->projects()->where('created_by', $app->lincko->data['uid'])->first();
 		$models->tasks = $models->projects->tasks()->where('created_by', $app->lincko->data['uid'])->first();
 
@@ -727,60 +737,54 @@ class ControllerTest extends Controller {
 		/*
 		Roles
 		[
-			-1:owner	=> [ read , edit , delete , create ]
-			0 :outsider (don't share anything)
-			1 :admin (share smae company, same chat room)
-			2 :manager (share smae company, same chat room)
-			3 :viewer (share smae company, same chat room)
+			0 :owner	=> additional feature if you are the owner
+			1 :outsider (don't share anything)
+			2 :grant (share same company, same chat room)
+			2 :max allow (share same company, same chat room)
 		]
 		*/
 		$accept = array(
-			/*
-				 0: cannot
-				 1: can
-				-1: can only if creator
-			*/
-			'companies' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 1 ), //outsider
-				1	=> array( 1 , 1 , 0 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 1 ), //manager
-				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			'companies' => array( //[ read , create , edit , delete ]
+				0	=> array( 1 , 0 , 0 , 0 ), //owner
+				1	=> array( 0 , 1 , 0 , 0 ), //outsider
+				2	=> array( 1 , 1 , 1 , 0 ), //grant
+				3	=> array( 1 , 1 , 0 , 0 ), //max allow
 			),
-			'roles' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 0 ), //outsider
-				1	=> array( 1 , 1 , 1 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 0 ), //manager
-				3	=> array( 1 , 0 , 0 , 0 ), //viewer
+			'roles' => array( //[ read , create , edit , delete ]
+				0	=> array( 1 , 0 , 0 , 0 ), //owner
+				1	=> array( 0 , 0 , 0 , 0 ), //outsider
+				2	=> array( 1 , 1 , 1 , 1 ), //grant
+				3	=> array( 1 , 0 , 0 , 0 ), //max allow
 			),
-			'chats' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 1 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 1 ), //outsider
-				1	=> array( 1 , 0 , 0 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 1 ), //manager
-				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			'chats' => array( //[ read , create , edit , delete ]
+				0	=> array( 1 , 0 , 1 , 0 ), //owner
+				1	=> array( 0 , 1 , 0 , 0 ), //outsider
+				2	=> array( 1 , 1 , 0 , 0 ), //grant
+				3	=> array( 1 , 1 , 0 , 0 ), //max allow
 			),
-			'chats_comments' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 1 ), //outsider
-				1	=> array( 1 , 0 , 0 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 1 ), //manager
-				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			'projects' => array( //[ read , create , edit , delete ]
+				0	=> array( 1 , 0 , 0 , 0 ), //owner
+				1	=> array( 0 , 0 , 0 , 0 ), //outsider
+				2	=> array( 1 , 1 , 1 , 1 ), //grant
+				3	=> array( 1 , 0 , 0 , 0 ), //max allow
 			),
-			'projects' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 0 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 0 ), //outsider
-				1	=> array( 1 , 1 , 1 , 1 ), //administrator
-				2	=> array( 1 , 0 , 0 , 0 ), //manager
-				3	=> array( 1 , 0 , 0 , 0 ), //viewer
+			'tasks' => array( //[ read , create , edit , delete ]
+				0	=> array( 1 , 0 , 1 , 0 ), //owner
+				1	=> array( 0 , 0 , 0 , 0 ), //outsider
+				2	=> array( 1 , 1 , 1 , 1 ), //grant
+				3	=> array( 1 , 1 , 1 , 0 ), //max allow
 			),
-			'tasks' => array( //[ read , edit , delete , create ]
-				-1	=> array( 1 , 0 , 1 , 0 ), //owner
-				0	=> array( 0 , 0 , 0 , 0 ), //outsider
-				1	=> array( 1 , 1 , 1 , 1 ), //administrator
-				2	=> array( 1 ,-1 , 0 , 1 ), //manager (can edit only if creator)
-				3	=> array( 1 , 0 , 0 , 1 ), //viewer
+			'comments' => array( //[ read , create , edit , delete ]
+				0	=> array( 1 , 0 , 0 , 0 ), //owner
+				1	=> array( 0 , 0 , 0 , 0 ), //outsider
+				2	=> array( 1 , 1 , 1 , 0 ), //grant
+				3	=> array( 1 , 1 , 0 , 0 ), //max allow
+			),
+			'users' => array( //[ read , create , edit , delete ]
+				0	=> array( 1 , 0 , 1 , 0 ), //owner
+				1	=> array( 0 , 1 , 0 , 0 ), //outsider
+				2	=> array( 1 , 1 , 0 , 0 ), //grant
+				3	=> array( 1 , 1 , 0 , 0 ), //max allow
 			),
 		);
 		
@@ -811,14 +815,15 @@ class ControllerTest extends Controller {
 					$new_model->name = $model->name = '_Role '.rand();
 				}  else if($key == 'chats'){
 					$new_model->title = $model->title = '_Chat '.rand();
-				} else if($key == 'chats_comments'){
-					$new_model->chats_id = $model->chats_id;
-					$new_model->comment = $model->comment = '_Comment '.rand();
 				} else if($key == 'projects'){
 					$new_model->title = $model->title = '_Project '.rand();
 				} else if($key == 'tasks'){
 					$new_model->projects_id = $model->projects_id;
 					$new_model->title = $model->title = '_Task '.rand();
+				} else if($key == 'comments'){
+					$new_model->type = 'chats';
+					$new_model->type_id = $model->chats->getKey();
+					$new_model->comment = $model->comment = '_Comment '.rand();
 				}
 
 				//Reinitialize variables
