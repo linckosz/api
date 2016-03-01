@@ -205,7 +205,10 @@ class Companies extends ModelLincko {
 			$company = new self();
 			$company->personal_private = $app->lincko->data['uid'];
 			$company->name = $app->lincko->data['username'];
-			$company->save();
+			$company->allowCompanyCreation();
+			if($company->save()){
+				return $company;
+			}
 		}
 		return false;
 	}

@@ -280,12 +280,12 @@ class Users extends ModelLincko {
 				$app->lincko->data['uid'] = $this->id;
 				$app->lincko->data['username'] = $this->username;
 
-				Companies::setPersonal();
-				
+				$company = Companies::setPersonal();
+
 				$app->lincko->data['company'] = $company->url;
 				$app->lincko->data['company_id'] = intval($company->id);
 				
-				Projects::setPersonal();
+				$project = Projects::setPersonal();
 
 				$app->lincko->data['user_log']->save();
 			}

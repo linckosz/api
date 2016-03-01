@@ -301,16 +301,19 @@ abstract class ModelLincko extends Model {
 		return true;
 	}
 
-	public static function setForceReset($company=false){
-		if($company){
+	public static function setForceReset($only_company=false){
+		$app = self::getApp();
+		if($only_company){
 			$list_users = array();
-			$users = Company::find($app->lincko->data['company_id'])->getUsersContacts();
-			foreach ($users as $users_id => $user) {
-				$list_users[] = $users_id;
-			}
-			if(!empty($list_users)){
-				// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
-				Users::whereIn('id', $list_users)->getQuery()->update(['force_schema' => '2']);
+			if($company = Companies::find($app->lincko->data['company_id'])){
+				$users = $company->getUsersContacts();
+				foreach ($users as $users_id => $user) {
+					$list_users[] = $users_id;
+				}
+				if(!empty($list_users)){
+					// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
+					Users::whereIn('id', $list_users)->getQuery()->update(['force_schema' => '2']);
+				}
 			}
 		} else {
 			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess

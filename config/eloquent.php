@@ -17,8 +17,6 @@ foreach($app->lincko->databases as $key => $database) {
 		'collation' => 'utf8mb4_unicode_ci',
 		'prefix' => '',
 	), $key);
-	//$db = Capsule::connection($key);
-	//\libs\Watch::php($key, '$db', __FILE__, false, false, true);
 }
 
 //Erase connection information to avoid hacking

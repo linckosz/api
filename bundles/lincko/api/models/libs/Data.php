@@ -143,7 +143,7 @@ class Data {
 
 		$roles = PivotUsersRoles::getCompanyRoles();
 
-		\libs\Watch::php( $roles->toArray() , '$roles', __FILE__, false, false, true);
+		//\libs\Watch::php( $roles->toArray() , '$roles', __FILE__, false, false, true);
 
 		$roles_list = array();
 		foreach($roles as $value) {

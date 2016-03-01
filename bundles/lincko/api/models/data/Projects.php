@@ -190,7 +190,9 @@ class Projects extends ModelLincko {
 			$project = new self();
 			$project->title = 'Private';
 			$project->personal_private = $app->lincko->data['uid'];
-			$project->save();
+			if($project->save()){
+				return $project;
+			}
 		}
 		return false;
 	}
