@@ -24,7 +24,7 @@ class Comments extends ModelLincko {
 		'comment',
 	);
 
-	// CUSTOMIZATION //
+	// CUSTOMIZATION // 
 
 	protected $show_field = 'comment';
 
