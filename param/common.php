@@ -70,6 +70,14 @@ $app->config(array(
 //Root directory (which is different from landing page which is in public folder)
 $app->lincko->path = $path;
 
+//Insure the the folder is writable by chown apache:apache slim.api/logs and is in share(=writable) path in gluster mode.
+//chown apache:apache /path/to/applilogs
+$app->lincko->logPath = $app->lincko->path.'/logs';
+
+//Insure the the folder is writable by chown apache:apache slim.api/public and is in share(=writable) path in gluster mode.
+//chown apache:apache /path/to/applipublic
+$app->lincko->publicPath = $app->lincko->path.'/public';
+
 //False if we want to use Slim error display, use True for json application
 $app->lincko->jsonException = true;
 
