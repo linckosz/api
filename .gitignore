@@ -1,0 +1,6 @@
+/logs/*
+/vendor/*
+/param/unique/*
+/.*
+/composer.lock
+/public/lincko/*
