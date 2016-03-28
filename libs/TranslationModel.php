@@ -49,4 +49,3 @@ class TranslationModel extends Model {
 	}
 
 }
-
