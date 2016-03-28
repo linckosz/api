@@ -1,5 +1,5 @@
 <?php
-// test 6
+// test 7
 $path = dirname(__FILE__).'/..';
 
 require_once $path.'/vendor/autoload.php';
