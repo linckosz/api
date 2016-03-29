@@ -25,7 +25,7 @@ ini_set('opcache.enable', '0');
 require_once $path.'/error/errorPHP.php';
 require_once $path.'/config/eloquent.php';
 
-$app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname = null, $deployment = null, $sub = null) use($app) {
+$app->get('/push/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname = null, $deployment = null, $sub = null) use($app) {
 	$list = array();
 	foreach ($app->lincko->databases as $bundle => $value) {
 		if(Capsule::schema($bundle)->hasTable('translation')){
@@ -45,13 +45,13 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 		echo "You are not authorized to modify the translation database\n";
 		return true;
 	}
-	echo "Get the translation data [$domain]\n";
+	echo "Push the translation data [$domain]\n";
 
 	$data = json_encode(array(
 		'translation' => $list,
 		'deployment' => $deployment,
 	));
-	$ch = curl_init($ip.':8888/update');
+	$ch = curl_init($ip.':8888/pull');
 	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
 	curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -93,9 +93,9 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 	'deployment' => '\w+',
 	'sub' => '\w+',
 ))
-->name('get_translation_data');
+->name('push');
 
-$app->post('/update', function () use($app) {
+$app->post('/pull', function () use($app) {
 	$domain = $_SERVER["HTTP_HOST"];
 	if(strpos($domain, ':')){
 		$domain = strstr($domain, ':', true);
@@ -109,7 +109,7 @@ $app->post('/update', function () use($app) {
 		echo "You are not authorized to modify the translation database\n";
 		return true;
 	}
-	echo "Update the translation data [$domain] => \n";
+	echo "Pull the translation data [$domain] => \n";
 	$translation = json_decode($app->request->getBody())->translation;
 	foreach ($translation as $bundle => $items) {
 		foreach ($items as $item) {
@@ -145,7 +145,7 @@ $app->post('/update', function () use($app) {
 	
 	echo "Translation ok\n";
 })
-->name('update_translation_data');
+->name('pull');
 
 $app->map('/:catchall', function() use ($app) {
 	echo 'Page not found';
@@ -155,4 +155,3 @@ $app->map('/:catchall', function() use ($app) {
 
 $app->run();
 //Checking $app (print_r) after run can make php crashed out of memory because it contains files data
-
