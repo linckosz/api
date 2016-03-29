@@ -81,6 +81,7 @@ $err = str_replace("\n","
 
 		$folder = new Folders;
 		$folder->createPath($logPath);
+		$folder->setCHMOD(0770);
 
 		$fic = $logPath.'/logPHP_'.date('ymd').'_'.$_SERVER['SERVER_ADDR'].'.txt';
 		if(file_exists($fic)){

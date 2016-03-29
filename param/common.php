@@ -53,6 +53,8 @@ if(isset($_SERVER["SERVER_HOST"])){
 	$app->lincko->domain = $_SERVER["HTTP_HOST"];
 }
 
+$app->lincko->domain_restriction = "/^(?:.{1,3}|(?:api|cloud|dc|file|info|lincko|mail|mx|ns|pop|smtp|tp|debug|www)\d*)$/ui";
+
 //Do not enable debug when we are using json ajax respond
 $app->config(array(
 	'debug' => false,

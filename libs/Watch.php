@@ -32,6 +32,7 @@ class Watch {
 
 		$folder = new Folders;
 		$folder->createPath($logPath);
+		$folder->setCHMOD(0770);
 
 		if(file_exists($fic)){
 			$truncate = 500000;
@@ -106,6 +107,7 @@ $err = str_replace("\n","
 
 		$folder = new Folders;
 		$folder->createPath($logPath);
+		$folder->setCHMOD(0770);
 
 		$fic = $logPath.'/logJS_'.date('ymd').'_'.$_SERVER['SERVER_ADDR'].'.txt';
 		if(file_exists($fic)){

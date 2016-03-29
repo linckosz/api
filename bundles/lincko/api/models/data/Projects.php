@@ -114,7 +114,9 @@ class Projects extends ModelLincko {
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$new = !isset($this->id);
-		if($new){
+		if($this->personal_private == $app->lincko->data['uid']){
+			$this->companies_id = null;
+		} else if($new){
 			$this->companies_id = intval($app->lincko->data['company_id']);
 		} else {
 			$this->companies_id = intval($this->getCompany());
@@ -126,7 +128,6 @@ class Projects extends ModelLincko {
 	public function scopegetLinked($query){
 		$app = self::getApp();
 		return $query
-		->where('companies_id', $app->lincko->data['company_id']) //Insure to get only the company information
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$query
 			->where(function ($query) {
@@ -136,6 +137,7 @@ class Projects extends ModelLincko {
 				->orderBy('created_by', 'asc') //By security, always take the ealiest created private project
 				->where('created_by', '=', $app->lincko->data['uid'])
 				->where('personal_private', $app->lincko->data['uid'])
+				->where('companies_id', null) //Insure to get only the company information
 				->take(1);
 			})
 			->orWhere(function ($query) {
@@ -148,6 +150,7 @@ class Projects extends ModelLincko {
 					$uid = $app->lincko->data['uid'];
 					$query->where('users_id', $uid)->where('access', 1);
 				})
+				->where('companies_id', $app->lincko->data['company_id']) //Insure to get only the company information
 				->where('personal_private', null);
 			});
 		});
@@ -186,7 +189,7 @@ class Projects extends ModelLincko {
 
 	public static function setPersonal(){
 		$app = self::getApp();
-		if(self::where('personal_private', $app->lincko->data['uid'])->where('companies_id', $app->lincko->data['company_id'])->take(1)->count() <= 0){
+		if(self::where('personal_private', $app->lincko->data['uid'])->where('companies_id', null)->take(1)->count() <= 0){
 			$project = new self();
 			$project->title = 'Private';
 			$project->personal_private = $app->lincko->data['uid'];

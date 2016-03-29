@@ -31,6 +31,15 @@ class Folders {
 		return false;
 	}
 
+	public function setCHMOD($chmod = 0750){
+		if($this->folder !== false){
+			if($this->checkPath($this->folder)){
+				return chmod($this->folder, $chmod);;
+			}
+		}
+		return false;
+	}
+
 	protected function includeFiles($folder){
 		if($this->checkPath($folder)){
 			$files = glob($folder.'/*');
