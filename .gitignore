@@ -1,7 +1,7 @@
-/logs/
-/vendor/
-/param/unique/
+/logs/*
+/vendor
+/param/unique
 /.*
 /composer.lock
-/public/lincko/
+/public/lincko
 /*.patch
