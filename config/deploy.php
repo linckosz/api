@@ -25,7 +25,7 @@ ini_set('opcache.enable', '0');
 require_once $path.'/error/errorPHP.php';
 require_once $path.'/config/eloquent.php';
 
-$app->get('/getdata/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname = null, $deployment = null, $sub = null) use($app) {
+$app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname = null, $deployment = null, $sub = null) use($app) {
 	$list = array();
 	foreach ($app->lincko->databases as $bundle => $value) {
 		if(Capsule::schema($bundle)->hasTable('translation')){
