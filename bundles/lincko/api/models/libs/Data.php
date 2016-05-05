@@ -5,9 +5,11 @@ namespace bundles\lincko\api\models\libs;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
 
+use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;
-use \bundles\lincko\api\models\data\Companies;
+use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Roles;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 
 class Data {
@@ -16,10 +18,12 @@ class Data {
 	protected $data = NULL;
 	protected static $models = NULL;
 	protected $lastvisit = false; //Format 'Y-m-d H:i:s'
+	protected $lastvisit_timestamp = false;
 	protected $partial = NULL;
 
 	protected $item_detail = true;
 	protected $history_detail = false;
+	protected $action = NULL;
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
@@ -36,7 +40,6 @@ class Data {
 
 	public function dataUpdateConfirmation($msg, $status=200){
 		$app = $this->app;
-
 		if($this->setLastVisit()){
 			$lastvisit = time()-1;
 			$msg = array_merge(
@@ -56,19 +59,18 @@ class Data {
 				$msg
 			);
 		}
-
 		$app->render($status, array('msg' => $msg,));
 		return true;
 	}
 
 	protected function setLastVisit($timestamp='false'){
-		if(is_int($timestamp)){
+		if(is_integer($timestamp)){
 			if($timestamp>0){
 				return $this->lastvisit = (new \DateTime('@'.$timestamp))->format('Y-m-d H:i:s');
 			}
 			return $this->lastvisit = false;
 		} else if(isset($this->data->data->lastvisit)){
-			if(is_int($this->data->data->lastvisit) && $this->data->data->lastvisit>0){
+			if(is_integer($this->data->data->lastvisit) && $this->data->data->lastvisit>0){
 				return $this->lastvisit = (new \DateTime('@'.$this->data->data->lastvisit))->format('Y-m-d H:i:s');
 			}
 			return $this->lastvisit = false;
@@ -77,17 +79,33 @@ class Data {
 	}
 
 	public function getTimestamp(){
-		if($this->lastvisit){
-			return (new \DateTime($this->lastvisit))->getTimestamp();
+		if($this->lastvisit_timestamp){
+			return $this->lastvisit_timestamp;
+		} else if($this->lastvisit){
+			return $this->lastvisit_timestamp = (new \DateTime($this->lastvisit))->getTimestamp();
 		} else if($this->setLastVisit()){
-			return (new \DateTime($this->lastvisit))->getTimestamp();
+			return $this->lastvisit_timestamp = (new \DateTime($this->lastvisit))->getTimestamp();
 		} else {
 			return 0;
 		}
 	}
 
-	protected function setPartial(){
-		if(isset($this->data->data->partial)){
+	public function getTimeobject(){
+		if($this->lastvisit){
+			return new \DateTime($this->lastvisit);
+		} else if($this->setLastVisit()){
+			return new \DateTime($this->lastvisit);
+		} else {
+			return false;
+		}
+	}
+
+	protected function setPartial($force_partial=false){
+		if($force_partial){
+			return $this->partial = $force_partial;
+		} else if(is_object($this->partial)){
+			return $this->partial;
+		} else if(isset($this->data->data->partial)){
 			if(is_object($this->data->data->partial)){
 				return $this->partial = $this->data->data->partial;
 			}
@@ -100,7 +118,6 @@ class Data {
 		if(is_null(self::$models)){
 			$sql = 'SHOW TABLES;';
 			$db = Capsule::connection('data');
-			$db->enableQueryLog();
 			$data = $db->select( $db->raw($sql) );
 			$classes = array();
 			foreach ($data as $key => $value) {
@@ -115,374 +132,115 @@ class Data {
 		return self::$models;
 	}
 
-	/*
-	TIPS (31 dec 2015):
-		A way to accelerate the code should be to do only one SQL request (like $tp = Companies::with('projects.tasks')->find(3)->toJson() ), but this do not call toJson for child items, and we migth need to rebuild the client side database, this is a heavy rewriting to do only if we really need to speedup the code execution. It can also exclude the possibility to link a task to 2 projects
-	*/
-	protected function getList(){
-		$app = $this->app;
-		$result = new \stdClass;
-		$usersContacts = new \stdClass;
-		$uid = $app->lincko->data['uid'];
-		self::getModels();
-
-		$full_data = false;
-
-		//If the lastvisit is not set, and we do not work with partial database, we force to get all details
-		if(!$this->lastvisit && is_null($this->partial) && !$this->history_detail){
-			$full_data = true;
-			//We check if the user has a personnal project, if not we create one
-			Projects::setPersonal();
-		}
-
-		$comp_users = Companies::find($app->lincko->data['company_id'])->users()->get();
-		$users_list = array();
-		foreach ($comp_users as $comp_user) {
-			$users_list[] = $comp_user->getKey();
-		}
-
-		$roles = PivotUsersRoles::getCompanyRoles();
-
-		//\libs\Watch::php( $roles->toArray() , '$roles', __FILE__, false, false, true);
-
-		$roles_list = array();
-		foreach($roles as $value) {
-			if($value->roles_id!=null || $value->single!=null){
-				if(isset($roles_list[$value->relation_type])){ $roles_list[$value->relation_type] = array(); }
-				if($value->roles_id!=null){
-					$roles_list[$value->relation_type][$value->relation_id] = array(
-						'roles_id' => $value->roles_id,
-					);
-				}
-				if($value->single!=null){
-					$roles_list[$value->relation_type][$value->relation_id] = array(
-						'single' => $value->single,
-					);
+	public static function getTrees($list_tp=false){
+		if(!$list_tp || !is_array($list_tp)){
+			$list_models = self::getModels();
+		} else {
+			$tp = self::getModels();
+			$list_models = array();
+			foreach ($list_tp as $table_name) {
+				if(isset($tp[$table_name])){
+					$list_models[$table_name] = $tp[$table_name];
 				}
 			}
 		}
-
-		//Build the tree
-		//We use teh prefix "tree_" to avoid variable conflict.
-		$tree_asc = new \stdClass;
-		$tree = new \stdClass;
-		/*
-		if(true || $full_data){
-			foreach(self::$models as $key => $value) {
-				$model = new $value;
-
-				//Ascendant
-				$child = 'tree_'.$model->getTable();
-				if( !isset(${$child}) ){
-					${$child} = new \stdClass;
+		$tree_scan = array();
+		$tree_desc = new \stdClass;
+		foreach($list_models as $value) {
+			$model = new $value;
+			//Ascendant
+			$child = 'tree_'.$model->getTable();
+			$table = $model->getTable();
+			if( !isset(${$child}) ){
+				${$child} = new \stdClass;
+			}
+			$parentList = array();
+			$parentType = $model::getParentList();
+			if(count($parentType)==0){ //It's in the root
+				$parentList['tree_desc'] = 'tree_desc';
+			} else if(is_array($parentType)){ //A list a parent
+				foreach($parentType as $name) {
+					if(array_key_exists($name, $list_models)){
+						$parentList[$name] = 'tree_'.$name;
+					} else if($name == null){ //It's in the root
+						$parentList['tree_desc'] = 'tree_desc';
+					}
 				}
-				if($model->getParentName() == null){
-					$parent = 'tree_asc';
+			} else if($parentType == '*' || $parentType == '+'){ //All are parents
+				if($parentType == '*'){
+					$parentList['tree_desc'] = 'tree_desc';
+				}
+				foreach($list_models as $value_bis) {
+					$table_bis = (new $value_bis)->getTable();
+					$parentList[$table_bis] = 'tree_'.$table_bis;
+				}
+			} else { //Has one parent
+				if(array_key_exists($parentType, $list_models)){
+					$parentList[$parentType] = 'tree_'.$parentType;
 				} else {
-					$parent = 'tree_'.$model->getParentName();
+					$parentList['tree_desc'] = 'tree_desc';
 				}
+			}
+			unset($parentList[$table]); //Avoid recursivity
+			foreach($parentList as $name => $parent) {
+				if( !isset($tree_scan[$table]) ){
+					$tree_scan[$table] = array();
+				}
+				if(array_key_exists($name, $list_models)){
+					$tree_scan[$table][] = $name;
+				}
+
 				if( !isset(${$parent}) ){
 					${$parent} = new \stdClass;
 				}
-				//${$parent}->{$child} = ${$child};
-
 				$root_child = $model->getTable();
-				${$parent}->{$child} = ${$child};
-				unset(${$parent}->{$child}); //This helps to delete the prefix 'tree'
-				${$parent}->{$root_child} = ${$child};
+				${$parent}->$child = ${$child};
+				unset(${$parent}->$child); //This helps to delete the prefix 'tree'
+				${$parent}->$root_child = ${$child};
 			}
-		}
-		*/
-		if($full_data || !is_null($this->partial)){
-			foreach(self::$models as $key => $value) {
-				$model = new $value;
-				$tree->{$model->getTable()} = $model->getParentName();
-			}
+			unset($parentList);
 		}
 
-		//Get the relations list
-		if($full_data){
-			if(!isset($result->$uid)){
-				$result->$uid = new \stdClass;
-			}
-			if(!isset($result->$uid->{'_'})){
-				$result->$uid->{'_'} = new \stdClass;
-			}	
-			$result->$uid->{'_'}->{'_tree'} = $tree;
-			$result->$uid->{'_'}->{'_relations'} = new \stdClass;
-			$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
-		}
-
-		if(!is_null($this->partial) && isset($this->partial->$uid) && isset($this->partial->$uid->{'_'})){
-			if(!isset($result->$uid)){
-				$result->$uid = new \stdClass;
-			}
-			if(!isset($result->$uid->{'_'})){
-				$result->$uid->{'_'} = new \stdClass;
-			}
-			if(isset($this->partial->$uid->{'_'}->{'_tree'})){
-				$result->$uid->{'_'}->{'_tree'} = $tree;
-			}
-			if(isset($this->partial->$uid->{'_'}->{'_relations'})){
-				$result->$uid->{'_'}->{'_relations'} = new \stdClass;
-			}
-			if(isset($this->partial->$uid->{'_'}->{'_history_title'})){
-				$result->$uid->{'_'}->{'_history_title'} = new \stdClass;
-			}
-		}
-
-		foreach(self::$models as $key => $value) {
-			//Insure that the where is only with AND, not an OR!
-			$data = $value::getItems($this->lastvisit);
-
-			//Get table name
-			$model = new $value;
-			$table_name = $model->getTable();
-
-			//Get the relations list
-			if($full_data){
-				if(!isset($result->$uid->{'_'}->{'_relations'}->$table_name)){
-					if($this->item_detail){
-						//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
-						$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
-					} else {
-						$result->$uid->{'_'}->{'_relations'}->$table_name = new \stdClass;
-					}
-				}
-				if(!isset($result->$uid->{'_'}->{'_history_title'}->$table_name)){
-					if($this->item_detail){
-						$result->$uid->{'_'}->{'_history_title'}->$table_name = $model->getHistoryTitles();
-					} else {
-						$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
-					}
-				}
-			}
-
-			if(!is_null($this->partial) && isset($this->partial->$uid) && isset($this->partial->$uid->{'_'})){
-				if(isset($this->partial->$uid->{'_'}->{'_relations'})){
-					if(isset($this->partial->$uid->{'_'}->{'_relations'}->$table_name)){
-						if($this->item_detail){
-							//Build the relations with UP ("parents" which is the default), and DOWN ("children" which has to be launched)
-							$result->$uid->{'_'}->{'_relations'}->$table_name = $model->getRelations();
-						} else {
-							$result->$uid->{'_'}->{'_relations'}->$table_name = new \stdClass;
-						}
-					}
-				}
-				if(isset($this->partial->$uid->{'_'}->{'_history_title'})){
-					if(isset($this->partial->$uid->{'_'}->{'_history_title'}->$table_name)){
-						if($this->item_detail){
-							$result->$uid->{'_'}->{'_history_title'}->$table_name = $model->getHistoryTitles();
-						} else {
-							$result->$uid->{'_'}->{'_history_title'}->$table_name = new \stdClass;
-						}
-					}
-				}
-			}
-
-			//Check if there is at least one update
-			if(!$data->isEmpty()){
-				$id_list = array();
-				
-				if(!is_null($this->partial)){
-					$comp = array('_', $app->lincko->data['company_id']);
-					foreach($comp as $compid) {
-						if(!isset($this->partial->$uid) || !isset($this->partial->$uid->$compid) || !isset($this->partial->$uid->$compid->$table_name)){
-							continue;
-						}
-					}
-				}
-
-				if(!isset($result->$uid)){
-					$result->$uid = new \stdClass;
-				}
-
-				$compid = false;
-				//Launching any model Method inside this loo migth kill the server (too many mysql requests)
-				foreach ($data as $key => $value) {
-					unset($temp);
-					$id = $value->id;
-					//On client side we store companies in shared folder '_'
-					if($table_name == 'companies'){
-						$compid = '_';
-					} else {
-						$compid = $value->getCompany();
-					}
-					//If we the element is in another company, we do not need to keep the data
-					if($compid != '_' && $compid != $app->lincko->data['company_id']){
-						continue;
-					}
-
-					//If the items doesn't exist in partial, no need to record it
-					if(!is_null($this->partial)){
-						if(!isset($this->partial->$uid) || !isset($this->partial->$uid->$compid) || !isset($this->partial->$uid->$compid->$table_name) || !isset($this->partial->$uid->$compid->$table_name->$id)){
-							continue;
-						}
-					}
-
-					//Create object
-
-					$id_list[] = $id;
-					if($this->item_detail){
-						$temp = json_decode($value->toJson());
-					} else {
-						$temp = new \stdClass;
-					}
-
-					//Only get History for getLatest() and getMissing() and getHistory()
-					if(isset($temp->id)){
-						unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
-						//Get only creation history to avoid mysql overload
-						$temp->history = $value->getHistoryCreation();
-					}
-
-					if(!$full_data){
-						$temp->_perm = new \stdClass;
-						foreach ($users_list as $comp_user_id) {
-							$temp->_perm->$comp_user_id = $value->getPermissionMax($comp_user_id);
-						}
-					}
-
-					//Set parent information
-					if(!is_null($value->getParentName())){
-						$temp->parent = $value->getParentName();
-						$temp->parent_id = $value->{$temp->parent.'_id'};
-					} else {
-						$temp->parent = null;
-					}
-					
-					if(!isset($result->$uid->$compid)){
-						$result->$uid->$compid = new \stdClass;
-					}
-					if(!isset($result->$uid->$compid->$table_name)){
-						$result->$uid->$compid->$table_name = new \stdClass;
-					}
-
-					$result->$uid->$compid->$table_name->$id = $temp;
-
-				}
-				
-				if(!empty($id_list)){
-					
-					if($full_data){
-						$contacts = $value::getUsersContactsID($id_list);
-						foreach ($contacts as $contacts_key => $contacts_value) {
-							if($contacts_key != $app->lincko->data['uid']){ //Do not overwritte the user itself
-								if(!isset($usersContacts->$contacts_key)){
-									$usersContacts->$contacts_key = new \stdClass;
-									$usersContacts->$contacts_key->contactsLock = false;
-									$usersContacts->$contacts_key->contactsVisibility = false;
-									$usersContacts->$contacts_key->new = 0;
-								}
-								//Keep true if at least once
-								$usersContacts->$contacts_key->contactsLock = ($usersContacts->$contacts_key->contactsLock || $contacts_value->contactsLock);
-								$usersContacts->$contacts_key->contactsVisibility = ($usersContacts->$contacts_key->contactsVisibility || $contacts_value->contactsVisibility);
+		// Get all ID with parent dependencies
+		$loop = true;
+		$tree_tp = $tree_scan;
+		$tree_id = array();
+		$result = new \stdClass;
+		while(count($tree_tp)>0 && $loop){
+			$loop = false;
+			foreach ($tree_tp as $key => $value) {
+				if(count($value)<=0){
+					$loop = true;
+					//Get all ID including whereIn if some parents
+					if(isset($list_models[$key])){
+						$class = $list_models[$key];
+						$list = array();
+						foreach ($tree_scan[$key] as $value_bis) {
+							if(isset($tree_id[$value_bis])){
+								$list[$value_bis] = $tree_id[$value_bis];
 							}
 						}
-					}
-
-					//Get comments
-					$comments = $value::getComments($id_list);
-					foreach ($comments as $id => $temp) {
-						if(isset($result->$uid->$compid->$table_name->$id)){
-							foreach ($temp as $comment_id => $comment) {
-								if(!isset($result->$uid->$compid->$table_name->$id->comments)){
-									$result->$uid->$compid->$table_name->$id->comments = array();
-								}
-								$result->$uid->$compid->$table_name->$id->comments[] = $comment_id;
-								if(!isset($result->$uid->{'_'})){
-									$result->$uid->{'_'} = new \stdClass;
-								}
-								if(!isset($result->$uid->{'_'}->{'comments'})){
-									$result->$uid->{'_'}->{'comments'} = new \stdClass;
-								}
-								if($this->item_detail){
-									$result->$uid->{'_'}->{'comments'}->$comment_id = json_decode($comment->toJson());
-								} else {
-									$result->$uid->{'_'}->{'comments'}->$comment_id = new \stdClass;
-								}
-							}
+						$result->$key = $class::getItems($list, true);
+						$tree_id[$key] = array();
+						foreach ($result->$key as $value_bis) {
+							$tree_id[$key][$value_bis->id] = $value_bis->id;
 						}
 					}
-
-					if($this->item_detail){
-						//Get dependency (all ManyToMany that have other fields than access)
-						$dependencies = $value::getDependencies($id_list);
-						foreach ($dependencies as $id => $temp) {
-							if(isset($result->$uid->$compid->$table_name->$id)){
-								$result->$uid->$compid->$table_name->$id = (object) array_merge((array) $result->$uid->$compid->$table_name->$id, (array) $temp);
-							}
-						}
-						//Get history
-						$histories = $value::getHistories($id_list, $this->history_detail);
-						foreach ($histories as $id => $temp) {
-							if(isset($result->$uid->$compid->$table_name->$id)){
-								$result->$uid->$compid->$table_name->$id->history = (object) array_merge((array) $result->$uid->$compid->$table_name->$id->history, (array) $temp->history);
-							}
-						}
-						//For history, we only keep the items that are filled in
-						if($this->history_detail){
-							if(empty((array) $histories)){
-								unset($result->$uid->$compid->$table_name);
-							} else {
-								foreach ($result->$uid->$compid->$table_name as $id => $temp) {
-									if(!isset($histories->$id)){
-										unset($result->$uid->$compid->$table_name->$id);
-									}
-								}
-							}
-							if(empty((array) $result->$uid->$compid)){
-								unset($result->$uid->$compid);
-							}
+					unset($tree_tp[$key]);
+					foreach ($tree_tp as $key_bis => $value_bis) {
+						$key_tp = array_search($key, $value_bis);
+						if($key_tp!==false){
+							unset($tree_tp[$key_bis][$key_tp]);
 						}
 					}
 				}
-
-				unset($data);
 			}
 		}
-
-		//Delete to main user to not overwrite its settings
-		unset($usersContacts->{$app->lincko->data['uid']});
-		//Add all users to the main object
-		foreach ($usersContacts as $key => $value) {
-			unset($temp);
-			if($key != $app->lincko->data['uid']){ //we do not overwritte the user itself
-				if($user = Users::find($key)){
-					if($this->item_detail){
-						$temp = json_decode($user->toJson());
-						//Add history for poeple visible in user list only (can get detauls because not heavy data)
-						if($value->contactsVisibility && $history = $user->getHistory(true)){
-							$temp->history = $history;
-						}
-						$temp->contactsLock = $value->contactsLock;
-						$temp->contactsVisibility = $value->contactsVisibility;
-					} else {
-						$temp = new \stdClass;
-					}
-					//Delete ID property since it becomes the key of the table
-					unset($temp->{'id'});
-					if(!isset($result->$uid)){
-						$result->$uid = new \stdClass;
-					}
-					if(!isset($result->$uid->{'_'})){
-						$result->$uid->{'_'} = new \stdClass;
-					}
-					if(!isset($result->$uid->{'_'}->{'users'})){
-						$result->$uid->{'_'}->{'users'} = new \stdClass;
-					}
-					$result->$uid->{'_'}->{'users'}->$key = $temp;
-				}	
-			}
-		}
-		
-		//Enable this code to see if there is any bootle neck (time) doing mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
-		
-		return $result;
+		return array($tree_scan, $tree_desc, $tree_id, $result);
 	}
 
 	public function getLatest($timestamp=false){
+		$this->action = 'latest';
 		$this->reinit();
 		$this->setLastVisit($timestamp);
 		$this->partial = NULL;
@@ -490,6 +248,7 @@ class Data {
 	}
 
 	public function getNewest(){
+		$this->action = 'newest';
 		$this->reinit();
 		$app = $this->app;
 		$this->lastvisit = (new \DateTime('@'.$app->lincko->data['lastvisit']))->format('Y-m-d H:i:s');
@@ -498,6 +257,7 @@ class Data {
 	}
 
 	public function getSchema(){
+		$this->action = 'schema';
 		$this->reinit();
 		$this->lastvisit = false;
 		$this->partial = NULL;
@@ -505,14 +265,16 @@ class Data {
 		return $this->getList();
 	}
 
-	public function getMissing(){
+	public function getMissing($force_partial=false){
+		$this->action = 'missing';
 		$this->reinit();
 		$this->lastvisit = false;
-		$this->setPartial();
+		$this->setPartial($force_partial);
 		return $this->getList();
 	}
 
 	public function getHistory(){
+		$this->action = 'history';
 		$this->reinit();
 		$this->lastvisit = false;
 		$this->history_detail = true;
@@ -522,13 +284,7 @@ class Data {
 
 	public function getForceSchema(){
 		$user = Users::getUser();
-		$force_schema = $user->force_schema;
-		if($force_schema>0){
-			$user->timestamps = false; //Disable timestamp update_at
-			$user->force_schema = 0;
-			$user->save();
-		}
-		return $force_schema;
+		return $user->force_schema;
 	}
 
 	public function setForceSchema(){
@@ -540,5 +296,487 @@ class Data {
 		return Users::setForceReset();
 	}
 
-}
+	public function setResetInit(){
+		$user = Users::getUser();
+		return $user->setUserSchemaReset();
+	}
 
+	protected function getList(){
+		$app = $this->app;
+		//Capsule::connection('data')->enableQueryLog();
+		$uid = $app->lincko->data['uid'];
+		$workid = $app->lincko->data['workspace_id'];
+		$list_models = self::getModels();
+		$full_schema = false;
+		//If the lastvisit is not set, and we do not work with partial database, we force to get all details
+		if(!$this->lastvisit && is_null($this->partial) && !$this->history_detail){
+			$full_schema = true;
+		}
+
+		$tp = $this::getTrees();
+		$tree_scan = $tp[0];
+		$tree_desc = $tp[1];
+		$tree_id = $tp[2];
+		$result = $tp[3];
+		unset($tp);
+
+		$users = array();
+		foreach ($result as $models) {
+			foreach ($models as $model) {
+				$users = array_merge($users, $model->setContacts());
+			}
+		}
+
+		$visible = array();
+		if(isset($tree_id['users'])){
+			$visible = $tree_id['users'];
+			$users = array_merge($tree_id['users'], $users);
+		}
+		$tree_id['users'] = array_keys(array_flip($users)); //Similar as array_unique, but faster for simple array
+
+		//Insure we get all users information (it can be a heavy operation over the time, need to careful)
+		$result->users = Users::getUsersContacts($tree_id, $visible);
+
+		if($this->item_detail){
+
+			$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
+			$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
+			$tree_single = array(); //Permission allowed for the user at single element level (Priority 3 / cutomized)
+			$tree_role = array(); //Permission allowed for the user according the herited Roles(Priority 4 / cutomized) => Need to scan the tree to assigned children
+
+			$tree_roles_id = array();
+			$roles = array();
+			if(isset($result->roles)){
+				foreach ($result->roles as $value) {
+					$roles[$value->id] = $value;
+				}
+			}
+
+
+			//Tell if the user has super access to the workspace
+			
+			$work_super = array();
+			if($workspaces = Users::getUser()->workspaces){
+				foreach ($workspaces as $value) {
+					$work_super[$value->id] = $value->pivot->super;
+				}
+			}
+			$work_super[0] = 0; //Insure to reject super permission for shared workspace
+
+			$pivot = PivotUsersRoles::getLinked()->get();
+			foreach ($pivot as $value) {
+				$table_name = $value->parent_type;
+				$id = $value->parent_id;
+
+				if(
+					   isset($tree_id[$table_name])
+					&& isset($tree_id[$table_name][$id])
+				){
+					$class = false;
+					if(isset($list_models[$table_name])){
+						$class = $list_models[$table_name];
+					}
+					//Single (ok)
+					if($class && $value->single){
+						if($class::getRoleAllow()[0]){ //Single
+							if(!isset($tree_single[$table_name])){ $tree_single[$table_name] = array(); }
+							$tree_single[$table_name][$id] = $value->single;
+						}
+					}
+					//Role (will affect children)
+					if($class && $value->roles_id && isset($tree_id['roles']) && isset($tree_id['roles'][$value->roles_id])){ //The last condition insure that the Role was not deleted
+						if($class::getRoleAllow()[1]){ //Role
+							if(!isset($tree_roles_id[$table_name])){ $tree_roles_id[$table_name] = array(); }
+							$tree_roles_id[$table_name][$id] = $value->roles_id;
+						}
+					}
+				}
+			}
+			
+		}
+		//By default, give Administrator role to all users inside shared workspace
+		if($app->lincko->data['workspace_id']==0){
+			if(!isset($tree_roles_id['workspaces'])){
+				$tree_roles_id['workspaces'] = array();
+			}
+			$tree_roles_id['workspaces'][0] = 1;
+		}
+
+		$result_bis = new \stdClass;
+		$result_bis->$uid = new \stdClass;
+		$lastvisit_obj = $this->getTimeobject();
+		if($lastvisit_obj && $this->getTimestamp()>0){
+			foreach ($result as $key => $models) {
+				foreach ($models as $key_bis => $model) {
+					if(
+						   $full_schema //For Schema
+						|| $model->updated_at >= $lastvisit_obj //For Latest
+						|| (!is_null($this->partial) && isset($this->partial->$uid) && isset($this->partial->$uid->$key) && isset($this->partial->$uid->$key->{$model->id})) //For Missing
+					){
+						if(!isset($result_bis->$uid->$key)){
+							$result_bis->$uid->$key = new \stdClass;
+						}
+						$result_bis->$uid->$key->{$model->id} = $model;
+					}
+				}
+			}
+		} else {
+			foreach ($result as $key => $models) {
+				$result_bis->$uid->$key = new \stdClass;
+				foreach ($models as $key_bis => $model) {
+					$result_bis->$uid->$key->{$model->id} = $model;
+				}
+			}
+		}
+
+		unset($result);
+		
+		//Delete the useless part if partial
+		if(!is_null($this->partial) && isset($this->partial->$uid)){
+			foreach ($result_bis->$uid as $key => $models) {
+				if(!isset($this->partial->$uid->$key)){
+					unset($result_bis->$uid->$key);
+					unset($tree_id[$key]);
+					continue;
+				} else {
+					foreach ($models as $key_bis => $model) {
+						if(!isset($this->partial->$uid->$key->key_bis)){
+							unset($result_bis->$uid->$key->key_bis);
+							unset($tree_id[$key][$key_bis]);
+							continue;
+						}
+					}
+				}
+			}
+		}
+
+		if($this->item_detail){
+			//Onwer (ok) , it needs to works with model, not array convertion
+			foreach ($result_bis->$uid as $table_name => $models) {
+				if(isset($list_models[$table_name])){
+					$class = $list_models[$table_name];
+					foreach ($models as $key => $model) {
+						if(!isset($tree_owner[$table_name])){ $tree_owner[$table_name] = array(); }
+						$tree_owner[$table_name][$model->id] = $model->getPermissionOwner($uid);
+					}
+				}
+			}
+		}
+
+		$list_id = array();
+		foreach ($result_bis->$uid as $table_name => $models) {
+			$list_id[$table_name] = array();
+			foreach ($models as $id => $model) {
+				$list_id[$table_name][] = $id;
+				unset($temp);
+				$temp = new \stdClass;
+				$temp = json_decode($model->toJson());
+				unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
+				//Get only creation history to avoid mysql overload
+				$temp->history = $model->getHistoryCreation();
+				$temp->_parent = $model->setParentAttributes();
+				$result_bis->$uid->$table_name->$id = $temp;
+			}
+		}
+
+		$root_0 = new \stdClass;
+
+		//Descendant tree with IDs, and rebuild trre_id
+		$tree_id = array();
+		$root_0->workspaces = new \stdClass;
+		${'workspaces_'.$workid} = $root_0->workspaces->$workid = new \stdClass; //Must initialize for share workspace because the database doesn't exists
+		$tree_id['workspaces'] = array( $workid => $workid );
+		for ($i = 1; $i <= 2; $i++) { //Loop 2 times to be sure to attach all IDs
+			foreach ($result_bis->$uid as $name => $models) {
+				foreach ($models as $id => $model) {
+					$pname = (string)$model->_parent[0];
+					$pid = (int)$model->_parent[1];
+					$id = (int)$id;
+					if(empty($pname)){
+						$pname = 'root';
+						$pid = 0;
+					}
+					if(!isset(${$pname.'_'.$pid})){
+						${$pname.'_'.$pid} = new \stdClass;
+					}
+					if(!isset(${$pname.'_'.$pid}->$name)){
+						${$pname.'_'.$pid}->$name = new \stdClass;
+					}
+					if(isset(${$name.'_'.$id})){
+						${$pname.'_'.$pid}->$name->$id = ${$name.'_'.$id};
+					} else {
+						${$pname.'_'.$pid}->$name->$id = false;
+						${$name.'_'.$id} = new \stdClass;
+					}
+					//Rebuild tree_id
+					if(!isset($tree_id[$name])){
+						$tree_id[$name] = array();
+					}
+					if(!isset($tree_id[$pname])){
+						$tree_id[$pname] = array();
+					}
+					$tree_id[$name][$id] = $id;
+					$tree_id[$pname][$pid] = $pid;
+				}
+			}
+		}
+
+		if(!$this->item_detail){
+
+			foreach ($result_bis->$uid as $table_name => $models) {
+				foreach ($models as $id => $model) {
+					$result_bis->$uid->$table_name->$id = new \stdClass;
+				}
+			}
+
+		} else {
+			
+			//Super (ok)
+			$arr = array( 0 => json_decode(json_encode($root_0)) ); //No Super applied (0) at the root level
+			$arr_tp = $arr;
+			$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
+			while(!empty($arr)){ 
+				$arr_tp = array();
+				foreach ($arr as $super => $list) {
+					foreach ($list as $table_name => $models) {
+						$super_perm = 0; //[R]
+						$class = false;
+						if(isset($list_models[$table_name])){
+							$class = $list_models[$table_name];
+						}
+						if($super && $class){
+							$super_perm = $class::getPermissionSheet()[1];
+						}
+						if(!isset($tree_super[$table_name])){ $tree_super[$table_name] = array(); }
+						foreach ($models as $id => $model) {
+							$super_perm_model = $super_perm;
+							$super_tp = $super;
+							//We only check at worspace level
+							if($table_name == 'workspaces' && isset($work_super[$id])){
+								$super_tp = 0; //Insure nobody has super access to shared workspace
+								if($id > 0){
+									$super_tp = $work_super[$id];
+								}
+							}
+							if($super_tp != $super){
+								$super_perm_model = 0;
+								if($super_tp && $class){
+									$super_perm_model = $class::getPermissionSheet()[1];
+								}
+							}
+							$tree_super[$table_name][$id] = $super_perm_model;
+							if(!empty((array)$model)){
+								if(!isset($arr_tp[$super_tp])){
+									$arr_tp[$super_tp] = $model;
+								} else {
+									foreach ($model as $key => $value) {
+										if(!isset($arr_tp[$super_tp]->$key)){
+											$arr_tp[$super_tp]->$key = $value;
+										} else {
+											$arr_tp[$super_tp]->$key = (object) array_merge((array) $arr_tp[$super_tp]->$key, (array) $value);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				$arr = $arr_tp;
+				$i--;
+				if($i<=0){
+					$arr = array();
+					break;
+				}
+			}
+
+			//Role (ok)
+			$arr = array( 0 => json_decode(json_encode($root_0)) ); //No role applied (0) at the root level
+			$arr_tp = $arr;
+			$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
+			while(!empty($arr)){ 
+				$arr_tp = array();
+				foreach ($arr as $role => $list) {
+					foreach ($list as $table_name => $models) {
+						$role_perm = 0; //[R]
+						$max_perm = 0; //[R]
+						$class = false;
+						$allow_role = false;
+						if(isset($list_models[$table_name])){
+							$class = $list_models[$table_name];
+							$allow_role = $class::getRoleAllow()[1];
+							if($role > 0){
+								$max_perm = $class::getPermissionSheet()[1];
+							}
+						}
+						if($max_perm > 0 && isset($roles[$role])){
+							if(isset($roles[$role]->{'perm_'.$table_name})){ //Per model
+								$role_perm = $roles[$role]->{'perm_'.$table_name};
+							} else { //General
+								$role_perm = $roles[$role]->perm_all;
+							}
+							//We check the limit of the permission
+							if($role_perm > $max_perm){
+								$role_perm = $max_perm;
+							}
+						}
+						if(!isset($tree_role[$table_name])){ $tree_role[$table_name] = array(); }
+						foreach ($models as $id => $model) {
+							$role_perm_elem = $role_perm;
+							$role_tp = $role;
+							if($allow_role && isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$id])){
+								$role_tp = $tree_roles_id[$table_name][$id];
+							} else {
+								if(!isset($tree_roles_id[$table_name])){ $tree_roles_id[$table_name] = array(); }
+								$tree_roles_id[$table_name][$id] = $role_tp;
+							}
+							if($role_tp != $role){
+								$max_perm_elem = 0; //[R]
+								if($role_tp > 0 && $class){
+									$max_perm_elem = $class::getPermissionSheet()[1];
+								}
+								if($max_perm_elem > 0 && isset($roles[$role_tp])){
+									if(isset($roles[$role_tp]->{'perm_'.$table_name})){ //Per model
+										$role_perm_elem = $roles[$role_tp]->{'perm_'.$table_name};
+									} else { //General
+										$role_perm_elem = $roles[$role_tp]->perm_all;
+									}
+									//We check the limit of the permission
+									if($role_perm_elem > $max_perm_elem){
+										$role_perm_elem = $max_perm_elem;
+									}
+								}
+							}
+							$tree_role[$table_name][$id] = $role_perm_elem;
+							if(!empty((array)$model)){
+								if(!isset($arr_tp[$role_tp])){
+									$arr_tp[$role_tp] = $model;
+								} else {
+									foreach ($model as $key => $value) {
+										if(!isset($arr_tp[$role_tp]->$key)){
+											$arr_tp[$role_tp]->$key = $value;
+										} else {
+											$arr_tp[$role_tp]->$key = (object) array_merge((array) $arr_tp[$role_tp]->$key, (array) $value);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				$arr = $arr_tp;
+				$i--;
+				if($i<=0){
+					$arr = array();
+					break;
+				}
+			}
+
+			foreach ($result_bis->$uid as $table_name => $models) {
+				foreach ($result_bis->$uid->$table_name as $id => $temp) {
+					$perm_owner = 0; //tree_owner
+					if(isset($tree_owner[$table_name]) && isset($tree_owner[$table_name][$id])){ $perm_owner = $tree_owner[$table_name][$id]; }
+					$perm_super = 0; //tree_super
+					if(isset($tree_super[$table_name]) && isset($tree_super[$table_name][$id])){ $perm_super = $tree_super[$table_name][$id]; }
+					$perm_single = 0; //tree_single (priority on single over Role)
+					$perm_role = 0; //tree_role
+					if(isset($tree_single[$table_name]) && isset($tree_single[$table_name][$id])){
+						$perm_single = $tree_single[$table_name][$id];
+					} else if(isset($tree_role[$table_name]) && isset($tree_role[$table_name][$id])){
+						$perm_role = $tree_role[$table_name][$id];
+					}
+					
+					$role_id = 0; //tree_role
+					if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$id])){ $role_id = $tree_roles_id[$table_name][$id]; }
+
+					$result_bis->$uid->$table_name->$id->_perm = array(
+						(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
+						(int)$role_id,
+					);
+				}
+			}
+
+			//Get dependency (all ManyToMany that have other fields than access)
+			$dependencies = Users::getDependencies($list_id, $list_models);
+			foreach ($dependencies as $table_name => $models) {
+				foreach ($models as $id => $temp) {
+					if(isset($result_bis->$uid->$table_name->$id)){
+						$result_bis->$uid->$table_name->$id = (object) array_merge((array) $result_bis->$uid->$table_name->$id, (array) $temp);
+					}
+				}
+			}
+			$histories = Users::getHistories($list_id, $list_models, $this->history_detail);
+			foreach ($histories as $table_name => $models) {
+				foreach ($models as $id => $temp) {
+					if(isset($result_bis->$uid->$table_name->$id)){
+						if(isset($result_bis->$uid->$table_name->$id->history)){
+							$result_bis->$uid->$table_name->$id->history = (object) array_merge((array) $result_bis->$uid->$table_name->$id->history, (array) $temp->history);
+						} else {
+							$result_bis->$uid->$table_name->$id->history = $temp->history;
+						}
+					}
+				}
+			}
+			//For history, we only keep the items that are filled in
+			if($this->history_detail){
+				foreach ($result_bis->$uid as $table_name => $models) {
+					if(!isset($histories->$table_name)){
+						unset($result_bis->$uid->$table_name);
+					} else {
+						foreach ($result_bis->$uid->$table_name as $id => $temp) {
+							if(!isset($histories->$table_name->$id)){
+								unset($result_bis->$uid->$table_name->$id);
+							}
+						}
+					}
+					if(empty((array) $result_bis->$uid)){
+						unset($result_bis->$uid);
+					}
+				}
+			}
+		}
+
+		//Get the relations list
+		if($full_schema){
+			$result_bis->$uid->{'_tree'} = $root_0;
+			$result_bis->$uid->{'_history_title'} = new \stdClass;
+		}
+
+		//It gather the fields we need to workspace only
+		if(!is_null($this->partial) && isset($this->partial->$uid)){
+			if($this->item_detail && isset($this->partial->$uid->{'_tree'})){
+				$result_bis->$uid->{'_tree'} = $root_0;
+			}
+			if(isset($this->partial->$uid->{'_history_title'})){
+				$result_bis->$uid->{'_history_title'} = new \stdClass;
+			}
+		}
+
+		foreach($list_models as $key => $value) {
+			$model = new $value;
+			$table_name = $model->getTable();
+			if(
+				$full_schema
+				||
+				(
+					!is_null($this->partial)
+					&& isset($this->partial->$uid)
+					&& isset($this->partial->$uid->{'_history_title'})
+					&& isset($this->partial->$uid->{'_history_title'}->$table_name)
+				)
+			)
+			{
+				if($this->item_detail){
+					$result_bis->$uid->{'_history_title'}->$table_name = $model->getHistoryTitles();
+				} else {
+					$result_bis->$uid->{'_history_title'}->$table_name = new \stdClass;
+				}
+			}
+		}
+		
+		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		return $result_bis;
+
+	}
+
+}

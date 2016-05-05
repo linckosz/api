@@ -8,7 +8,7 @@ use \bundles\lincko\api\models\Api;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
-use \bundles\lincko\api\models\data\Companies;
+use \bundles\lincko\api\models\data\Workspaces;
 
 class CheckAccess extends \Slim\Middleware {
 	
@@ -31,7 +31,7 @@ class CheckAccess extends \Slim\Middleware {
 
 		if(isset($form->email) && isset($form->password)){
 			$form->password = Datassl::decrypt($form->password, $form->email);
-			if(UsersLog::isValid($form) && Users::isValid($form)){
+			if(Users::isValid($form)){
 				if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
 					if($user_log = UsersLog::where('username_sha1', '=', mb_strtolower($user->username_sha1))->first()){
 						if($authorize = $user_log->authorize($data)){
@@ -91,7 +91,7 @@ class CheckAccess extends \Slim\Middleware {
 
 	protected function checkFields(){
 		$data = $this->data;
-		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data) && isset($data->fingerprint) && isset($data->company);
+		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data) && isset($data->fingerprint) && isset($data->workspace);
 	}
 
 	protected function checkAPI(){
@@ -150,27 +150,28 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 		$data = $this->data;
 		if($user = Users::getUser()){
-			$companies = Companies::getLinked()->get();
-			//We check that the user has access to the workspace
-			foreach ($companies as $key => $value) {
-				if(!is_null($value->personal_private) && $value->personal_private==$app->lincko->data['uid'] && $data->company == ''){ //Personal workspace
-					$app->lincko->data['company'] = '';
-					$app->lincko->data['company_id'] = intval($value->id);
-					return true;
-				} else if(!is_null($value->personal_private) && $data->company != '' && $value->personal_private==$data->company){ //Someone workspace
-					$app->lincko->data['company'] = '';
-					$app->lincko->data['company_id'] = intval($value->id);
-					return true;
-				} else if(is_null($value->personal_private) && $data->company != '' && $value->url == $data->company){ //Company workspace
-					$app->lincko->data['company'] = $value->url;
-					$app->lincko->data['company_id'] = intval($value->id);
-					return true;
+			if(empty($data->workspace)){ //Shared workspace
+				$app->lincko->data['workspace'] = '';
+				$app->lincko->data['workspace_id'] = 0;
+				return true;
+			} else {
+				$workspaces = Workspaces::getLinked()->get();
+				//We check that the user has access to the workspace
+				foreach ($workspaces as $key => $value) {
+					if(!empty($data->workspace) && $value->url == $data->workspace){ //Company workspace
+						$app->lincko->data['workspace'] = $value->url;
+						$app->lincko->data['workspace_id'] = $value->getWorkspaceID();
+						return true;
+					}
 				}
 			}
-		} else if($data->company == '' && $data->public_key === $app->lincko->security['public_key']){
-			//If the user and the company is undefined, we migth be in subscription mode, so we valid this step (it will be block later if it's not a credential operation)
+		} else if($data->public_key === $app->lincko->security['public_key']){
+			//If the user and the workspace is undefined, we migth be in subscription mode, so we valid this step (it will be block later if it's not a credential operation)
+			$app->lincko->data['create_user'] = true; //Authorize user account creation
 			return true;
 		}
+		$app->lincko->data['workspace'] = '';
+		$app->lincko->data['workspace_id'] = (new Workspaces)->getWorkspaceID();
 		return false;
 	}
 
@@ -254,7 +255,7 @@ class CheckAccess extends \Slim\Middleware {
 			$status = 401;
 			$resignin = true;
 
-		//Check the company ID
+		//Check the workspace ID
 		} else if(!$this->checkWorkspace()) {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 			$status = 401;

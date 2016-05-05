@@ -70,15 +70,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return exit(0);
 	}
 
-	public function _options(){
-		return $this->displayHTML();
-	}
-
-	public function _get(){
-		return $this->displayHTML('ok');
-	}
-
-	public function _post(){
+	public function create_post(){
 		$app = $this->app;
 		$post = $app->request->post();
 
@@ -129,6 +121,34 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		return false;
 
+	}
+
+	public function read_post(){
+		$app = $this->app;
+		$errmsg = $app->trans->getBRUT('api', 14, 3)."\n".$app->trans->getBRUT('api', 0, 0); //File access failed. You are not allowed to access the server data.
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg), 'error' => true));
+		return false;
+	}
+
+	public function update_post(){
+		$app = $this->app;
+		$errmsg = $app->trans->getBRUT('api', 14, 5)."\n".$app->trans->getBRUT('api', 0, 5); //File update failed. You are not allowed to edit the server data.
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg), 'error' => true));
+		return false;
+	}
+
+	public function delete_post(){
+		$app = $this->app;
+		$errmsg = $app->trans->getBRUT('api', 14, 7)."\n".$app->trans->getBRUT('api', 0, 6); //File deletion failed. You are not allowed to delete the server data.
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg), 'error' => true));
+		return false;
+	}
+
+	public function restore_post(){
+		$app = $this->app;
+		$errmsg = $app->trans->getBRUT('api', 14, 20)."\n".$app->trans->getBRUT('api', 0, 9); //File restoration failed. You are not allowed to restore the server data.
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg), 'error' => true));
+		return false;
 	}
 
 	//This function only works if the client and the server have the same secret_key

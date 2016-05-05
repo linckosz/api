@@ -2,19 +2,39 @@
 
 namespace bundles\lincko\api\routes;
 
-use \libs\Json;
-
 $app = \Slim\Slim::getInstance();
-
 
 $app->group('/file', function () use ($app) {
 
-	$app->map(
-		'/',
-		'\bundles\lincko\api\controllers\ControllerFile:'.$app->lincko->method_suffix
+	$app->post(
+		'/create',
+		'\bundles\lincko\api\controllers\ControllerFile:create'.$app->lincko->method_suffix
 	)
-	->via('GET', 'POST', 'OPTIONS')
-	->name('file'.$app->lincko->method_suffix);
+	->name('file_create'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/read',
+		'\bundles\lincko\api\controllers\ControllerFile:read'.$app->lincko->method_suffix
+	)
+	->name('file_read'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/update',
+		'\bundles\lincko\api\controllers\ControllerFile:update'.$app->lincko->method_suffix
+	)
+	->name('file_update'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/delete',
+		'\bundles\lincko\api\controllers\ControllerFile:delete'.$app->lincko->method_suffix
+	)
+	->name('file_delete'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/restore',
+		'\bundles\lincko\api\controllers\ControllerFile:restore'.$app->lincko->method_suffix
+	)
+	->name('file_restore'.$app->lincko->method_suffix);
 
 	$app->map(
 		'/result',

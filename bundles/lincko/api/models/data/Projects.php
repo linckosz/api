@@ -4,7 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\data\Companies;
+use \bundles\lincko\api\models\data\Workspaces;
 use \libs\Json;
 
 class Projects extends ModelLincko {
@@ -26,6 +26,7 @@ class Projects extends ModelLincko {
 		'title',
 		'description',
 		'personal_private',
+		'_parent',
 	);
 
 	// CUSTOMIZATION //
@@ -38,35 +39,38 @@ class Projects extends ModelLincko {
 	);
 
 	protected $archive = array(
-		'created_at' => 401, //[{un|ucfirst}] created a new project.
-		'_' => 402,//[{un|ucfirst}] modified a project.
-		'title' => 403,//[{un|ucfirst}] changed a project name.
-		'description' => 404, //[{un|ucfirst}] modified a project description.
-		'_access_0' => 496, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a project.
-		'_access_1' => 497, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a project.
-		'_restore' => 498,//[{un|ucfirst}] restored a project.
-		'_delete' => 499,//[{un|ucfirst}] deleted a project.
+		'created_at' => 401, //[{un|ucfirst}] created a new project
+		'_' => 402,//[{un|ucfirst}] modified a project
+		'title' => 403,//[{un|ucfirst}] changed a project name
+		'description' => 404, //[{un|ucfirst}] modified a project description
+		'_access_0' => 496, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a project
+		'_access_1' => 497, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a project
+		'_restore' => 498,//[{un|ucfirst}] restored a project
+		'_delete' => 499,//[{un|ucfirst}] deleted a project
 	);
 
 	protected static $foreign_keys = array(
 		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
 		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'companies_id' => '\\bundles\\lincko\\api\\models\\data\\Companies',
+		'parent_id' => '\\bundles\\lincko\\api\\models\\data\\Workspaces',
 	);
 
 	protected static $relations_keys = array(
 		'users',
-		'companies',
+		'workspaces',
 	);
 
-	protected $parent = 'companies';
+	protected static $parent_list = 'workspaces';
+
+	protected $model_integer = array(
+		'personal_private',
+	);
 
 	protected static $allow_role = true;
 
 	protected static $permission_sheet = array(
-		0, //[R] owner
-		3, //[RCUD] grant
-		0, //[R] max allow
+		3, //[RCUD] owner
+		3, //[RCUD] max allow || super
 	);
 
 ////////////////////////////////////////////
@@ -76,58 +80,60 @@ class Projects extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access');
 	}
 
-	//Many(Projects) to One(Companies)
-	public function companies(){
-		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Companies', 'companies_id');
+	//Many(Projects) to One(Workspaces)
+	public function workspaces(){
+		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Workspaces', 'parent_id');
 	}
 
 	//One(Projects) to Many(Tasks)
 	public function tasks(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'projects_id');
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'parent_id');
 	}
 
 ////////////////////////////////////////////
-	public static function validTitle($data){
-		$return = preg_match("/^.{1,104}$/u", $data);
-		return self::noValidMessage($return, __FUNCTION__);
-	}
-
-	//Optional
-	//empty checks $data if !isset or "", returning true makes the value optional
-	public static function validDescription($data){
-		$return = true;
-		if(empty($data)){ return $return = true; }
-		return self::noValidMessage($return, __FUNCTION__);
-	}
 
 	public static function isValid($form){
-		if(!isset($form->title)){ self::noValidMessage(false, 'title'); } //Required
-		return
-			     isset($form->title) && self::validTitle($form->title)
-			&& (!isset($form->description) || self::validDescription($form->description)) //Optional 
-			;
+		if(
+			   (isset($form->id) && !self::validNumeric($form->id, true))
+			|| (isset($form->parent_id) && !self::validNumeric($form->parent_id, true))
+			|| (isset($form->title) && !self::validTitle($form->title, true))
+			|| (isset($form->description) && !self::validText($form->description, true))
+		){
+			return false;
+		}
+		return true;
 	}
 
 ////////////////////////////////////////////
 
-	//Insure that we only record 1 personal_private project for each company
+	public function delete(){
+		if(isset($this->personal_private) && !empty($this->personal_private)){
+			$this::errorMsg('Cannot delete a private project');
+			$this->checkPermissionAllow(4);
+			return false;
+		}
+		return parent::delete();
+	}
+
+	//Insure that we only record 1 personal_private project for each user
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$new = !isset($this->id);
 		if($this->personal_private == $app->lincko->data['uid']){
-			$this->companies_id = null;
+			$this->parent_id = 0;
 		} else if($new){
-			$this->companies_id = intval($app->lincko->data['company_id']);
+			$this->personal_private = null;
+			$this->parent_id = intval($app->lincko->data['workspace_id']);
 		} else {
-			$this->companies_id = intval($this->getCompany());
+			$this->personal_private = null;
 		}
 		$return = parent::save($options);
 		return $return;
 	}
 
-	public function scopegetLinked($query){
+	public function scopegetItems($query, $list=array(), $get=false){
 		$app = self::getApp();
-		return $query
+		$query = $query
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$query
 			->where(function ($query) {
@@ -135,46 +141,58 @@ class Projects extends ModelLincko {
 				$app = self::getApp();
 				$query
 				->orderBy('created_by', 'asc') //By security, always take the ealiest created private project
-				->where('created_by', '=', $app->lincko->data['uid'])
 				->where('personal_private', $app->lincko->data['uid'])
-				->where('companies_id', null) //Insure to get only the company information
 				->take(1);
 			})
 			->orWhere(function ($query) {
 				//Exclude private project, and be sure to have access to the project (because the user whom created the project does not necessary have access to it)
+				$app = self::getApp();
 				$query
-				//->with('users')
-				//->with('companies')
 				->whereHas('users', function ($query){
 					$app = self::getApp();
-					$uid = $app->lincko->data['uid'];
-					$query->where('users_id', $uid)->where('access', 1);
+					$query
+					->where('users_id', $app->lincko->data['uid'])
+					->where('access', 1);
 				})
-				->where('companies_id', $app->lincko->data['company_id']) //Insure to get only the company information
+				->where('projects.parent_id', $app->lincko->data['workspace_id']) //Insure to get only the company information
 				->where('personal_private', null);
 			});
 		});
+		if($get){
+			$result = $query->get();
+			foreach($result as $key => $value) {
+				$result[$key]->accessibility = true;
+			}
+			return $result;
+		} else {
+			return $query;
+		}
 	}
 
-	public function checkRole($level, $msg=false){
+	public function checkPermissionAllow($level, $msg=false){
 		$app = self::getApp();
 		$this->checkUser();
+		if(!$this->checkAccess()){
+			return false;
+		}
 		$level = $this->formatLevel($level);
-		//Only allow one personal_private creation
-		if(intval($this->personal_private)>0 && !isset($this->id) && $level==1){ //Allow creation
-			//Only if no project attached for the user itself
-			if($this->personal_private==$app->lincko->data['uid'] && self::where('personal_private', $app->lincko->data['uid'])->where('companies_id', $this->companies_id)->take(1)->count() <= 0){
+		//Personal_privat
+		if(intval($this->personal_private)>0){
+			if($level==0 && $this->personal_private==$app->lincko->data['uid']){ //Read
 				return true;
 			}
-			$msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project for each company.
-			\libs\Watch::php($msg, 'Projects->save()', __FILE__, true);
-			return parent::checkRole(4, $msg); //this will only launch error, since $level = 3
+			if($level==1){ //Creation
+				//Only if no project attached for the user itself
+				if(!isset($this->id) && $this->personal_private==$app->lincko->data['uid'] && self::where('personal_private', $app->lincko->data['uid'])->take(1)->count() <= 0){
+					return true;
+				}
+				$msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project per user.
+				\libs\Watch::php($msg, 'Projects->save()', __FILE__, true);
+				return parent::checkPermissionAllow(4, $msg); //this will only launch error, since $level = 4
+			}
+			return false;
 		}
-		return parent::checkRole($level);
-	}
-
-	public function getCompany(){
-		return $this->companies_id;
+		return parent::checkPermissionAllow($level);
 	}
 
 	public function getHistoryCreation(array $parameters = array()){
@@ -189,10 +207,11 @@ class Projects extends ModelLincko {
 
 	public static function setPersonal(){
 		$app = self::getApp();
-		if(self::where('personal_private', $app->lincko->data['uid'])->where('companies_id', null)->take(1)->count() <= 0){
+		if(self::where('personal_private', $app->lincko->data['uid'])->take(1)->count() <= 0){
 			$project = new self();
 			$project->title = 'Private';
 			$project->personal_private = $app->lincko->data['uid'];
+			$project->parent_id = 0;
 			if($project->save()){
 				return $project;
 			}

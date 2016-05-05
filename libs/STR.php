@@ -473,7 +473,7 @@ class STR {
 		return $tx;
 	}
 
-	//Check the validy of a company code, return true if valid
+	//Check the validy of a workspace code, return true if valid
 	public static function checkcode_old($str) {
 		$strtonum = array("a" => 0, "c" => 1, "e" => 2, "g" => 3, "i" => 4, "k" => 5, "m" => 6, "o" => 7, "q" => 8, "s" => 9);
 		$temp = str_split($str);

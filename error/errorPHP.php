@@ -83,7 +83,7 @@ $err = str_replace("\n","
 		$folder->createPath($logPath);
 		$folder->setCHMOD(0770);
 
-		$fic = $logPath.'/logPHP_'.date('ymd').'_'.$_SERVER['SERVER_ADDR'].'.txt';
+		$fic = $logPath.'/logPHP_'.date('ymd').'.txt';
 		if(file_exists($fic)){
 			if(filesize($fic)>1000000){ //Help to never get a file higher than 1MB, avoid to fulfill the server space in case of heavy bug
 				if($fp = fopen($fic, 'r+')){ //We open the file in read/write, and place the cursor at the beginning

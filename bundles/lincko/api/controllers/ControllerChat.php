@@ -1,39 +1,38 @@
 <?php
-// Category 12
+// Category 13
 
 namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
-use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\libs\Data;
 
 /*
 
-PROJECTS
+CHATS
 
-	project/read => post
+	chat/read => post
 		+id [integer] (the ID of the element)
 
-	project/create => post
-		+parent_id [integer] (the ID of the parent workspace)
+	chat/create => post
+		+parent_type [string] (the type of the parent object, or null)
+		+parent_id [integer] (the ID of the parent object, or -1)
 		+title [string]
-		-description [string]
 
-	project/update => post
+	chat/update => post
 		+id [integer]
+		-parent_type [string]
 		-parent_id [integer]
 		-title [string]
-		-description [string]
 
-	project/delete => post
-		+id [integer]
+	chat/delete => post
+		+id [integer] (the ID of the element)
 
-	project/restore => post
-		+id [integer]
+	chat/restore => post
+		+id [integer] (the ID of the element)
 
 */
-
-class ControllerProject extends Controller {
+class ControllerChat extends Controller {
 
 	protected $app = NULL;
 	protected $data = NULL;
@@ -65,6 +64,9 @@ class ControllerProject extends Controller {
 		if(isset($form->id) && is_numeric($form->id)){
 			$form->id = (int) $form->id;
 		}
+		if(isset($form->parent_type) && is_string($form->parent_type)){
+			$form->parent_type = strtolower(trim($form->parent_type));
+		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
@@ -75,28 +77,32 @@ class ControllerProject extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 12, 1)."\n"; //Project creation failed.
+		$failmsg = $app->trans->getBRUT('api', 13, 1)."\n"; //Discussion group creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->parent_id) || !Projects::validNumeric($form->parent_id)){ //Required
+		if(!isset($form->parent_type) || !Chats::validType($form->parent_type)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
+			$errfield = 'parent_type';
+		}
+		else if(!isset($form->parent_id) || !Chats::validNumeric($form->parent_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
-		else if(!isset($form->title) || !Projects::validTitle($form->title)){ //Required
+		else if(!isset($form->title) || !Chats::validTitle($form->title)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
 			$errfield = 'title';
 		}
-		else if(isset($form->description) && !Projects::validText($form->description, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
-			$errfield = 'description';
-		}
-		else if($model = new Projects()){
+		else if($model = new Chats()){
+			$model->parent_type = $form->parent_type;
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
-			if(isset($form->description)){ $model->description = $form->description; } //Optional
+			if(empty($model->parent_type)){
+				$model->parent_type = null;
+				$model->parent_id = 0;
+			}
 			if($model->save()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 12, 2)); //Project created.
+				$msg = array('msg' => $app->trans->getBRUT('api', 13, 2)); //Discussion group created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
 				return true;
@@ -111,19 +117,19 @@ class ControllerProject extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 12, 3)."\n"; //Project access failed.
+		$failmsg = $app->trans->getBRUT('api', 13, 3)."\n"; //Discussion group access failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+		if(!isset($form->id) || !Chats::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 13); //We could not validate the discussion group ID.
 			$errfield = 'id';
 		}
-		else if($model = Projects::find($form->id)){
+		else if($model = Chats::find($form->id)){
 			if($model->checkAccess(false)){
 				$uid = $app->lincko->data['uid'];
 				$key = $model->getTable();
-				$msg = $app->trans->getBRUT('api', 12, 4); //Project accessed.
+				$msg = $app->trans->getBRUT('api', 13, 4); //Discussion group accessed.
 				$data = new Data();
 				$force_partial = new \stdClass;
 				$force_partial->$uid = new \stdClass;
@@ -136,7 +142,6 @@ class ControllerProject extends Controller {
 				}
 			}
 		}
-
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
 		return false;
 	}
@@ -145,32 +150,36 @@ class ControllerProject extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 12, 5)."\n"; //Project update failed.
+		$failmsg = $app->trans->getBRUT('api', 13, 5)."\n"; //Discussion group update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+		if(!isset($form->id) || !Chats::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 13); //We could not validate the discussion group ID.
 			$errfield = 'id';
 		}
-		else if(isset($form->parent_id) && !Projects::validNumeric($form->parent_id, true)){ //Optional
+		else if(isset($form->parent_type) && !Chats::validType($form->parent_type, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
+			$errfield = 'parent_type';
+		}
+		else if(isset($form->parent_id) && !Chats::validNumeric($form->parent_id, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
-		else if(isset($form->title) && !Projects::validTitle($form->title, true)){ //Optional
+		else if(isset($form->title) && !Chats::validTitle($form->title, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
 			$errfield = 'title';
 		}
-		else if(isset($form->description) && !Projects::validText($form->description, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
-			$errfield = 'description';
-		}
-		else if($model = Projects::find($form->id)){
+		else if($model = Chats::find($form->id)){
+			if(isset($form->parent_type)){ $model->parent_type = $form->parent_type; } //Optional
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
-			if(isset($form->description)){ $model->description = $form->description; } //Optional
+			if(empty($model->parent_type)){
+				$model->parent_type = null;
+				$model->parent_id = 0;
+			}
 			if($model->save()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 12, 6)); //Project updated.
+				$msg = array('msg' => $app->trans->getBRUT('api', 13, 6)); //Discussion group updated.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 200);
 				return true;
@@ -185,28 +194,28 @@ class ControllerProject extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 12, 7)."\n"; //Project deletion failed.
+		$failmsg = $app->trans->getBRUT('api', 13, 7)."\n"; //Discussion group deletion failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+		if(!isset($form->id) || !Chats::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		}
 
-		if($model = Projects::find($form->id)){
+		if($model = Chats::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 12, 8); //Project deleted.
+				$msg = $app->trans->getBRUT('api', 13, 8); //Discussion group deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
 			}
-		} else if($model = Projects::withTrashed()->find($form->id)){
+		} else if($model = Chats::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
 			$access = $model->checkAccess();
 			$model->enableTrash(false);
 			if($access){
-				$msg = $app->trans->getBRUT('api', 12, 9); //Project already deleted.
+				$msg = $app->trans->getBRUT('api', 13, 9); //Discussion group already deleted.
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg)));
 			}
 		}
@@ -219,28 +228,28 @@ class ControllerProject extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 12, 20)."\n"; //Project restoration failed.
+		$failmsg = $app->trans->getBRUT('api', 13, 20)."\n"; //Discussion group restoration failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+		if(!isset($form->id) || !Chats::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		}
 
-		if($model = Projects::onlyTrashed()->find($form->id)){
+		if($model = Chats::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 12, 21); //Project restored.
+				$msg = $app->trans->getBRUT('api', 13, 21); //Discussion group restored.
 				$data = new Data();
 				$schema = $data->getSchema();
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
 			}
-		} else if($model = Projects::find($form->id)){
+		} else if($model = Chats::find($form->id)){
 			$model->enableTrash(true);
 			$access = $model->checkAccess();
 			$model->enableTrash(false);
 			if($access){
-				$msg = $app->trans->getBRUT('api', 12, 22); //Project already present.
+				$msg = $app->trans->getBRUT('api', 13, 22); //Discussion group already present.
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg)));
 			}
 		}

@@ -26,6 +26,9 @@ class Users extends ModelLincko {
 		'firstname',
 		'lastname',
 		'gender',
+		'_parent',
+		'_lock',
+		'_visible',
 	);
 
 	// CUSTOMIZATION //
@@ -40,30 +43,36 @@ class Users extends ModelLincko {
 
 	protected $contactsVisibility = false; //By default do not make the user visible
 
+
 	protected $archive = array(
-		'created_at' => 601,  //[{un|ucfirst}] joined @@title~~.
-		'_' => 602,//[{un|ucfirst}] modified [{hh}] profile.
-		'username' => 602,//[{un|ucfirst}] modified [{hh}] profile.
-		'firstname' => 602,//[{un|ucfirst}] modified [{hh}] profile.
-		'lastname' => 602,//[{un|ucfirst}] modified [{hh}] profile.
-		'gender' => 602,//[{un|ucfirst}] modified [{hh}] profile.
-		'email' => 602,//[{un|ucfirst}] modified [{hh}] profile.
-		'_access_0' => 696, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to [{hh}] profile.
-		'_access_1' => 697, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to [{hh}] profile.
-		'_restore' => 698,//[{un|ucfirst}] restored [{hh}] profile.
-		'_delete' => 699,//[{un|ucfirst}] deleted [{hh}] profile.
+		'created_at' => 601,  //[{un|ucfirst}] joined @@title~~
+		'_' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'username' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'firstname' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'lastname' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'gender' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'email' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'_access_0' => 696, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to [{hh}] profile
+		'_access_1' => 697, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to [{hh}] profile
+		'_restore' => 698,//[{un|ucfirst}] restored [{hh}] profile
+		'_delete' => 699,//[{un|ucfirst}] deleted [{hh}] profile
 	);
 
 	protected static $relations_keys = array();
 
-	protected static $permission_sheet = array(
-		2, //[RCU] owner
-		1, //[RC] grant
-		1, //[RC] max allow
+	protected $model_integer = array(
+		'gender',
 	);
 
-	//Authorized by default since it's not part of a company
-	protected static $permission_grant = 1;
+	protected $model_boolean = array(
+		'in_charge',
+		'approver',
+	);
+
+	protected static $permission_sheet = array(
+		2, //[RCU] owner
+		1, //[RC] max allow || super
+	);
 	
 ////////////////////////////////////////////
 
@@ -78,14 +87,14 @@ class Users extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'users_x_chats', 'users_id', 'chats_id')->withPivot('access');
 	}
 
-	//One(Users) to Many(ChatsComments)
-	public function chatsComments(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\ChatsComments', 'created_by');
+	//One(Users) to Many(comments)
+	public function comments(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'created_by');
 	}
 
-	//Many(Users) to Many(Companies)
-	public function companies(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Companies', 'users_x_companies', 'users_id', 'companies_id')->withPivot('access');
+	//Many(Users) to Many(Workspaces)
+	public function workspaces(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Workspaces', 'users_x_workspaces', 'users_id', 'workspaces_id')->withPivot('access', 'super');
 	}
 
 	//Many(Users) to Many(Projects)
@@ -96,6 +105,11 @@ class Users extends ModelLincko {
 	//Many(Users) to Many(Tasks)
 	public function tasks(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'users_x_tasks', 'users_id', 'tasks_id')->withPivot('access', 'in_charge', 'approver');
+	}
+
+	//Many(Users) to Many(Notes)
+	public function notes(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'users_x_notes', 'users_id', 'notes_id')->withPivot('access');
 	}
 
 	//Many(Users) to Many(Users)
@@ -109,84 +123,99 @@ class Users extends ModelLincko {
 	}
 
 	//Many(Users) to Many(Roles)
-	public function perm($user_id=false){
-		$app = self::getApp();
-		$user_id = $app->lincko->data['uid'];
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'users_id', 'roles_id')->withPivot('relation_id', 'relation_type', 'access', 'single');
+	public function perm($users_id=false){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'users_id', 'roles_id')->withPivot('access', 'relation_id', 'parent_type', 'single');
 	}
 
 ////////////////////////////////////////////
 
-	public static function validEmail($data){
-		$return = preg_match("/^.{1,191}$/u", $data) && preg_match("/^.{1,100}@.*\..{2,4}$/ui", $data) && preg_match("/^[_a-z0-9-%+]+(\.[_a-z0-9-%+]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", $data);
-		return self::noValidMessage($return, __FUNCTION__);
-	}
-
-	//Optional
-	//empty checks $data if !isset or "", returning true makes the value optional
-	public static function validUsername($data){
-		$return = true;
-		if(empty($data)){ return $return = true; }
-		$return = preg_match("/^\S{1,104}$/u", $data);
-		return self::noValidMessage($return, __FUNCTION__);
-	}
-
-	//Optional
-	//empty checks $data if !isset or "", returning true makes the value optional
-	public static function validFirstname($data){
-		$return = true;
-		if(empty($data)){ return $return = true; }
-		$return = preg_match("/^.{1,104}$/u", $data);
-		return self::noValidMessage($return, __FUNCTION__);
-	}
-
-	//Optional
-	//empty checks $data if !isset or "", returning true makes the value optional
-	public static function validLastname($data){
-		$return = true;
-		if(empty($data)){ return $return = true; }
-		$return = preg_match("/^.{1,104}$/u", $data);
-		return self::noValidMessage($return, __FUNCTION__);
-	}
-
-	//Optional
-	//empty checks $data if !isset or "", returning true makes the value optional
-	public static function validGender($data){
-		$return = true;
-		if(empty($data)){ return $return = true; }
-		$return = preg_match("/^0|1$/u", $data);
-		return self::noValidMessage($return, __FUNCTION__);
-	}
-
 	public static function isValid($form){
-		if(!isset($form->email)){ self::noValidMessage(false, 'email'); } //Required
-		return
-			     isset($form->email) && self::validEmail($form->email)
-			&& (!isset($form->username) || self::validUsername($form->username)) //Optional
-			&& (!isset($form->firstname) || self::validFirstname($form->firstname)) //Optional
-			&& (!isset($form->lastname) || self::validLastname($form->lastname)) //Optional
-			&& (!isset($form->gender) || self::validGender($form->gender)) //Optional
-			;
+		if(
+			   (isset($form->id) && !self::validNumeric($form->id, true))
+			|| (isset($form->email) && !self::validEmail($form->email, true))
+			|| (isset($form->password) && !self::validPassword($form->password, true))
+			|| (isset($form->username) && !self::validChar($form->username, true))
+			|| (isset($form->firstname) && !self::validChar($form->firstname, true))
+			|| (isset($form->lastname) && !self::validChar($form->lastname, true))
+			|| (isset($form->gender) && !self::validBoolean($form->gender, true))
+		){
+			return false;
+		}
+		return true;
 	}
 
 ////////////////////////////////////////////
 
 	//Add these functions to insure that nobody can make them disappear
-	public function delete(){}
-	public function restore(){}
+	public function delete(){ return false; }
+	public function restore(){ return false; }
 
-	public function scopegetLinked($query){
-		return $query
+	public function scopegetItems($query, $list=array(), $get=false){
+		$app = self::getApp();
+		$query = $query
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
 			$app = self::getApp();
 			$query
-			//->with('usersLinked')
+			//->with('usersLinked') //It affects heavily speed performance
 			->whereHas('usersLinked', function ($query) {
 				$app = self::getApp();
-				$query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
+				$query
+				->where('users_id', $app->lincko->data['uid'])
+				->where('access', 1);
 			})
-			->orWhere('id', $app->lincko->data['uid']);
+			->orWhere('users.id', $app->lincko->data['uid']);
 		});
+		if($get){
+			$result = $query->get();
+			foreach($result as $key => $value) {
+				$result[$key]->accessibility = true;
+				if($result[$key]->id != $app->lincko->data['uid']){
+					$result[$key]->contactsVisibility = true; //We make all users inside the userlist visible, expect the user itself
+				} else {
+					$result[$key]->contactsLock = true; //We do not allow to reject the user itself
+				}
+			}
+			return $result;
+		} else {
+			return $query;
+		}
+	}
+
+	//List all users directly attached to the corresponding object
+	public function scopegetUsers($query, $list=array()){
+		$this->var['list'] = $list;
+		foreach ($list as $key => $value) {
+			$this->var['table'] = $key;
+			if($key=='roles') { $key = 'perm'; }
+			if($key=='users') {
+				$query = $query->orWhereIn('users.id', $value);
+				continue;
+			}
+			$this->var['key'] = $key;
+			if(method_exists(get_called_class(), $this->var['key'])){
+				$query = $query
+				->orWhereHas($this->var['key'], function ($query) {
+					$query
+					->whereIn($this->var['table'].'.id', $this->var['list'][$this->var['table']]);
+				});
+
+			}
+		}
+		return $query;
+	}
+
+	public static function getUsersContacts($list=array(), $visible=array()){
+		$app = self::getApp();
+		$result = self::getUsers($list)->get();
+		foreach($result as $key => $value) {
+			$result[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
+			if($value->id == $app->lincko->data['uid']){
+				$result[$key]->contactsLock = true; //We do not allow to reject the user itself
+			} else if(in_array($value->id, $visible)){
+				$result[$key]->contactsVisibility = true; //We make all users inside the userlist visible, expect the user itself
+			}
+		}
+		return $result;
 	}
 
 	public function getContactsLock(){
@@ -200,26 +229,20 @@ class Users extends ModelLincko {
 	public function getContactsVisibility(){
 		$app = self::getApp();
 		if($this->id == $app->lincko->data['uid']){
-			$this->contactsVisibility = false; //No need to make the user visible in the list on client side
+			$this->contactsVisibility = false; //Do not allow the user to talk to himself (technicaly, cannot attached comment to yourself, use MyPlaceholder instead)
 		}
 		return $this->contactsVisibility;
 	}
 
-	//Get all users that are added as contact by the user
-	public function getUsersContacts(){
-		$app = self::getApp();
-		$contacts = parent::getUsersContacts();
-		$id = $this->id;
-		$contacts->$id = $this->getContactsInfo();
-		$list = $this->users()->get();
-		foreach($list as $key => $value) {
-			$id = $value->id;
-			$contacts->$id = $this->getContactsInfo();
-			if($this->id != $app->lincko->data['uid'] && isset($value->pivot) && $value->pivot->access){
-				$contacts->$id->contactsVisibility = true;
-			}
+	protected function updateContactAttributes(){
+		if(isset(self::$contacts_list[$this->id])){
+			$this->_lock = self::$contacts_list[$this->id][0];
+			$this->_visible = self::$contacts_list[$this->id][1];
+		} else {
+			$this->_lock = $this->getContactsLock();
+			$this->_visible = $this->getContactsVisibility();
 		}
-		return $contacts;
+		return true;
 	}
 
 	public function getForceSchema(){
@@ -235,9 +258,9 @@ class Users extends ModelLincko {
 	public function scopetheUser($query){
 		$app = self::getApp();
 		if(isset($app->lincko->data['uid'])){
-			return $query->whereId($app->lincko->data['uid']);
+			return $query->where('users.id', $app->lincko->data['uid']);
 		}
-		return $query->whereId(-1); //It will force an error since the user -1 does not exists
+		return $query->where('users.id', -1); //It will force an error since the user -1 does not exists
 	}
 
 	public static function getUser(){
@@ -277,13 +300,13 @@ class Users extends ModelLincko {
 				$return = parent::save($options);
 			} else {
 				$return = parent::save($options);
+
 				$app->lincko->data['uid'] = $this->id;
 				$app->lincko->data['username'] = $this->username;
 
-				$company = Companies::setPersonal();
-
-				$app->lincko->data['company'] = $company->url;
-				$app->lincko->data['company_id'] = intval($company->id);
+				//We first login to shared worksace, which does not need to set a role permission, since everyone is an administrator (but not super)
+				$app->lincko->data['workspace'] = '';
+				$app->lincko->data['workspace_id'] = 0;
 				
 				$project = Projects::setPersonal();
 
@@ -297,8 +320,28 @@ class Users extends ModelLincko {
 		return $return;
 	}
 
+	//It checks if the user has access to it
+	public function checkAccess($show_msg=true){
+		$app = self::getApp();
+		if(!isset($this->id) || (isset($this->id) && $this->id == $app->lincko->data['uid'])){ //Always allow for the user itself
+			return $this->accessibility = (bool) true;
+		}
+		return parent::checkAccess($show_msg);
+	}
+
+	public function checkPermissionAllow($level, $msg=false){
+		$app = self::getApp();
+		$level = $this->formatLevel($level);
+		if($level==1 && !isset($this->id) && $app->lincko->data['create_user'] && !Users::getUser()){ //Allow creation for new user and out of the application only
+			return true;
+		}
+		return parent::checkPermissionAllow($level, $msg);
+	}
+
 	public function toJson($detail=true, $options = 0){
 		$app = self::getApp();
+
+		$this->updateContactAttributes();
 
 		//the play with accessibility allow Data.php to gather information about some other users that are not in the user contact list
 		$accessibility = $this->accessibility;
@@ -307,14 +350,13 @@ class Users extends ModelLincko {
 		$this->accessibility = $accessibility;
 		
 		$temp = json_decode($temp);
-		$temp->contactsLock = $this->getContactsLock();
-		$temp->contactsVisibility = $this->getContactsVisibility();
 		//Do not show email for all other users
 		if($this->id == $app->lincko->data['uid']){
 			$temp->email = $this->email;
 		} else {
 			$temp->email = "";
 		}
+		$temp->new = 0;
 		$temp = json_encode($temp, $options);
 		return $temp;
 	}

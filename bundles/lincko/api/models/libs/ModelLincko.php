@@ -17,7 +17,7 @@ use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\Comments;
 use \bundles\lincko\api\models\data\Users;
-use \bundles\lincko\api\models\data\Companies;
+use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Roles;
 
 abstract class ModelLincko extends Model {
@@ -26,6 +26,7 @@ abstract class ModelLincko extends Model {
 
 	use SoftDeletes;
 	protected $dates = ['deleted_at'];
+	protected $with_trash = false;
 
 	protected $guarded = array('*');
 
@@ -40,12 +41,12 @@ abstract class ModelLincko extends Model {
 	//Key: Column title to record
 	//Value: Title of record
 	protected $archive = array(
-		'created_at' => 1,  //[{un|ucfirst}] created a new item.
-		'_' => 2,//[{un|ucfirst}] modified an item.
-		'_access_0' => 96, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to an item.
-		'_access_1' => 97, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to an item.
-		'_restore' => 98,//[{un|ucfirst}] restored an item.
-		'_delete' => 99,//[{un|ucfirst}] deleted an item.
+		'created_at' => 1,  //[{un|ucfirst}] created a new item
+		'_' => 2,//[{un|ucfirst}] modified an item
+		'_access_0' => 96, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to an item
+		'_access_1' => 97, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to an item
+		'_restore' => 98,//[{un|ucfirst}] restored an item
+		'_delete' => 99,//[{un|ucfirst}] deleted an item
 	);
 
 	//When call toJson, convert fields to timestamp format if the field exists only
@@ -56,31 +57,41 @@ abstract class ModelLincko extends Model {
 	);
 	protected $model_timestamp = array();
 
-	protected $contactsLock = false; //If true, do not allow to delete the user from the contact list
+	//When call toJson, convert fields to integer format if the field exists only
+	protected static $class_integer = array(
+		'created_by',
+		'updated_by',
+		'deleted_by',
+	);
+	protected $model_integer = array();
 
+	//When call toJson, convert fields to boolean format if the field exists only
+	protected static $class_boolean = array(
+		'access',
+		'new',
+	);
+	protected $model_boolean = array();
+
+	//Record if the user is Locked and Visible [users_id => [false, false]]
+	protected static $contacts_list = array();
+	protected $contactsLock = false; //If true, do not allow to delete the user from the contact list
 	protected $contactsVisibility = false; //If true, it will appear in user contact list
 
 	//NOTE: All variables in this array must exist in the database, otherwise an error will be generated during SLQ request.
 	protected static $foreign_keys = array(); //Define a list of foreign keys, it helps to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link. It's also used to build relationships.
 
-	protected static $relations_keys_checked = false; //At false it will help to construct the list only once
+	protected static $relations_keys_checked = false; //(not used anymore) At false it will help to construct the list only once
 
 	//NOTE: Must exist in child "data"
-	protected static $relations_keys = array(); //This is a list of parent Models, it helps the front server to know which elements to update without the need of updating all elements and overkilling the CPU usage. This should be accurate using Models' name. We do not have to add foreign keys since it will be added automaticaly by getRelations().
+	protected static $relations_keys = array(); //(not used anymore) This is a list of parent Models, it helps the front server to know which elements to update without the need of updating all elements and overkilling the CPU usage. This should be accurate using Models' name.
 
 	//It should be a array of [key1:val1, key2:val2, etc]
 	//It helps to recover some iformation on client side
 	protected $historyParameters = array();
 
-	//List of relations we want to make available on client side
-	protected $dependencies_visible = array();
-
-	//List the fields that will be shown on client side
-	protected $dependencies_fields = array();
-
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
-	protected $parent = null;
-	protected $parent_id = null; //Unique parent ID
+	protected static $parent_list = null;
+
 	//This enable or disable the ability to give a permission to a single element.
 	protected static $allow_single = false;
 	//This enable or disable the ability to give a role permission to a single element with it's children.
@@ -94,30 +105,26 @@ abstract class ModelLincko extends Model {
 
 	/*
 	Roles
-	[
-		0 :owner	=> additional feature if you are the owner
-		1 :outsider (don't share anything)
-		2 :grant (share same company, same chat room)
-		2 :max allow (share same company, same chat room)
-	]
 	0: read
 	1: read + create
 	2: read + create + edit
 	3: read + create + edit + delete
 	*/
 	protected static $permission_sheet = array(
-		0, //[R] owner
-		0, //[R] grant
-		0, //[R] max allow
+		0, //[R] owner (It will be given by default for all Owner. It overwrite any other value if higher)
+		0, //[R] max allow || super (this value give a limitation from the value got from the Roles table)
 	);
 
-	//Interger 1 if all users have grant access to the element
-	//If an array, tell grant access for each user
-	protected static $permission_grant = array();
+	//Interger 1 if all users have super access to the element
+	//If an array, tell super access for each user
+	protected static $permission_super = array();
 
 	//It record the permission found to speed up calculation in Data.php
 	//Level of perission for the model (0: R, 1: RC, 2: RCU, 3: RCUD)
 	protected static $permission_users = array();
+
+	protected $parent_item = null;
+	public $_parent = array(null, -1);
 
 	/*
 		Model variables linked to the user ID
@@ -135,7 +142,15 @@ abstract class ModelLincko extends Model {
 		END
 	*/
 
+	//Vraiable used to pass some values through scopes
+	protected $var = array();
+
+	protected static $columns = array();
+
 	//Note: In relation functions, cannot not use underscore "_", something like "tasks_users()" will not work.
+
+	//List of relations we want to make available on client side
+	protected static $dependencies_visible = array();
 
 	//No need to abstract it, but need to redefined for the Models that use it
 	public function users(){
@@ -143,38 +158,136 @@ abstract class ModelLincko extends Model {
 	}
 
 	//Many(Roles) to Many Poly (Users)
-	public function perm($user_id=false){
+	public function perm($users_id=false){
 		$app = self::getApp();
-		if(!$user_id){
-			$user_id = $app->lincko->data['uid'];
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
 		}
-		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'relation', 'users_x_roles_x', 'relation_id', 'roles_id')->where('users_id', $user_id)->withPivot('access', 'single', 'relation_id', 'relation_type')->take(1);
+		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'parent', 'users_x_roles_x', 'parent_id', 'roles_id')->where('users_id', $users_id)->withPivot('access', 'single', 'parent_id', 'parent_type')->take(1);
 	}
 
 	//One(?) to Many(Comments)
 	public function comments(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\libs\\Comments', 'type_id')->where('type', $this->getTable());
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'parent_id')->where('parent_type', $this->getTable());
 	}
 
 	//Many(Roles) to Many Poly (Users)
 	public function rolesUsers(){
 		$app = self::getApp();
-		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'relation', 'users_x_roles_x', 'relation_id', 'users_id')->withPivot('access', 'single', 'roles_id', 'relation_id', 'relation_type')->take(1);
+		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'parent', 'users_x_roles_x', 'parent_id', 'users_id')->withPivot('access', 'single', 'roles_id', 'parent_id', 'parent_type')->take(1);
 	}
 
 	public function __construct(array $attributes = array()){
 		$app = self::getApp();
 		parent::__construct($attributes);
-		$db = Capsule::connection($this->connection);
-		$db->enableQueryLog();
+		//$db = Capsule::connection($this->connection);
+		//$db->enableQueryLog();
 		if(isset($app->lincko->data['uid'])){
 			$this->record_user = $app->lincko->data['uid'];
 		}
 	}
 
-	public static function getTableStatic(){
-		return (new static())->getTable();
+////////////////////////////////////////////
+	//VALIDATION METHODS
+
+	public static function isValid($form){
+		return true;
 	}
+
+	public static function noValidMessage($return, $function=__FUNCTION__){
+		if(!$return){
+			$app = self::getApp();
+			$app->lincko->data['fields_not_valid'][] = preg_replace('/^valid/ui', '', $function, 1);
+		}
+		return $return;
+	}
+
+	//The value has to be previously converted (int)boolval(var) because of MySQL => 0|1
+	public static function validBoolean($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_numeric($data) && ($data==0 || $data==1);
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validNumeric($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_numeric($data);
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validRCUD($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_numeric($data) && $data>=0 && $data<=3;
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validProgress($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_numeric($data) && $data>=0 && $data<=100;
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validDate($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u", $data);
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validType($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$parent_list = static::$parent_list;
+		if(!is_array($parent_list) && is_string($parent_list)){
+			$parent_list = array($parent_list);
+		}
+		$return = is_string($data) && !empty($parent_list) && in_array($data, $parent_list) && preg_match("/^[a-z]{0,104}$/u", $data);
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validChar($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && strlen(trim($data))>0 && preg_match("/^.{1,104}$/u", $data);
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validTitle($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && strlen(trim($data))>0 && preg_match("/^.{1,200}$/u", $data);
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validText($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && strlen(trim($data))>0;
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	//191 is limited by MySQL for Indexing
+	public static function validDomain($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && preg_match("/^.{1,191}$/u", trim($data)) && preg_match("/^[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", trim($data));
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validURL($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && preg_match("/^[a-zA-Z0-9]{3,104}$/u", trim($data));
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	//191 is limited by MySQL for Indexing
+	public static function validEmail($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && preg_match("/^.{1,191}$/u", trim($data)) && preg_match("/^.{1,100}@.*\..{2,4}$/ui", trim($data)) && preg_match("/^[_a-z0-9-%+]+(\.[_a-z0-9-%+]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", trim($data));
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validPassword($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data) && preg_match("/^[\w\d]{6,60}$/u", $data);
+		return $return;
+	}
+
+////////////////////////////////////////////
 
 	public static function getApp(){
 		if(is_null(self::$app)){
@@ -183,67 +296,92 @@ abstract class ModelLincko extends Model {
 		return self::$app;
 	}
 
-	public static function isValid($format){
-		return true;
-	}
-
-	public static function noValidMessage($return, $function){
-		if(!$return){
-			$app = self::getApp();
-			$app->lincko->data['fields_not_valid'][] = preg_replace('/^valid/ui', '', $function, 1);
-		}
-		return $return;
+	public static function getTableStatic(){
+		return (new static())->getTable();
 	}
 
 	//This function helps to get all instance related to the user itself only
 	//It needs to redefine the related function users() too
 	//IMPORTANT: getLinked must check if the user has access to it, a good example is Tasks model which include all tasks with access 1 and tasks that belongs to projects with access authorized.
-	public function scopegetLinked($query){
-		return $query
-		//->with('users')
-		->whereHas('users', function ($query) {
-			$query->theUser();
-		});
+	//$list is used to add more IDs previously found by other methods
+	//$get also force the accessibility attribute to true
+	public function scopegetItems($query, $list=array(), $get=false){
+		if(method_exists(get_called_class(), 'users')){
+			// user() must be defined has a relation, if not it will crash
+			$query = $query
+			->whereHas('users', function ($query) {
+				$app = self::getApp();
+				$query
+				->where('users_id', $app->lincko->data['uid'])
+				->where('access', 1);
+			});
+		} else {
+			$query = $query
+			->where('id', -1); //Force to return null
+		}
+		if($get){
+			$result = $query->get();
+			foreach($result as $key => $value) {
+				$result[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
+			}
+			return $result;
+		} else {
+			return $query;
+		}
+	}
+
+	//This function does the same as getItems, but the calculation is heavier since it's requesting every parent, getItems is using a list to simulate dependencies (previously got in Data.php)
+	public function scopegetLinked($query, $with=false){
+		$arr = array();
+		$parentType = $this::getParentList();
+		if(count($parentType)>0){
+			if(is_string($parentType)){
+				if(method_exists(get_called_class(), $parentType) && $parentType!=$this->getTable()){
+					$arr[] = $parentType;
+				}
+			} else if(is_array($parentType)){
+				foreach ($parentType as $type) {
+					if(method_exists(get_called_class(), $type) && $type!=$this->getTable()){
+						$arr[] = $type;
+					}
+				}
+			}
+		}
+		if($with){
+			foreach ($arr as $type) {
+				$query = $query->with($type);
+			}
+		}
+		$list = (new Data())->getTrees($arr)[2];
+		if($this->with_trash){
+			$query = $query->withTrashed();
+		}
+		return $query->getItems($list);
 	}
 
 	public static function getColumns(){
 		$model = new static();		
 		$schema = $model->getConnection()->getSchemaBuilder();
-		return $schema->getColumnListing($model->getTable());
+		if(!isset(self::$columns[$model->getTable()])){
+			self::$columns[$model->getTable()] = array();
+		}
+		self::$columns[$model->getTable()] = $schema->getColumnListing($model->getTable());
+		return self::$columns[$model->getTable()];
 	}
 
-	public static function getItems($timestamp=false, $id=null){
-		$request = self::getLinked();
-		if($timestamp!==false){
-			$request = $request->where('updated_at', '>=', $timestamp);
+	public function getWorkspaceID(){
+		if(!$this->checkAccess(false)){
+			return -1;
 		}
-		if(!is_null($id)){
-			$request = $request->whereIn('id', $id);
+		$parent = $this->getParent(); //It has to be called first to insure _parent is setup
+		if($this->getTable()=='workspaces'){
+			return (int) $this->id;
+		} else if($this->parent_type=='workspaces' && $this->parent_id==0){
+			return 0;
+		} else if($parent){
+			return (int) $parent->getWorkspaceID();
 		}
-		$list = $request->get();
-		foreach($list as $key => $value) {
-			$list[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
-		}
-		return $list;
-	}
-
-	public function getCompany(){
-		return '_';
-	}
-
-	public function getChildren(){
-		if(!is_null($this->all_parents)){
-			return $this->all_parents;
-		}
-		if($this->parent && method_exists(get_class($this), $this->parent)){
-			if($model = $this->{$this->parent}()->first()){
-				$this->parent_id = $model->id;
-				return $model;
-			}
-		}
-		$this->parent = false;
-		$this->parent_id = false;
-		return false;
+		return -1; //this insure that we cannot find the workspace (-1 means that we are in root directory)
 	}
 
 	public function createdBy(){
@@ -253,23 +391,48 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
-	public function getParentName(){
-		return $this->parent;
+	public function setParentAttributes(){
+		$app = self::getApp();
+		if(is_array($this::$parent_list) && isset($this->parent_type) && in_array($this->parent_type, $this::$parent_list)){
+			$this->_parent[0] = (string)$this->parent_type;
+		} else if(is_string($this::$parent_list)){
+			$this->_parent[0] = (string)$this::$parent_list;
+		} else {
+			$this->_parent[0] = null;
+		}
+		if(isset($this->parent_id)){
+			$this->_parent[1] = (int)$this->parent_id;
+		}
+		if(is_null($this->parent_id)){ //Some element are not attached to a workspace (parent_id is NULL, not 0) => NULL is all over workspace, 0 is only for shared workspace 
+			$this->_parent[1] = null;
+		}
+		//For global scope
+		if(empty($this->_parent[0])){
+			$this->_parent[0] = null;
+			$this->_parent[1] = 0;
+		}
+		$this->parent_type = $this->_parent[0];
+		$this->parent_id = $this->_parent[1];
+		if($this->_parent[0]=='workspaces' && is_null($this->_parent[1])){ //Personal project (MyPlaceholder) and Roles that are not attached to a workspace (parent_id is NULL, not 0) => NULL is all over workspace, 0 is only for shared workspace 
+			$this->_parent[1] = (int)$app->lincko->data['workspace_id'];
+			$this->parent_id = $this->_parent[1];
+		}
+		return $this->_parent;
+	}
+
+	public static function getParentList(){
+		return static::$parent_list;
 	}
 
 	public function getParent(){
-		if($this->parent && $this->parent_id && $class = $this->getClass($this->parent)){
-			return $class::find($this->parent_id);
-		}
-		if($this->parent && method_exists(get_class($this), $this->parent)){
-			if($model = $this->{$this->parent}()->first()){
-				$this->parent_id = $model->id;
-				return $model;
+		$this->setParentAttributes();
+		if(is_string($this->parent_type) && is_integer($this->_parent[1]) && $class = $this->getClass($this->parent_type)){
+			if($this->parent_item = $class::find($this->_parent[1])){
+				return $this->parent_item;
 			}
 		}
-		$this->parent = false;
-		$this->parent_id = false;
-		return false;
+		$this->parent_item = false;
+		return $this->parent_item;
 	}
 
 	public static function setDebugMode($onoff=false){
@@ -289,35 +452,33 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function setForceSchema(){
-		$list_users = array();
-		$users = $this->getUsersContacts();
-		foreach ($users as $users_id => $user) {
-			$list_users[] = $users_id;
-		}
-		if(!empty($list_users)){
-			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
-			Users::whereIn('id', $list_users)->where('force_schema', 0)->getQuery()->update(['force_schema' => '1']);
+		$list = array(
+			$this->getTable() => array($this->id),
+		);
+		Users::getUsers($list)->where('force_schema', 0)->getQuery()->update(['force_schema' => '1']);
+		return true;
+	}
+
+	public function setUserSchemaReset(){
+		$user = Users::getUser();
+		if($user->force_schema>0){
+			$user->timestamps = false; //Disable timestamp update_at
+			$user->force_schema = 0;
+			$user->save();
 		}
 		return true;
 	}
 
-	public static function setForceReset($only_company=false){
+	public static function setForceReset($only_workspace=false){
 		$app = self::getApp();
-		if($only_company){
-			$list_users = array();
-			if($company = Companies::find($app->lincko->data['company_id'])){
-				$users = $company->getUsersContacts();
-				foreach ($users as $users_id => $user) {
-					$list_users[] = $users_id;
-				}
-				if(!empty($list_users)){
-					// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
-					Users::whereIn('id', $list_users)->getQuery()->update(['force_schema' => '2']);
-				}
-			}
+		if($only_workspace){
+			$list = array(
+				'workspaces' => array($app->lincko->data['workspace_id']),
+			);
+			Users::getUsers($list)->getQuery()->update(['force_schema' => '2']);
 		} else {
 			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
-			Users::getQuery()->update(['force_schema' => '2']);;
+			Users::getQuery()->update(['force_schema' => '2']);
 		}
 		return true;
 	}
@@ -326,84 +487,62 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
-	protected static function buildRelations(){
-		if(self::$relations_keys_checked === false){
-			$models = Data::getModels();
-				
-			//First we fillin the relation list properly adding foreign keys (parents) for each model
-			foreach($models as $model_name => $model) {
-				foreach($model::$foreign_keys as $key => $value) {
-					$table_name = $value::getTableStatic();
-					if(!in_array($table_name, $model::$relations_keys)){
-						$model::$relations_keys[] = $table_name;
-					}
-				}
-			}
-
-			//UP: Adding parents level
-			$parents = array();
-			foreach($models as $model_name => $model) {
-				foreach($model::$relations_keys as $key => $value) {
-					$parents = array_unique(array_merge($model::$relations_keys, $models[$value]::$relations_keys));
-				}
-			}
-			$model::$relations_keys = array_unique(array_merge($model::$relations_keys, $parents));
-			
-			//DOWN: Adding children level
-			foreach($models as $model_name => $model) {
-				foreach($model::$relations_keys as $key => $value) {
-					if(!in_array($model_name, $models[$value]::$relations_keys)){
-						$models[$value]::$relations_keys[] = $model_name;
-					}
-				}
-			}
-
-			//Reindex all lists, because some list migth not have incremental index
-			foreach($models as $model_name => $model) {
-				$model::$relations_keys = array_merge($model::$relations_keys);
-			}
-			
-			self::$relations_keys_checked = true;
-		}
-	}
-
-	public function getRelations(){
-		if(self::$relations_keys_checked === false){
-			self::buildRelations();
-		}
-		return $this::$relations_keys;
+	public static function getDependenciesVisible(){
+		return static::$dependencies_visible;
 	}
 
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
-	public static function getDependencies(array $id_list){
+	public static function getDependencies(array $list_id, array $classes){
 		$dependencies = new \stdClass;
-		$model = new static();
-		foreach ($model->dependencies_visible as $dependency => $dependencies_fields) {
-			if(method_exists(get_class($model), $dependency)) {
-				$data = null;
-				try { //In case access in not available for the model
-					$data = self::whereIn('id', $id_list)->with($dependency)->whereHas($dependency, function ($query){
-						$query->where('access', 1);
-					})->get(['id']);
-				} catch (Exception $obj_exception) {
-					//Do nothing to continue
-					return $dependencies;
+		foreach ($classes as $table => $class) {
+			$model = new $class;
+			$data = null;
+			$dependencies_visible = $model::getDependenciesVisible();
+			if(count($dependencies_visible)>0){
+				foreach ($dependencies_visible as $dependency => $dependencies_fields) {
+					if(count($dependencies_fields)>0 && isset($list_id[$table]) && method_exists($class, $dependency)) {
+						if(is_null($data)){
+							$data = $model::whereIn($model::getTableStatic().'.id', $list_id[$table]);
+						}
+						$data = $data->with($dependency);
+					}
 				}
-				if(!is_null($data) && !empty($data->toArray())){
-					foreach ($data as $dep) {
-						foreach ($dep->$dependency as $key => $value) {
-							if($value->pivot->access){
-								if(!isset($dependencies->{$dep->id})){ $dependencies->{$dep->id} = new \stdClass; }
-								if(!isset($dependencies->{$dep->id}->{'_'.$dependency})){ $dependencies->{$dep->id}->{'_'.$dependency} = new \stdClass; }
-								if(!isset($dependencies->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
-								foreach ($dependencies_fields as $field) {
-									if(isset($value->pivot->{$field})){
-										$dependencies->{$dep->id}->{'_'.$dependency}->{$value->id}->{$field} = $value->pivot->{$field};
+				if(!is_null($data)){
+					$data = $data->where(function ($query) use ($class, $list_id, $table, $dependencies_visible) {
+						foreach ($dependencies_visible as $dependency => $dependencies_fields) {
+							if(isset($list_id[$table]) && method_exists($class, $dependency)) {
+								$query->orWhereHas($dependency, function ($query){
+									$query->where('access', 1);
+								});
+							}
+						}
+					});
+				}
+				if(!is_null($data)){
+					try { //In case access in not available for the model
+						$data = $data->get(['id']);
+						foreach ($data as $dep) {
+							foreach ($dependencies_visible as $dependency => $dependencies_fields) {
+								foreach ($dep->$dependency as $key => $value) {
+									if(isset($value->pivot->access) && isset($dependencies_visible[$dependency])){
+										if(!isset($dependencies->$table)){ $dependencies->$table = new \stdClass; }
+										if(!isset($dependencies->$table->{$dep->id})){ $dependencies->$table->{$dep->id} = new \stdClass; }
+										if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency})){ $dependencies->$table->{$dep->id}->{'_'.$dependency} = new \stdClass; }
+										if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
+										foreach ($dependencies_fields as $field) {
+											if(isset($value->pivot->$field)){
+												$field_value = $dep->formatAttributes($field, $value->pivot->$field);
+												$dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id}->$field = $field_value;
+											}
+										}
 									}
 								}
 							}
 						}
+					} catch (Exception $obj_exception) {
+						//Do nothing to continue
+						continue;
 					}
 				}
 			}
@@ -411,88 +550,91 @@ abstract class ModelLincko extends Model {
 		return $dependencies;
 	}
 
-	public static function getUsersContactsID(array $id_list){
-		$model = new static();
-		$list = array();
-		if($data = $model->whereIn('id', $id_list)->with('users')){
-			$data = $data->get();
-			foreach ($data as $item) {
-				//Get users list from items themselves
-				if(isset($item->created_by)){
-					if(!isset($list[(integer) $item->created_by])){
-							$list[(integer) $item->created_by] = $model->getContactsInfo();
-					}
+	public static function getHistories(array $list_id, array $classes, $history_detail=false){
+		$app = self::getApp();
+		$history = new \stdClass;
+		$data = null;
+		foreach ($classes as $table => $class) {
+			$model = new $class;
+			if(isset($list_id[$table]) && count($model->archive)>0){
+				if(is_null($data)){
+					$data = History::orWhere(function ($query) use ($list_id, $table) {
+						$query
+						->whereParentType($table)
+						->whereIn('history.parent_id', $list_id[$table]);
+					});
+				} else {
+					$data = $data->orWhere(function ($query) use ($list_id, $table) {
+						$query
+						->whereParentType($table)
+						->whereIn('history.parent_id', $list_id[$table]);
+					});
 				}
-				if(isset($item->updated_by)){
-					if(!isset($list[(integer) $item->updated_by])){
-							$list[(integer) $item->updated_by] = $model->getContactsInfo();
-					}
-				}
-				//Get users list from items access relationship
-				if(isset($item->users) && is_object($item->user)){
-					if(isset($item->users->id) && !isset($list[(integer) $item->users->id])){
-						$list[(integer) $item->users->id] = $model->getContactsInfo();
-					}
-					foreach ($item->users as $value) {
-						if(isset($value->id) && !isset($list[(integer) $value->id])){
-							$list[(integer) $value->id] = $model->getContactsInfo();
-						}
-					}
-				}
-				
 			}
 		}
-		return $list;
-	}
-
-	//This method helps to avoid too many mysql by storing first all history info of a list of items
-	public static function getHistories(array $id_list, $history_detail=false){
-		$model = new static();
-		$history = new \stdClass;
-		if(count($model->archive)>0){
-			$table_name = $model->getTable();
-			$records = History::whereType($table_name)->whereIn('type_id', $id_list)->get();
-			foreach ($records as $key => $value) {
-				if(array_key_exists($value->attribute, $model->archive)){
-					$prefix = $model->getPrefix($value->attribute);
-					$created_at = (new \DateTime($value->created_at))->getTimestamp();
-					if(!isset($history->{$value->type_id})){ $history->{$value->type_id} = new \stdClass; }
-					if(!isset($history->{$value->type_id}->history)){ $history->{$value->type_id}->history = new \stdClass; }
-					if(!isset($history->{$value->type_id}->history->$created_at)){ $history->{$value->type_id}->history->$created_at = new \stdClass; }
-					if(!isset($history->{$value->type_id}->history->$created_at->{$value->id})){ $history->{$value->type_id}->history->$created_at->{$value->id} = new \stdClass; }
-					$history->{$value->type_id}->history->$created_at->{$value->id}->by = $value->createdBy();
-					$history->{$value->type_id}->history->$created_at->{$value->id}->att = $prefix.$value->attribute;
-					if($history_detail){
-						$history->{$value->type_id}->history->$created_at->{$value->id}->old = $value->old;
-						$history->{$value->type_id}->history->$created_at->{$value->id}->new = $value->new;
-					}
-					if(!empty($value->parameters)){
-						$history->{$value->type_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
+		if(!is_null($data)){
+			try { //In case access in not available for the model
+				$data = $data->get();
+				foreach ($data as $key => $value) {
+					try { //In case access in not available for the model
+						if(isset($classes[$value->parent_type])){
+							$model = new $classes[$value->parent_type];
+							if(array_key_exists($value->attribute, $model->archive)){
+								$prefix = $model->getPrefix($value->attribute);
+								$created_at = (new \DateTime($value->created_at))->getTimestamp();
+								$not = false;
+								if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
+									$not = true; //True if need notification
+								}
+								if(!isset($history->{$value->parent_type})){ $history->{$value->parent_type} = new \stdClass; }
+								if(!isset($history->{$value->parent_type}->{$value->parent_id})){ $history->{$value->parent_type}->{$value->parent_id} = new \stdClass; }
+								if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
+								if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
+								if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id})){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = new \stdClass; }
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (int)$value->createdBy();
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$prefix.$value->attribute;
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->not = (boolean)$not;
+								if($history_detail || strlen($value->old)<500){
+									$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
+								}
+								if(!empty($value->parameters)){
+									$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
+								}
+							}
+						}
+					} catch (Exception $obj_exception) {
+						continue;
 					}
 				}
+			} catch (Exception $obj_exception) {
+				//Do nothing to continue
 			}
 		}
 		return $history;
-		
 	}
 
 	//detail help to get history detail of an item, we do not allow it at the normal use avoiding over quota memory
 	public function getHistory($history_detail=false){
+		$app = self::getApp();
 		$history = new \stdClass;
 		$parameters = array();
 		if(count($this->archive)>0 && isset($this->id)){
-			$records = History::whereType($this->getTable())->whereTypeId($this->id)->get();
+			$records = History::whereParentType($this->getTable())->whereParentId($this->id)->get();
 			foreach ($records as $key => $value) {
 				if(array_key_exists($value->attribute, $this->archive)){
 					$prefix = $this->getPrefix($value->attribute);
 					$created_at = (new \DateTime($value->created_at))->getTimestamp();
+					$not = false;
+					if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
+						$not = true; //True if need notification
+					}
 					if(!isset($history->$created_at)){ $history->$created_at = new \stdClass; }
 					if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
-					$history->$created_at->{$value->id}->by = $value->createdBy();
-					$history->$created_at->{$value->id}->att = $prefix.$value->attribute;
-					if($history_detail){
+					$history->$created_at->{$value->id}->by = (int)$value->createdBy();
+					$history->$created_at->{$value->id}->att = (string)$prefix.$value->attribute;
+					$history->$created_at->{$value->id}->not = (boolean)$not;
+					if($history_detail || strlen($value->old)<500){
 						$history->$created_at->{$value->id}->old = $value->old;
-						$history->$created_at->{$value->id}->new = $value->new;
 					}
 					if(!empty($value->parameters)){
 						$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
@@ -505,19 +647,26 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getHistoryCreation(array $parameters = array()){
+		$app = self::getApp();
 		$history = new \stdClass;
 		$created_at = (new \DateTime($this->created_at))->getTimestamp();
+		$not = false;
+		if(isset($this->noticed_by)){
+			if(strpos($this->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
+				$not = true; //True if need notification
+			}
+		}
 		$history->$created_at = new \stdClass;
 		$history->$created_at->{'0'} = new \stdClass;
-		//Because some models doesn't have creacted_by column (like the companies)
+		//Because some models doesn't have creacted_by column (like the workspaces)
 		$created_by = null;
 		if(isset($this->created_by)){
 			$created_by = $this->created_by;
 		}
-		$history->$created_at->{'0'}->by = $created_by;
+		$history->$created_at->{'0'}->by = (int)$created_by;
 		$history->$created_at->{'0'}->att = 'created_at';
 		$history->$created_at->{'0'}->old = null;
-		$history->$created_at->{'0'}->new = null;
+		$history->$created_at->{'0'}->not = (boolean)$not;
 		if(!empty($parameters)){
 			$history->$created_at->{'0'}->par = (object) $parameters;
 		}
@@ -529,16 +678,19 @@ abstract class ModelLincko extends Model {
 	*/
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
 		$app = self::getApp();
+		$namespace = (new \ReflectionClass($this))->getNamespaceName();
+		if(count($this->archive)==0 || $this->getTable()=='history' || $namespace!='bundles\lincko\api\models\data'){ //We exclude history itself to avoid looping
+			return true;
+		}
 		$history = new History;
 		$history->created_by = $app->lincko->data['uid'];
-		$history->type_id = $this->id;
-		$history->type = $this->getTable();
+		$history->parent_id = $this->id;
+		$history->parent_type = $this->getTable();
 		if(!array_key_exists($key, $this->archive)){
 			$key = '_';
 		}
 		$history->attribute = $key;
 		if(!is_null($old)){ $history->old = $old; }
-		if(!is_null($new)){ $history->new = $new; }
 		if(!empty($parameters)){
 			$history->parameters = json_encode($parameters, JSON_FORCE_OBJECT);
 		}
@@ -566,23 +718,6 @@ abstract class ModelLincko extends Model {
 		return $titles;
 	}
 
-	//Return a list object of users linked to the model in direct relation, It add the value regardless if it's locked or not.
-	public function getUsersContacts(){
-		$contacts = new \stdClass;
-		if(isset($this->created_by)){
-			$contacts->{$this->created_by} = $this->getContactsInfo();
-		}
-		if(isset($this->updated_by)){
-			$contacts->{$this->updated_by} = $this->getContactsInfo();
-		}
-		$list = $this->users()->get();
-		foreach($list as $key => $value) {
-			$id = $value->id;
-			$contacts->$id = $this->getContactsInfo();
-		}
-		return $contacts;
-	}
-
 	public function getContactsLock(){
 		return $this->contactsLock;
 	}
@@ -591,85 +726,135 @@ abstract class ModelLincko extends Model {
 		return $this->contactsVisibility;
 	}
 
-	public function getContactsInfo(){
-		$info = new \stdClass;
-		$info->contactsLock = $this->getContactsLock();
-		$info->contactsVisibility = $this->getContactsVisibility();
-		return $info;
+	public function setContacts(){
+		$users = array();
+		if(isset($this->created_by) && $this->created_by>0){
+			$users[] = $this->created_by;
+		}
+		if(isset($this->updated_by) && $this->updated_by>0){
+			$users[] = $this->updated_by;
+		}
+		if($this->getTable() == 'users'){
+			$users[] = $this->id;
+		}
+		$users = array_keys(array_flip($users));
+		$contactsLock = $this->getContactsLock();
+		$contactsVisibility = $this->getContactsVisibility();
+		if($contactsLock || $contactsVisibility){
+			foreach ($users as $value) {
+				if(!isset(self::$contacts_list[$value])){
+					self::$contacts_list[$value] = array($contactsLock, $contactsVisibility);
+				} else if($contactsLock){
+					self::$contacts_list[$value][0] = true;
+				} else if($contactsVisibility){
+					self::$contacts_list[$value][1] = true;
+				}
+			}
+		}
+		return $users;
 	}
 
 	//This function helps to delete the indicator as new for an item, it means we already saw it once
 	public function viewed(){
 		$app = self::getApp();
-		if(array_key_exists('viewed_by', $this->attributes)){
-			$viewed_by = ';'.$app->lincko->data['uid'].';';
-			if(strpos($this->viewed_by, $viewed_by) === false){
-				$this->viewed_by .= $viewed_by;
-				$this->updateTimestamps();
-				parent::save();
-			}
-		}
 	}
 
 	//In case the developer change the user ID, we reset all access
 	public function checkUser(){
 		$app = self::getApp();
-		if(!isset($app->lincko->data['uid']) || $this->record_user != $app->lincko->data['uid']){
+		if(!isset($app->lincko->data['uid'])){
+			$errmsg = $app->trans->getBRUT('api', 0, 2); //Please sign in.
+			$this::errorMsg('No user logged', $errmsg);
+			return false;
+		} else if($this->record_user != $app->lincko->data['uid']){
 			$this->record_user = null;
 			$this->accessibility = null;
-			if(isset($app->lincko->data['uid'])){
-				$this->record_user = $app->lincko->data['uid'];
-			}
+			return $this->record_user = $app->lincko->data['uid'];
 		}
+		return $app->lincko->data['uid'];
 	}
 
-	public function getPermissionMax($user_id = false){
+	public function getPermissionMax($users_id = false){
 		$app = self::getApp();
-		if(!$user_id){
-			$user_id = $app->lincko->data['uid'];
-		}
 		$this->checkUser();
-		if( !isset(self::$permission_users[$user_id]) ){ self::$permission_users[$user_id] = array(); }
-		if( !isset(self::$permission_users[$user_id][$this->getTable()]) ){ self::$permission_users[$user_id][$this->getTable()] = array(); }
-		if(  isset(self::$permission_users[$user_id][$this->getTable()][$this->id]) ){
-			return self::$permission_users[$user_id][$this->getTable()][$this->id];
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
+		if( !isset(self::$permission_users[$users_id]) ){ self::$permission_users[$users_id] = array(); }
+		if( !isset(self::$permission_users[$users_id][$this->getTable()]) ){ self::$permission_users[$users_id][$this->getTable()] = array(); }
+		if(  isset(self::$permission_users[$users_id][$this->getTable()][$this->id]) ){
+			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
 		//Check in order or speed code priority
 		$perm = 0;
-		//Check ownership
-		if(static::$permission_sheet[0] > $perm && $this->createdBy() == $user_id){
-			$perm = static::$permission_sheet[0];
+		//Check ownership (faster to check)
+		if(static::$permission_sheet[0] > $perm){
+			$perm = $this->getPermissionOwner($users_id);
 		}
-		//Check grant (as priority over singular role, it means that one administrator cannot retrict another administrator with grant permission)
-		if(static::$permission_sheet[1] > $perm && $this->getCompanyGrant($user_id)){
-			$perm = static::$permission_sheet[1];
-		}
+			
 		//Check role
-		if(static::$permission_sheet[2] > $perm){
-			$role_perm = $this->getRole($user_id);
-			if($role_perm > static::$permission_sheet[2]){ //There is a limitation allowed per model that can be different than the database setup.
-				$role_perm = static::$permission_sheet[2];
-			}
-			if($role_perm > $perm){
-				$perm = $role_perm;
+		if(static::$permission_sheet[1] > $perm){
+			if(self::getWorkspaceSuper($users_id)){ //Check if super user (highest riority)
+				$perm = static::$permission_sheet[1];
+			} else {
+				$role_perm = $this->getRole($users_id);
+				if($role_perm > static::$permission_sheet[1]){ //There is a limitation allowed per model that can be different than the database setup.
+					$role_perm = static::$permission_sheet[1];
+				}
+				if($role_perm > $perm){
+					$perm = $role_perm;
+				}
 			}
 		}
 
 		$perm = intval($perm);
-		self::$permission_users[$user_id][$this->getTable()][$this->id] = $perm;
+		self::$permission_users[$users_id][$this->getTable()][$this->id] = $perm;
 
 		return $perm;
 	}
 
-	//It checks if the user has access to edit it
-	public function getRole($user_id = false){
+	public static function getWorkspaceSuper($users_id=false){
 		$app = self::getApp();
-		if(!$user_id){
-			$user_id = $app->lincko->data['uid'];
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
 		}
+		$super = 0;
+		if(isset(static::$permission_super[$users_id])){
+			return static::$permission_super[$users_id];
+		} else if($workspace = Workspaces::find($app->lincko->data['workspace_id'])){ //This insure to return 0 at shared workspace
+			$pivot = $workspace->getUserPivotValue('super', $users_id);
+			if($pivot[0]){
+				$super = (int) $pivot[1];
+			}
+		}
+		static::$permission_super[$users_id] = $super;
+		return $super;
+	}
+
+	public static function getPermissionSheet(){
+		return static::$permission_sheet;
+	}
+
+	public function getPermissionOwner($users_id = false, $perm = 0){
+		$app = self::getApp();
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
+		if(static::$permission_sheet[0] > $perm && $this->createdBy() == $users_id){
+			$perm = static::$permission_sheet[0];
+		}
+		return $perm;
+	}
+
+	//It checks if the user has access to edit it
+	public function getRole($users_id=false, $suffix=false){
+		$app = self::getApp();
 		$this->checkUser();
-		if( isset(self::$permission_users[$user_id]) && isset(self::$permission_users[$user_id][$this->getTable()]) && isset(self::$permission_users[$user_id][$this->getTable()][$this->id]) ){
-			return self::$permission_users[$user_id][$this->getTable()][$this->id];
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
+		if( isset(self::$permission_users[$users_id]) && isset(self::$permission_users[$users_id][$this->getTable()]) && isset(self::$permission_users[$users_id][$this->getTable()][$this->id]) ){
+			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
 		$model = $this;
 		$check_single = true; //We only check single of the model itself, not its parents
@@ -683,9 +868,24 @@ abstract class ModelLincko extends Model {
 			$role = false;
 			if(!in_array($model->getTable(), $table)){ //It avoids to loop the same model
 				if($model::$allow_role || $model::$allow_single){
-					$pivot = $model->getRolePivotValue($user_id);
+					$pivot = $model->getRolePivotValue($users_id);
+					if(!$pivot[0]){ //Check for shared workspace
+						$model->setParentAttributes();
+						if($model->parent_type=='workspaces' && $model->parent_id==0){
+							//By default, give Administrator role to all users inside shared workspace
+							if($role = Roles::find(1)){
+								if(isset($role->{'perm_'.$suffix})){ //Per model
+									$perm = $role->{'perm_'.$suffix};
+								} else { //General
+									$perm = $role->perm_all;
+								}
+								$loop = 0;
+								break;
+							}
+						}
+					}
 					if($pivot[0]){
-						if($check_single && $model::$allow_single && $pivot[2]){
+						if($check_single && $model::$allow_single && $pivot[2]){ //Priority on single over Role
 							$perm = $pivot[2];
 							$loop = 0;
 							break;
@@ -696,9 +896,9 @@ abstract class ModelLincko extends Model {
 								} else { //General
 									$perm = $role->perm_all;
 								}
+								$loop = 0;
+								break;
 							}
-							$loop = 0;
-							break;
 						}
 					}
 				}
@@ -715,27 +915,38 @@ abstract class ModelLincko extends Model {
 	}
 
 	//It checks if the user has access to it
-	public function checkAccess(){
+	public function checkAccess($show_msg=true){
 		$app = self::getApp();
 		$this->checkUser();
 		if(!is_bool($this->accessibility)){
 			$this->accessibility = (bool) false; //By default, for security reason, we do not allow the access
-			$compid = $this->getCompany();
+			//If the element exists, we check if we can find it by getLinked
 			if(isset($this->id)){
-				//It has to be in the same workspace or in the shared workspace
-				if(($compid == $app->lincko->data['company_id'] || $compid == '_') && $this->getLinked()->whereId($this->id)->take(1)->count() > 0){
+				if($this->getLinked()->whereId($this->id)->take(1)->count() > 0){
 					$this->accessibility = (bool) true;
 				}
-			} else if($compid == '_' || ($compid == $app->lincko->data['company_id'] && Companies::find($compid)->checkAccess())){
-				$this->accessibility = (bool) true; //Set to true for any created item
 			}
+			//If it's a new element, we check if we can access it's parent (we don't have to care about element linked to Workspaces|NULL since ID will be current workspace, so $parent will exists)
+			else {
+				$parent = $this->getParent();
+				if($parent){
+					$this->accessibility = $parent->checkAccess($show_msg);
+				}
+				//Root directory
+				else if(empty($parent_type) && empty($parent_id)){
+					$this->accessibility = (bool) true;
+				}
+			}
+			
 		}
 		if($this->accessibility){
 			return true;
 		} else {
+			$suffix = $this->getTable();
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php(parent::toJson(), $msg, __FILE__, true);
-			if(!self::$debugMode){
+			$suffix = $this->getTable();
+			\libs\Watch::php($suffix." :\n".parent::toJson(), $msg, __FILE__, true);
+			if($show_msg && !self::$debugMode){
 				$json = new Json($msg, true, 406);
 				$json->render();
 			}
@@ -745,9 +956,9 @@ abstract class ModelLincko extends Model {
 
 	protected function formatLevel($level){
 		if(is_string($level)){
-			if(strtolower($level) == 'create'){ $level = 1; } //create
-			else if(strtolower($level) == 'delete'){ $level = 2; } //edit
-			else if(strtolower($level) == 'delete'){ $level = 3; } //delete
+			if(strtolower($level) == 'create' || strtolower($level) == 'creation' || strtolower($level) == 'creating'){ $level = 1; } //create
+			else if(strtolower($level) == 'edit' || strtolower($level) == 'edition' || strtolower($level) == 'editing'){ $level = 2; } //edit
+			else if(strtolower($level) == 'delete' || strtolower($level) == 'deletion' || strtolower($level) == 'deleting'){ $level = 3; } //delete
 			else if(strtolower($level) == 'error'){ $level = 4; } //force error
 			else { $level = 0; } //read
 		} else if(is_integer($level)){
@@ -759,9 +970,12 @@ abstract class ModelLincko extends Model {
 	}
 
 	//It checks if the user has access to edit it
-	public function checkRole($level, $msg=false){
+	public function checkPermissionAllow($level, $msg=false){
 		$app = self::getApp();
 		$this->checkUser();
+		if(!$this->checkAccess()){
+			return false;
+		}
 		$allow = false;
 		$level = $this->formatLevel($level);
 		if($level<=0){
@@ -795,19 +1009,39 @@ abstract class ModelLincko extends Model {
 
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
-		if(!$this->checkRole('edit') || !$this->checkAccess()){
+		if(!$this->checkAccess()){
+			return false;
+		} else if(!isset($this->id) && !$this->checkPermissionAllow('create')){
+			return false;
+		} else if(isset($this->id) && !$this->checkPermissionAllow('edit')){
 			return false;
 		}
 		$app = self::getApp();
+	
+		//Insure that the user has at least a read access to the element where it's attached
+		//The access to the parent has been previously check in $this->checkAccess()
+		$parent = $this->getParent();
+		$columns = self::getColumns();
+
+		//Indicate the that the user itself has already viewed the last modification
+		if(in_array('viewed_by', $columns)){
+			$viewed_by = ';'.$app->lincko->data['uid'].';';
+			//[toto] Enabling the following avoid to have red dot everytime an update is done, need to brainstorm
+			/*
+			if(strpos($this->viewed_by, $viewed_by) === false){
+				$viewed_by .= $this->viewed_by;
+			}
+			*/
+			$this->viewed_by = $viewed_by;
+		}
+
 		$dirty = $this->getDirty();
 		$original = $this->getOriginal();
+
 		$new = !isset($this->id);
-		if(array_key_exists('viewed_by', $this->attributes)){
-			$this->viewed_by = ';'.$app->lincko->data['uid'].';';
-		}
+
 		//Only check foreign keys for new items
 		if($new){
-			$columns = self::getColumns();
 			if(in_array('created_by', $columns)){
 				$this->created_by = $app->lincko->data['uid'];
 			}
@@ -830,9 +1064,7 @@ abstract class ModelLincko extends Model {
 				return false;
 			}
 		} else {
-			if(isset($this->updated_by)){
-				$this->updated_by = $app->lincko->data['uid'];
-			}
+			$this->updateTimestamps();
 		}
 		$app->lincko->translation['fields_not_valid'] = $app->trans->getBRUT('api', 4, 3); //[unknwon]
 		$app->lincko->data['fields_not_valid'] = array();
@@ -853,7 +1085,32 @@ abstract class ModelLincko extends Model {
 			return true;
 		}
 
+		$attributes = array();
+		//Insure to not send to mysql any field that does not exists (for example parent_type)
+		//Store thoese values to reapply them after saving
+		foreach ($this->attributes as $key => $value) {
+			if(!in_array($key, $columns)){
+				$attributes[$key] = $this->attributes[$key];
+				unset($this->attributes[$key]);
+			}
+		}
+		$dirty = $this->getDirty();
+		//do nothing if dirty is empty
+		if(count($dirty)<=0){
+			return true;
+		}
+
 		$return = parent::save($options);
+
+		//Reapply the fields that were not part of table columns
+		foreach ($attributes as $key => $value) {
+			$this->attributes[$key] = $value;
+		}
+
+		if($parent){
+			$parent->touchUpdateAt();
+		}
+
 		if($new){
 			$this->new_model = true;
 		}
@@ -861,12 +1118,12 @@ abstract class ModelLincko extends Model {
 		if(!$new){
 			foreach($dirty as $key => $value) {
 				//We exclude "created_at" if not we will always record it on history table, that might fulfill it too quickly
-				if($key != 'created_at' && array_key_exists($key, $this->archive)){
+				if($key != 'created_at' && $key != 'updated_at' && array_key_exists($key, $this->archive)){
 					$old = null;
 					$new = null;
 					if(isset($original[$key])){ $old = $original[$key]; }
 					if(isset($dirty[$key])){ $new = $dirty[$key]; }
-					$this->setHistory($key, $old, $new);
+					$this->setHistory($key, $new, $old);
 				}
 			}
 		} else if(isset($app->lincko->data['uid'])){
@@ -877,9 +1134,18 @@ abstract class ModelLincko extends Model {
 		return $return;
 		
 	}
+
+	//This will update updated_at, even if the user doesn't have write permission
+	public function touchUpdateAt(){
+		if (!$this->timestamps || !isset($this->updated_at) || !isset($this->id)) {
+			return false;
+		}
+		$time = $this->freshTimestamp();
+		return $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time]);
+	}
 	
 	public function delete(){
-		if($this->getCompanyGrant() == 0 || !$this->checkRole('delete')){
+		if(!$this->checkPermissionAllow('delete')){
 			return false;
 		}
 		//We don't delete in debug mode
@@ -900,7 +1166,10 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function restore(){
-		if($this->getCompanyGrant() == 0 || !$this->checkRole('delete')){
+		$this->enableTrash(true);
+		$permission = $this->checkPermissionAllow('delete');
+		$this->enableTrash(false);
+		if(!$permission){
 			return false;
 		}
 		//We don't restore in debug mode
@@ -919,31 +1188,40 @@ abstract class ModelLincko extends Model {
 		return true;
 	}
 
+	//True: will display with trashed
+	//False (default): will display only not deleted
+	public function enableTrash($trash=false){
+		$trash = (boolean) $trash;
+		$this->with_trash = $trash;
+	}
+
+	/*
+		Note: The following information are note built in this method, but are necessary to outup a element Read:
+			- _parent: array(0,1)
+			- _"dependencies"
+			- _perm
+			- history
+	*/
 	public function toJson($detail=true, $options = 0){
 		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
 		$app = self::getApp();
-		if($detail){
+		$this->setParentAttributes();
+		if($detail){ //It's used for word search on Front side (+/- prefix)
 			$temp = json_decode(parent::toJson($options));
 			foreach ($temp as $key => $value) {
 				$prefix = $this->getPrefix($key);
 				if(!empty($prefix)){
 					$temp_field = $temp->$key;
 					unset($temp->$key);
-					$temp->{$prefix.$key} = $temp_field;
+					$temp->{$prefix.$key} = (string)$temp_field;
 				}
 			}
 			$temp = json_encode($temp, $options);
 		} else {
 			$temp = parent::toJson($options);
 		}
-		//Convert DateTime to Tiestamp for JS use, it avoid location hour issue.
+		//Convert DateTime to Timestamp for JS use, it avoid location hour issue. NULL will stay NULL thanks to isset()
 		$temp = json_decode($temp);
-		foreach(self::$class_timestamp as $value) {
-			if(isset($temp->$value)){  $temp->$value = (new \DateTime($temp->$value))->getTimestamp(); }
-		}
-		foreach($this->model_timestamp as $value) {
-			if(isset($temp->$value)){  $temp->$value = (new \DateTime($temp->$value))->getTimestamp(); }
-		}
 		//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
 		$temp->new = 0;
 		if(isset($this->viewed_by)){
@@ -951,8 +1229,41 @@ abstract class ModelLincko extends Model {
 				$temp->new = 1;
 			}
 		}
+
+		foreach(self::$class_timestamp as $value) {
+			if(isset($temp->$value)){  $temp->$value = (int)(new \DateTime($temp->$value))->getTimestamp(); }
+		}
+		foreach($this->model_timestamp as $value) {
+			if(isset($temp->$value)){  $temp->$value = (int)(new \DateTime($temp->$value))->getTimestamp(); }
+		}
+		//Convert number to integer. NULL will stay NULL thanks to isset()
+		foreach(self::$class_integer as $value) {
+			if(isset($temp->$value)){  $temp->$value = (int)$temp->$value; }
+		}
+		foreach($this->model_integer as $value) {
+			if(isset($temp->$value)){  $temp->$value = (int)$temp->$value; }
+		}
+		//Convert boolean.
+		foreach(self::$class_boolean as $value) {
+			if(isset($temp->$value)){  $temp->$value = (boolean)$temp->$value; }
+		}
+		foreach($this->model_boolean as $value) {
+			if(isset($temp->$value)){  $temp->$value = (boolean)$temp->$value; }
+		}
+		
 		$temp = json_encode($temp, $options);
 		return $temp;
+	}
+
+	protected function formatAttributes($attribute, $value){
+		if(in_array($attribute, self::$class_timestamp) || in_array($attribute, $this->model_timestamp)){
+			$value = (int)(new \DateTime($value))->getTimestamp();
+		} else if(in_array($attribute, self::$class_integer) || in_array($attribute, $this->model_integer)){
+			$value = (int)$value;
+		} else if(in_array($attribute, self::$class_boolean) || in_array($attribute, $this->model_boolean)){
+			$value = (boolean)$value;
+		}
+		return $value;
 	}
 
 	protected function getPrefix($value){
@@ -966,8 +1277,12 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected
-	//public function getUserPivotValue($users_id, $column){
-	protected function getUserPivotValue($users_id, $column){
+	//public function getUserPivotValue($column, $users_id=false){
+	protected function getUserPivotValue($column, $users_id=false){
+		$app = self::getApp();
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
 		$column = strtolower($column);
 		if($users = $this->users()){
 			if($user = $users->find($users_id)){
@@ -990,23 +1305,23 @@ abstract class ModelLincko extends Model {
 
 	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
 		$app = self::getApp();
-		if($this->getCompanyGrant() == 0){
-			$this->checkRole(3);
+		$namespace = (new \ReflectionClass($this))->getNamespaceName();
+		if($this->getTable()=='users_x_roles_x' || $namespace!='bundles\lincko\api\models\data'){ //We exclude users_x_roles_x itself to avoid looping
+			return true;
+		}
+		if(self::getWorkspaceSuper() == 0 && !$this->new_model && !$this->checkPermissionAllow('edit')){ //If not a Super, and you don't have editing permission
+			$this->checkPermissionAllow(4);
 			return false;
 		}
 		//We don't record if the model doesn't exists in the database
 		if(!isset($this->id)){
 			return false;
 		}
-		//We don't set roles since it will always be access 1, but we allow deletion [toto] => still need to check how the deletion will work
-		if($this->getTable()=='roles'){
-			return false;
-		}
 		$column = strtolower($column);
 		$return = false;
 		$users = $this->users();
 		if($users === false || !method_exists($users,'updateExistingPivot') || !method_exists($users,'attach')){ return false; } //If the pivot doesn't exist, we exit
-		$pivot = $this->getUserPivotValue($users_id, $column);
+		$pivot = $this->getUserPivotValue($column, $users_id);
 		$value_old = $pivot[1];
 		if($pivot[0]){
 			if($value_old != $value){
@@ -1037,43 +1352,14 @@ abstract class ModelLincko extends Model {
 		return $return;
 	}
 
-	public function setComment($text){
-		$app = self::getApp();
-		if(!$this->checkAccess()){
-			$this::errorMsg('Access issue');
-			return false;
-		}
-		$comment = new Comments;
-		$comment->created_by = $app->lincko->data['uid'];
-		$comment->type_id = $this->id;
-		$comment->type = $this->getTable();
-		$comment->comment = $text;
-		$comment->save();
-		$this->touch();
-		return true;
-	}
-
-	//This method helps to avoid too many mysql by storing first all history info of a list of items
-	public static function getComments(array $id_list, $history_detail=false){
-		$model = new static();
-		$comments = new \stdClass;
-		$table_name = $model->getTable();
-		$records = Comments::whereType($table_name)->whereIn('type_id', $id_list)->get();
-		foreach ($records as $key => $value) {
-			if(!isset($comments->{$value->type_id})){ $comments->{$value->type_id} = new \stdClass; }
-			$comments->{$value->type_id}->{$value->id} = $value;
-		}
-		return $comments;		
-	}
-
 	public static function getRoleAllow(){
-		return array($this::$allow_single, $this::$allow_role);
+		return array(static::$allow_single, static::$allow_role);
 	}
 
 	//By preference, keep it protected
 	public function getRolePivotValue($users_id){
 	//protected function getRolePivotValue($users_id){
-		if($roles = $this->rolesUsers()){
+		if($roles = $this->rolesUsers()){ //This insure that the Role was not previously deleted
 			if($role = $roles->wherePivot('users_id', $users_id)->first()){
 				$roles_id = null;
 				$single = null;
@@ -1089,30 +1375,14 @@ abstract class ModelLincko extends Model {
 		return array(false, null, null);
 	}
 
-	public function getCompanyGrant($user_id=false){
-		$app = self::getApp();
-		if(!$user_id){
-			$user_id = $app->lincko->data['uid'];
-		}
-		if(is_integer(static::$permission_grant)){
-			return static::$permission_grant;
-		}
-		if(is_array(static::$permission_grant)){
-			if(isset(static::$permission_grant[$user_id])){
-				return static::$permission_grant[$user_id];
-			} else if($company = Companies::find($app->lincko->data['company_id'])){
-				return static::$permission_grant[$user_id] = $company->getCompanyGrant($user_id);
-			}
-		}
-		return 0;
-	}
-
 	//By preference, keep it protected, public is only for test
 	public function setRolePivotValue($users_id, $roles_id=null, $single=null, $history=true){
 		$app = self::getApp();
-		if($this->getCompanyGrant() == 0){
-			$this::errorMsg('No grant permission');
-			$this->checkRole(3);
+
+		//We don't allow non-administrator to modify user permission
+		if(self::getWorkspaceSuper() == 0){
+			$this::errorMsg('No super permission');
+			$this->checkPermissionAllow(4);
 			return false;
 		}
 		//We don't record if the model doesn't exists in the database
@@ -1132,19 +1402,6 @@ abstract class ModelLincko extends Model {
 		//It's useless to insert an element wich cannot be checked
 		if(!$this::$allow_role && !$this::$allow_single){
 			$this::errorMsg('Allow issue');
-			return false;
-		}
-
-		$company_id = $this->getCompany();
-		//We don't allow to modify role for non-workspace elements
-		if($company_id == '_'){
-			$this::errorMsg('Non-workspace issue');
-			return false;
-		}
-		
-		//We don't allow non-administrator to modify user permission
-		if($this->getCompanyGrant() == 0){
-			$this::errorMsg('Non-grant issue');
 			return false;
 		}
 

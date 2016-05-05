@@ -84,7 +84,7 @@ class Translation {
 				$result = false;
 				if($category===true){
 					$result = TranslationModel::on($bundle)->get(array('category', 'phrase', $lang));
-				} else if(is_int($category)){
+				} else if(is_integer($category)){
 					$result = TranslationModel::on($bundle)->where('category', '=', $category)->get(array('category', 'phrase', $lang));
 				}
 				if($result){

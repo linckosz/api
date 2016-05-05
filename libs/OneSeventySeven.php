@@ -46,7 +46,7 @@ class OneSeventySeven {
 
 	protected static function getCookies(){
 		//Assign only once all real cookies to memory
-		if(self::$first){
+		if(self::$first || count(self::$cookies<=0)){
 			$app = \Slim\Slim::getInstance();
 			if($one_seventy_seven = $app->getCookie('one_seventy_seven', false)){
 				$one_seventy_seven = json_decode($one_seventy_seven);
@@ -73,7 +73,11 @@ class OneSeventySeven {
 		}
 		self::getCookies();
 		unset(self::$cookies[$key]);
+		if(isset($_SESSION['one_seventy_seven'])){
+			unset($_SESSION['one_seventy_seven'][$key]);
+		}
 		self::$change = true;
+		self::$first = true;
 		return true;
 	}
 
@@ -90,10 +94,11 @@ class OneSeventySeven {
 		if(isset($_SESSION['one_seventy_seven'])){
 			foreach($_SESSION['one_seventy_seven'] as $key => $value) {
 				if(!in_array($key, $array_exception)){
-					unset($_SESSION['one_seventy_seven']);
+					unset($_SESSION['one_seventy_seven'][$key]);
 				}
 			}
 		}
+		self::$first = true;
 		self::$change = true;
 		return true;
 	}
@@ -109,6 +114,7 @@ class OneSeventySeven {
 			} else {
 				unset($_SESSION['one_seventy_seven']);
 				$app->deleteCookie('one_seventy_seven');
+				self::$first = true;
 			}
 		}
 		return true;

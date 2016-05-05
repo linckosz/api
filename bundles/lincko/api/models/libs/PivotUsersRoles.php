@@ -4,7 +4,7 @@
 namespace bundles\lincko\api\models\libs;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\data\Companies;
+use \bundles\lincko\api\models\data\Workspaces;
 
 class PivotUsersRoles extends ModelLincko {
 
@@ -19,42 +19,55 @@ class PivotUsersRoles extends ModelLincko {
 
 	protected static $permission_sheet = array(
 		0, //[R] owner
-		0, //[R] grant
-		0, //[R] max allow
+		0, //[R] max allow || super
 	);
 
-	//Authorized by default since it's not part of a company
-	protected static $permission_grant = 1;
+	protected static $parent_list = array('users', 'comments', 'chats', 'workspaces', 'projects', 'tasks', 'notes', 'files');
 	
 ////////////////////////////////////////////
 
-	//Add these functions to insure that nobody can make them disappear
-	public function delete(){}
-	public function restore(){}
+	//Many(comments) to One(Users)
+	public function users(){
+		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'users_id');
+	}
 
 ////////////////////////////////////////////
 
-	public function scopegetLinked($query){
-		$app = self::getApp();
-		return $query->where('users_id', $app->lincko->data['uid'])->where('access', 1);
+	//Add these functions to insure that nobody can make them disappear
+	public function delete(){ return false; }
+	public function restore(){ return false; }
+
+	//We do not record history
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+		return true;
 	}
 
-	public function scopesameCompany($query){
-		$app = self::getApp();
-		return $query->where('relation_type', 'companies')->where('relation_id', $app->lincko->data['company_id'])->where('access', 1);
+	//We do not attach
+	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
+		return true;
 	}
 
-	public static function getCompanyRoles(){
+////////////////////////////////////////////
+
+	public function scopesameWorkspace($query){
 		$app = self::getApp();
-		$comp_users = Companies::find($app->lincko->data['company_id'])->users()->get();
-		$users_list = array();
-		foreach ($comp_users as $comp_user) {
-			$users_list[] = $comp_user->getKey();
+		return $query->where('users_x_roles_x.parent_type', 'workspaces')->where('users_x_roles_x.parent_id', $app->lincko->data['workspace_id'])->where('access', 1);
+	}
+
+	public static function getWorkspaceRoles(){
+		$app = self::getApp();
+		if($workspace = Workspaces::find($app->lincko->data['workspace_id'])){
+			$work_users = $workspace->users()->get();
+			$users_list = array();
+			foreach ($work_users as $work_user) {
+				$users_list[] = $work_user->getKey();
+			}
+			if(!in_array($app->lincko->data['uid'], $users_list)){
+				$users_list[] = $app->lincko->data['uid'];
+			}
+			return self::whereIn('users_x_roles_x.users_id', $users_list)->get();
 		}
-		if(!in_array($app->lincko->data['uid'], $users_list)){
-			$users_list[] = $app->lincko->data['uid'];
-		}
-		return self::whereIn('users_id', $users_list)->get();
+		return null;
 	}
 
 }

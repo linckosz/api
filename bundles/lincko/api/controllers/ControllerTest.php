@@ -7,19 +7,24 @@ use \libs\Email;
 use \libs\Json;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
-use \bundles\lincko\api\models\libs\Comments;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
-use \bundles\lincko\api\models\data\Companies;
+use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Tasks;
 use \bundles\lincko\api\models\data\Roles;
+use \bundles\lincko\api\models\data\Comments;
+use \bundles\lincko\api\models\data\Notes;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
+use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
+
+//http://stackoverflow.com/questions/3684463/php-foreach-with-nested-array
+
 
 class ControllerTest extends Controller {
 
@@ -40,6 +45,7 @@ class ControllerTest extends Controller {
 		}
 		$msg = $app->trans->getBRUT('api', 8888, 0); //The application is reading.
 		Capsule::connection('data')->enableQueryLog();
+		$tp = null;
 
 		//\libs\Watch::php(Users::getUser()->toJson(),'$user',__FILE__);
 		
@@ -77,11 +83,11 @@ class ControllerTest extends Controller {
 		//$tp = Users::toto()->get();
 		//$tp = ChatsComments::getLinked()->get();
 		//$tp = Users::getUser()->users;
-		//$tp = Companies::getLinked()->where('updated_at', '>=', $lastvisit)->get();
+		//$tp = Workspaces::getLinked()->where('updated_at', '>=', $lastvisit)->get();
 
 		//$tp = Users::getLinked()->get();
 		//$tp = Tasks::getLinked()->get();
-		//$tp = Users::getUser()->companies;
+		//$tp = Users::getUser()->workspaces;
 		//$tp = Users::toto();
 		//$tp = Users::getUser()->users();
 		//$tp = Users::getUser()->usersInvert();
@@ -108,12 +114,12 @@ class ControllerTest extends Controller {
 		});
 */
 			
-		//$tp = Tasks::all()->first()->getCompany();
+		//$tp = Tasks::all()->first()->getWorkspaceID();
 		//\libs\Watch::php( $tp ,'$tp',__FILE__);
 
 		//$tp = Projects::with('userAccess')->where('users_x_projects.access', 1)->get();
 
-		//$tp = Projects::whereCompaniesId(0)->count();
+		//$tp = Projects::whereWorkspacesId(0)->count();
 		/*
 		$tp = Projects::with(['userAccess' => function ($query){
 			$query->where('access', 1);
@@ -146,8 +152,8 @@ class ControllerTest extends Controller {
 */
 
 		//$tp = Users::getUser()->self()->where('users_x_users.access', 1)->get();
-		//$tp = Companies::getLinked()->find(2)->users;
-		//$tp = Companies::getLinked()->find(2)->users()->where('users_x_companies.companies_id','<>','1')->get();
+		//$tp = Workspaces::getLinked()->find(2)->users;
+		//$tp = Workspaces::getLinked()->find(2)->users()->where('users_x_workspaces.workspaces_id','<>','1')->get();
 		//\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
 
 		//$tp = Tasks::find(7)->count();
@@ -169,7 +175,7 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(5);
 		$tp->description = "Un truc a faire";
 		$tp->title = 'OK DOKI '.rand();
-		$tp->companies_id = 0;
+		$tp->parent_id = 0;
 		$tp->save();
 		*/
 
@@ -177,7 +183,7 @@ class ControllerTest extends Controller {
 		$tp = new Tasks();
 		$tp->comment = "Un truc a faire";
 		$tp->title = 'OK DOKI '.rand();
-		$tp->projects_id = 1;
+		$tp->parent_id = 1;
 		$tp->save();
 		*/
 
@@ -245,7 +251,7 @@ class ControllerTest extends Controller {
 		//$tp = $tp->pivot->access;
 
 		//$tp = Projects::find(5)->$temp;
-		//$tp = Companies::find(1)->getUsersContacts();
+		//$tp = Workspaces::find(1)->getUsersContacts();
 
 		//$tp = Projects::find(5)->users()->find(2)->pivot;//->access;
 		//$tp = Users::getUser()->force_schema;
@@ -267,8 +273,8 @@ class ControllerTest extends Controller {
 		$tp = ChatsComments::getLinked()->get();
 		\libs\Watch::php( json_decode($tp->toJson()) ,'$ChatsComments', __FILE__, false, false, true);
 
-		$tp = Companies::getLinked()->get();
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$Companies', __FILE__, false, false, true);
+		$tp = Workspaces::getLinked()->get();
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Workspaces', __FILE__, false, false, true);
 
 		$tp = Projects::getLinked()->get();
 		\libs\Watch::php( json_decode($tp->toJson()) ,'$Projects', __FILE__, false, false, true);
@@ -329,7 +335,7 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(5);
 		//$tp->title = 'Un titre '.rand();
 		//$tp->description = 'Une description';
-		//$tp->companies_id = 0;
+		//$tp->parent_id = 0;
 		//$tp->save();
 
 		//$db = Capsule::connection('data');
@@ -379,27 +385,27 @@ class ControllerTest extends Controller {
 		//$tp = Users::find(2)->getHistory(true);
 		//$tp = Users::find(2)->getItems();
 		//$tp = $tp->projects()->first();
-		//$tp->projects()->whereId($this->projects_id)->whereAccess(1)->first()
+		//$tp->projects()->whereId($this->parent_id)->whereAccess(1)->first()
 		//\libs\Watch::php( $tp , $app->lincko->data['uid'], __FILE__, false, false, true);
 
-		//$tp = History::whereType('projects')->whereTypeId([8, 201])->get();
-		//$tp = History::whereType('projects')->whereIn('type_id', [8, 201])->get();
+		//$tp = History::whereParentType('projects')->whereParentId([8, 201])->get();
+		//$tp = History::whereParentType('projects')->whereIn('parent_id', [8, 201])->get();
 		//$tp = Projects::getHistories([8, 201, 180]);
 		//$tp = Projects::find(8)->getHistory();
 		//$tp = Tasks::getUsersContactsID([54, 77]);
-		//$tp = Companies::getUsersContactsID([0]);
+		//$tp = Workspaces::getUsersContactsID([0]);
 
 		//$tp = Tasks::whereIn('id', [77])->get()->toArray();
 
-		//$tp = Companies::find(2);
+		//$tp = Workspaces::find(2);
 		//$tp->setUserPivotValue(1, 'access', 1, true);
 
-		//$tp = Companies::getLinked()->get()->toArray();
+		//$tp = Workspaces::getLinked()->get()->toArray();
 
 		//$tp = Tasks::find(16);
 		//$tp = $tp->users()->whereId($app->lincko->data['uid'])->whereAccess(1)->get()->toArray();
-		//$tp = $tp->projects()->whereId($tp->projects_id)->whereAccess(1)->get()->toArray();
-		//$tp = $tp->projects()->whereId($tp->projects_id)->get()->toArray();
+		//$tp = $tp->projects()->whereId($tp->parent_id)->whereAccess(1)->get()->toArray();
+		//$tp = $tp->projects()->whereId($tp->parent_id)->get()->toArray();
 		//$tp = $tp->users()->whereAccess(1)->get()->toArray();
 
 		//$tp = $tp->getUsersContacts();
@@ -422,23 +428,23 @@ class ControllerTest extends Controller {
 		/*
 		$tp = Roles::
 			where('users_id', $app->lincko->data['uid'])
-			->orWhere('companies_id', $app->lincko->data['company_id'])
-			->orWhere('companies_id', null)
+			->orWhere('parent_id', $app->lincko->data['workspace_id'])
+			->orWhere('parent_id', null)
 			->get(['id'])->toArray();
 		*/
-		//$tp = Users::getUser()->roles()->where('users_x_companies.companies_id', $app->lincko->data['company_id'])->first();//->toArray();
+		//$tp = Users::getUser()->roles()->where('users_x_workspaces.workspaces_id', $app->lincko->data['workspace_id'])->first();//->toArray();
 		/*
 		$tp = Users::getUser()->whereHas('roles', function ($query){
 			$app = \Slim\Slim::getInstance();
-			$query->where('users_x_companies.companies_id', $app->lincko->data['company_id']);
+			$query->where('users_x_workspaces.workspaces_id', $app->lincko->data['workspace_id']);
 		})->get()->toArray();
 		*/
 		
 		//$tp = Users::getUser()->with('roles')->get()->toArray();
 
 		//$tp = Roles::getItems()->toArray();
-		//$tp = Roles::whereIn('companies_id', [$app->lincko->data['company_id'], null])->get()->toArray();
-		//$tp = Roles::where('companies_id', null)->get()->toArray();
+		//$tp = Roles::whereIn('parent_id', [$app->lincko->data['workspace_id'], null])->get()->toArray();
+		//$tp = Roles::where('parent_id', null)->get()->toArray();
 		
 		//$tp = Roles::with('users')->find(6);
 		//$tp = Roles::getUsersContactsID([1, 5, 6]);
@@ -451,11 +457,11 @@ class ControllerTest extends Controller {
 		//$tp = Users::find(1);
 		//$tp = $tp->toJson();
 
-		//$tp = Companies::with('projects.tasks')->find(3)->toJson();
+		//$tp = Workspaces::with('projects.tasks')->find(3)->toJson();
 
-		//$tp = Companies::find(1)->roles()->get();
+		//$tp = Workspaces::find(1)->roles()->get();
 
-		//$tp = Companies::find(1)->roles()->get()->toArray();
+		//$tp = Workspaces::find(1)->roles()->get()->toArray();
 		//$tp = Tasks::getDependencies([4]);
 		
 		//$tp = Projects::find(1)->roles()->get()->toArray();
@@ -464,8 +470,8 @@ class ControllerTest extends Controller {
 		\libs\Watch::php( $tp->toArray() ,'$tp', __FILE__, false, false, true);
 		$list_roles = array();
 		foreach ($tp as $value){
-			$type = $value->pivot->relation_type;
-			$id = $value->pivot->relation_id;
+			$type = $value->pivot->parent_type;
+			$id = $value->pivot->parent_id;
 			if( !isset($list_roles[$type]) ){ $list_roles[$type] = array(); }
 			if( !isset($list_roles[$type][$id]) ){ $list_roles[$type][$id] = array(); }
 			$list_roles[$type][$id] = array(
@@ -486,8 +492,8 @@ class ControllerTest extends Controller {
 		$roles_list = array();
 		//Get list of all role rules
 		foreach($roles as $value) {
-			if(!isset($roles_list[$value->relation_type])){ $roles_list[$value->relation_type] = array(); }
-			$roles_list[$value->relation_type][$value->relation_id] = array(
+			if(!isset($roles_list[$value->parent_type])){ $roles_list[$value->parent_type] = array(); }
+			$roles_list[$value->parent_type][$value->parent_id] = array(
 				'roles_id' => $value->roles_id,
 				'single' => $value->single,
 			);
@@ -506,16 +512,16 @@ class ControllerTest extends Controller {
 		$tp1 = Projects::find(5);
 		$tp = $tp1->getRolePivotValue($app->lincko->data['uid']);
 		\libs\Watch::php( $tp ,'$getRolePivotValue', __FILE__, false, false, true);
-		$tp = $tp1->checkRole(1);
+		$tp = $tp1->checkPermissionAllow(1);
 		*/
 		//$tp = Projects::find(5)->getRolePivotValue($app->lincko->data['uid']);
 
-		//$tp = Companies::find(17);
-		//$tp = $tp->getCompanyGrant();
+		//$tp = Workspaces::find(17);
+		//$tp = $tp->getWorkspaceSuper();
 
-		//$tp = Companies::find(1)->roles;
-		//$tp = Companies::with('rolesMany')->get();
-		//$tp = Companies::with('rolesPoly')->get();
+		//$tp = Workspaces::find(1)->roles;
+		//$tp = Workspaces::with('rolesMany')->get();
+		//$tp = Workspaces::with('rolesPoly')->get();
 
 		//$tp = Tasks::find(4);
 		//$tp = isset($tp->created_byy);
@@ -524,13 +530,13 @@ class ControllerTest extends Controller {
 		//$tp = (new Schema((new Tasks())->connexion))->getColumnListing(Tasks::getClass());
 		//$tp = Projects::find(5);
 
-		//$tp = Companies::find(3);
-		//$tp = Companies::find(3)->roles()->first()->perm_grant;
+		//$tp = Workspaces::find(3);
+		//$tp = Workspaces::find(3)->roles()->first()->perm_grant;
 		//$tp = chatsComments::find(7);
 		//$tp = Chats::find(1);
 
 		//$tp = $tp->setRolePivotValue(40, 3, 3);
-		//$tp = Companies::find(1);//->roles()->first()->perm_grant;
+		//$tp = Workspaces::find(1);//->roles()->first()->perm_grant;
 
 		//$tp = Projects::find(8)->users();
 		//Block
@@ -543,12 +549,59 @@ class ControllerTest extends Controller {
 		//$tp = $tp->getRolePivotValue(1);
 		//$tp = $tp->newExistingPivot();
 		//$tp->setRolePivotValue(40, 2);
-		//$tp->attach(40, array('users_id' => 40, 'roles_id' => 4, 'single' => null, 'relation_type' => 'tasks', 'relation_id' => 4));
+		//$tp->attach(40, array('users_id' => 40, 'roles_id' => 4, 'single' => null, 'parent_type' => 'tasks', 'parent_id' => 4));
 
-		$tp = Companies::getLinked()->get()->toArray();
+		//$tp = Projects::users()->get()->toArray();
+		//$tp = Projects::whereIn('id', [3, 4, 11])->with('users')->get();
+		//$tp = Projects::has('users')->get();
+		//$tp = Projects::with('users')->get();
+		
+		//$tp = Tasks::getDependencies([49, 92, 112, 113]);
+
+		/*
+		$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->with('users')->whereHas('users', function ($query){
+			$query->where('access', 1);
+		})->get(['id']);
+		*/
+
+		//$tp = Tasks::whereIn('tasks.id', [112])->with('users')->get();
+		//$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->with('users');
+		//$tp = Tasks::with('users')->get();
+		//$model = new Tasks();
+		//$tp = $model->users()->newPivot($model)->where('tasks_id', 113)->get();
+		//$tp = $model->users()->newPivot()->get();
+		//$tp = $model->users->pivot;
+		//$model->users()->find(112, ['tasks_id']);
+
+		//$model->users()->wherePivot('users_id', 113)->orWherePivot('users_id', 113)->get();
+
+
+
+		//$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->with('users')->getResults();
+		//$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->users()->getResults();
+		//$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->getQuery()->eagerLoadRelations();
+		//$tp = $model->getQuery()->eagerLoadRelations($model);
+		//$tp = Tasks::with('users')->getQuery()->get();
+		//$tp = $model->applyScopes();//->eagerLoadRelations($model);
+		//$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->has('users')->get();
+
+		//$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->whereHas('users')->get();
+
+		//$tp = Tasks::whereIn('tasks.id', [49, 92, 112, 113])->load('users');
+
+		//->withPivot('access', 'in_charge', 'approver');
+/*
+		$tp = Users::
+			with(array('perm' => function ($query) {
+				$query->whereIn('roles.id', [1, 7]);
+			}))
+			->get();
+*/	
 		//$tp = Chats::getComments(array(1));
-		$tp = Companies::getUsersContactsID(array(1, 22));
-
+		//$tp = Workspaces::getUsersContactsID(array(1, 22));
+		//$tp = Workspaces::find(2)->setForceSchema();
+		//$list = array( 'workspaces' => array($app->lincko->data['workspace_id'], 2), );
+		//$tp = Users::getUsers($list)->get();
 		/*
 		$user = Users::find($app->lincko->data['uid']);
 		$user = Users::find(48);
@@ -557,22 +610,70 @@ class ControllerTest extends Controller {
 		$tp = json_decode($user->toJson());
 		\libs\Watch::php( $tp , '$toJson', __FILE__, false, false, true);
 		*/
+		
+		//$tp = PivotUsersRoles::whereIn('users_x_roles_x.id', [1])->with('roles')->get();
+		//$tp =           Tasks::whereIn(         'tasks.id', [49])->with('users')->get();
 
-		$tp = new \stdClass;
-		$tp->a = new \stdClass;
-		$tp->b = new \stdClass;
-		$obj = $tp->b;
+		//$tp = Users::find($app->lincko->data['uid'])->perm;
+		//$tp = Users::with('perm')->find($app->lincko->data['uid'])->get();
 
-		$obj->c = new \stdClass;
-		$tp->b->c->d = true;
+		//$tp = Tasks::getItems()->get()->toArray();
+		//$tp = PivotUsersRoles::getLinked()->get()->toArray();
 
-		\libs\Watch::php( $tp , '$tp', __FILE__, false, false, true);
-		\libs\Watch::php( $obj , '$obj', __FILE__, false, false, true);
+		//$tp = Chats::find(0)->checkAccess();
+		//$tp = (new Chats)->checkAccess();
+		//$tp = Chats::getLinked()->get()->toArray();
 
+		
+		//$this->crud_get();
+
+		//$tp = count(array('aaa'));
+		
+		
+		$theuser = Users::find($app->lincko->data['uid']);
+		$theuser::setDebugMode(true);
+		//$tp = new Comments;
+		//$tp = Projects::find(13);
+		
+		
+		//$tp->delete();
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//$tp->comment='test '.time();
+		//$tp = $tp->rolesUsers();
+		//$tp->getParent();
+		//\libs\Watch::php( $tp->checkAccess(true), 'checkAccess '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->getWorkspaceSuper(), 'getWorkspaceSuper '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(1), 'create '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(2), 'edit '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(3), 'delete '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, 'new '.$tp->getTable(), __FILE__, false, false, true);
+
+		//\libs\Watch::php( $tp->checkAccess(true, false), 'checkAccess '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->getWorkspaceSuper(), 'getWorkspaceSuper '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(3), 'delete '.$tp->getTable(), __FILE__, false, false, true);
+
+		//$tp = Users::getUser()->workspaces;
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//$tp = Users::find(3)->workspaces()->first()->pivot;
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//----------------------------------------
+
+		$tp = new Chats;
+		$tp->parent_type = 'projects';
+		$tp->parent_id = 13;
+		$tp->title = 'ok';
+		//$tp->enableTrash(true);
+		//$tp = $tp->checkPermissionAllow('create');
+		$tp = $tp->getRole();
+		//$tp = $tp->getLinked()->whereId(13)->get();
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//$aaa = $tp->checkPermissionAllow('delete');
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+
 
 		
 
@@ -583,7 +684,7 @@ class ControllerTest extends Controller {
 		$tp = new Projects();
 		$tp->description = "Something to following";
 		$tp->title = 'toto '.rand();
-		$tp->companies_id = $app->lincko->data['company_id'];
+		$tp->parent_id = $app->lincko->data['workspace_id'];
 		$tp->save();
 		*/
 		
@@ -614,7 +715,7 @@ class ControllerTest extends Controller {
 		$tp = new Tasks();
 		$tp->comment = "Something to do quickly";
 		$tp->title = 'A task name '.rand();
-		$tp->projects_id = 5;
+		$tp->parent_id = 5;
 		$tp->save();
 		*/
 
@@ -623,17 +724,17 @@ class ControllerTest extends Controller {
 		$tp = new Tasks();
 		$tp->comment = "Something to do quickly";
 		//$tp->title = 'B';
-		$tp->projects_id = 5;
+		$tp->parent_id = 5;
 		$tp->save();
 		*/
 
 		//Move a task to another project
 		/*
 		$tp = Tasks::find(4);
-		if($tp->projects_id==8){
-			$tp->projects_id = 5;
+		if($tp->parent_id==8){
+			$tp->parent_id = 5;
 		} else {
-			$tp->projects_id = 8;
+			$tp->parent_id = 8;
 		}
 		$tp->save();
 		*/
@@ -676,6 +777,118 @@ class ControllerTest extends Controller {
 		}
 	}
 
+	public function crud_get(){
+		$app = $this->app;
+		$tp = null;
+
+		function resultTest($tp){
+			//return $tp->checkAccess(false); //Test Access
+			//return $tp->checkPermissionAllow(0); //Test Read
+			//return $tp->checkPermissionAllow(1); //Test Create
+			//return $tp->checkPermissionAllow(2); //Test Update
+			//return $tp->checkPermissionAllow(3); //Test Delete
+			return $tp->checkPermissionAllow(4); //Test Error
+		}
+
+		$theuser = Users::find($app->lincko->data['uid']);
+		$theuser::setDebugMode(true);
+
+		\libs\Watch::php( $app->lincko->data['workspace'], 'workspace', __FILE__, false, false, true);
+		\libs\Watch::php( $app->lincko->data['workspace_id'], 'workspace_id', __FILE__, false, false, true);
+
+		$tp = new Users;
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Users::find(3);
+		\libs\Watch::php( resultTest($tp), 'Self '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Users::find(5);
+		\libs\Watch::php( resultTest($tp), 'Direct '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Users::find(6);
+		\libs\Watch::php( resultTest($tp), 'Hidden '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		$tp = new Roles;
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Roles::find(2);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Roles::find(4);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Roles::find(7);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		$tp = new Workspaces;
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Workspaces::find(1);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Workspaces::find(2);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		$tp = new Projects;
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Projects::find(3);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Projects::find(13);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Projects::find(59);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Projects::find(61);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		$tp = new Tasks;
+		$tp->parent_id=3;
+		$tp->setParentAttributes();
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Tasks::find(3);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Tasks::find(6);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Tasks::find(15);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Tasks::find(18);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		$tp = new Notes;
+		$tp->parent_id=3;
+		$tp->setParentAttributes();
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Notes::find(13);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Notes::find(16);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Notes::find(19);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Notes::find(22);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		$tp = new Chats;
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Chats::find(28);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Chats::find(42);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Chats::find(13);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Chats::find(24);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Chats::find(25);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		$tp = new Comments;
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		$tp = Comments::find(87);
+		\libs\Watch::php( resultTest($tp), 'Users5 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Comments::find(6);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Comments::find(28);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Comments::find(1);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Comments::find(7);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		$tp = Comments::find(90);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+
+		return true;
+	}
+
 	// Test role rules
 	// Must log as an adminsitrator in perso workspace (invite at least a manager and a viewer)
 	public function role_get(){
@@ -685,8 +898,8 @@ class ControllerTest extends Controller {
 		$theuser::setDebugMode(true);
 
 		$models = new \stdClass;
-		$models->companies = Companies::whereId($app->lincko->data['company_id'])->where('created_by', $app->lincko->data['uid'])->first();
-		$models->roles = (new Roles)->getLinked()->where('shared', 0)->where('created_by', $app->lincko->data['uid'])->where('companies_id', $app->lincko->data['company_id'])->first();
+		$models->workspaces = Workspaces::whereId($app->lincko->data['workspace_id'])->where('created_by', $app->lincko->data['uid'])->first();
+		$models->roles = (new Roles)->getLinked()->where('shared', 0)->where('created_by', $app->lincko->data['uid'])->where('parent_id', $app->lincko->data['workspace_id'])->first();
 		$models->chats = $theuser->chats()->where('created_by', $app->lincko->data['uid'])->first();
 		$models->comments = $models->chats->comments()->where('created_by', $app->lincko->data['uid'])->first();
 		$models->projects = $theuser->projects()->where('created_by', $app->lincko->data['uid'])->first();
@@ -699,7 +912,7 @@ class ControllerTest extends Controller {
 			}
 		}
 
-		$pivots = (new PivotUsersRoles)->sameCompany()->get();
+		$pivots = (new PivotUsersRoles)->sameWorkspace()->get();
 
 		$users = array();
 		foreach ($pivots as $pivot) {
@@ -710,25 +923,25 @@ class ControllerTest extends Controller {
 				foreach ($models as $model) {
 					if($model){
 						$model->setUserPivotValue($pivot->users_id, 'access', 1, false);
-						if($model->getTable() != 'companies'){
+						if($model->getTable() != 'workspaces'){
 							$model->setRolePivotValue($pivot->users_id, null, null, false);
 						}
 					}
 				}
-				//Role initialization for companies
+				//Role initialization for Workspaces
 				if($pivot->users_id != $app->lincko->data['uid']){
 					//Be care full manager must be 2, and viewer must be 3
 					$role_id = 2;
 					if(Users::find($pivot->users_id)->username == 'viewer'){ $role_id = 3; }
-					$models->companies->setRolePivotValue($pivot->users_id, $role_id, null, false);
+					$models->workspaces->setRolePivotValue($pivot->users_id, $role_id, null, false);
 				}
 			}
 		}
 
 		//Set the outsider user, he should be rejected by everything
-		$users[0] = Users::whereHas('companies', function ($query){
+		$users[0] = Users::whereHas('workspaces', function ($query){
 			$app = \Slim\Slim::getInstance();
-			$query->where('companies_id', $app->lincko->data['company_id'])->where('access', 1);
+			$query->where('parent_id', $app->lincko->data['workspace_id'])->where('access', 1);
 		}, '<', 1)->first()->id;
 		
 
@@ -739,51 +952,51 @@ class ControllerTest extends Controller {
 		[
 			0 :owner	=> additional feature if you are the owner
 			1 :outsider (don't share anything)
-			2 :grant (share same company, same chat room)
-			2 :max allow (share same company, same chat room)
+			2 :super (share same workspace, same chat room)
+			2 :max allow (share same workspace, same chat room)
 		]
 		*/
 		$accept = array(
-			'companies' => array( //[ read , create , edit , delete ]
+			'workspaces' => array( //[ read , create , edit , delete ]
 				0	=> array( 1 , 0 , 0 , 0 ), //owner
 				1	=> array( 0 , 1 , 0 , 0 ), //outsider
-				2	=> array( 1 , 1 , 1 , 0 ), //grant
+				2	=> array( 1 , 1 , 1 , 0 ), //super
 				3	=> array( 1 , 1 , 0 , 0 ), //max allow
 			),
 			'roles' => array( //[ read , create , edit , delete ]
 				0	=> array( 1 , 0 , 0 , 0 ), //owner
 				1	=> array( 0 , 0 , 0 , 0 ), //outsider
-				2	=> array( 1 , 1 , 1 , 1 ), //grant
+				2	=> array( 1 , 1 , 1 , 1 ), //v
 				3	=> array( 1 , 0 , 0 , 0 ), //max allow
 			),
 			'chats' => array( //[ read , create , edit , delete ]
 				0	=> array( 1 , 0 , 1 , 0 ), //owner
 				1	=> array( 0 , 1 , 0 , 0 ), //outsider
-				2	=> array( 1 , 1 , 0 , 0 ), //grant
+				2	=> array( 1 , 1 , 0 , 0 ), //super
 				3	=> array( 1 , 1 , 0 , 0 ), //max allow
 			),
 			'projects' => array( //[ read , create , edit , delete ]
 				0	=> array( 1 , 0 , 0 , 0 ), //owner
 				1	=> array( 0 , 0 , 0 , 0 ), //outsider
-				2	=> array( 1 , 1 , 1 , 1 ), //grant
+				2	=> array( 1 , 1 , 1 , 1 ), //super
 				3	=> array( 1 , 0 , 0 , 0 ), //max allow
 			),
 			'tasks' => array( //[ read , create , edit , delete ]
 				0	=> array( 1 , 0 , 1 , 0 ), //owner
 				1	=> array( 0 , 0 , 0 , 0 ), //outsider
-				2	=> array( 1 , 1 , 1 , 1 ), //grant
+				2	=> array( 1 , 1 , 1 , 1 ), //super
 				3	=> array( 1 , 1 , 1 , 0 ), //max allow
 			),
 			'comments' => array( //[ read , create , edit , delete ]
 				0	=> array( 1 , 0 , 0 , 0 ), //owner
 				1	=> array( 0 , 0 , 0 , 0 ), //outsider
-				2	=> array( 1 , 1 , 1 , 0 ), //grant
+				2	=> array( 1 , 1 , 1 , 0 ), //super
 				3	=> array( 1 , 1 , 0 , 0 ), //max allow
 			),
 			'users' => array( //[ read , create , edit , delete ]
 				0	=> array( 1 , 0 , 1 , 0 ), //owner
 				1	=> array( 0 , 1 , 0 , 0 ), //outsider
-				2	=> array( 1 , 1 , 0 , 0 ), //grant
+				2	=> array( 1 , 1 , 0 , 0 ), //super
 				3	=> array( 1 , 1 , 0 , 0 ), //max allow
 			),
 		);
@@ -797,8 +1010,8 @@ class ControllerTest extends Controller {
 
 		\libs\Watch::php( '!!!!!!!!!! START !!!!!!!!!!' , 'Permissions', __FILE__, false, false, true);
 
-		foreach ($users as $role_id => $user_id) {
-			$app->lincko->data['uid'] = $user_id;
+		foreach ($users as $role_id => $users_id) {
+			$app->lincko->data['uid'] = $users_id;
 
 			foreach ($accept as $key => $table) {	
 				if(!isset($models->{$key})){
@@ -807,10 +1020,10 @@ class ControllerTest extends Controller {
 				$model = $models->{$key};
 				$new_model = $model->newinstance();
 
-				if($key == 'companies'){
-					$new_model->name = $model->name = '_Company '.rand();
-					$model->allowCompanyCreation();
-					$new_model->allowCompanyCreation();
+				if($key == 'workspaces'){
+					$new_model->name = $model->name = '_Workspace '.rand();
+					$model->allowWorkspaceCreation();
+					$new_model->allowWorkspaceCreation();
 				} else if($key == 'roles'){
 					$new_model->name = $model->name = '_Role '.rand();
 				}  else if($key == 'chats'){
@@ -818,11 +1031,11 @@ class ControllerTest extends Controller {
 				} else if($key == 'projects'){
 					$new_model->title = $model->title = '_Project '.rand();
 				} else if($key == 'tasks'){
-					$new_model->projects_id = $model->projects_id;
+					$new_model->parent_id = $model->parent_id;
 					$new_model->title = $model->title = '_Task '.rand();
 				} else if($key == 'comments'){
-					$new_model->type = 'chats';
-					$new_model->type_id = $model->chats->getKey();
+					$new_model->parent_type = 'chats';
+					$new_model->parent_id = $model->chats->getKey();
 					$new_model->comment = $model->comment = '_Comment '.rand();
 				}
 
@@ -834,8 +1047,8 @@ class ControllerTest extends Controller {
 				if( $a=intval($model->checkAccess()) xor $b=intval($accept[ $key ][ $role_id ][ 0 ]) ){
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($model->checkAccess());
-						$d = intval($model->checkRole('read'));
-						\libs\Watch::php( $a.'...BUG READ...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->access() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+						$d = intval($model->checkPermissionAllow('read'));
+						\libs\Watch::php( $a.'...BUG READ...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->access() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
 					}
 				}
 
@@ -843,8 +1056,8 @@ class ControllerTest extends Controller {
 				if( $a=intval($model->save()) xor $b=intval($accept[ $key ][ $role_id ][ 1 ]) ){
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($model->checkAccess());
-						$d = intval($model->checkRole('edit'));
-						\libs\Watch::php( $a.'...BUG EDIT...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->edit() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+						$d = intval($model->checkPermissionAllow('edit'));
+						\libs\Watch::php( $a.'...BUG EDIT...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->edit() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
 					}
 				}
 
@@ -852,8 +1065,8 @@ class ControllerTest extends Controller {
 				if( $a=intval($model->delete()) xor $b=intval($accept[ $key ][ $role_id ][ 2 ]) ){
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($model->checkAccess());
-						$d = intval($model->checkRole('delete'));
-						\libs\Watch::php( $a.'...BUG DELETE...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->delete() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+						$d = intval($model->checkPermissionAllow('delete'));
+						\libs\Watch::php( $a.'...BUG DELETE...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->delete() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
 					}
 				}
 
@@ -861,8 +1074,8 @@ class ControllerTest extends Controller {
 				if( $a=intval($new_model->save()) xor $b=intval($accept[ $key ][ $role_id ][ 3 ]) ){
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($new_model->checkAccess());
-						$d = intval($new_model->checkRole('edit'));
-						\libs\Watch::php( $a.'...BUG CREATION...'.$b.': '.$c.'|'.$d , '[*] '.$new_model->getTable().'->create() => User: '.$user_id.' | role: '.$role_id, __FILE__, false, false, true);
+						$d = intval($new_model->checkPermissionAllow('edit'));
+						\libs\Watch::php( $a.'...BUG CREATION...'.$b.': '.$c.'|'.$d , '[*] '.$new_model->getTable().'->create() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
 					}
 				}
 

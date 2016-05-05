@@ -24,17 +24,43 @@ class History extends ModelLincko {
 
 	protected static $permission_sheet = array(
 		0, //[R] owner
-		1, //[RC] grant
-		1, //[RC] max allow
+		1, //[RC] max allow || super
 	);
-	
-	//Authorized by default since it's not part of a company
-	protected static $permission_grant = 1;
+
+	protected static $parent_list = array('users', 'comments', 'chats', 'workspaces', 'projects', 'tasks', 'notes', 'files');
 	
 ////////////////////////////////////////////
 
 	//Add these functions to insure that nobody can make them disappear
-	public function delete(){}
-	public function restore(){}
+	public function delete(){ return false; }
+	public function restore(){ return false; }
+
+	//We do not record history
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+		return true;
+	}
+
+	//We do not attach
+	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
+		return true;
+	}
+
+	public function save(array $options = array()){
+		//Do accept only new history, disallow modification
+		if(isset($this->id)){
+			return false;
+		}
+		$return = parent::save($options);
+		return $return;
+	}
+
+	public function checkPermissionAllow($level, $msg=false){
+		$this->checkUser();
+		$level = $this->formatLevel($level);
+		if($level==1){ //Creation
+			return true;
+		}
+		return true;
+	}
 
 }

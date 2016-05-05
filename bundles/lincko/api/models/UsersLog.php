@@ -30,21 +30,8 @@ class UsersLog extends Model {
 ////////////////////////////////////////////
 
 	//Add these functions to insure that nobody can make them disappear
-	public function delete(){}
-	public function restore(){}
-
-	//Do not call noValidMessage because it's not a child of ModleLincko, but Model directly
-	public static function validPassword($data){
-		$return = preg_match("/^[\w\d]{6,60}$/u", $data);
-		return $return;
-	}
-
-	public static function isValid($form){
-		return
-			     isset($form->password) && self::validPassword($form->password)
-			;
-
-	}
+	public function delete(){ return false; }
+	public function restore(){ return false; }
 
 ////////////////////////////////////////////
 
@@ -87,7 +74,6 @@ class UsersLog extends Model {
 		}
 
 		if($authorize){
-
 			$authorization = new Authorization;
 			$sha1 = sha1(uniqid());
 			while(!is_null(Authorization::where('public_key', '=', $sha1)->first())){
@@ -99,7 +85,7 @@ class UsersLog extends Model {
 			$private_key = $authorization->private_key;
 			$authorization->user_id = $this->id;
 			$authorization->fingerprint = $fingerprint;
-			if($authorization->save()){
+			if(!empty($this->id) && $authorization->save()){
 				return array(
 					'public_key' => $public_key,
 					'private_key' => $private_key,

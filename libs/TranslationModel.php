@@ -13,8 +13,8 @@ class TranslationModel extends Model {
 	/////////////////////////////////////
 
 	//Add these functions to insure that nobody can make them disappear
-	public function delete(){}
-	public function restore(){}
+	public function delete(){ return false; }
+	public function restore(){ return false; }
 
 	//"READ ONLY" mode
 	//Overwrite the basic function save() to not update or add anymore line

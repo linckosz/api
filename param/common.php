@@ -144,14 +144,15 @@ $app->lincko->translation = array(
 $app->lincko->data = array(
 	'domain' => $app->lincko->domain,
 	'title' => $app->lincko->title,
-	'company' => '',
+	'workspace' => '',
 );
 
 ////////////////////////////////////
 // BUNDLE lincko/api
 ////////////////////////////////////
 
-$app->lincko->data['company_id'] = 0; //Share workspace by default
+$app->lincko->data['workspace_id'] = 0; //Share workspace by default
+$app->lincko->data['create_user'] = false; //True if we want to be able to authorize the user creation
 
 $app->lincko->data['lastvisit'] = time()-1; //Less one second to avoid missing timestamp at the same time
 

@@ -102,4 +102,15 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function reset_init_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 15); //the user database has been refreshed.
+
+		$data = new Data();
+		$data->setResetInit();
+
+		$app->render(200, array('msg' => array('msg' => $msg,)));
+		return true;
+	}
+
 }

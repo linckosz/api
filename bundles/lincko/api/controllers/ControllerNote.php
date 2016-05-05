@@ -1,50 +1,39 @@
 <?php
-// Category 9
+// Category 10
 
 namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
-use \bundles\lincko\api\models\data\Tasks;
+use \bundles\lincko\api\models\data\Notes;
 use \bundles\lincko\api\models\libs\Data;
 
 /*
 
-TASKS
+NOTES
 
-	task/read => post
+	note/read => post
 		+id [integer] (the ID of the element)
 
-	task/create => post
+	note/create => post
 		+parent_id [integer] (the ID of the parent project)
-		+title [string]
-		-comment [string]
-		-start [interger | timestamp] (the beginning of the task)
-		-duration [interger | seconds] (the duration of the task)
-		-fixed [boolean] (If the start date move along with a dependant task)
-		-status [integer] (0:pause / 1:done / 2:ongoing / 3:canceled) => this might be redefined later according to spaces
-		-progress [integer] (task progression, 0-100)
+		-title [string]
+		+comment [string]
 
-
-	task/update => post
+	note/update => post
 		+id [integer]
 		-parent_id [integer]
 		-title [string]
 		-comment [string]
-		-start [interger | timestamp]
-		-duration [interger | seconds]
-		-fixed [boolean]
-		-status [integer]
-		-progress [integer]
 
-	task/delete => post
+	note/delete => post
 		+id [integer]
 
-	task/restore => post
+	note/restore => post
 		+id [integer]
 
 */
 
-class ControllerTask extends Controller {
+class ControllerNote extends Controller {
 
 	protected $app = NULL;
 	protected $data = NULL;
@@ -79,21 +68,6 @@ class ControllerTask extends Controller {
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
-		if(isset($form->start) && is_numeric($form->start)){
-			$form->start = (new \DateTime('@'.$form->start))->format('Y-m-d H:i:s');
-		}
-		if(isset($form->duration) && is_numeric($form->duration)){
-			$form->duration = (int) $form->duration;
-		}
-		if(isset($form->fixed)){
-			$form->fixed = (int) boolval($form->fixed);
-		}
-		if(isset($form->status) && is_numeric($form->status)){
-			$form->status = (int) $form->status;
-		}
-		if(isset($form->progress) && is_numeric($form->progress)){
-			$form->progress = (int) $form->progress;
-		}
 		return $this->form = $form;
 	}
 
@@ -101,48 +75,28 @@ class ControllerTask extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 9, 1)."\n"; //Task creation failed.
+		$failmsg = $app->trans->getBRUT('api', 10, 1)."\n"; //Note creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->parent_id) || !Tasks::validNumeric($form->parent_id)){ //Required
+		if(!isset($form->parent_id) || !Notes::validNumeric($form->parent_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
-		else if(!isset($form->title) || !Tasks::validTitle($form->title)){ //Required
+		else if(isset($form->title) && !Notes::validTitle($form->title, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
 			$errfield = 'title';
 		}
-		else if(isset($form->comment) && !Tasks::validText($form->comment, true)){ //Optional
+		else if(!isset($form->comment) || !Notes::validText($form->comment)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
-		else if(isset($form->start) && !Tasks::validDate($form->start, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 22); //We could not validate the date format: - Timestamp
-			$errfield = 'start';
-		}
-		else if(isset($form->duration) && !Tasks::validNumeric($form->duration, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 23); //We could not validate the duration format: - Seconds
-			$errfield = 'duration';
-		}
-		else if(isset($form->fixed) && !Tasks::validBoolean($form->fixed, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
-			$errfield = 'fixed';
-		}
-		else if(isset($form->status) && !Tasks::validNumeric($form->status, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
-			$errfield = 'status';
-		}
-		else if(isset($form->progress) && !Tasks::validProgress($form->progress, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 26); //We could not validate the format: - Pourcentage
-			$errfield = 'progress';
-		}
-		else if($model = new Tasks()){
+		else if($model = new Notes()){
 			$model->parent_id = $form->parent_id;
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			$model->comment = $form->comment;
 			if($model->save()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 9, 2)); //Task created.
+				$msg = array('msg' => $app->trans->getBRUT('api', 10, 2)); //Note created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
 				return true;
@@ -157,19 +111,19 @@ class ControllerTask extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 9, 3)."\n"; //Task access failed.
+		$failmsg = $app->trans->getBRUT('api', 10, 3)."\n"; //Note access failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
+		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		}
-		else if($model = Tasks::find($form->id)){
+		else if($model = Notes::find($form->id)){
 			if($model->checkAccess(false)){
 				$uid = $app->lincko->data['uid'];
 				$key = $model->getTable();
-				$msg = $app->trans->getBRUT('api', 9, 4); //Task accessed.
+				$msg = $app->trans->getBRUT('api', 10, 4); //Note accessed.
 				$data = new Data();
 				$force_partial = new \stdClass;
 				$force_partial->$uid = new \stdClass;
@@ -191,52 +145,32 @@ class ControllerTask extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 9, 5)."\n"; //Task update failed.
+		$failmsg = $app->trans->getBRUT('api', 10, 5)."\n"; //Note update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
+		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		}
-		else if(isset($form->parent_id) && !Tasks::validNumeric($form->parent_id, true)){ //Optional
+		else if(isset($form->parent_id) && !Notes::validNumeric($form->parent_id, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
-		else if(isset($form->title) && !Tasks::validTitle($form->title, true)){ //Optional
+		else if(isset($form->title) && !Notes::validTitle($form->title, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
 			$errfield = 'title';
 		}
-		else if(isset($form->comment) && !Tasks::validText($form->comment, true)){ //Optional
+		else if(isset($form->comment) && !Notes::validText($form->comment, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
-		else if(isset($form->start) && !Tasks::validDate($form->start, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 22); //We could not validate the date format: - Timestamp
-			$errfield = 'start';
-		}
-		else if(isset($form->duration) && !Tasks::validNumeric($form->duration, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 23); //We could not validate the duration format: - Seconds
-			$errfield = 'duration';
-		}
-		else if(isset($form->fixed) && !Tasks::validBoolean($form->fixed, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
-			$errfield = 'fixed';
-		}
-		else if(isset($form->status) && !Tasks::validNumeric($form->status, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
-			$errfield = 'status';
-		}
-		else if(isset($form->progress) && !Tasks::validProgress($form->progress, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 26); //We could not validate the format: - Pourcentage
-			$errfield = 'progress';
-		}
-		else if($model = Tasks::find($form->id)){
+		else if($model = Notes::find($form->id)){
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 			if($model->save()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 9, 6)); //Task updated.
+				$msg = array('msg' => $app->trans->getBRUT('api', 10, 6)); //Note updated.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 200);
 				return true;
@@ -251,28 +185,28 @@ class ControllerTask extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 9, 7)."\n"; //Task deletion failed.
+		$failmsg = $app->trans->getBRUT('api', 10, 7)."\n"; //Note deletion failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
+		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		}
 
-		if($model = Tasks::find($form->id)){
+		if($model = Notes::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 9, 8); //Task deleted.
+				$msg = $app->trans->getBRUT('api', 10, 8); //Note deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
 			}
-		} else if($model = Tasks::withTrashed()->find($form->id)){
+		} else if($model = Notes::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
 			$access = $model->checkAccess();
 			$model->enableTrash(false);
 			if($access){
-				$msg = $app->trans->getBRUT('api', 9, 9); //Task already deleted.
+				$msg = $app->trans->getBRUT('api', 10, 9); //Note already deleted.
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg)));
 			}
 		}
@@ -285,28 +219,28 @@ class ControllerTask extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		$failmsg = $app->trans->getBRUT('api', 9, 20)."\n"; //Task restoration failed.
+		$failmsg = $app->trans->getBRUT('api', 10, 20)."\n"; //Note restoration failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
+		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		}
 
-		if($model = Tasks::onlyTrashed()->find($form->id)){
+		if($model = Notes::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 9, 21); //Task restored.
+				$msg = $app->trans->getBRUT('api', 10, 21); //Note restored.
 				$data = new Data();
 				$schema = $data->getSchema();
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
 			}
-		} else if($model = Tasks::find($form->id)){
+		} else if($model = Notes::find($form->id)){
 			$model->enableTrash(true);
 			$access = $model->checkAccess();
 			$model->enableTrash(false);
 			if($access){
-				$msg = $app->trans->getBRUT('api', 9, 22); //Task already present.
+				$msg = $app->trans->getBRUT('api', 10, 22); //Note already present.
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg)));
 			}
 		}
