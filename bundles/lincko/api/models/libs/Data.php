@@ -220,10 +220,29 @@ class Data {
 								$list[$value_bis] = $tree_id[$value_bis];
 							}
 						}
-						$result->$key = $class::getItems($list, true);
 						$tree_id[$key] = array();
-						foreach ($result->$key as $value_bis) {
-							$tree_id[$key][$value_bis->id] = $value_bis->id;
+						$result_bis = false;
+						$nested = true;
+						while($nested){ //$nested is used for element that are linked to each others
+							$nested = false;
+							$result_bis = $class::getItems($list, true);
+							if(isset($result->$key)){
+								$result->$key = $result->$key->merge($result_bis);
+							} else {
+								$result->$key = $result_bis;
+							}
+							$list = array();
+							$list[$key] = array();
+							foreach ($result_bis as $value_bis) {
+								if(!isset($tree_id[$key][$value_bis->id])){ //Insure to not record twice the same ID to not enter inside an infinite loop
+									$list[$key][$value_bis->id] = $value_bis->id;
+								}
+								$tree_id[$key][$value_bis->id] = $value_bis->id;
+							}
+							unset($result_bis);
+							if(!empty($list[$key]) && $class::isParent($key)){
+								$nested = true;
+							}
 						}
 					}
 					unset($tree_tp[$key]);

@@ -336,12 +336,12 @@ abstract class ModelLincko extends Model {
 		$parentType = $this::getParentList();
 		if(count($parentType)>0){
 			if(is_string($parentType)){
-				if(method_exists(get_called_class(), $parentType) && $parentType!=$this->getTable()){
+				if(method_exists(get_called_class(), $parentType)){
 					$arr[] = $parentType;
 				}
 			} else if(is_array($parentType)){
 				foreach ($parentType as $type) {
-					if(method_exists(get_called_class(), $type) && $type!=$this->getTable()){
+					if(method_exists(get_called_class(), $type)){
 						$arr[] = $type;
 					}
 				}
@@ -357,6 +357,16 @@ abstract class ModelLincko extends Model {
 			$query = $query->withTrashed();
 		}
 		return $query->getItems($list);
+	}
+
+	public static function isParent($type){
+		$parentType = self::getParentList();
+		if(is_string($parentType) && $type==$parentType){
+			return true;
+		} else if(is_array($parentType) && in_array($type, $parentType)){
+			return true;
+		}
+		return false;
 	}
 
 	public static function getColumns(){

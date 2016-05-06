@@ -658,18 +658,13 @@ class ControllerTest extends Controller {
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//----------------------------------------
 
-		$tp = new Chats;
-		$tp->parent_type = 'projects';
-		$tp->parent_id = 13;
-		$tp->title = 'ok';
-		//$tp->enableTrash(true);
-		//$tp = $tp->checkPermissionAllow('create');
-		$tp = $tp->getRole();
-		//$tp = $tp->getLinked()->whereId(13)->get();
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		$tp = new Comments;
+		$tp = $tp->getLinked()->get()->toArray();
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//$aaa = $tp->checkPermissionAllow('delete');
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
+		//$tp = Comments::isParent('comments');
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
