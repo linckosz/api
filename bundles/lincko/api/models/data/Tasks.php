@@ -21,13 +21,15 @@ class Tasks extends ModelLincko {
 		'id',
 		'created_at',
 		'updated_at',
-		'done_at',
+		'approved_at',
 		'created_by',
 		'updated_by',
+		'approved_by',
 		'title',
 		'comment',
 		'duration',
 		'fixed',
+		'approved',
 		'status',
 		'start',
 		'progress',
@@ -61,6 +63,8 @@ class Tasks extends ModelLincko {
 		'_in_charge_1' => 552, //[{cun|ucfirst}] is unassigned from a task
 		'_approver_0' => 553, //[{cun|ucfirst}] becomes an approver to a task
 		'_approver_1' => 554, //[{cun|ucfirst}] is no longer an approver to a task
+		'approved_0' => 555, //[{cun|ucfirst}] reopened a task
+		'approved_1' => 556, //[{cun|ucfirst}] completed a task
 		'_access_0' => 596, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a task
 		'_access_1' => 597, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a task
 		'_restore' => 598,//[{un|ucfirst}] restored a task
@@ -81,11 +85,12 @@ class Tasks extends ModelLincko {
 	protected static $parent_list = 'projects';
 
 	protected $model_timestamp = array(
-		'done_at',
+		'approved_at',
 		'start',
 	);
 
 	protected $model_integer = array(
+		'approved_by',
 		'duration',
 		'progress',
 		'status',
@@ -94,6 +99,7 @@ class Tasks extends ModelLincko {
 
 	protected $model_boolean = array(
 		'fixed',
+		'approved',
 		'in_charge',
 		'approver',
 	);
@@ -138,6 +144,7 @@ class Tasks extends ModelLincko {
 			|| (isset($form->start) && !self::validDate($form->start, true))
 			|| (isset($form->duration) && !self::validNumeric($form->duration, true))
 			|| (isset($form->fixed) && !self::validBoolean($form->fixed, true))
+			|| (isset($form->approved) && !self::validBoolean($form->approved, true))
 			|| (isset($form->status) && !self::validNumeric($form->status, true))
 			|| (isset($form->progress) && !self::validProgress($form->progress, true))
 		){
@@ -195,6 +202,21 @@ class Tasks extends ModelLincko {
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$new = !isset($this->id);
+		$dirty = $this->getDirty();
+		foreach($dirty as $key => $value) {
+			if($key=='approved'){
+				if($this->approved){
+					$this->approved = 1;
+					$this->approved_at = $this->freshTimestamp();
+					$this->approved_by = $app->lincko->data['uid'];
+				} else {
+					$this->approved = 0;
+					$this->approved_at = null;
+					$this->approved_by = null;
+				}
+				break;
+			}
+		}
 		$return = parent::save($options);
 		if($new){
 			$this->setUserPivotValue($app->lincko->data['uid'], 'in_charge', 1, false);

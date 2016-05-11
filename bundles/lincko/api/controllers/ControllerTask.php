@@ -21,6 +21,7 @@ TASKS
 		-start [interger | timestamp] (the beginning of the task)
 		-duration [interger | seconds] (the duration of the task)
 		-fixed [boolean] (If the start date move along with a dependant task)
+		-approved [boolean] (If the task is completed and approved)
 		-status [integer] (0:pause / 1:done / 2:ongoing / 3:canceled) => this might be redefined later according to spaces
 		-progress [integer] (task progression, 0-100)
 
@@ -33,6 +34,7 @@ TASKS
 		-start [interger | timestamp]
 		-duration [interger | seconds]
 		-fixed [boolean]
+		-approved [boolean]
 		-status [integer]
 		-progress [integer]
 
@@ -88,6 +90,9 @@ class ControllerTask extends Controller {
 		if(isset($form->fixed)){
 			$form->fixed = (int) boolval($form->fixed);
 		}
+		if(isset($form->approved)){
+			$form->approved = (int) boolval($form->approved);
+		}
 		if(isset($form->status) && is_numeric($form->status)){
 			$form->status = (int) $form->status;
 		}
@@ -129,6 +134,10 @@ class ControllerTask extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
 			$errfield = 'fixed';
 		}
+		else if(isset($form->approved) && !Tasks::validBoolean($form->approved, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'approved';
+		}
 		else if(isset($form->status) && !Tasks::validNumeric($form->status, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
 			$errfield = 'status';
@@ -141,6 +150,12 @@ class ControllerTask extends Controller {
 			$model->parent_id = $form->parent_id;
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			$model->comment = $form->comment;
+			if(isset($form->start)){ $model->start = $form->start; } //Optional
+			if(isset($form->duration)){ $model->duration = $form->duration; } //Optional
+			if(isset($form->fixed)){ $model->fixed = $form->fixed; } //Optional
+			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional
+			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(isset($form->progress)){ $model->progress = $form->progress; } //Optional
 			if($model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 2)); //Task created.
 				$data = new Data();
@@ -223,6 +238,10 @@ class ControllerTask extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
 			$errfield = 'fixed';
 		}
+		else if(isset($form->approved) && !Tasks::validBoolean($form->approved, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'approved';
+		}
 		else if(isset($form->status) && !Tasks::validNumeric($form->status, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
 			$errfield = 'status';
@@ -235,6 +254,12 @@ class ControllerTask extends Controller {
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(isset($form->start)){ $model->start = $form->start; } //Optional
+			if(isset($form->duration)){ $model->duration = $form->duration; } //Optional
+			if(isset($form->fixed)){ $model->fixed = $form->fixed; } //Optional
+			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional
+			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(isset($form->progress)){ $model->progress = $form->progress; } //Optional
 			if($model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 6)); //Task updated.
 				$data = new Data();

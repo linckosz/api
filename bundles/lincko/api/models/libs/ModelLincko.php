@@ -404,29 +404,29 @@ abstract class ModelLincko extends Model {
 	public function setParentAttributes(){
 		$app = self::getApp();
 		if(is_array($this::$parent_list) && isset($this->parent_type) && in_array($this->parent_type, $this::$parent_list)){
-			$this->_parent[0] = (string)$this->parent_type;
+			$this->_parent[0] = (string) $this->parent_type;
 		} else if(is_string($this::$parent_list)){
-			$this->_parent[0] = (string)$this::$parent_list;
+			$this->_parent[0] = (string) $this::$parent_list;
 		} else {
 			$this->_parent[0] = null;
 		}
-		if(isset($this->parent_id)){
-			$this->_parent[1] = (int)$this->parent_id;
-		}
-		if(is_null($this->parent_id)){ //Some element are not attached to a workspace (parent_id is NULL, not 0) => NULL is all over workspace, 0 is only for shared workspace 
-			$this->_parent[1] = null;
-		}
-		//For global scope
-		if(empty($this->_parent[0])){
+
+		if(!isset($this->parent_id)){
+			$this->_parent[1] = 0;
+			if($this->_parent[0]=='workspaces'){
+				$this->_parent[1] = (int) $app->lincko->data['workspace_id'];
+			} else {
+				$this->_parent[0] = null;
+			}
+		} else if(empty($this->_parent[0])){
 			$this->_parent[0] = null;
 			$this->_parent[1] = 0;
+		} else {
+			$this->_parent[1] = (int) $this->parent_id;
 		}
+
 		$this->parent_type = $this->_parent[0];
 		$this->parent_id = $this->_parent[1];
-		if($this->_parent[0]=='workspaces' && is_null($this->_parent[1])){ //Personal project (MyPlaceholder) and Roles that are not attached to a workspace (parent_id is NULL, not 0) => NULL is all over workspace, 0 is only for shared workspace 
-			$this->_parent[1] = (int)$app->lincko->data['workspace_id'];
-			$this->parent_id = $this->_parent[1];
-		}
 		return $this->_parent;
 	}
 
@@ -589,27 +589,28 @@ abstract class ModelLincko extends Model {
 					try { //In case access in not available for the model
 						if(isset($classes[$value->parent_type])){
 							$model = new $classes[$value->parent_type];
-							if(array_key_exists($value->attribute, $model->archive)){
-								$prefix = $model->getPrefix($value->attribute);
-								$created_at = (new \DateTime($value->created_at))->getTimestamp();
-								$not = false;
-								if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
-									$not = true; //True if need notification
-								}
-								if(!isset($history->{$value->parent_type})){ $history->{$value->parent_type} = new \stdClass; }
-								if(!isset($history->{$value->parent_type}->{$value->parent_id})){ $history->{$value->parent_type}->{$value->parent_id} = new \stdClass; }
-								if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
-								if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
-								if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id})){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = new \stdClass; }
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (int)$value->createdBy();
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$prefix.$value->attribute;
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->not = (boolean)$not;
-								if($history_detail || strlen($value->old)<500){
-									$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
-								}
-								if(!empty($value->parameters)){
-									$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
-								}
+							$created_at = (new \DateTime($value->created_at))->getTimestamp();
+							$not = false;
+							if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
+								$not = true; //True if need notification
+							}
+							if(!isset($history->{$value->parent_type})){ $history->{$value->parent_type} = new \stdClass; }
+							if(!isset($history->{$value->parent_type}->{$value->parent_id})){ $history->{$value->parent_type}->{$value->parent_id} = new \stdClass; }
+							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
+							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
+							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id})){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = new \stdClass; }
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->timestamp = (integer)$created_at;
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->type = (string)$value->parent_type;
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->id = (integer)$value->parent_id;
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (integer)$value->createdBy();
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$value->attribute;
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->not = (boolean)$not;
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->cod = (integer)$value->code;
+							if($history_detail || strlen($value->old)<500){
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
+							}
+							if(!empty($value->parameters)){
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
 							}
 						}
 					} catch (Exception $obj_exception) {
@@ -631,24 +632,25 @@ abstract class ModelLincko extends Model {
 		if(count($this->archive)>0 && isset($this->id)){
 			$records = History::whereParentType($this->getTable())->whereParentId($this->id)->get();
 			foreach ($records as $key => $value) {
-				if(array_key_exists($value->attribute, $this->archive)){
-					$prefix = $this->getPrefix($value->attribute);
-					$created_at = (new \DateTime($value->created_at))->getTimestamp();
-					$not = false;
-					if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
-						$not = true; //True if need notification
-					}
-					if(!isset($history->$created_at)){ $history->$created_at = new \stdClass; }
-					if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
-					$history->$created_at->{$value->id}->by = (int)$value->createdBy();
-					$history->$created_at->{$value->id}->att = (string)$prefix.$value->attribute;
-					$history->$created_at->{$value->id}->not = (boolean)$not;
-					if($history_detail || strlen($value->old)<500){
-						$history->$created_at->{$value->id}->old = $value->old;
-					}
-					if(!empty($value->parameters)){
-						$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
-					}
+				$created_at = (new \DateTime($value->created_at))->getTimestamp();
+				$not = false;
+				if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
+					$not = true; //True if need notification
+				}
+				if(!isset($history->$created_at)){ $history->$created_at = new \stdClass; }
+				if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
+				$history->$created_at->{$value->id}->timestamp = (integer)$created_at;
+				$history->$created_at->{$value->id}->type = (string)$value->parent_type;
+				$history->$created_at->{$value->id}->id = (integer)$value->parent_id;
+				$history->$created_at->{$value->id}->by = (integer)$value->createdBy();
+				$history->$created_at->{$value->id}->att = (string)$value->attribute;
+				$history->$created_at->{$value->id}->not = (boolean)$not;
+				$history->$created_at->{$value->id}->cod = (integer)$value->code;
+				if($history_detail || strlen($value->old)<500){
+					$history->$created_at->{$value->id}->old = $value->old;
+				}
+				if(!empty($value->parameters)){
+					$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
 				}
 			}
 		}
@@ -666,6 +668,10 @@ abstract class ModelLincko extends Model {
 				$not = true; //True if need notification
 			}
 		}
+		$code = 1; //Default created_at comment
+		if(array_key_exists('created_at', $this->archive)){
+			$code = $this->archive['created_at'];
+		}
 		$history->$created_at = new \stdClass;
 		$history->$created_at->{'0'} = new \stdClass;
 		//Because some models doesn't have creacted_by column (like the workspaces)
@@ -673,10 +679,14 @@ abstract class ModelLincko extends Model {
 		if(isset($this->created_by)){
 			$created_by = $this->created_by;
 		}
-		$history->$created_at->{'0'}->by = (int)$created_by;
+		$history->$created_at->{'0'}->timestamp = (integer)$created_at;
+		$history->$created_at->{'0'}->type = (string)$this->getTable();
+		$history->$created_at->{'0'}->id = (integer)$this->id;
+		$history->$created_at->{'0'}->by = (integer)$created_by;
 		$history->$created_at->{'0'}->att = 'created_at';
 		$history->$created_at->{'0'}->old = null;
 		$history->$created_at->{'0'}->not = (boolean)$not;
+		$history->$created_at->{'0'}->cod = (integer)$code;
 		if(!empty($parameters)){
 			$history->$created_at->{'0'}->par = (object) $parameters;
 		}
@@ -696,9 +706,7 @@ abstract class ModelLincko extends Model {
 		$history->created_by = $app->lincko->data['uid'];
 		$history->parent_id = $this->id;
 		$history->parent_type = $this->getTable();
-		if(!array_key_exists($key, $this->archive)){
-			$key = '_';
-		}
+		$history->code = $this->getArchiveCode($key, $new);
 		$history->attribute = $key;
 		if(!is_null($old)){ $history->old = $old; }
 		if(!empty($parameters)){
@@ -710,20 +718,9 @@ abstract class ModelLincko extends Model {
 	public function getHistoryTitles(){
 		$app = self::getApp();
 		$connectionName = $this->getConnectionName();
-		foreach ($this->archive as $key => $value) {
-			$this->archive[$key] = $app->trans->getBRUT($connectionName, 1, $value);
-		}
 		$titles = new \stdClass;
 		foreach ($this->archive as $key => $value) {
-			$titles->$key = $value;
-		}
-		foreach ($titles as $key => $value) {
-			$prefix = $this->getPrefix($key);
-			if(!empty($prefix)){
-				$temp_field = $titles->$key;
-				unset($titles->$key);
-				$titles->{$prefix.$key} = $temp_field;
-			}
+			$titles->$value = $app->trans->getBRUT($connectionName, 1, $value);
 		}
 		return $titles;
 	}
@@ -1128,12 +1125,16 @@ abstract class ModelLincko extends Model {
 		if(!$new){
 			foreach($dirty as $key => $value) {
 				//We exclude "created_at" if not we will always record it on history table, that might fulfill it too quickly
-				if($key != 'created_at' && $key != 'updated_at' && array_key_exists($key, $this->archive)){
+				if($key != 'created_at' && $key != 'updated_at'){
 					$old = null;
 					$new = null;
 					if(isset($original[$key])){ $old = $original[$key]; }
 					if(isset($dirty[$key])){ $new = $dirty[$key]; }
-					$this->setHistory($key, $new, $old);
+					$code = $this->getArchiveCode($key, $new);
+					$code_key = array_search($code, $this->archive);
+					if($code_key != '_'){ //We excluse default modification
+						$this->setHistory($key, $new, $old);
+					}
 				}
 			}
 		} else if(isset($app->lincko->data['uid'])){
@@ -1304,13 +1305,13 @@ abstract class ModelLincko extends Model {
 		return array(false, null);
 	}
 
-	protected function getPivotArchiveTitle($column, $value){
-		if(array_key_exists('_'.$column.'_'.$value, $this->archive)){
-			return '_'.$column.'_'.$value;
-		} else if(array_key_exists('_'.$column, $this->archive)){
-			return '_'.$column;
+	protected function getArchiveCode($column, $value){
+		if(array_key_exists($column.'_'.$value, $this->archive)){
+			return $this->archive[$column.'_'.$value];
+		} else if(array_key_exists($column, $this->archive)){
+			return $this->archive[$column];
 		}
-		return '_'; //Neutral comment
+		return $this->archive['_']; //Neutral comment
 	}
 
 	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
@@ -1338,8 +1339,7 @@ abstract class ModelLincko extends Model {
 				//Modify a line
 				$users->updateExistingPivot($users_id, array($column => $value));
 				if($history){
-					$archive_title = $this->getPivotArchiveTitle($column, $value);
-					$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($users_id)->username));
+					$this->setHistory('_'.$column, $value, $value_old, array('cun' => Users::find($users_id)->username));
 					$this->touch();
 				}
 				$return = true;
@@ -1348,8 +1348,7 @@ abstract class ModelLincko extends Model {
 			//Create a new line
 			$users->attach($users_id, array($column => $value));
 			if($history){
-				$archive_title = $this->getPivotArchiveTitle($column, $value);
-				$this->setHistory($archive_title, $value, $value_old, array('cun' => Users::find($users_id)->username));
+				$this->setHistory('_'.$column, $value, $value_old, array('cun' => Users::find($users_id)->username));
 				$this->touch();
 			}
 			$return = true;

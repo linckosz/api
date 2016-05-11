@@ -658,16 +658,20 @@ class ControllerTest extends Controller {
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//----------------------------------------
 
-		$tp = new Comments;
-		$tp = $tp->getLinked()->get()->toArray();
+		//$tp = new Comments;
+		//$tp = $tp->getLinked()->get()->toArray();
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//$aaa = $tp->checkPermissionAllow('delete');
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
-		//$tp = Comments::isParent('comments');
+		$tp = Tasks::find(6);
+		//$tp = Projects::find(18);
+		//$tp = Roles::find(1);
+		$tp = $tp->getHistory();
+
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 
 		

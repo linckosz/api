@@ -770,20 +770,20 @@ class Data {
 			}
 		}
 
-		foreach($list_models as $key => $value) {
-			$model = new $value;
-			$table_name = $model->getTable();
-			if(
-				$full_schema
-				||
-				(
-					!is_null($this->partial)
-					&& isset($this->partial->$uid)
-					&& isset($this->partial->$uid->{'_history_title'})
-					&& isset($this->partial->$uid->{'_history_title'}->$table_name)
-				)
+		if(
+			$full_schema
+			||
+			(
+				!is_null($this->partial)
+				&& isset($this->partial->$uid)
+				&& isset($this->partial->$uid->{'_history_title'})
+				&& isset($this->partial->$uid->{'_history_title'}->$table_name)
 			)
-			{
+		)
+		{
+			foreach($list_models as $key => $value) {
+				$model = new $value;
+				$table_name = $model->getTable();
 				if($this->item_detail){
 					$result_bis->$uid->{'_history_title'}->$table_name = $model->getHistoryTitles();
 				} else {
