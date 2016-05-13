@@ -1344,86 +1344,88 @@ abstract class ModelLincko extends Model {
 		$success = true;
 		$touch = false;
 		//checkAccess and checkPermissionAllow are previously used in save()
-		foreach ($this->pivots_var as $type => $type_id_list) {
-			if(!$success){ break; }
-			foreach ($type_id_list as $type_id => $column_list) {
+		if(is_object($this->pivots_var)){
+			foreach ($this->pivots_var as $type => $type_id_list) {
 				if(!$success){ break; }
-				foreach ($column_list as $column => $result) {
-					$history_save = true;
-					if(is_array($result)){
-						$value = $result[0];
-						$history_save = $result[1];
-					} else {
-						$value = $result;
-					}
-					//Convert the value to be compriable with database
-					if(is_bool($value)){
-						$value = (int) $value;
-					}
-					$value = (string) $value;
+				foreach ($type_id_list as $type_id => $column_list) {
 					if(!$success){ break; }
-					$pivot_exists = false;
-					$pivot = false;
-					if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
-						$pivot_relation = $this->$type();
-						if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
-							if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
-								$pivot_exists = true;
-							} else if($class = $this::getClass($type)){ //Check if the Class exists
-								$pivot = $class::find($type_id);
-							}
+					foreach ($column_list as $column => $result) {
+						$history_save = true;
+						if(is_array($result)){
+							$value = $result[0];
+							$history_save = $result[1];
+						} else {
+							$value = $result;
 						}
-						if($pivot){
-							if($pivot_exists){
-								//Update an existing pivot
-								$value_old = (string) $pivot->pivot->$column;
-								if($value_old != $value){
-									if($pivot_relation->updateExistingPivot($type_id, array($column => $value))){
-										$touch = true;
-										if($history_save){
-											$parameters = array();
-											if($type=='users'){
-												$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
-											}
-											$code = $this->getArchiveCode('pivot_'.$column, $value);
-											$code_key = array_search($code, $this->archive);
-											if($code_key && $code_key != '_'){ //We excluse default modification
-												$this->setHistory($column, $value, $value_old, $parameters, $type, $type_id);
-											}
-										}
-									} else {
-										$success = false;
-									}
+						//Convert the value to be compriable with database
+						if(is_bool($value)){
+							$value = (int) $value;
+						}
+						$value = (string) $value;
+						if(!$success){ break; }
+						$pivot_exists = false;
+						$pivot = false;
+						if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
+							$pivot_relation = $this->$type();
+							if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
+								if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
+									$pivot_exists = true;
+								} else if($class = $this::getClass($type)){ //Check if the Class exists
+									$pivot = $class::find($type_id);
 								}
-								continue;
-							} else {
-								//Create a new pivot line
-								if($column=='access' || !isset($this->pivots_var->$type->type_id->access)){
-									//By default, if we affect a new pivot, we always authorized access if it's not specified (for instance a user assigned to a task will automaticaly have access to it)
-									$pivot_relation->attach($type_id, array('access' => true, $column => $value)); //attach() return nothing
-								} else {
-									$pivot_relation->attach($type_id, array($column => $value)); //attach() return nothing
-								}
-								$touch = true;
-								if($history_save){
-									$parameters = array();
-									if($type=='users'){
-										$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
-									}
-									$code = $this->getArchiveCode('pivot_'.$column, $value);
-									$code_key = array_search($code, $this->archive);
-									if($code_key && $code_key != '_'){ //We excluse default modification
-										$this->setHistory($column, $value, null, $parameters, $type, $type_id);
-									}
-								}
-								continue;
 							}
+							if($pivot){
+								if($pivot_exists){
+									//Update an existing pivot
+									$value_old = (string) $pivot->pivot->$column;
+									if($value_old != $value){
+										if($pivot_relation->updateExistingPivot($type_id, array($column => $value))){
+											$touch = true;
+											if($history_save){
+												$parameters = array();
+												if($type=='users'){
+													$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
+												}
+												$code = $this->getArchiveCode('pivot_'.$column, $value);
+												$code_key = array_search($code, $this->archive);
+												if($code_key && $code_key != '_'){ //We excluse default modification
+													$this->setHistory($column, $value, $value_old, $parameters, $type, $type_id);
+												}
+											}
+										} else {
+											$success = false;
+										}
+									}
+									continue;
+								} else {
+									//Create a new pivot line
+									if($column=='access' || !isset($this->pivots_var->$type->type_id->access)){
+										//By default, if we affect a new pivot, we always authorized access if it's not specified (for instance a user assigned to a task will automaticaly have access to it)
+										$pivot_relation->attach($type_id, array('access' => true, $column => $value)); //attach() return nothing
+									} else {
+										$pivot_relation->attach($type_id, array($column => $value)); //attach() return nothing
+									}
+									$touch = true;
+									if($history_save){
+										$parameters = array();
+										if($type=='users'){
+											$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
+										}
+										$code = $this->getArchiveCode('pivot_'.$column, $value);
+										$code_key = array_search($code, $this->archive);
+										if($code_key && $code_key != '_'){ //We excluse default modification
+											$this->setHistory($column, $value, null, $parameters, $type, $type_id);
+										}
+									}
+									continue;
+								}
+							}
+							$success = false;
+							break;
 						}
 						$success = false;
 						break;
 					}
-					$success = false;
-					break;
 				}
 			}
 		}
