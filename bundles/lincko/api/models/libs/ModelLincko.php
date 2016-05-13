@@ -38,6 +38,7 @@ abstract class ModelLincko extends Model {
 	//(used in "toJson()") All field to include in search engine, it will add a prefix "-"
 	protected $search_fields = array();
 
+	protected $name_code = 0;
 	//Key: Column title to record
 	//Value: Title of record
 	protected $archive = array(
@@ -727,6 +728,7 @@ abstract class ModelLincko extends Model {
 		foreach ($this->archive as $key => $value) {
 			$titles->$value = $app->trans->getBRUT($connectionName, 1, $value);
 		}
+		$titles->{'0'} = $app->trans->getBRUT($connectionName, 1, $this->name_code);
 		return $titles;
 	}
 

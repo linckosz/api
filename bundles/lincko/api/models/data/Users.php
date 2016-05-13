@@ -43,6 +43,7 @@ class Users extends ModelLincko {
 
 	protected $contactsVisibility = false; //By default do not make the user visible
 
+	protected $name_code = 600;
 
 	protected $archive = array(
 		'created_at' => 601,  //[{un|ucfirst}] joined @@title~~

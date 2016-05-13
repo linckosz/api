@@ -31,6 +31,8 @@ class Workspaces extends ModelLincko {
 
 	protected $contactsVisibility = true; //Make all user linked to the workspace visible by the user into the contact list
 
+	protected $name_code = 300;
+
 	protected $archive = array(
 		'created_at' => 301, //[{un|ucfirst}] created a new workspace
 		'_' => 302,//[{un|ucfirst}] modified the workspace

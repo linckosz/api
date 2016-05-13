@@ -38,6 +38,8 @@ class Projects extends ModelLincko {
 		'description',
 	);
 
+	protected $name_code = 400;
+
 	protected $archive = array(
 		'created_at' => 401, //[{un|ucfirst}] created a new project
 		'_' => 402,//[{un|ucfirst}] modified a project

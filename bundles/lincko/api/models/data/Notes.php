@@ -37,6 +37,8 @@ class Notes extends ModelLincko {
 		'comment',
 	);
 
+	protected $name_code = 800;
+
 	protected $archive = array(
 		'created_at' => 801, //[{un|ucfirst}] created a new note
 		'_' => 802,//[{un|ucfirst}] modified a note

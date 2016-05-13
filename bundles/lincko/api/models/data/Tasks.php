@@ -47,6 +47,8 @@ class Tasks extends ModelLincko {
 		'comment',
 	);
 
+	protected $name_code = 500;
+
 	protected $archive = array(
 		'created_at' => 501, //[{un|ucfirst}] created a new task
 		'_' => 502,//[{un|ucfirst}] modified a task
