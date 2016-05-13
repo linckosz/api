@@ -707,10 +707,24 @@ class Data {
 					$role_id = 0; //tree_role
 					if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$id])){ $role_id = $tree_roles_id[$table_name][$id]; }
 
+					/*
+					//This has to be done for each user
 					$result_bis->$uid->$table_name->$id->_perm = array(
 						(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
 						(int)$role_id,
 					);
+					*/
+					$result_bis->$uid->$table_name->$id->_perm = new \stdClass;
+					$result_bis->$uid->$table_name->$id->_perm->{'3'} = array(2, 2);
+					$result_bis->$uid->$table_name->$id->_perm->{'5'} = array(2, 2);
+					$result_bis->$uid->$table_name->$id->_perm->{'6'} = array(2, 2);
+					$result_bis->$uid->$table_name->$id->_perm->{'12'} = array(2, 2);
+
+					$result_bis->$uid->$table_name->$id->_perm->$uid = array(
+						(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
+						(int)$role_id,
+					);
+
 				}
 			}
 

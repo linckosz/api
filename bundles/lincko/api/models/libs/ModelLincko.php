@@ -683,14 +683,14 @@ abstract class ModelLincko extends Model {
 		if(isset($this->created_by)){
 			$created_by = $this->created_by;
 		}
-		$history->$created_at->{'0'}->timestamp = (integer)$created_at;
-		$history->$created_at->{'0'}->type = (string)$this->getTable();
-		$history->$created_at->{'0'}->id = (integer)$this->id;
-		$history->$created_at->{'0'}->by = (integer)$created_by;
+		$history->$created_at->{'0'}->timestamp = (integer) $created_at;
+		$history->$created_at->{'0'}->type = (string) $this->getTable();
+		$history->$created_at->{'0'}->id = (integer) $this->id;
+		$history->$created_at->{'0'}->by = (integer) $created_by;
 		$history->$created_at->{'0'}->att = 'created_at';
 		$history->$created_at->{'0'}->old = null;
-		$history->$created_at->{'0'}->not = (boolean)$not;
-		$history->$created_at->{'0'}->cod = (integer)$code;
+		$history->$created_at->{'0'}->not = (boolean) $not;
+		$history->$created_at->{'0'}->cod = (integer) $code;
 		if(!empty($parameters)){
 			$history->$created_at->{'0'}->par = (object) $parameters;
 		}
