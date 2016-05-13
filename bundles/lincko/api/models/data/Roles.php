@@ -34,8 +34,8 @@ class Roles extends ModelLincko {
 	protected $archive = array(
 		'created_at' => 701, //[{un|ucfirst}] created a new role
 		'_' => 702,//[{un|ucfirst}] modified a role
-		'_access_0' => 796, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a role
-		'_access_1' => 797, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a role
+		//'pivot_access_0' => 796, /* UNSUSED */ //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a role
+		//'pivot_access_1' => 797, /* UNSUSED */ //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a role
 		'_restore' => 798,//[{un|ucfirst}] restored a role
 		'_delete' => 799,//[{un|ucfirst}] deleted a role
 	);
@@ -134,7 +134,7 @@ class Roles extends ModelLincko {
 		return parent::delete();
 	}
 
-	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
+	protected function pivots_save(array $parameters = array()){
 		//We don't set roles since it will always be access 1, but we allow deletion
 		return false;
 	}

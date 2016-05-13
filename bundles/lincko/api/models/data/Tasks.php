@@ -59,14 +59,14 @@ class Tasks extends ModelLincko {
 		'progress' => 502, //[{un|ucfirst}] modified a task
 		'parent_id' => 505, //[{un|ucfirst}] moved a task to the project "[{pj|ucfirst}]"
 		'_delay' => 550, //[{un|ucfirst}] modified a task delay
-		'_in_charge_0' => 551, //[{cun|ucfirst}] is in charge of a task
-		'_in_charge_1' => 552, //[{cun|ucfirst}] is unassigned from a task
-		'_approver_0' => 553, //[{cun|ucfirst}] becomes an approver to a task
-		'_approver_1' => 554, //[{cun|ucfirst}] is no longer an approver to a task
-		'approved_0' => 555, //[{cun|ucfirst}] reopened a task
-		'approved_1' => 556, //[{cun|ucfirst}] completed a task
-		'_access_0' => 596, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a task
-		'_access_1' => 597, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a task
+		'pivot_in_charge_0' => 551, //[{cun|ucfirst}] is in charge of a task
+		'pivot_in_charge_1' => 552, //[{cun|ucfirst}] is unassigned from a task
+		'pivot_approver_0' => 553, //[{cun|ucfirst}] becomes an approver to a task
+		'pivot_approver_1' => 554, //[{cun|ucfirst}] is no longer an approver to a task
+		'approved_0' => 555, //[{un|ucfirst}] reopened a task
+		'approved_1' => 556, //[{un|ucfirst}] completed a task
+		'pivot_access_0' => 596, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a task
+		'pivot_access_1' => 597, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a task
 		'_restore' => 598,//[{un|ucfirst}] restored a task
 		'_delete' => 599,//[{un|ucfirst}] deleted a task
 	);
@@ -190,7 +190,7 @@ class Tasks extends ModelLincko {
 		}
 	}
 
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		if($key == 'parent_id'){
 			if($project = Projects::find($new)){
 				$parameters['pj'] = $project->title;
@@ -217,11 +217,16 @@ class Tasks extends ModelLincko {
 				break;
 			}
 		}
-		$return = parent::save($options);
 		if($new){
-			$this->setUserPivotValue($app->lincko->data['uid'], 'in_charge', 1, false);
-			$this->setUserPivotValue($app->lincko->data['uid'], 'approver', 1, false);
+			$pivots = new \stdClass;
+			$pivots->{'users>in_charge'} = new \stdClass;
+			$pivots->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
+			$pivots->{'users>approver'} = new \stdClass;
+			$pivots->{'users>approver'}->{$app->lincko->data['uid']} = true;
+			$this->pivots_format($pivots, false);
 		}
+		$return = parent::save($options);
+		
 		return $return;
 	}
 

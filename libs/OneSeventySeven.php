@@ -46,7 +46,7 @@ class OneSeventySeven {
 
 	protected static function getCookies(){
 		//Assign only once all real cookies to memory
-		if(self::$first || count(self::$cookies<=0)){
+		if(self::$first || count(self::$cookies)<=0){
 			$app = \Slim\Slim::getInstance();
 			if($one_seventy_seven = $app->getCookie('one_seventy_seven', false)){
 				$one_seventy_seven = json_decode($one_seventy_seven);

@@ -101,6 +101,7 @@ class ControllerWorkspace extends Controller {
 			$model->name = $form->name;
 			if(isset($form->domain)){ $model->domain = $form->domain; } //Optional
 			if(isset($form->url)){ $model->url = $form->url; } //Optional
+			$model->pivots_format($form, true);
 			if($model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 16, 2)); //Workspace created.
 				$data = new Data();
@@ -175,10 +176,18 @@ class ControllerWorkspace extends Controller {
 			if(isset($form->name)){ $model->name = $form->name; } //Optional
 			if(isset($form->domain)){ $model->domain = $form->domain; } //Optional
 			if(isset($form->url)){ $model->url = $form->url; } //Optional
-			if($model->save()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 16, 6)); //Workspace updated.
-				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 200);
+			$dirty = $model->getDirty();
+			$pivots = $model->pivots_format($form);
+			if(count($dirty)>0 || $pivots){
+				if($model->save()){
+					$msg = array('msg' => $app->trans->getBRUT('api', 16, 6)); //Workspace updated.
+					$data = new Data();
+					$data->dataUpdateConfirmation($msg, 200);
+					return true;
+				}
+			} else {
+				$errmsg = $app->trans->getBRUT('api', 8, 29); //Already up to date.
+				$app->render(200, array('show' => false, 'msg' => array('msg' => $errmsg)));
 				return true;
 			}
 		}

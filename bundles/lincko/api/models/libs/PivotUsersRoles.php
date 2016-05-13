@@ -38,12 +38,12 @@ class PivotUsersRoles extends ModelLincko {
 	public function restore(){ return false; }
 
 	//We do not record history
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		return true;
 	}
 
 	//We do not attach
-	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
+	protected function pivots_save(array $parameters = array()){
 		return true;
 	}
 

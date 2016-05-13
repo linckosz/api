@@ -114,6 +114,7 @@ class ControllerComment extends Controller {
 				$model->parent_type = null;
 				$model->parent_id = 0;
 			}
+			$model->pivots_format($form, false);
 			if($model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 2)); //Message created.
 				$data = new Data();

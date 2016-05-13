@@ -36,8 +36,8 @@ class Workspaces extends ModelLincko {
 		'_' => 302,//[{un|ucfirst}] modified the workspace
 		'name' => 303,//[{un|ucfirst}] changed the workspace name
 		'domain' => 304,//[{un|ucfirst}] changed the workspace domain link
-		'_access_0' => 396, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to the workspace
-		'_access_1' => 397, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to the workspace
+		'pivot_access_0' => 396, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to the workspace
+		'pivot_access_1' => 397, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to the workspace
 		'_restore' => 398,//[{un|ucfirst}] restored the workspace
 		'_delete' => 399,//[{un|ucfirst}] deleted the workspace
 	);

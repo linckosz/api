@@ -35,8 +35,8 @@ class Chats extends ModelLincko {
 		'created_at' => 101, //[{un|ucfirst}] created a new chat group
 		'_' => 102,//[{un|ucfirst}] modified a chat group
 		'title' => 103,//[{un|ucfirst}] changed a chat group title
-		'_access_0' => 196, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a chat group
-		'_access_1' => 197, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a chat group
+		'pivot_access_0' => 196, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a chat group
+		'pivot_access_1' => 197, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a chat group
 		'_restore' => 198,//[{un|ucfirst}] restored a chat group
 		'_delete' => 199,//[{un|ucfirst}] deleted a chat group
 	);

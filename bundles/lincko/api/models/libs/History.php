@@ -18,6 +18,8 @@ class History extends ModelLincko {
 
 	protected $visible = array();
 
+	protected $accessibility = true; //Always allow History creation
+
 	protected static $foreign_keys = array(
 		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
 	);
@@ -36,12 +38,12 @@ class History extends ModelLincko {
 	public function restore(){ return false; }
 
 	//We do not record history
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		return true;
 	}
 
 	//We do not attach
-	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
+	protected function pivots_save(array $parameters = array()){
 		return true;
 	}
 
@@ -60,7 +62,7 @@ class History extends ModelLincko {
 		if($level==1){ //Creation
 			return true;
 		}
-		return true;
+		return false;
 	}
 
 }

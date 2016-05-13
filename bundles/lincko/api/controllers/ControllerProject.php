@@ -95,6 +95,7 @@ class ControllerProject extends Controller {
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
+			$model->pivots_format($form, false);
 			if($model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 2)); //Project created.
 				$data = new Data();
@@ -169,10 +170,18 @@ class ControllerProject extends Controller {
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
-			if($model->save()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 12, 6)); //Project updated.
-				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 200);
+			$dirty = $model->getDirty();
+			$pivots = $model->pivots_format($form);
+			if(count($dirty)>0 || $pivots){
+				if($model->save()){
+					$msg = array('msg' => $app->trans->getBRUT('api', 12, 6)); //Project updated.
+					$data = new Data();
+					$data->dataUpdateConfirmation($msg, 200);
+					return true;
+				}
+			} else {
+				$errmsg = $app->trans->getBRUT('api', 8, 29); //Already up to date.
+				$app->render(200, array('show' => false, 'msg' => array('msg' => $errmsg)));
 				return true;
 			}
 		}

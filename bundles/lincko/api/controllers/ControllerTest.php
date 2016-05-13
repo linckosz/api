@@ -652,22 +652,13 @@ class ControllerTest extends Controller {
 		//\libs\Watch::php( $tp->getWorkspaceSuper(), 'getWorkspaceSuper '.$tp->getTable(), __FILE__, false, false, true);
 		//\libs\Watch::php( $tp->checkPermissionAllow(3), 'delete '.$tp->getTable(), __FILE__, false, false, true);
 
-		//$tp = Users::getUser()->workspaces;
+		//$tp = Users::getUser()
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//$tp = Users::find(3)->workspaces()->first()->pivot;
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//----------------------------------------
 
-		//$tp = new Comments;
-		//$tp = $tp->getLinked()->get()->toArray();
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
-		//$aaa = $tp->checkPermissionAllow('delete');
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
-
-		$tp = Tasks::find(6);
-		//$tp = Projects::find(18);
-		//$tp = Roles::find(1);
-		$tp = $tp->getHistory();
+		//$tp = Chats::find(120)->setHistory();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
@@ -737,9 +728,6 @@ class ControllerTest extends Controller {
 		}
 		$tp->save();
 		*/
-
-		//--------------------------------------
-
 		$app->render(200, array('msg' => $msg,));
 		return true;
 	}

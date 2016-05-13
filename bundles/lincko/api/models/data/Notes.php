@@ -43,8 +43,8 @@ class Notes extends ModelLincko {
 		'title' => 803,//[{un|ucfirst}] changed a note title
 		'comment' => 804, //[{un|ucfirst}] modified a note content
 		'parent_id' => 805, //[{un|ucfirst}] moved a note to the project "[{pj|ucfirst}]"
-		'_access_0' => 896, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a note
-		'_access_1' => 897, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a note
+		'pivot_access_0' => 896, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a note
+		'pivot_access_1' => 897, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a note
 		'_restore' => 898,//[{un|ucfirst}] restored a note
 		'_delete' => 899,//[{un|ucfirst}] deleted a note
 	);
@@ -132,7 +132,7 @@ class Notes extends ModelLincko {
 		}
 	}
 
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		if($key == 'parent_id'){
 			if($project = Projects::find($new)){
 				$parameters['pj'] = $project->title;

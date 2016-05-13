@@ -152,6 +152,9 @@ abstract class ModelLincko extends Model {
 	//List of relations we want to make available on client side
 	protected static $dependencies_visible = array();
 
+	//
+	protected $pivots_var = null;
+
 	//No need to abstract it, but need to redefined for the Models that use it
 	public function users(){
 		return false;
@@ -436,7 +439,7 @@ abstract class ModelLincko extends Model {
 
 	public function getParent(){
 		$this->setParentAttributes();
-		if(is_string($this->parent_type) && is_integer($this->_parent[1]) && $class = $this->getClass($this->parent_type)){
+		if(is_string($this->parent_type) && is_integer($this->_parent[1]) && $class = $this::getClass($this->parent_type)){
 			if($this->parent_item = $class::find($this->_parent[1])){
 				return $this->parent_item;
 			}
@@ -696,7 +699,7 @@ abstract class ModelLincko extends Model {
 	/*
 		$parameters should be a array of [key1:val1, key2:val2, etc]
 	*/
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		$app = self::getApp();
 		$namespace = (new \ReflectionClass($this))->getNamespaceName();
 		if(count($this->archive)==0 || $this->getTable()=='history' || $namespace!='bundles\lincko\api\models\data'){ //We exclude history itself to avoid looping
@@ -706,6 +709,8 @@ abstract class ModelLincko extends Model {
 		$history->created_by = $app->lincko->data['uid'];
 		$history->parent_id = $this->id;
 		$history->parent_type = $this->getTable();
+		$history->pivot_type = $pivot_type;
+		$history->pivot_id = $pivot_id;
 		$history->code = $this->getArchiveCode($key, $new);
 		$history->attribute = $key;
 		if(!is_null($old)){ $history->old = $old; }
@@ -723,6 +728,19 @@ abstract class ModelLincko extends Model {
 			$titles->$value = $app->trans->getBRUT($connectionName, 1, $value);
 		}
 		return $titles;
+	}
+
+	protected function getArchiveCode($column, $value){
+		if(is_bool($value)){
+			$value = (int) $value;
+		}
+		$value = (string) $value;
+		if(array_key_exists($column.'_'.$value, $this->archive)){
+			return $this->archive[$column.'_'.$value];
+		} else if(array_key_exists($column, $this->archive)){
+			return $this->archive[$column];
+		}
+		return $this->archive['_']; //Neutral comment
 	}
 
 	public function getContactsLock(){
@@ -1087,6 +1105,14 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 
+		//Give access to the user itself
+		if($new && isset($app->lincko->data['uid'])){
+			$pivots = new \stdClass;
+			$pivots->{'users>access'} = new \stdClass;
+			$pivots->{'users>access'}->{$app->lincko->data['uid']} = true;
+			$this->pivots_format($pivots, false);
+		}
+
 		//For debug mode, do not record new model
 		if($new && self::$debugMode){
 			return true;
@@ -1106,16 +1132,22 @@ abstract class ModelLincko extends Model {
 		if(count($dirty)<=0){
 			return true;
 		}
-
-		$return = parent::save($options);
-
-		//Reapply the fields that were not part of table columns
-		foreach ($attributes as $key => $value) {
-			$this->attributes[$key] = $value;
-		}
-
-		if($parent){
-			$parent->touchUpdateAt();
+		$db = Capsule::connection($this->connection);
+		$db->beginTransaction(); //toto: It has to be tested with user creation because it involve 2 transaction together
+		try {
+			$return = parent::save($options);
+			//Reapply the fields that were not part of table columns
+			foreach ($attributes as $key => $value) {
+				$this->attributes[$key] = $value;
+			}
+			$this->pivots_save();
+			if($parent){
+				$parent->touchUpdateAt();
+			}
+			$db->commit();
+		} catch(\Exception $e){
+			$return = null;
+			$db->rollback();
 		}
 
 		if($new){
@@ -1132,15 +1164,11 @@ abstract class ModelLincko extends Model {
 					if(isset($dirty[$key])){ $new = $dirty[$key]; }
 					$code = $this->getArchiveCode($key, $new);
 					$code_key = array_search($code, $this->archive);
-					if($code_key != '_'){ //We excluse default modification
+					if($code_key && $code_key != '_'){ //We excluse default modification
 						$this->setHistory($key, $new, $old);
 					}
 				}
 			}
-		} else if(isset($app->lincko->data['uid'])){
-			//For any new model, we force to enable the access to the user
-			//But we disable the history record since it's during creation of new model only
-			$this->setUserPivotValue($app->lincko->data['uid'], 'access', 1, false);
 		}
 		return $return;
 		
@@ -1287,6 +1315,125 @@ abstract class ModelLincko extends Model {
 		return $prefix;
 	}
 
+	public function pivots_format($form, $history_save=true){
+		$save = false;
+		foreach ($form as $key => $list) {
+			if( preg_match("/^([a-z0-9_]+)>([a-z0-9_]+)$/ui", $key, $match) && is_object($list) && count((array)$list)>0 ){
+				$type = $match[1];
+				$column = $match[2];
+				foreach ($list as $type_id => $value) {
+					if(is_numeric($type_id) && (int)$type_id>0){
+						$save = true;
+						if($this->pivots_var==null){ $this->pivots_var = new \stdClass; }
+						if(!isset($this->pivots_var->$type)){ $this->pivots_var->$type = new \stdClass; }
+						if(!isset($this->pivots_var->$type->$type_id)){ $this->pivots_var->$type->$type_id = new \stdClass; }
+						if(!isset($this->pivots_var->$type->$type_id->$column)){ $this->pivots_var->$type->$type_id->$column = array($value, $history_save); }
+					}	
+				}
+			}
+		}
+		return $save;	
+	}
+
+	protected function pivots_save(array $parameters = array()){
+		$app = self::getApp();
+		$namespace = (new \ReflectionClass($this))->getNamespaceName();
+		if($namespace!='bundles\lincko\api\models\data'){ //We exclude users_x_roles_x itself to avoid looping
+			return true;
+		}
+		$success = true;
+		$touch = false;
+		//checkAccess and checkPermissionAllow are previously used in save()
+		foreach ($this->pivots_var as $type => $type_id_list) {
+			if(!$success){ break; }
+			foreach ($type_id_list as $type_id => $column_list) {
+				if(!$success){ break; }
+				foreach ($column_list as $column => $result) {
+					$history_save = true;
+					if(is_array($result)){
+						$value = $result[0];
+						$history_save = $result[1];
+					} else {
+						$value = $result;
+					}
+					//Convert the value to be compriable with database
+					if(is_bool($value)){
+						$value = (int) $value;
+					}
+					$value = (string) $value;
+					if(!$success){ break; }
+					$pivot_exists = false;
+					$pivot = false;
+					if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
+						$pivot_relation = $this->$type();
+						if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
+							if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
+								$pivot_exists = true;
+							} else if($class = $this::getClass($type)){ //Check if the Class exists
+								$pivot = $class::find($type_id);
+							}
+						}
+						if($pivot){
+							if($pivot_exists){
+								//Update an existing pivot
+								$value_old = (string) $pivot->pivot->$column;
+								if($value_old != $value){
+									if($pivot_relation->updateExistingPivot($type_id, array($column => $value))){
+										$touch = true;
+										if($history_save){
+											$parameters = array();
+											if($type=='users'){
+												$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
+											}
+											$code = $this->getArchiveCode('pivot_'.$column, $value);
+											$code_key = array_search($code, $this->archive);
+											if($code_key && $code_key != '_'){ //We excluse default modification
+												$this->setHistory($column, $value, $value_old, $parameters, $type, $type_id);
+											}
+										}
+									} else {
+										$success = false;
+									}
+								}
+								continue;
+							} else {
+								//Create a new pivot line
+								if($column=='access' || !isset($this->pivots_var->$type->type_id->access)){
+									//By default, if we affect a new pivot, we always authorized access if it's not specified (for instance a user assigned to a task will automaticaly have access to it)
+									$pivot_relation->attach($type_id, array('access' => true, $column => $value)); //attach() return nothing
+								} else {
+									$pivot_relation->attach($type_id, array($column => $value)); //attach() return nothing
+								}
+								$touch = true;
+								if($history_save){
+									$parameters = array();
+									if($type=='users'){
+										$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
+									}
+									$code = $this->getArchiveCode('pivot_'.$column, $value);
+									$code_key = array_search($code, $this->archive);
+									if($code_key && $code_key != '_'){ //We excluse default modification
+										$this->setHistory($column, $value, null, $parameters, $type, $type_id);
+									}
+								}
+								continue;
+							}
+						}
+						$success = false;
+						break;
+					}
+					$success = false;
+					break;
+				}
+			}
+		}
+		if($touch){
+			$this->touch();
+			$this->setForceSchema();
+		}
+		return $success;
+	}
+
 	//By preference, keep it protected
 	//public function getUserPivotValue($column, $users_id=false){
 	protected function getUserPivotValue($column, $users_id=false){
@@ -1303,62 +1450,6 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		return array(false, null);
-	}
-
-	protected function getArchiveCode($column, $value){
-		if(array_key_exists($column.'_'.$value, $this->archive)){
-			return $this->archive[$column.'_'.$value];
-		} else if(array_key_exists($column, $this->archive)){
-			return $this->archive[$column];
-		}
-		return $this->archive['_']; //Neutral comment
-	}
-
-	public function setUserPivotValue($users_id, $column, $value=0, $history=true){
-		$app = self::getApp();
-		$namespace = (new \ReflectionClass($this))->getNamespaceName();
-		if($this->getTable()=='users_x_roles_x' || $namespace!='bundles\lincko\api\models\data'){ //We exclude users_x_roles_x itself to avoid looping
-			return true;
-		}
-		if(self::getWorkspaceSuper() == 0 && !$this->new_model && !$this->checkPermissionAllow('edit')){ //If not a Super, and you don't have editing permission
-			$this->checkPermissionAllow(4);
-			return false;
-		}
-		//We don't record if the model doesn't exists in the database
-		if(!isset($this->id)){
-			return false;
-		}
-		$column = strtolower($column);
-		$return = false;
-		$users = $this->users();
-		if($users === false || !method_exists($users,'updateExistingPivot') || !method_exists($users,'attach')){ return false; } //If the pivot doesn't exist, we exit
-		$pivot = $this->getUserPivotValue($column, $users_id);
-		$value_old = $pivot[1];
-		if($pivot[0]){
-			if($value_old != $value){
-				//Modify a line
-				$users->updateExistingPivot($users_id, array($column => $value));
-				if($history){
-					$this->setHistory('_'.$column, $value, $value_old, array('cun' => Users::find($users_id)->username));
-					$this->touch();
-				}
-				$return = true;
-			}
-		} else {
-			//Create a new line
-			$users->attach($users_id, array($column => $value));
-			if($history){
-				$this->setHistory('_'.$column, $value, $value_old, array('cun' => Users::find($users_id)->username));
-				$this->touch();
-			}
-			$return = true;
-		}
-		if($return){
-			//Force all linked users to recheck their Schema
-			$this->setForceSchema();
-		}
-		//Do not change anything, it's the same
-		return $return;
 	}
 
 	public static function getRoleAllow(){

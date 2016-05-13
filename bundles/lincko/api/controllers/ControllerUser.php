@@ -175,6 +175,7 @@ class ControllerUser extends Controller {
 				$model->username = $username;
 				$model->username_sha1 = $username_sha1;
 				$model->internal_email = $internal_email;
+				$model->pivots_format($form, false);
 				if($model->save()){
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', false);
@@ -284,14 +285,21 @@ class ControllerUser extends Controller {
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
-
-			if(isset($form->username) && Users::where('username', '=', $form->username)->first()){
-				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 18); //Username already in use.
-				$errfield = 'username';
-			} else if($model->save()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account updated.
-				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 200);
+			$dirty = $model->getDirty();
+			$pivots = $model->pivots_format($form);
+			if(count($dirty)>0 || $pivots){
+				if(isset($form->username) && Users::where('username', '=', $form->username)->first()){
+					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 18); //Username already in use.
+					$errfield = 'username';
+				} else if($model->save()){
+					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account updated.
+					$data = new Data();
+					$data->dataUpdateConfirmation($msg, 200);
+					return true;
+				}
+			} else {
+				$errmsg = $app->trans->getBRUT('api', 8, 29); //Already up to date.
+				$app->render(200, array('show' => false, 'msg' => array('msg' => $errmsg)));
 				return true;
 			}
 		}

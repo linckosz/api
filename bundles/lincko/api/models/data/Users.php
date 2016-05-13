@@ -52,8 +52,8 @@ class Users extends ModelLincko {
 		'lastname' => 602,//[{un|ucfirst}] modified [{hh}] profile
 		'gender' => 602,//[{un|ucfirst}] modified [{hh}] profile
 		'email' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'_access_0' => 696, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to [{hh}] profile
-		'_access_1' => 697, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to [{hh}] profile
+		'pivot_access_0' => 696, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to [{hh}] profile
+		'pivot_access_1' => 697, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to [{hh}] profile
 		'_restore' => 698,//[{un|ucfirst}] restored [{hh}] profile
 		'_delete' => 699,//[{un|ucfirst}] deleted [{hh}] profile
 	);
@@ -276,7 +276,7 @@ class Users extends ModelLincko {
 		}
 	}
 
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array()){
+	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		$parameters['hh'] = $this->get_HisHer();
 		parent::setHistory($key, $new, $old, $parameters);
 	}

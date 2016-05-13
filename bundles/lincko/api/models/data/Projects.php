@@ -43,8 +43,8 @@ class Projects extends ModelLincko {
 		'_' => 402,//[{un|ucfirst}] modified a project
 		'title' => 403,//[{un|ucfirst}] changed a project name
 		'description' => 404, //[{un|ucfirst}] modified a project description
-		'_access_0' => 496, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a project
-		'_access_1' => 497, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a project
+		'pivot_access_0' => 496, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a project
+		'pivot_access_1' => 497, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a project
 		'_restore' => 498,//[{un|ucfirst}] restored a project
 		'_delete' => 499,//[{un|ucfirst}] deleted a project
 	);
