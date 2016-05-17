@@ -77,7 +77,6 @@ class OneSeventySeven {
 			unset($_SESSION['one_seventy_seven'][$key]);
 		}
 		self::$change = true;
-		self::$first = true;
 		return true;
 	}
 
@@ -98,7 +97,6 @@ class OneSeventySeven {
 				}
 			}
 		}
-		self::$first = true;
 		self::$change = true;
 		return true;
 	}

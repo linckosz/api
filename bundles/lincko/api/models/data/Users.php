@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
@@ -147,6 +148,26 @@ class Users extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	//Only add access at true
+	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+		$result = array();
+		$table = (new self)->getTable();
+		$attributes = array( 'table' => $table, );
+		$pivot = new PivotUsers($attributes);
+		if($pivot->tableExists($pivot->getTable())){
+			$pivot = $pivot->whereIn('users_id', $uid_list)->whereIn($table.'_id_link', $list)->withTrashed()->get(); //Must use _id_link
+			foreach ($pivot as $key => $value) {
+				if($value->access){
+					$uid = (integer) $value->users_id;
+					$id = (integer) $value->{$table.'_id_link'}; //Must use _id_link
+					if(!isset($result[$uid])){ $result[$uid] = array(); }
+					$result[$uid][$id] = (array) $value->attributes;
+				}
+			}
+		}
+		return $result;
+	}
+
 	//Add these functions to insure that nobody can make them disappear
 	public function delete(){ return false; }
 	public function restore(){ return false; }
@@ -251,7 +272,15 @@ class Users extends ModelLincko {
 		if($this->id == $app->lincko->data['uid']){
 			return $this->force_schema;
 		}
-		return false;
+		return 0;
+	}
+
+	public function getCheckSchema(){
+		$app = self::getApp();
+		if($this->id == $app->lincko->data['uid']){
+			return $this->check_schema;
+		}
+		return 0;
 	}
 
 ////////////////////////////////////////////

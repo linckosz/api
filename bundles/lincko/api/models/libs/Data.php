@@ -258,6 +258,33 @@ class Data {
 		return array($tree_scan, $tree_desc, $tree_id, $result);
 	}
 
+	public static function getAccesses($tree_id){
+		$app = \Slim\Slim::getInstance();
+		$tree_access = array();
+		if(isset($tree_id['users'])){
+			$list_models = self::getModels();
+			$users = $tree_id['users'];
+			foreach ($tree_id as $table => $list) {
+				if(isset($list_models[$table])){
+					$class = $list_models[$table];
+					$tree_access[$table] = $class::filterPivotAccessList($users, $list);
+				}
+			}
+			//By default, give access to all users inside shared workspace
+			if($app->lincko->data['workspace_id']==0){
+				if(!isset($tree_access['workspaces'])){ $tree_access['workspaces'] = array(); }
+				foreach ($users as $users_id) {
+					if(!isset($tree_access['workspaces'][$users_id])){ $tree_access['workspaces'][$users_id] = array(); }
+					$tree_access['workspaces'][$users_id][0] = array(
+						'access' => 1, //Give access to all user
+						'super' => 0, //Prohibit super permission to shared workspace
+					);
+				}
+			}
+		}
+		return $tree_access;
+	}
+
 	public function getLatest($timestamp=false){
 		$this->action = 'latest';
 		$this->reinit();
@@ -301,25 +328,6 @@ class Data {
 		return $this->getList();
 	}
 
-	public function getForceSchema(){
-		$user = Users::getUser();
-		return $user->force_schema;
-	}
-
-	public function setForceSchema(){
-		$user = Users::getUser();
-		return $user->setForceSchema();
-	}
-
-	public function setForceReset(){
-		return Users::setForceReset();
-	}
-
-	public function setResetInit(){
-		$user = Users::getUser();
-		return $user->setUserSchemaReset();
-	}
-
 	protected function getList(){
 		$app = $this->app;
 		//Capsule::connection('data')->enableQueryLog();
@@ -358,6 +366,7 @@ class Data {
 
 		if($this->item_detail){
 
+			$tree_access = $this::getAccesses($tree_id); //Check if at least other users have access
 			$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
 			$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
 			$tree_single = array(); //Permission allowed for the user at single element level (Priority 3 / cutomized)
@@ -373,20 +382,27 @@ class Data {
 
 
 			//Tell if the user has super access to the workspace
-			
 			$work_super = array();
-			if($workspaces = Users::getUser()->workspaces){
-				foreach ($workspaces as $value) {
-					$work_super[$value->id] = $value->pivot->super;
+			foreach ($tree_id['users'] as $users_id) {
+				$work_super[$users_id] = array();
+				if(isset($tree_access['workspaces'][$users_id])){
+					foreach ($tree_access['workspaces'][$users_id] as $value) {
+						if($value['super']){
+							$work_super[$users_id][(int)$value['workspaces_id']] = $value['super'];
+						}
+					}
+				}
+				if(isset($work_super[$users_id])){
+					//Insure to reject super permission for shared workspace
+					unset($work_super[$users_id][0]);
 				}
 			}
-			$work_super[0] = 0; //Insure to reject super permission for shared workspace
 
-			$pivot = PivotUsersRoles::getLinked()->get();
+			$pivot = PivotUsersRoles::getRoles($tree_id);
 			foreach ($pivot as $value) {
 				$table_name = $value->parent_type;
 				$id = $value->parent_id;
-
+				$users_id = $value->users_id;
 				if(
 					   isset($tree_id[$table_name])
 					&& isset($tree_id[$table_name][$id])
@@ -397,28 +413,36 @@ class Data {
 					}
 					//Single (ok)
 					if($class && $value->single){
-						if($class::getRoleAllow()[0]){ //Single
+						if($class::getRoleAllow()[0]){ //Single (RCUD)
 							if(!isset($tree_single[$table_name])){ $tree_single[$table_name] = array(); }
-							$tree_single[$table_name][$id] = $value->single;
+							if(!isset($tree_single[$table_name][$users_id])){ $tree_single[$table_name][$users_id] = array(); }
+							$tree_single[$table_name][$users_id][$id] = (int) $value->single;
 						}
 					}
 					//Role (will affect children)
 					if($class && $value->roles_id && isset($tree_id['roles']) && isset($tree_id['roles'][$value->roles_id])){ //The last condition insure that the Role was not deleted
-						if($class::getRoleAllow()[1]){ //Role
+						if($class::getRoleAllow()[1]){ //Role (Role ID)
 							if(!isset($tree_roles_id[$table_name])){ $tree_roles_id[$table_name] = array(); }
-							$tree_roles_id[$table_name][$id] = $value->roles_id;
+							if(!isset($tree_roles_id[$table_name][$users_id])){ $tree_roles_id[$table_name][$users_id] = array(); }
+							$tree_roles_id[$table_name][$users_id][$id] = (int) $value->roles_id;
 						}
 					}
 				}
 			}
 			
 		}
+		
 		//By default, give Administrator role to all users inside shared workspace
 		if($app->lincko->data['workspace_id']==0){
 			if(!isset($tree_roles_id['workspaces'])){
 				$tree_roles_id['workspaces'] = array();
 			}
-			$tree_roles_id['workspaces'][0] = 1;
+			foreach ($tree_id['users'] as $users_id) {
+				if(!isset($tree_roles_id['workspaces'][(int)$users_id])){
+					$tree_roles_id['workspaces'][(int)$users_id] = array();
+				}
+				$tree_roles_id['workspaces'][(int)$users_id][0] = 1;
+			}
 		}
 
 		$result_bis = new \stdClass;
@@ -476,7 +500,10 @@ class Data {
 					$class = $list_models[$table_name];
 					foreach ($models as $key => $model) {
 						if(!isset($tree_owner[$table_name])){ $tree_owner[$table_name] = array(); }
-						$tree_owner[$table_name][$model->id] = $model->getPermissionOwner($uid);
+						foreach ($tree_id['users'] as $users_id) {
+							if(!isset($tree_owner[$table_name][$users_id])){ $tree_owner[$table_name][$users_id] = array(); }
+							$tree_owner[$table_name][$users_id][$model->id] = $model->getPermissionOwner($users_id);
+						}
 					}
 				}
 			}
@@ -500,11 +527,9 @@ class Data {
 
 		$root_0 = new \stdClass;
 
-		//Descendant tree with IDs, and rebuild trre_id
-		$tree_id = array();
+		//Descendant tree with IDs
 		$root_0->workspaces = new \stdClass;
 		${'workspaces_'.$workid} = $root_0->workspaces->$workid = new \stdClass; //Must initialize for share workspace because the database doesn't exists
-		$tree_id['workspaces'] = array( $workid => $workid );
 		for ($i = 1; $i <= 2; $i++) { //Loop 2 times to be sure to attach all IDs
 			foreach ($result_bis->$uid as $name => $models) {
 				foreach ($models as $id => $model) {
@@ -527,15 +552,6 @@ class Data {
 						${$pname.'_'.$pid}->$name->$id = false;
 						${$name.'_'.$id} = new \stdClass;
 					}
-					//Rebuild tree_id
-					if(!isset($tree_id[$name])){
-						$tree_id[$name] = array();
-					}
-					if(!isset($tree_id[$pname])){
-						$tree_id[$pname] = array();
-					}
-					$tree_id[$name][$id] = $id;
-					$tree_id[$pname][$pid] = $pid;
 				}
 			}
 		}
@@ -549,182 +565,240 @@ class Data {
 			}
 
 		} else {
+
+			$root_uid = array();
+			//Build the tree per user
+			foreach ($tree_id['users'] as $users_id) {
+				$root_uid[(int)$users_id] = array( 0 => json_decode(json_encode($root_0)) ); //No Super applied (0) at the root level
+			}
+
+			$tree_access_users = array();
 			
-			//Super (ok)
-			$arr = array( 0 => json_decode(json_encode($root_0)) ); //No Super applied (0) at the root level
-			$arr_tp = $arr;
-			$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
-			while(!empty($arr)){ 
-				$arr_tp = array();
-				foreach ($arr as $super => $list) {
-					foreach ($list as $table_name => $models) {
-						$super_perm = 0; //[R]
-						$class = false;
-						if(isset($list_models[$table_name])){
-							$class = $list_models[$table_name];
-						}
-						if($super && $class){
-							$super_perm = $class::getPermissionSheet()[1];
-						}
-						if(!isset($tree_super[$table_name])){ $tree_super[$table_name] = array(); }
-						foreach ($models as $id => $model) {
-							$super_perm_model = $super_perm;
-							$super_tp = $super;
-							//We only check at worspace level
-							if($table_name == 'workspaces' && isset($work_super[$id])){
-								$super_tp = 0; //Insure nobody has super access to shared workspace
-								if($id > 0){
-									$super_tp = $work_super[$id];
+			foreach ($root_uid as $users_id => $root) {
+
+				//Super (ok) & for guesses deletes it if inaccessible
+				$arr = $root_uid[$users_id];
+				$arr_tp = $arr;
+				$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
+				while(!empty($arr)){
+					$arr_tp = array();
+					foreach ($arr as $super => $list) {
+						foreach ($list as $table_name => $models) {
+							//For guess users, delete the part of tree that are inaccessible
+							if($users_id != $uid){
+								if(
+									   !isset($tree_access[$table_name])
+									|| !isset($tree_access[$table_name][$users_id])
+								){
+									continue;
 								}
 							}
-							if($super_tp != $super){
-								$super_perm_model = 0;
-								if($super_tp && $class){
-									$super_perm_model = $class::getPermissionSheet()[1];
-								}
+							$super_perm = 0; //[R]
+							$class = false;
+							if(isset($list_models[$table_name])){
+								$class = $list_models[$table_name];
 							}
-							$tree_super[$table_name][$id] = $super_perm_model;
-							if(!empty((array)$model)){
-								if(!isset($arr_tp[$super_tp])){
-									$arr_tp[$super_tp] = $model;
+							if($super && $class){
+								$super_perm = $class::getPermissionSheet()[1];
+							}
+							if(!isset($tree_super[$table_name])){ $tree_super[$table_name] = array(); }
+							if(!isset($tree_super[$table_name][$users_id])){ $tree_super[$table_name][$users_id] = array(); }
+							if(!isset($tree_access_users[$table_name])){ $tree_access_users[$table_name] = array(); }
+							if(!isset($tree_access_users[$table_name][$users_id])){ $tree_access_users[$table_name][$users_id] = array(); }
+							foreach ($models as $id => $model) {
+								//For guess users, delete the part of tree that are inaccessible
+								if($users_id != $uid){
+									if(
+										   !isset($tree_access[$table_name][$users_id][$id])
+										|| !isset($tree_access[$table_name][$users_id][$id]['access'])
+										|| !$tree_access[$table_name][$users_id][$id]['access']
+									){
+										continue;
+									} else {
+										$tree_access_users[$table_name][$users_id][$id] = true;
+									}
 								} else {
-									foreach ($model as $key => $value) {
-										if(!isset($arr_tp[$super_tp]->$key)){
-											$arr_tp[$super_tp]->$key = $value;
-										} else {
-											$arr_tp[$super_tp]->$key = (object) array_merge((array) $arr_tp[$super_tp]->$key, (array) $value);
+									$tree_access_users[$table_name][$users_id][$id] = true;
+								}
+								$super_perm_model = $super_perm;
+								$super_tp = $super;
+								//We only check at worspace level
+								if($table_name == 'workspaces' && isset($work_super[$users_id][$id])){
+									$super_tp = 0; //(workspace $id<=0) Insure nobody has super access to shared workspace
+									if($id > 0){
+										$super_tp = $work_super[$users_id][$id];
+									}
+								}
+								if($super_tp != $super){
+									$super_perm_model = 0;
+									if($super_tp && $class){
+										$super_perm_model = $class::getPermissionSheet()[1];
+									}
+								}
+								$tree_super[$table_name][$users_id][$id] = $super_perm_model;
+								if(!empty((array)$model)){
+									if(!isset($arr_tp[$super_tp])){
+										$arr_tp[$super_tp] = $model;
+									} else {
+										foreach ($model as $key => $value) {
+											if(!isset($arr_tp[$super_tp]->$key)){
+												$arr_tp[$super_tp]->$key = $value;
+											} else {
+												$arr_tp[$super_tp]->$key = (object) array_merge((array) $arr_tp[$super_tp]->$key, (array) $value);
+											}
 										}
 									}
 								}
 							}
 						}
 					}
+					$arr = $arr_tp;
+					$i--;
+					if($i<=0){
+						$arr = array();
+						break;
+					}
 				}
-				$arr = $arr_tp;
-				$i--;
-				if($i<=0){
-					$arr = array();
-					break;
-				}
-			}
 
-			//Role (ok)
-			$arr = array( 0 => json_decode(json_encode($root_0)) ); //No role applied (0) at the root level
-			$arr_tp = $arr;
-			$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
-			while(!empty($arr)){ 
-				$arr_tp = array();
-				foreach ($arr as $role => $list) {
-					foreach ($list as $table_name => $models) {
-						$role_perm = 0; //[R]
-						$max_perm = 0; //[R]
-						$class = false;
-						$allow_role = false;
-						if(isset($list_models[$table_name])){
-							$class = $list_models[$table_name];
-							$allow_role = $class::getRoleAllow()[1];
-							if($role > 0){
-								$max_perm = $class::getPermissionSheet()[1];
-							}
-						}
-						if($max_perm > 0 && isset($roles[$role])){
-							if(isset($roles[$role]->{'perm_'.$table_name})){ //Per model
-								$role_perm = $roles[$role]->{'perm_'.$table_name};
-							} else { //General
-								$role_perm = $roles[$role]->perm_all;
-							}
-							//We check the limit of the permission
-							if($role_perm > $max_perm){
-								$role_perm = $max_perm;
-							}
-						}
-						if(!isset($tree_role[$table_name])){ $tree_role[$table_name] = array(); }
-						foreach ($models as $id => $model) {
-							$role_perm_elem = $role_perm;
-							$role_tp = $role;
-							if($allow_role && isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$id])){
-								$role_tp = $tree_roles_id[$table_name][$id];
-							} else {
-								if(!isset($tree_roles_id[$table_name])){ $tree_roles_id[$table_name] = array(); }
-								$tree_roles_id[$table_name][$id] = $role_tp;
-							}
-							if($role_tp != $role){
-								$max_perm_elem = 0; //[R]
-								if($role_tp > 0 && $class){
-									$max_perm_elem = $class::getPermissionSheet()[1];
-								}
-								if($max_perm_elem > 0 && isset($roles[$role_tp])){
-									if(isset($roles[$role_tp]->{'perm_'.$table_name})){ //Per model
-										$role_perm_elem = $roles[$role_tp]->{'perm_'.$table_name};
-									} else { //General
-										$role_perm_elem = $roles[$role_tp]->perm_all;
-									}
-									//We check the limit of the permission
-									if($role_perm_elem > $max_perm_elem){
-										$role_perm_elem = $max_perm_elem;
-									}
+				//Role (ok)
+				$arr = $root_uid[$users_id];
+				$arr_tp = $arr;
+				$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
+				while(!empty($arr)){
+					$arr_tp = array();
+					foreach ($arr as $role => $list) {
+						foreach ($list as $table_name => $models) {
+							//For guess users, delete the part of tree that are inaccessible
+							if($users_id != $uid){
+								if(
+									   !isset($tree_access[$table_name])
+									|| !isset($tree_access[$table_name][$users_id])
+								){
+									continue;
 								}
 							}
-							$tree_role[$table_name][$id] = $role_perm_elem;
-							if(!empty((array)$model)){
-								if(!isset($arr_tp[$role_tp])){
-									$arr_tp[$role_tp] = $model;
+							$role_perm = 0; //[R]
+							$max_perm = 0; //[R]
+							$class = false;
+							$allow_role = false;
+							if(isset($list_models[$table_name])){
+								$class = $list_models[$table_name];
+								$allow_role = $class::getRoleAllow()[1];
+								if($role > 0){
+									$max_perm = $class::getPermissionSheet()[1];
+								}
+							}
+							if($max_perm > 0 && isset($roles[$role])){
+								if(isset($roles[$role]->{'perm_'.$table_name})){ //Per model
+									$role_perm = $roles[$role]->{'perm_'.$table_name};
+								} else { //General
+									$role_perm = $roles[$role]->perm_all;
+								}
+								//We check the limit of the permission
+								if($role_perm > $max_perm){
+									$role_perm = $max_perm;
+								}
+							}
+							if(!isset($tree_role[$table_name])){ $tree_role[$table_name] = array(); }
+							if(!isset($tree_role[$table_name][$users_id])){ $tree_role[$table_name][$users_id] = array(); }
+							foreach ($models as $id => $model) {
+								//For guess users, delete the part of tree that are inaccessible
+								if($users_id != $uid){
+									if(
+										   !isset($tree_access[$table_name][$users_id][$id])
+										|| !isset($tree_access[$table_name][$users_id][$id]['access'])
+										|| !$tree_access[$table_name][$users_id][$id]['access']
+									){
+										continue;
+									}
+								}
+								$role_perm_elem = $role_perm;
+								$role_tp = $role;
+								if($allow_role && isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$users_id]) && isset($tree_roles_id[$table_name][$users_id][$id])){
+									$role_tp = $tree_roles_id[$table_name][$users_id][$id];
 								} else {
-									foreach ($model as $key => $value) {
-										if(!isset($arr_tp[$role_tp]->$key)){
-											$arr_tp[$role_tp]->$key = $value;
-										} else {
-											$arr_tp[$role_tp]->$key = (object) array_merge((array) $arr_tp[$role_tp]->$key, (array) $value);
+									if(!isset($tree_roles_id[$table_name])){ $tree_roles_id[$table_name] = array(); }
+									if(!isset($tree_roles_id[$table_name][$users_id])){ $tree_roles_id[$table_name][$users_id] = array(); }
+									$tree_roles_id[$table_name][$users_id][$id] = $role_tp;
+								}
+								if($role_tp != $role){
+									$max_perm_elem = 0; //[R]
+									if($role_tp > 0 && $class){
+										$max_perm_elem = $class::getPermissionSheet()[1];
+									}
+									if($max_perm_elem > 0 && isset($roles[$role_tp])){
+										if(isset($roles[$role_tp]->{'perm_'.$table_name})){ //Per model
+											$role_perm_elem = $roles[$role_tp]->{'perm_'.$table_name};
+										} else { //General
+											$role_perm_elem = $roles[$role_tp]->perm_all;
+										}
+										//We check the limit of the permission
+										if($role_perm_elem > $max_perm_elem){
+											$role_perm_elem = $max_perm_elem;
+										}
+									}
+								}
+								$tree_role[$table_name][$users_id][$id] = $role_perm_elem;
+								if(!empty((array)$model)){
+									if(!isset($arr_tp[$role_tp])){
+										$arr_tp[$role_tp] = $model;
+									} else {
+										foreach ($model as $key => $value) {
+											if(!isset($arr_tp[$role_tp]->$key)){
+												$arr_tp[$role_tp]->$key = $value;
+											} else {
+												$arr_tp[$role_tp]->$key = (object) array_merge((array) $arr_tp[$role_tp]->$key, (array) $value);
+											}
 										}
 									}
 								}
 							}
 						}
 					}
+					$arr = $arr_tp;
+					$i--;
+					if($i<=0){
+						$arr = array();
+						break;
+					}
 				}
-				$arr = $arr_tp;
-				$i--;
-				if($i<=0){
-					$arr = array();
-					break;
-				}
+				
 			}
-
+			
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($result_bis->$uid->$table_name as $id => $temp) {
-					$perm_owner = 0; //tree_owner
-					if(isset($tree_owner[$table_name]) && isset($tree_owner[$table_name][$id])){ $perm_owner = $tree_owner[$table_name][$id]; }
-					$perm_super = 0; //tree_super
-					if(isset($tree_super[$table_name]) && isset($tree_super[$table_name][$id])){ $perm_super = $tree_super[$table_name][$id]; }
-					$perm_single = 0; //tree_single (priority on single over Role)
-					$perm_role = 0; //tree_role
-					if(isset($tree_single[$table_name]) && isset($tree_single[$table_name][$id])){
-						$perm_single = $tree_single[$table_name][$id];
-					} else if(isset($tree_role[$table_name]) && isset($tree_role[$table_name][$id])){
-						$perm_role = $tree_role[$table_name][$id];
-					}
-					
-					$role_id = 0; //tree_role
-					if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$id])){ $role_id = $tree_roles_id[$table_name][$id]; }
-
-					/*
-					//This has to be done for each user
-					$result_bis->$uid->$table_name->$id->_perm = array(
-						(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
-						(int)$role_id,
-					);
-					*/
 					$result_bis->$uid->$table_name->$id->_perm = new \stdClass;
-					$result_bis->$uid->$table_name->$id->_perm->{'3'} = array(2, 2);
-					$result_bis->$uid->$table_name->$id->_perm->{'5'} = array(2, 2);
-					$result_bis->$uid->$table_name->$id->_perm->{'6'} = array(2, 2);
-					$result_bis->$uid->$table_name->$id->_perm->{'12'} = array(2, 2);
+					foreach ($tree_id['users'] as $users_id) {
+						//Check access first
+						if(
+							   !isset($tree_access_users[$table_name])
+							|| !isset($tree_access_users[$table_name][$users_id])
+							|| !isset($tree_access_users[$table_name][$users_id][$id])
+						){
+							continue;
+						}
+						$perm_owner = 0; //tree_owner
+						if(isset($tree_owner[$table_name]) && isset($tree_owner[$table_name][$users_id]) && isset($tree_owner[$table_name][$users_id][$id])){ $perm_owner = $tree_owner[$table_name][$users_id][$id]; }
+						$perm_super = 0; //tree_super
+						if(isset($tree_super[$table_name]) && isset($tree_super[$table_name][$users_id]) && isset($tree_super[$table_name][$users_id][$id])){ $perm_super = $tree_super[$table_name][$users_id][$id]; }
+						$perm_single = 0; //tree_single (priority on single over Role)
+						$perm_role = 0; //tree_role
+						if(isset($tree_single[$table_name]) && isset($tree_single[$table_name][$users_id]) && isset($tree_single[$table_name][$users_id][$id])){
+							$perm_single = $tree_single[$table_name][$users_id][$id];
+						} else if(isset($tree_role[$table_name]) && isset($tree_role[$table_name][$users_id]) && isset($tree_role[$table_name][$users_id][$id])){
+							$perm_role = $tree_role[$table_name][$users_id][$id];
+							if(!isset($result_bis->$uid->roles) || !isset($result_bis->$uid->roles->$perm_role)){
+								$perm_role = 0; //If the role is not register we set to viewer
+							}
+						}
+						$role_id = 0; //tree_role
+						if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$users_id]) && isset($tree_roles_id[$table_name][$users_id][$id])){ $role_id = $tree_roles_id[$table_name][$users_id][$id]; }
 
-					$result_bis->$uid->$table_name->$id->_perm->$uid = array(
-						(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
-						(int)$role_id,
-					);
-
+						$result_bis->$uid->$table_name->$id->_perm->$users_id = array(
+							(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
+							(int)$role_id,
+						);
+					}
 				}
 			}
 

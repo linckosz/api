@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Users;
 
 class Comments extends ModelLincko {
@@ -125,6 +126,15 @@ class Comments extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
+
+	//Give access to all, will be delete later by hierarchy
+	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+		$default = array(
+			'access' => 1, //Default is accessible
+		);
+		$result = parent::filterPivotAccessList($uid_list, $list, $default); //Format the list first
+		return $result;
+	}
 
 	//Add these functions to insure that nobody can make them disappear
 	public function delete(){ return false; }

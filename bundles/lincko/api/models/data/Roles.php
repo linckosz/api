@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Workspaces;
 
 class Roles extends ModelLincko {
@@ -108,6 +109,15 @@ class Roles extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	//Give access to all, will be delete later by hierarchy
+	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+		$default = array(
+			'access' => 1, //Default is accessible
+		);
+		$result = parent::filterPivotAccessList($uid_list, $list, $default); //Format the list first
+		return $result;
+	}
+
 	public function scopegetItems($query, $list=array(), $get=false){
 		$query = $query
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
@@ -120,6 +130,12 @@ class Roles extends ModelLincko {
 			$result = $query->get();
 			foreach($result as $key => $value) {
 				$result[$key]->accessibility = true;
+				if($result[$key]->perm_workspaces<1){
+					$result[$key]->perm_workspaces = 1; //We always allow at least workspace creation (if paid)
+				}
+				if($result[$key]->perm_comments<1){
+					$result[$key]->perm_comments = 1; //We always allow at least comments creation
+				}
 			}
 			return $result;
 		} else {
@@ -156,8 +172,12 @@ class Roles extends ModelLincko {
 			$this->parent_id = intval($app->lincko->data['workspace_id']);
 		}
 		$this->shared = 0;
-		$this->perm_grant = 0;
-		$this->perm_workspaces = 0;
+		if(!isset($this->perm_workspaces) || $this->perm_workspaces<1){
+			$this->perm_workspaces = 1; //We always allow at least workspace creation (if paid)
+		}
+		if(!isset($this->perm_comments) || $this->perm_comments<1){
+			$this->perm_comments = 1; //We always allow at least comments creation
+		}
 		$return = parent::save($options);
 		self::setForceReset(true);
 		return $return;

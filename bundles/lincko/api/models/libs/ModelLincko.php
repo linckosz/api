@@ -32,6 +32,8 @@ abstract class ModelLincko extends Model {
 
 ////////////////////////////////////////////
 
+	protected static $schema_table = array();
+
 	//(used in "toJson()") This is the field to show in the content of history (it will add a prefix "+", which is used for search tool too)
 	protected $show_field = false;
 
@@ -293,6 +295,19 @@ abstract class ModelLincko extends Model {
 
 ////////////////////////////////////////////
 
+	//Scan the list and tell if the user has an access to it by filetring it (mainly used for Data.php)
+	//The unaccesible one will be deleted in Data.php by hierarchy
+	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+		$result = array();
+		foreach ($uid_list as $uid) {
+			$result[$uid] = array();
+			foreach ($list as $value) {
+				$result[$uid][$value] = (array) $default;
+			}
+		}
+		return $result;
+	}
+
 	public static function getApp(){
 		if(is_null(self::$app)){
 			self::$app = \Slim\Slim::getInstance();
@@ -302,6 +317,34 @@ abstract class ModelLincko extends Model {
 
 	public static function getTableStatic(){
 		return (new static())->getTable();
+	}
+
+
+	public function tableExists($table){
+		$app = self::getApp();
+		$connection = $this->getConnectionName();
+		if(!isset(self::$schema_table[$connection])){
+			self::$schema_table[$connection] = array();
+			if(isset($app->lincko->databases[$connection]) && isset($app->lincko->databases[$connection]['database'])){
+				$sql = 'select `table_name` from `information_schema`.`tables` where `table_schema` = ?;';
+				$db = Capsule::connection($connection);
+				$database = Capsule::schema($connection)->getConnection()->getDatabaseName();
+				$tables = $db->select( $sql , [$database] );
+				foreach ($tables as $value) {
+					if(isset($value->table_name)){
+						self::$schema_table[$connection][$value->table_name] = true;
+					}
+				}
+			}
+		}
+		if(isset(self::$schema_table[$connection][$table])){
+			return true;
+		}
+		return false;
+	}
+
+	public static function getTablesList(){
+		return self::$schema_table;
 	}
 
 	//This function helps to get all instance related to the user itself only
@@ -458,41 +501,35 @@ abstract class ModelLincko extends Model {
 		if(!$class){
 			$class = self::getTableStatic();
 		}
-		$tp = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC($class);
-		if(class_exists($tp)){
-			return $tp;
+		$fullClass = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC($class);
+		if(class_exists($fullClass)){
+			return $fullClass;
 		}
 		return false;
 	}
 
+	//Only check the structure of the database
 	public function setForceSchema(){
+		$timestamp = time();
 		$list = array(
 			$this->getTable() => array($this->id),
 		);
-		Users::getUsers($list)->where('force_schema', 0)->getQuery()->update(['force_schema' => '1']);
+		Users::getUsers($list)->getQuery()->update(['check_schema' => $timestamp]);
 		return true;
 	}
 
-	public function setUserSchemaReset(){
-		$user = Users::getUser();
-		if($user->force_schema>0){
-			$user->timestamps = false; //Disable timestamp update_at
-			$user->force_schema = 0;
-			$user->save();
-		}
-		return true;
-	}
-
+	//Force to redownload the whole database
 	public static function setForceReset($only_workspace=false){
 		$app = self::getApp();
+		$timestamp = time();
 		if($only_workspace){
 			$list = array(
 				'workspaces' => array($app->lincko->data['workspace_id']),
 			);
-			Users::getUsers($list)->getQuery()->update(['force_schema' => '2']);
+			Users::getUsers($list)->getQuery()->update(['force_schema' => $timestamp]);
 		} else {
 			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
-			Users::getQuery()->update(['force_schema' => '2']);
+			Users::getQuery()->update(['force_schema' => $timestamp]);
 		}
 		return true;
 	}
@@ -821,7 +858,7 @@ abstract class ModelLincko extends Model {
 			
 		//Check role
 		if(static::$permission_sheet[1] > $perm){
-			if(self::getWorkspaceSuper($users_id)){ //Check if super user (highest riority)
+			if(self::getWorkspaceSuper($users_id)){ //Check if super user (highest priority)
 				$perm = static::$permission_sheet[1];
 			} else {
 				$role_perm = $this->getRole($users_id);

@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Workspaces;
 use \libs\Json;
 
@@ -108,6 +109,26 @@ class Projects extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	//Only add access at true
+	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+		$result = array();
+		$table = (new self)->getTable();
+		$attributes = array( 'table' => $table, );
+		$pivot = new PivotUsers($attributes);
+		if($pivot->tableExists($pivot->getTable())){
+			$pivot = $pivot->whereIn('users_id', $uid_list)->whereIn($table.'_id', $list)->withTrashed()->get();
+			foreach ($pivot as $key => $value) {
+				if($value->access){
+					$uid = (integer) $value->users_id;
+					$id = (integer) $value->{$table.'_id'};
+					if(!isset($result[$uid])){ $result[$uid] = array(); }
+					$result[$uid][$id] = (array) $value->attributes;
+				}
+			}
+		}
+		return $result;
+	}
+
 	public function delete(){
 		if(isset($this->personal_private) && !empty($this->personal_private)){
 			$this::errorMsg('Cannot delete a private project');
@@ -164,6 +185,9 @@ class Projects extends ModelLincko {
 			$result = $query->get();
 			foreach($result as $key => $value) {
 				$result[$key]->accessibility = true;
+				if($result[$key]->personal_private == $app->lincko->data['uid']){
+					$result[$key]->parent_id = $app->lincko->data['workspace_id'];
+				}
 			}
 			return $result;
 		} else {
@@ -178,7 +202,7 @@ class Projects extends ModelLincko {
 			return false;
 		}
 		$level = $this->formatLevel($level);
-		//Personal_privat
+		//Personal_private
 		if(intval($this->personal_private)>0){
 			if($level==0 && $this->personal_private==$app->lincko->data['uid']){ //Read
 				return true;

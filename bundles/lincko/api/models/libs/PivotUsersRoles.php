@@ -33,6 +33,28 @@ class PivotUsersRoles extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	//Only delete the access at false
+	public static function getRoles($tree_id){
+		$result = new \stdClass;
+		if(isset($tree_id['users']) && isset($tree_id['roles'])){
+			$users = $tree_id['users'];
+			$roles = $tree_id['roles'];
+			$result = self::whereIn('users_id', $users)->where('access', 1);
+			foreach ($tree_id as $type => $list_id) {
+				if(in_array($type, static::$parent_list)){
+					$result = $result
+					->orWhere(function ($query) use ($type, $list_id) {
+						$query
+						->where('parent_type', $type)
+						->whereIn('parent_id', $list_id);
+					});
+				}
+			}
+			$result = $result->get();
+		}
+		return $result;
+	}
+
 	//Add these functions to insure that nobody can make them disappear
 	public function delete(){ return false; }
 	public function restore(){ return false; }

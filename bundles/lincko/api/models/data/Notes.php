@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 
 class Notes extends ModelLincko {
@@ -98,6 +99,30 @@ class Notes extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
+
+	//Only delete the access at false
+	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+		$default = array(
+			'access' => 1, //Default is accessible
+		);
+		$result = parent::filterPivotAccessList($uid_list, $list, $default); //Format the list first
+		$table = (new self)->getTable();
+		$attributes = array( 'table' => $table, );
+		$pivot = new PivotUsers($attributes);
+		if($pivot->tableExists($pivot->getTable())){
+			$pivot = $pivot->whereIn('users_id', $uid_list)->whereIn($table.'_id', $list)->withTrashed()->get();
+			foreach ($pivot as $key => $value) {
+				if(!$value->access){
+					$uid = (integer) $value->users_id;
+					$id = (integer) $value->{$table.'_id'};
+					if(isset($result[$uid]) && isset($result[$uid][$id])){
+						unset($result[$uid][$id]);
+					}
+				}
+			}
+		}
+		return $result;
+	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects

@@ -8,6 +8,7 @@ use \libs\Json;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\Workspaces;
@@ -630,8 +631,7 @@ class ControllerTest extends Controller {
 		//$tp = count(array('aaa'));
 		
 		
-		$theuser = Users::find($app->lincko->data['uid']);
-		$theuser::setDebugMode(true);
+		
 		//$tp = new Comments;
 		//$tp = Projects::find(13);
 		
@@ -658,7 +658,60 @@ class ControllerTest extends Controller {
 		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		//----------------------------------------
 
-		//$tp = Chats::find(120)->setHistory();
+		/*
+		$tp = 'no';
+		if(Capsule::schema('data')->hasTable('users_x_projects')){
+			$tp = 'ok';
+		}
+
+		$connection = Capsule::schema('data')->getConnection();
+		$sql = $connection->getSchemaGrammar()->compileTableExists();
+
+		$tp = $connection->select($sql, []);
+		*/
+
+		/*
+		$sql = 'select table_name from information_schema.tables where table_schema=?;';
+		$db = Capsule::connection('data');
+		$database = 'dev_lincko_data';
+		$tp = $db->select( $sql , [$database] );
+		*/
+		/*
+		$attributes = array( 'table' => 'projects', );
+		$tp = new PivotUsers($attributes);
+		$attributes = array( 'table' => 'users', );
+		$tp = new PivotUsers($attributes);
+		$attributes = array( 'table' => 'roles', );
+		$tp = new PivotUsers($attributes);
+		//$tp = $tp->getTable();
+		//$tp = $tp->tableExists($tp->getTable());
+
+		//$database = Capsule::schema('data')->getConnection()->getDatabaseName();
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		$tp = $tp->getTablesList();
+		*/
+
+		/*
+		$attributes = array( 'table' => 'roles', );
+		$tp = new PivotUsers($attributes);
+		if($tp->tableExists($tp->getTable())){
+			$tp = $tp->where('users_id', 3)->withTrashed()->get();
+			foreach ($tp as $key => $value) {
+				\libs\Watch::php( $value->access, '$projects_id => '.$value->projects_id, __FILE__, false, false, true);
+			}
+		}
+		*/
+
+		$theuser = Users::find($app->lincko->data['uid']);
+		$theuser::setDebugMode(true);
+
+
+		//$tp = Users::getUser()->getForceSchema();
+		$data = new Data();
+		$tp = $data->getTimestamp();
+		//$tp = $data->getForceSchema();
+
+
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

@@ -3,6 +3,7 @@
 namespace bundles\lincko\api\controllers;
 
 use \bundles\lincko\api\models\libs\Data;
+use \bundles\lincko\api\models\data\Users;
 
 use \libs\Controller;
 
@@ -22,16 +23,17 @@ class ControllerData extends Controller {
 		$msg = $app->trans->getBRUT('api', 8888, 9); //You got the latest updates.
 
 		$data = new Data();
+		$user = Users::getUser();
 		$partial = NULL;
 		$schema = NULL;
 		$info = NULL;
-		$forceSchema = $data->getForceSchema();
+		$data_lastvisit = $data->getTimestamp();
 		$lastvisit = time()-1;
 
-		if($forceSchema==2){
+		if($user->getForceSchema() > $data_lastvisit){
 			$info = 'reset';
 			$partial = $data->getLatest(0); //Setting to 0 helps to reset the full local database on client side
-		} else if($forceSchema==1){
+		} else if($user->getCheckSchema() > $data_lastvisit){
 			$schema = $data->getSchema();
 			$partial = $data->getLatest();
 		} else {
@@ -84,8 +86,7 @@ class ControllerData extends Controller {
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 12); //The synchronization will be done for all contacts.
 
-		$data = new Data();
-		$data->setForceSchema();
+		Users::getUser()->setForceSchema();
 
 		$app->render(200, array('msg' => array('msg' => $msg,)));
 		return true;
@@ -95,19 +96,7 @@ class ControllerData extends Controller {
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 14); //The database reset will be done for all contacts.
 
-		$data = new Data();
-		$data->setForceReset();
-
-		$app->render(200, array('msg' => array('msg' => $msg,)));
-		return true;
-	}
-
-	public function reset_init_post(){
-		$app = $this->app;
-		$msg = $app->trans->getBRUT('api', 8888, 15); //the user database has been refreshed.
-
-		$data = new Data();
-		$data->setResetInit();
+		Users::getUser()->setForceReset();
 
 		$app->render(200, array('msg' => array('msg' => $msg,)));
 		return true;
