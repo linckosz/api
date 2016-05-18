@@ -78,6 +78,9 @@ class ControllerUser extends Controller {
 		if(isset($form->id) && is_numeric($form->id)){
 			$form->id = (int) $form->id;
 		}
+		if(isset($form->temp_id) && is_string($form->temp_id)){
+			$form->temp_id = trim($form->temp_id);
+		}
 		if(isset($form->email) && is_string($form->email)){
 			$form->email = trim($form->email);
 		}
@@ -132,6 +135,7 @@ class ControllerUser extends Controller {
 			$errfield = 'gender';
 		}
 		else if($model = new Users()){
+			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->email = $form->email;
 			$model->password = $form->password;
 			if(isset($form->username)){ $model->username = $form->username; } //Optional

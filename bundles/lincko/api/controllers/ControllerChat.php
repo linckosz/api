@@ -64,6 +64,9 @@ class ControllerChat extends Controller {
 		if(isset($form->id) && is_numeric($form->id)){
 			$form->id = (int) $form->id;
 		}
+		if(isset($form->temp_id) && is_string($form->temp_id)){
+			$form->temp_id = trim($form->temp_id);
+		}
 		if(isset($form->parent_type) && is_string($form->parent_type)){
 			$form->parent_type = strtolower(trim($form->parent_type));
 		}
@@ -94,6 +97,7 @@ class ControllerChat extends Controller {
 			$errfield = 'title';
 		}
 		else if($model = new Chats()){
+			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_type = $form->parent_type;
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;

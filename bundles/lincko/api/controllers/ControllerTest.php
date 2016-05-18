@@ -706,16 +706,10 @@ class ControllerTest extends Controller {
 		$theuser::setDebugMode(true);
 
 
-		//$tp = Users::getUser()->getForceSchema();
-		$data = new Data();
-		$tp = $data->getTimestamp();
-		//$tp = $data->getForceSchema();
-
-
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		
 
 
 		

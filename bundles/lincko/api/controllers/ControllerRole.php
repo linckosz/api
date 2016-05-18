@@ -81,6 +81,9 @@ class ControllerRole extends Controller {
 		if(isset($form->id) && is_numeric($form->id)){
 			$form->id = (int) $form->id;
 		}
+		if(isset($form->temp_id) && is_string($form->temp_id)){
+			$form->temp_id = trim($form->temp_id);
+		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
@@ -167,6 +170,7 @@ class ControllerRole extends Controller {
 			$errfield = 'perm_comments';
 		}
 		else if($model = new Roles()){
+			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
 			$model->name = $form->name;
 			if(isset($form->perm_grant)){ $model->perm_grant = $form->perm_grant; } //Optional

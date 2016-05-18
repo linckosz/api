@@ -98,6 +98,7 @@ class ControllerWorkspace extends Controller {
 			$errfield = 'url';
 		}
 		else if($model = new Workspaces()){
+			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->name = $form->name;
 			if(isset($form->domain)){ $model->domain = $form->domain; } //Optional
 			if(isset($form->url)){ $model->url = $form->url; } //Optional

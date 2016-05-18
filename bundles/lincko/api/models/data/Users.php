@@ -22,6 +22,7 @@ class Users extends ModelLincko {
 
 	protected $visible = array(
 		'id',
+		'temp_id',
 		'updated_at',
 		'username',
 		'firstname',

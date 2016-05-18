@@ -19,6 +19,7 @@ class Workspaces extends ModelLincko {
 
 	protected $visible = array(
 		'id',
+		'temp_id',
 		'updated_at',
 		'name',
 		'domain',

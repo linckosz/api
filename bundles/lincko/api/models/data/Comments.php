@@ -20,6 +20,7 @@ class Comments extends ModelLincko {
 
 	protected $visible = array(
 		'id',
+		'temp_id',
 		'created_at',
 		'created_by',
 		'recalled_by',

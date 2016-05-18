@@ -767,7 +767,16 @@ class Data {
 			
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($result_bis->$uid->$table_name as $id => $temp) {
+					//Delete temp_id if the user is not concerned
+					if(isset($temp->created_by) && $temp->created_by!=$uid){
+						unset($result_bis->$uid->$table_name->$id->temp_id);
+					}
+					if(isset($temp->temp_id) && $temp->temp_id==''){
+						unset($result_bis->$uid->$table_name->$id->temp_id);
+					}
+
 					$result_bis->$uid->$table_name->$id->_perm = new \stdClass;
+					//Set permission per user
 					foreach ($tree_id['users'] as $users_id) {
 						//Check access first
 						if(

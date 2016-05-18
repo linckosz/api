@@ -65,6 +65,9 @@ class ControllerProject extends Controller {
 		if(isset($form->id) && is_numeric($form->id)){
 			$form->id = (int) $form->id;
 		}
+		if(isset($form->temp_id) && is_string($form->temp_id)){
+			$form->temp_id = trim($form->temp_id);
+		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
@@ -92,6 +95,7 @@ class ControllerProject extends Controller {
 			$errfield = 'description';
 		}
 		else if($model = new Projects()){
+			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(isset($form->description)){ $model->description = $form->description; } //Optional

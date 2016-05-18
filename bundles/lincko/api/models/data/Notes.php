@@ -20,6 +20,7 @@ class Notes extends ModelLincko {
 
 	protected $visible = array(
 		'id',
+		'temp_id',
 		'created_at',
 		'updated_at',
 		'created_by',
