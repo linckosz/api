@@ -3,7 +3,11 @@
 
 namespace bundles\lincko\api\models\libs;
 
+use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\data\Users;
+
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class History extends ModelLincko {
 
@@ -48,12 +52,39 @@ class History extends ModelLincko {
 	}
 
 	public function save(array $options = array()){
-		//Do accept only new history, disallow modification
+		$app = self::getApp();
+		$columns = self::getColumns();
+		//Indicate that the user aknowledge the creation notification
+		if(in_array('noticed_by', $columns)){
+			$noticed_by = ';'.$app->lincko->data['uid'].';';
+			if(strpos($this->noticed_by, $noticed_by) === false){
+				$noticed_by .= $this->noticed_by;
+				$this->noticed_by = $noticed_by;
+			}
+		}
 		if(isset($this->id)){
+			//Only allow notified_by modification
+			$dirty = $this->getDirty();
+			if(count($dirty)!=1 || !isset($dirty['noticed_by'])){
+				return false;
+			}
+			$this->timestamps = false; //Don't update updated_at
+		}
+		$return = Model::save($options);
+		return $return;
+	}
+
+	public function checkAccess($show_msg=true){
+		if(isset($this->id)){
+			//Only allow notified_by modification
+			$dirty = $this->getDirty();
+			if(count($dirty)==1 && isset($dirty['noticed_by'])){
+				$this->accessibility = (bool) true;
+				return true;
+			}
 			return false;
 		}
-		$return = parent::save($options);
-		return $return;
+		return parent::checkAccess($show_msg);
 	}
 
 	public function checkPermissionAllow($level, $msg=false){
@@ -61,8 +92,72 @@ class History extends ModelLincko {
 		$level = $this->formatLevel($level);
 		if($level==1){ //Creation
 			return true;
+		} else if($level==2){ //Edition (noticed_by only)
+			$dirty = $this->getDirty();
+			if(count($dirty)==1 && isset($dirty['noticed_by'])){
+				return true;
+			}
+			return false;
 		}
 		return false;
+	}
+
+	public static function historyNoticed($list){
+		$app = self::getApp();
+		$partial = false;
+		$uid = $app->lincko->data['uid'];
+		if(count($list)>0){
+			$histories = History::where('noticed_by', 'NOT LIKE', '%;'.$app->lincko->data['uid'].';%')
+			->where(function ($query) use ($list) {
+				foreach ($list as $type => $list_id) {
+					foreach ($list_id as $id => $timestamp) {
+						$query = $query
+						->orWhere(function ($query) use ($type, $id, $timestamp) {
+							$query
+							->whereParentType($type)
+							->whereParentId($id);
+							if($timestamp!==true){
+								$created_at = (new \DateTime('@'.$timestamp))->format('Y-m-d H:i:s');
+								$query = $query->where('created_at', '<=', $created_at);
+							}
+						});
+					}
+				}
+			})->get();
+			$parent_list = array();
+			//Update History
+			foreach ($histories as $history) {
+				$history->save();
+				if(!isset($parent_list[$history->parent_type])){ $parent_list[$history->parent_type] = array(); }
+				$parent_list[$history->parent_type][$history->parent_id] = true;
+			}
+			//Update object itself
+			foreach ($list as $type => $list_id) {
+				$class = Users::getClass($type);
+				if($class){
+					foreach ($list_id as $id => $timestamp) {
+						if($model = $class::find($id)){
+							if(strpos($model->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
+								$noticed_by = $model->noticed_by.';'.$app->lincko->data['uid'].';';
+								$class::where('id', $id)->getQuery()->update(['noticed_by' => $noticed_by]);
+								$model->touchUpdateAt();
+								if(!$partial){ $partial = new \stdClass; }
+								if(!isset($partial->$uid)){ $partial->$uid = new \stdClass; }
+								if(!isset($partial->$uid->$type)){ $partial->$uid->$type = new \stdClass; }
+								if(!isset($partial->$uid->$type->$id)){ $partial->$uid->$type->$id = new \stdClass; }
+							} else if(isset($parent_list[$type]) && isset($parent_list[$type][$id])){
+								$model->touchUpdateAt();
+								if(!$partial){ $partial = new \stdClass; }
+								if(!isset($partial->$uid)){ $partial->$uid = new \stdClass; }
+								if(!isset($partial->$uid->$type)){ $partial->$uid->$type = new \stdClass; }
+								if(!isset($partial->$uid->$type->$id)){ $partial->$uid->$type->$id = new \stdClass; }
+							}
+						}
+					}
+				}
+			}
+		}
+		return $partial;
 	}
 
 }

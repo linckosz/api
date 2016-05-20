@@ -3,6 +3,7 @@
 namespace bundles\lincko\api\controllers;
 
 use \bundles\lincko\api\models\libs\Data;
+use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\data\Users;
 
 use \libs\Controller;
@@ -99,6 +100,67 @@ class ControllerData extends Controller {
 		Users::getUser()->setForceReset();
 
 		$app->render(200, array('msg' => array('msg' => $msg,)));
+		return true;
+	}
+
+	public function noticed_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 16); //Notifications updated.
+
+		if(isset($this->data->data)){
+			$list = array();
+			foreach ($this->data->data as $string => $timestamp) {
+				if(preg_match("/^([a-z_]+)_(\d+)$/ui", $string, $matches)){
+					$type = $matches[1];
+					$id = $matches[2];
+					if(!isset($list[$type])){ $list[$type] = array(); }
+					$list[$type][$id] = $timestamp;
+				}
+			}
+			$force_partial = History::historyNoticed($list);
+			$data = new Data();
+			$partial = $data->getMissing($force_partial);
+			$info = 'noticed';
+			$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial, 'info' => $info),));
+		} else {
+			$app->render(200, array('msg' => array('msg' => $msg,)));
+		}
+		
+		return true;
+	}
+
+	public function viewed_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 17); //Elements viewed.
+
+		if(isset($this->data->data)){
+			$force_partial = false;
+			$uid = $app->lincko->data['uid'];
+			foreach ($this->data->data as $string => $value) {
+				if(preg_match("/^([a-z_]+)_(\d+)$/ui", $string, $matches)){
+					$type = $matches[1];
+					$id = $matches[2];
+					$class = Users::getClass($type);
+					if($class){
+						if($model = $class::find($id)){
+							if($model->viewed()){
+								if(!$force_partial){ $force_partial = new \stdClass; }
+								if(!isset($force_partial->$uid)){ $force_partial->$uid = new \stdClass; }
+								if(!isset($force_partial->$uid->$type)){ $force_partial->$uid->$type = new \stdClass; }
+								if(!isset($force_partial->$uid->$type->$id)){ $force_partial->$uid->$type->$id = new \stdClass; }
+							}
+						}
+					}
+				}
+			}
+			$data = new Data();
+			$partial = $data->getMissing($force_partial);
+			$info = 'viewed';
+			$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial, 'info' => $info),));
+		} else {
+			$app->render(200, array('msg' => array('msg' => $msg,)));
+		}
+
 		return true;
 	}
 

@@ -705,11 +705,12 @@ class ControllerTest extends Controller {
 		$theuser = Users::find($app->lincko->data['uid']);
 		$theuser::setDebugMode(true);
 
-
+		$tp = Tasks::find(32);
+		$tp->noticed();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 
 		

@@ -819,8 +819,26 @@ abstract class ModelLincko extends Model {
 	}
 
 	//This function helps to delete the indicator as new for an item, it means we already saw it once
+	//It also place at false all notifications since the user aknowledge the latest information by viewing the element
 	public function viewed(){
 		$app = self::getApp();
+		//$this->noticed($category, $id, true); //We place at false all notifications (considerate as viewed) => after brainstorming, we keep up notification, even if the tasks as been opened
+		if (isset($this->id) && isset($this->viewed_by)) {
+			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
+				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
+				$this->getQuery()->update(['viewed_by' => $viewed_by]);
+				$this->touchUpdateAt();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public function noticed(){
+		$app = self::getApp();
+		$list = array();
+		$list[$this->getTable()] = array( $this->id => true, );
+		History::historyNoticed($list);
 	}
 
 	//In case the developer change the user ID, we reset all access
@@ -1081,22 +1099,26 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 		$app = self::getApp();
-	
+
 		//Insure that the user has at least a read access to the element where it's attached
 		//The access to the parent has been previously check in $this->checkAccess()
 		$parent = $this->getParent();
 		$columns = self::getColumns();
 
-		//Indicate the that the user itself has already viewed the last modification
+		//Indicate that the user itself has already viewed the last modification
 		if(in_array('viewed_by', $columns)){
+			//On front end, if the developper wants to know if it's a new or updated element, he can compare created_at and updated_at
 			$viewed_by = ';'.$app->lincko->data['uid'].';';
-			//[toto] Enabling the following avoid to have red dot everytime an update is done, need to brainstorm
-			/*
-			if(strpos($this->viewed_by, $viewed_by) === false){
-				$viewed_by .= $this->viewed_by;
+			$this->viewed_by = $viewed_by; //Reset
+		}
+
+		//Indicate that the user aknowledge the creation notification
+		if(in_array('noticed_by', $columns)){
+			$noticed_by = ';'.$app->lincko->data['uid'].';';
+			if(strpos($this->noticed_by, $noticed_by) === false){
+				$noticed_by .= $this->noticed_by;
 			}
-			*/
-			$this->viewed_by = $viewed_by;
+			$this->noticed_by = $noticed_by;
 		}
 
 		$dirty = $this->getDirty();
