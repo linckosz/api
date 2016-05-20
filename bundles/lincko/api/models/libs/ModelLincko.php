@@ -826,7 +826,7 @@ abstract class ModelLincko extends Model {
 		if (isset($this->id) && isset($this->viewed_by)) {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
-				$this->getQuery()->update(['viewed_by' => $viewed_by]);
+				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]);
 				$this->touchUpdateAt();
 				return true;
 			}
