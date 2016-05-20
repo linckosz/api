@@ -80,7 +80,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$fingerprint = $post['fingerprint'];
 			if($authorization = Authorization::find_finger($shangzai_puk, $fingerprint)){
 				$checksum = md5($authorization->private_key.$shangzai_puk);
-				if($user_log = UsersLog::find($authorization->user_id) && $checksum === $shangzai_cs){
+				if($user_log = UsersLog::find($authorization->users_id) && $checksum === $shangzai_cs){
 					$this->resignin = false;
 					$this->status = 412;
 				}

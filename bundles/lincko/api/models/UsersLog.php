@@ -51,7 +51,7 @@ class UsersLog extends Model {
 
 		if(isset($data->public_key) && $authorization = Authorization::find_finger($data->public_key, $fingerprint)){
 			//If we are signing in as a new user, we force to recheck the password.
-			if($this->id!==$authorization->user_id){
+			if($this->id!==$authorization->users_id){
 				$authorization = false;
 			}
 		}
@@ -83,7 +83,7 @@ class UsersLog extends Model {
 			$public_key = $authorization->public_key = $sha1;
 			$authorization->private_key = md5(uniqid());
 			$private_key = $authorization->private_key;
-			$authorization->user_id = $this->id;
+			$authorization->users_id = $this->id;
 			$authorization->fingerprint = $fingerprint;
 			if(!empty($this->id) && $authorization->save()){
 				return array(

@@ -54,7 +54,7 @@ class CheckAccess extends \Slim\Middleware {
 		$data = $this->data;
 		$authorization = $this->authorization;
 		if($authorization){
-			if($user_log = UsersLog::find($authorization->user_id)){
+			if($user_log = UsersLog::find($authorization->users_id)){
 				if($authorize = $user_log->authorize($data)){
 					if(isset($authorize['public_key']) && isset($authorize['private_key'])){
 						$this->app->lincko->securityFlash = $authorize;
@@ -70,8 +70,8 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 		if(isset($app->lincko->data['uid'])){
 			return $app->lincko->data['uid'];
-		} else if(isset($this->authorization->user_id) && $this->authorization->user_id>0){
-			if($user_log = UsersLog::find($this->authorization->user_id)){
+		} else if(isset($this->authorization->users_id) && $this->authorization->users_id>0){
+			if($user_log = UsersLog::find($this->authorization->users_id)){
 				if($user = Users::where('username_sha1', '=', $user_log->username_sha1)->first()){
 					$app->lincko->data['yonghu'] = $user->username; //This variable is used for error logs only
 					return $app->lincko->data['uid'] = $user->id;
@@ -249,7 +249,7 @@ class CheckAccess extends \Slim\Middleware {
 			$signout = true;
 			$status = 403;
 
-		//Check if the public key provided matchs. There is 2 kinds, one is standard with limited access to credential operations, the other is unique per device connection and correspond to a duo device(client side)/user_id(server side) and has whole access to the user workspace.
+		//Check if the public key provided matchs. There is 2 kinds, one is standard with limited access to credential operations, the other is unique per device connection and correspond to a duo device(client side)/users_id(server side) and has whole access to the user workspace.
 		} else if(!$this->checkPublicKey()) {
 			$msg = $app->trans->getBRUT('api', 0, 2); //Please sign in.
 			$status = 401;
