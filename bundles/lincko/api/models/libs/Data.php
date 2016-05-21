@@ -375,6 +375,8 @@ class Data {
 			$tree_id['users'][$users_id] = $users_id;
 		}
 
+		\libs\Watch::php( $tree_id['users'], '$users', __FILE__, false, false, true);
+
 		$tree_access = $this::getAccesses($tree_id); //Check if at least other users have access
 		//Get the list of all users that have access
 		foreach ($tree_access as $type => $type_list) {
@@ -383,10 +385,10 @@ class Data {
 			}
 		}
 
-		if($this->item_detail){
+		//Insure we get all users information (it can be a heavy operation over the time, need to careful)
+		$result->users = Users::getUsersContacts($tree_id, $visible);
 
-			//Insure we get all users information (it can be a heavy operation over the time, need to careful)
-			$result->users = Users::getUsersContacts($tree_id, $visible);
+		if($this->item_detail){
 
 			$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
 			$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
