@@ -295,16 +295,29 @@ abstract class ModelLincko extends Model {
 
 ////////////////////////////////////////////
 
-	//Scan the list and tell if the user has an access to it by filetring it (mainly used for Data.php)
+	//Scan the list and tell if the user has an access to it by filtering it (mainly used for Data.php)
 	//The unaccesible one will be deleted in Data.php by hierarchy
-	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+	public static function filterPivotAccessList(array $list, $suffix='_id'){
 		$result = array();
-		foreach ($uid_list as $uid) {
-			$result[$uid] = array();
-			foreach ($list as $value) {
-				$result[$uid][$value] = (array) $default;
+		$table = (new static)->getTable();
+		$attributes = array( 'table' => $table, );
+		$pivot = new PivotUsers($attributes);
+		if($pivot->tableExists($pivot->getTable())){
+			$pivot = $pivot->whereIn($table.$suffix, $list)->withTrashed()->get();
+			foreach ($pivot as $key => $value) {
+				if($value->access){
+					$uid = (integer) $value->users_id;
+					$id = (integer) $value->{$table.$suffix};
+					if(!isset($result[$uid])){ $result[$uid] = array(); }
+					$result[$uid][$id] = (array) $value->attributes;
+				}
 			}
 		}
+		return $result;
+	}
+
+	//By default just return the list as it is
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
 		return $result;
 	}
 
@@ -1150,6 +1163,9 @@ abstract class ModelLincko extends Model {
 				return false;
 			}
 		} else {
+			if(in_array('updated_by', $columns)){
+				$this->updated_by = $app->lincko->data['uid'];
+			}
 			$this->updateTimestamps();
 		}
 		$app->lincko->translation['fields_not_valid'] = $app->trans->getBRUT('api', 4, 3); //[unknwon]

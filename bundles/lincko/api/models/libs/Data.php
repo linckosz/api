@@ -263,11 +263,22 @@ class Data {
 		$tree_access = array();
 		if(isset($tree_id['users'])){
 			$list_models = self::getModels();
-			$users = $tree_id['users'];
 			foreach ($tree_id as $table => $list) {
 				if(isset($list_models[$table])){
 					$class = $list_models[$table];
-					$tree_access[$table] = $class::filterPivotAccessList($users, $list);
+					$tree_access[$table] = $class::filterPivotAccessList($list); //Getting real Pivot value
+				}
+			}
+			$users = array();
+			foreach ($tree_access as $type => $type_list) {
+				foreach ($type_list as $users_id => $value) {
+					$users[$users_id] = $users_id;
+				}
+			}
+			foreach ($tree_id as $table => $list) {
+				if(isset($list_models[$table])){
+					$class = $list_models[$table];
+					$tree_access[$table] = $class::filterPivotAccessListDefault($list, $users, $tree_access[$table]); //Applying default pivot value if need
 				}
 			}
 			//By default, give access to all users inside shared workspace
@@ -359,14 +370,24 @@ class Data {
 			$visible = $tree_id['users'];
 			$users = array_merge($tree_id['users'], $users);
 		}
-		$tree_id['users'] = array_keys(array_flip($users)); //Similar as array_unique, but faster for simple array
+		
+		foreach ($users as $users_id) {
+			$tree_id['users'][$users_id] = $users_id;
+		}
 
-		//Insure we get all users information (it can be a heavy operation over the time, need to careful)
-		$result->users = Users::getUsersContacts($tree_id, $visible);
+		$tree_access = $this::getAccesses($tree_id); //Check if at least other users have access
+		//Get the list of all users that have access
+		foreach ($tree_access as $type => $type_list) {
+			foreach ($type_list as $users_id => $value) {
+				$tree_id['users'][$users_id] = $users_id;
+			}
+		}
 
 		if($this->item_detail){
 
-			$tree_access = $this::getAccesses($tree_id); //Check if at least other users have access
+			//Insure we get all users information (it can be a heavy operation over the time, need to careful)
+			$result->users = Users::getUsersContacts($tree_id, $visible);
+
 			$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
 			$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
 			$tree_single = array(); //Permission allowed for the user at single element level (Priority 3 / cutomized)
@@ -379,7 +400,6 @@ class Data {
 					$roles[$value->id] = $value;
 				}
 			}
-
 
 			//Tell if the user has super access to the workspace
 			$work_super = array();
@@ -764,7 +784,7 @@ class Data {
 				}
 				
 			}
-			
+
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($result_bis->$uid->$table_name as $id => $temp) {
 					//Delete temp_id if the user is not concerned

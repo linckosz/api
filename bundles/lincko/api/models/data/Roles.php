@@ -110,11 +110,23 @@ class Roles extends ModelLincko {
 ////////////////////////////////////////////
 
 	//Give access to all, will be delete later by hierarchy
-	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+	public static function filterPivotAccessList(array $list, $suffix='_id'){
+		return array();
+	}
+
+	//This is used because by default not all IDs are stored in pivot table
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
 		$default = array(
 			'access' => 1, //Default is accessible
 		);
-		$result = parent::filterPivotAccessList($uid_list, $list, $default); //Format the list first
+		foreach ($uid_list as $uid) {
+			if(!isset($result[$uid])){ $result[$uid] = array(); }
+			foreach ($list as $value) {
+				if(!isset($result[$uid][$value])){
+					$result[$uid][$value] = (array) $default;
+				}
+			}
+		}
 		return $result;
 	}
 

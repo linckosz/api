@@ -150,23 +150,8 @@ class Users extends ModelLincko {
 ////////////////////////////////////////////
 
 	//Only add access at true
-	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
-		$result = array();
-		$table = (new self)->getTable();
-		$attributes = array( 'table' => $table, );
-		$pivot = new PivotUsers($attributes);
-		if($pivot->tableExists($pivot->getTable())){
-			$pivot = $pivot->whereIn('users_id', $uid_list)->whereIn($table.'_id_link', $list)->withTrashed()->get(); //Must use _id_link
-			foreach ($pivot as $key => $value) {
-				if($value->access){
-					$uid = (integer) $value->users_id;
-					$id = (integer) $value->{$table.'_id_link'}; //Must use _id_link
-					if(!isset($result[$uid])){ $result[$uid] = array(); }
-					$result[$uid][$id] = (array) $value->attributes;
-				}
-			}
-		}
-		return $result;
+	public static function filterPivotAccessList(array $list, $suffix='_id'){
+		return parent::filterPivotAccessList($list, '_id_link');
 	}
 
 	//Add these functions to insure that nobody can make them disappear

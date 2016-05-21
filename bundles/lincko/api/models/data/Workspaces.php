@@ -93,26 +93,6 @@ class Workspaces extends ModelLincko {
 
 ////////////////////////////////////////////
 
-	//Only add access at true
-	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
-		$result = array();
-		$table = (new self)->getTable();
-		$attributes = array( 'table' => $table, );
-		$pivot = new PivotUsers($attributes);
-		if($pivot->tableExists($pivot->getTable())){
-			$pivot = $pivot->whereIn('users_id', $uid_list)->whereIn($table.'_id', $list)->withTrashed()->get();
-			foreach ($pivot as $key => $value) {
-				if($value->access){
-					$uid = (integer) $value->users_id;
-					$id = (integer) $value->{$table.'_id'};
-					if(!isset($result[$uid])){ $result[$uid] = array(); }
-					$result[$uid][$id] = (array) $value->attributes;
-				}
-			}
-		}
-		return $result;
-	}
-
 	public function allowWorkspaceCreation(){
 		$this->allow_workspace_creation = true;
 	}

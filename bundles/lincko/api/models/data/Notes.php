@@ -101,24 +101,16 @@ class Notes extends ModelLincko {
 
 ////////////////////////////////////////////
 
-	//Only delete the access at false
-	public static function filterPivotAccessList(array $uid_list, array $list, array $default=array()){
+	//This is used because by default not all IDs are stored in pivot table
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
 		$default = array(
 			'access' => 1, //Default is accessible
 		);
-		$result = parent::filterPivotAccessList($uid_list, $list, $default); //Format the list first
-		$table = (new self)->getTable();
-		$attributes = array( 'table' => $table, );
-		$pivot = new PivotUsers($attributes);
-		if($pivot->tableExists($pivot->getTable())){
-			$pivot = $pivot->whereIn('users_id', $uid_list)->whereIn($table.'_id', $list)->withTrashed()->get();
-			foreach ($pivot as $key => $value) {
-				if(!$value->access){
-					$uid = (integer) $value->users_id;
-					$id = (integer) $value->{$table.'_id'};
-					if(isset($result[$uid]) && isset($result[$uid][$id])){
-						unset($result[$uid][$id]);
-					}
+		foreach ($uid_list as $uid) {
+			if(!isset($result[$uid])){ $result[$uid] = array(); }
+			foreach ($list as $value) {
+				if(!isset($result[$uid][$value])){
+					$result[$uid][$value] = (array) $default;
 				}
 			}
 		}
