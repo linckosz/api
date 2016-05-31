@@ -140,7 +140,7 @@ class Tasks extends ModelLincko {
 
 	//Many(Tasks) to Many(Files)
 	public function files(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'users_x_tasks', 'tasks_id', 'files_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'tasks_x_files', 'tasks_id', 'files_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////
