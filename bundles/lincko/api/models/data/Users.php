@@ -4,7 +4,6 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 
 use Illuminate\Database\Capsule\Manager as Capsule;

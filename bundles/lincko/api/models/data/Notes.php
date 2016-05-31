@@ -4,7 +4,6 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 
 class Notes extends ModelLincko {
@@ -28,6 +27,7 @@ class Notes extends ModelLincko {
 		'title',
 		'comment',
 		'_parent',
+		'_files',
 	);
 
 	// CUSTOMIZATION //
@@ -75,6 +75,10 @@ class Notes extends ModelLincko {
 	
 ////////////////////////////////////////////
 
+	protected static $dependencies_visible = array(
+		'files' => array(),
+	);
+
 	//Many(Notes) to One(Projects)
 	public function projects(){
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Projects', 'parent_id');
@@ -83,6 +87,11 @@ class Notes extends ModelLincko {
 	//Many(Notes) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_notes', 'notes_id', 'users_id')->withPivot('access');
+	}
+
+	//Many(Tasks) to Many(Files)
+	public function files(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'users_x_notes', 'notes_id', 'files_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////
@@ -150,15 +159,6 @@ class Notes extends ModelLincko {
 		} else {
 			return $query;
 		}
-	}
-
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		if($key == 'parent_id'){
-			if($project = Projects::find($new)){
-				$parameters['pj'] = $project->title;
-			}
-		}
-		parent::setHistory($key, $new, $old, $parameters);
 	}
 
 }

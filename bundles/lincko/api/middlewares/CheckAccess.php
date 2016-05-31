@@ -17,6 +17,7 @@ class CheckAccess extends \Slim\Middleware {
 	protected $authorization = NULL;
 	protected $authorizeAccess = false;
 	protected $route = NULL;
+	protected $upload = false;
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
@@ -208,6 +209,9 @@ class CheckAccess extends \Slim\Middleware {
 	protected function checkSum(){
 		$app = $this->app;
 		$data = $this->data;
+		if($this->upload){ //We do not check checksum for files
+			return true;
+		}
 		$authorization = $this->authorization;
 		if($authorization){
 			$checksum = md5($authorization->private_key.json_encode($data->data));
@@ -221,17 +225,44 @@ class CheckAccess extends \Slim\Middleware {
 		$data = $this->data;
 
 		$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$file_error = false;
 		$error = true;
 		$status = 400;
 		$signout = false;
 		$resignin = false;
 
-		//WARNING: SECURITY ISSUE THAT NEED TO BE SOLVED!
 		//For file uploading, make a specific process
-		if(preg_match("/^file\..*:8443$/ui",$app->request->headers->Host) && preg_match("/^\/file.*$/ui",$app->request->getResourceUri())){
+		if(preg_match("/^([a-z]+\.)file\..*:8443$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
+			$file_error = true;
 			if($this->checkRoute()!==false){
-				return $this->next->call();
+				$post = $app->request->post();
+				if(
+					   isset($post['shangzai_puk'])
+					&& isset($post['parent_type'])
+					&& isset($post['parent_id'])
+					&& isset($post['workspace'])
+					&& isset($post['fingerprint'])
+					&& isset($post['api_upload'])
+				){
+					$data = new \stdClass;
+					$post = $app->request->post();
+					$data->public_key = Datassl::decrypt($post['shangzai_puk'], $app->lincko->security['private_key']);
+					$data->api_key = $post['api_upload'];
+					$data->workspace = $post['workspace'];
+					$data->fingerprint = $post['fingerprint'];
+					$data->data = new \stdClass;
+					$data->checksum = 0;//md5($data->private_key.json_encode($data->data));
+					$this->data = $data;
+					$file_error = false;
+					$this->upload = true;
+				}
 			}
+		}
+
+		//Check if file access has an error
+		if($file_error){
+			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+			$status = 406;
 
 		//Check if all necessary fields in header are presents
 		} else if(!$this->checkFields()){

@@ -4,7 +4,6 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Workspaces;
 use \libs\Json;
 
@@ -225,6 +224,11 @@ class Projects extends ModelLincko {
 			}
 		}
 		return false;
+	}
+
+	public static function getPersonal(){
+		$app = self::getApp();
+		return self::where('personal_private', $app->lincko->data['uid'])->first();
 	}
 
 }

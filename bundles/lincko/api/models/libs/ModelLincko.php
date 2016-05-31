@@ -1393,13 +1393,17 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function pivots_format($form, $history_save=true){
+		$app = self::getApp();
 		$save = false;
 		foreach ($form as $key => $list) {
 			if( preg_match("/^([a-z0-9_]+)>([a-z0-9_]+)$/ui", $key, $match) && is_object($list) && count((array)$list)>0 ){
 				$type = $match[1];
 				$column = $match[2];
 				foreach ($list as $type_id => $value) {
-					if(is_numeric($type_id) && (int)$type_id>0){
+					//We cannot block or authorize itself
+					if($column=='access' && $type_id==$app->lincko->data['uid']){
+						continue;
+					} else if(is_numeric($type_id) && (int)$type_id>0){
 						$save = true;
 						if($this->pivots_var==null){ $this->pivots_var = new \stdClass; }
 						if(!isset($this->pivots_var->$type)){ $this->pivots_var->$type = new \stdClass; }

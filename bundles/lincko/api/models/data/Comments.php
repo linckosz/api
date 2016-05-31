@@ -4,7 +4,6 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Users;
 
 class Comments extends ModelLincko {
@@ -73,43 +72,42 @@ class Comments extends ModelLincko {
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'created_by');
 	}
 
-	//Many(Chats) to Many(Comments)
+	//Many(comments) to Many(Comments)
 	public function comments(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
 	}
 
-	//Many(Chats) to Many(Chats)
+	//Many(comments) to Many(Chats)
 	public function chats(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'comments', 'id', 'parent_id');
 	}
 
-	//Many(Chats) to Many(Workspaces)
+	//Many(comments) to Many(Workspaces)
 	public function workspaces(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Workspaces', 'comments', 'id', 'parent_id');
 	}
 
-	//Many(Chats) to Many(Projects)
+	//Many(comments) to Many(Projects)
 	public function projects(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'comments', 'id', 'parent_id');
 	}
 
-	//Many(Chats) to Many(Tasks)
+	//Many(comments) to Many(Tasks)
 	public function tasks(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'comments', 'id', 'parent_id');
 	}
 
-	//Many(Chats) to Many(Notes)
+	//Many(comments) to Many(Notes)
 	public function notes(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'comments', 'id', 'parent_id');
 	}
 
-	/*
-	toto => need to enable once File is ready
-	//Many(Chats) to Many(Files)
+	
+	//Many(comments) to Many(Files)
 	public function files(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'chats', 'id', 'parent_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'comments', 'id', 'parent_id');
 	}
-	*/
+	
 	
 
 ////////////////////////////////////////////

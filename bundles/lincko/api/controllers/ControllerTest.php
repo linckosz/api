@@ -18,6 +18,7 @@ use \bundles\lincko\api\models\data\Tasks;
 use \bundles\lincko\api\models\data\Roles;
 use \bundles\lincko\api\models\data\Comments;
 use \bundles\lincko\api\models\data\Notes;
+use \bundles\lincko\api\models\data\Files;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
@@ -702,14 +703,10 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		$theuser = Users::find($app->lincko->data['uid']);
-		$theuser::setDebugMode(true);
-
-		$tp = Tasks::find(32);
-		$tp->noticed();
+		$tp = Files::getItems()->get()->toArray();
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 

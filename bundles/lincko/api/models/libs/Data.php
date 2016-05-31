@@ -375,8 +375,6 @@ class Data {
 			$tree_id['users'][$users_id] = $users_id;
 		}
 
-		\libs\Watch::php( $tree_id['users'], '$users', __FILE__, false, false, true);
-
 		$tree_access = $this::getAccesses($tree_id); //Check if at least other users have access
 		//Get the list of all users that have access
 		foreach ($tree_access as $type => $type_list) {

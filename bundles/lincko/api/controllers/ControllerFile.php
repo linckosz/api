@@ -5,47 +5,27 @@ namespace bundles\lincko\api\controllers;
 
 use \libs\Json;
 use \libs\Controller;
-use \libs\Folders;
 use \libs\Datassl;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\data\Files;
 
 class ControllerFile extends Controller {
 
 	protected $app = NULL;
+	protected $data = NULL;
+	protected $form = NULL;
 	protected $user = NULL;
 	protected $msg = '';
 	protected $error = true;
-	protected $resignin = true;
-	protected $status = 401;
+	protected $status = 412;
 	protected $files = array();
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->msg = $app->trans->getBRUT('api', 3, 6); //Server access issue. Please retry.
+		$this->form = new \stdClass;
 		return true;
-	}
-
-	protected function displayHTML($msg=''){
-		$app = $this->app;
-		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
-		ob_clean();
-		echo '
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<script>
-document.domain = "'.$app->lincko->domain.'";
-</script>
-</head>
-<body>
-		'.$msg.'
-</body>
-</html>
-		';
-		return exit(0);
 	}
 
 	public function result(){
@@ -70,53 +50,112 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return exit(0);
 	}
 
+	protected function setFields(){
+		$app = $this->app;
+		$this->data = $app->request->post();
+
+		$form = new \stdClass;
+		/*
+		if(!isset($this->data->data)){
+			$app->render(400, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 0, 4)), 'error' => true,)); //No data form received.
+			return true;
+		} else {
+			$form = $this->data->data;
+		}
+		//Convert NULL to empty string to help isset returning true
+		foreach ($form as $key => $value) {
+			if(!is_numeric($value) && empty($value)){ //Exclude 0 to become an empty string
+				$form->$key = '';
+			}
+		}
+		if(isset($form->id) && is_numeric($form->id)){
+			$form->id = (int) $form->id;
+		}
+		if(isset($form->temp_id) && is_string($form->temp_id)){
+			$form->temp_id = trim($form->temp_id);
+		}
+		if(isset($form->parent_id) && is_numeric($form->parent_id)){
+			$form->parent_id = (int) $form->parent_id;
+		}
+		*/
+		return $this->form = $form;
+	}
+
 	public function create_post(){
 		$app = $this->app;
-		$post = $app->request->post();
+		$this->setFields();
+		$data = $this->data;
+		$this->msg = $app->trans->getBRUT('api', 3, 5); //Upload failed. Please retry.
 
-		if(isset($post['shangzai_puk']) && isset($post['shangzai_cs'])){
-			$shangzai_puk = Datassl::decrypt($post['shangzai_puk'], $app->lincko->security['private_key']);
-			$shangzai_cs = Datassl::decrypt($post['shangzai_cs'], $app->lincko->security['public_key']);
-			$fingerprint = $post['fingerprint'];
-			if($authorization = Authorization::find_finger($shangzai_puk, $fingerprint)){
-				$checksum = md5($authorization->private_key.$shangzai_puk);
-				if($user_log = UsersLog::find($authorization->users_id) && $checksum === $shangzai_cs){
-					$this->resignin = false;
-					$this->status = 412;
-				}
+		$parent_type = null;
+		$parent_id = null;
+		if(isset($data['parent_type']) && isset($data['parent_id'])){
+			$parent_type = $data['parent_type'];
+			$parent_id = $data['parent_id'];
+		} else { //By default store into MyPlaceholder
+			if($personal_private = Projects::getPersonal()){
+				$parent_type = 'projects';
+				$parent_id = $personal_private->id;
 			}
 		}
 
-		if(!$this->resignin){
-			if(isset($_FILES)){
-				foreach ($_FILES as $file => $fileArray) {
-					if(is_array($fileArray['tmp_name'])){
-						foreach ($fileArray['tmp_name'] as $j => $value) {
-							$file_tmp = array(
-								'name' => $fileArray['name'][$j],
-								'type' => $fileArray['type'][$j],
-								'tmp_name' => $fileArray['tmp_name'][$j],
-								'error' => $fileArray['error'][$j],
-								'size' => $fileArray['size'][$j],
-							);
-							$this->handleFile($file_tmp);
+		$success = false;
+		if(isset($_FILES)){
+			foreach ($_FILES as $file => $fileArray) {
+				if(is_array($fileArray['tmp_name'])){
+					foreach ($fileArray['tmp_name'] as $j => $value) {
+						if($model = new Files()){
+							$model->name = $fileArray['name'][$j];
+							$model->ori_type = mb_strtolower($fileArray['type'][$j]);
+							$model->tmp_name = $fileArray['tmp_name'][$j];
+							$model->error = $fileArray['error'][$j];
+							$model->size = $fileArray['size'][$j];
+							$model->parent_type = $parent_type;
+							$model->parent_id = $parent_id;
+							if($model->save()){
+								$model->setForceSchema();
+								$success = true;
+							} else {
+								$success = false;
+								break;
+							}
 						}
-					} else {
-						$this->handleFile($fileArray);
+					}
+				} else {
+					if($model = new Files()){
+						$model->name = $fileArray['name'];
+						$model->ori_type = mb_strtolower($fileArray['type']);
+						$model->tmp_name = $fileArray['tmp_name'];
+						$model->error = $fileArray['error'];
+						$model->size = $fileArray['size'];
+						$model->parent_type = $parent_type;
+						$model->parent_id = $parent_id;
+						if($model->save()){
+							$model->setForceSchema();
+							$success = true;
+						} else {
+							$success = false;
+						}
 					}
 				}
-			} else {
-				$this->msg = $app->trans->getBRUT('api', 3, 2); //No file selected to upload.
 			}
 		} else {
+			$this->msg = $app->trans->getBRUT('api', 3, 2); //No file selected to upload.
+		}
+
+		if($success){
+			$this->msg = $app->trans->getBRUT('api', 3, 3); //Upload Successful
+			$this->error = false;
+			$this->status = 200;
+		} else {
 			if(isset($_FILES)){
-				\libs\Watch::php(array_merge($post, $_FILES),'Upload failed',__FILE__,true);
+				\libs\Watch::php(array_merge($data, $_FILES), 'Upload failed',__FILE__,true);
 			} else {
-				\libs\Watch::php($post,'Upload failed (no file)',__FILE__,true);
+				\libs\Watch::php($data, 'Upload failed (no file)',__FILE__,true);
 			}
 		}
 
-		$json = new Json($this->msg, $this->error, $this->status, false, $this->resignin, $this->files);
+		$json = new Json($this->msg, $this->error, $this->status, false, false, $this->files);
 		$json->render();
 
 		return false;
@@ -151,39 +190,5 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return false;
 	}
 
-	//This function only works if the client and the server have the same secret_key
-	protected function uncryptData($value){
-		$app = $this->app;
-		return \Slim\Http\Util::decodeSecureCookie(
-			$value,
-			$app->config('cookies.secret_key'),
-			$app->config('cookies.cipher'),
-			$app->config('cookies.cipher_mode')
-		);
-	}
-
-	protected function handleFile($file){
-		$app = $this->app;
-		$this->msg = $app->trans->getBRUT('api', 3, 5); //Upload failed. Please retry.
-		$folder = new Folders;
-		$folder->createPath($app->lincko->filePath.'/temp/');
-		$obj = (object) array(
-			'name' => $file['name'],
-			'size' => $file['size'],
-			'error' => null,
-		);
-		$array_tmp_name = $file['tmp_name'];
-		$array_name = $file['name'];
-		if($file['size']<=0){
-			$obj->error = $app->trans->getBRUT('api', 3, 4); //File empty
-		} else {
-			copy($array_tmp_name, $folder->getPath().$array_name);
-			$this->msg = $app->trans->getBRUT('api', 3, 3); //Upload Successful
-			$this->error = false;
-			$this->status = 200;
-		}
-		array_push($this->files, $obj);
-		return true;
-	}
 
 }

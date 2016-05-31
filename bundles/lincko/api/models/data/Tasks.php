@@ -4,7 +4,6 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 
 class Tasks extends ModelLincko {
@@ -38,6 +37,7 @@ class Tasks extends ModelLincko {
 		'_parent',
 		'_tasks',
 		'_users',
+		'_files',
 	);
 
 	// CUSTOMIZATION //
@@ -62,7 +62,7 @@ class Tasks extends ModelLincko {
 		'start' => 502, //[{un|ucfirst}] modified a task
 		'progress' => 502, //[{un|ucfirst}] modified a task
 		'parent_id' => 505, //[{un|ucfirst}] moved a task to the project "[{pj|ucfirst}]"
-		'_delay' => 550, //[{un|ucfirst}] modified a task delay
+		'pivot_delay' => 550, //[{un|ucfirst}] modified a task delay
 		'pivot_in_charge_0' => 551, //[{cun|ucfirst}] is in charge of a task
 		'pivot_in_charge_1' => 552, //[{cun|ucfirst}] is unassigned from a task
 		'pivot_approver_0' => 553, //[{cun|ucfirst}] becomes an approver to a task
@@ -120,6 +120,7 @@ class Tasks extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'users' => array('in_charge', 'approver'),
 		'tasks' => array('delay'),
+		'files' => array(),
 	);
 
 	//Many(Tasks) to One(Projects)
@@ -135,6 +136,11 @@ class Tasks extends ModelLincko {
 	//Many(Tasks) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_tasks', 'tasks_id', 'users_id')->withPivot('access', 'in_charge', 'approver');
+	}
+
+	//Many(Tasks) to Many(Files)
+	public function files(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'users_x_tasks', 'tasks_id', 'files_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////

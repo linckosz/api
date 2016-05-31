@@ -56,7 +56,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 	curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 	curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
 	curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER ,true);
