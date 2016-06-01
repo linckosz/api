@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
+use \libs\STR;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\Data;
 
@@ -67,6 +68,9 @@ class ControllerProject extends Controller {
 		}
 		if(isset($form->temp_id) && is_string($form->temp_id)){
 			$form->temp_id = trim($form->temp_id);
+		}
+		if(isset($form->title) && is_string($form->title)){
+			$form->title = trim(STR::break_line_conv($form->title,' '));
 		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;

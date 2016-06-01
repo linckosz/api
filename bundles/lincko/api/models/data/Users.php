@@ -172,6 +172,7 @@ class Users extends ModelLincko {
 			})
 			->orWhere('users.id', $app->lincko->data['uid']);
 		});
+		//We do not allow to gather deleted users
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

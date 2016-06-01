@@ -225,7 +225,9 @@ class Data {
 						$nested = true;
 						while($nested){ //$nested is used for element that are linked to each others
 							$nested = false;
+							$class::enableTrashGlocal(true);
 							$result_bis = $class::getItems($list, true);
+							$class::enableTrashGlocal(false);
 							if(isset($result->$key)){
 								$result->$key = $result->$key->merge($result_bis);
 							} else {

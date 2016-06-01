@@ -703,10 +703,17 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		$tp = Files::getItems()->get()->toArray();
+		//$tp = Files::getItems()->get()->toArray();
+		//$tp = Notes::find(61)->projects->id;
+
+		$tp = Files::getModel(13);
+		//$tp = Chats::getModel(135);
+
+		//$class = Files::getClass('notes');
+		//$tp = $class::getModel('61');
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 

@@ -137,6 +137,9 @@ class Roles extends ModelLincko {
 			->where('roles.parent_id', $app->lincko->data['workspace_id'])
 			->orWhere('shared', 1);
 		});
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

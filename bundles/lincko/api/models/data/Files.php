@@ -64,7 +64,13 @@ class Files extends ModelLincko {
 		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
 	);
 
-	protected static $parent_list = array('users', 'chats', 'projects');
+	/*
+		IMPORTANT:
+		'users', 'chats', 'projects' are hardly attached
+		'tasks', 'notes' are softly attached, meaning that the file will be attached to the parent project but will be given the dependency to the tasks or note
+	*/
+	protected static $parent_list = array('users', 'chats', 'projects', 'tasks', 'notes');
+	protected static $parent_list_hard = array('users', 'chats', 'projects');
 
 	protected $model_integer = array(
 		'version_of',
@@ -175,6 +181,9 @@ class Files extends ModelLincko {
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 0);
 		}, '<', 1);
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {
@@ -230,7 +239,9 @@ class Files extends ModelLincko {
 	}
 
 
-
+	public static function getParentListHard(){
+		return static::$parent_list_hard;
+	}
 
 
 

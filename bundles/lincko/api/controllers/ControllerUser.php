@@ -82,16 +82,16 @@ class ControllerUser extends Controller {
 			$form->temp_id = trim($form->temp_id);
 		}
 		if(isset($form->email) && is_string($form->email)){
-			$form->email = trim($form->email);
+			$form->email = trim(STR::break_line_conv($form->email,' '));
 		}
 		if(isset($form->username) && is_string($form->username)){
-			$form->username = trim($form->username);
+			$form->username = trim(STR::break_line_conv($form->username,' '));
 		}
 		if(isset($form->firstname) && is_string($form->firstname)){
-			$form->firstname = trim($form->firstname);
+			$form->firstname = trim(STR::break_line_conv($form->firstname,' '));
 		}
 		if(isset($form->lastname) && is_string($form->lastname)){
-			$form->lastname = trim($form->lastname);
+			$form->lastname = trim(STR::break_line_conv($form->lastname,' '));
 		}
 		if(isset($form->gender)){
 			$form->gender = (int) boolval($form->gender);

@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
+use \libs\STR;
 use \bundles\lincko\api\models\data\Notes;
 use \bundles\lincko\api\models\libs\Data;
 
@@ -70,6 +71,9 @@ class ControllerNote extends Controller {
 		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
+		}
+		if(isset($form->title) && is_string($form->title)){
+			$form->title = trim(STR::break_line_conv($form->title,' '));
 		}
 		return $this->form = $form;
 	}

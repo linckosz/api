@@ -7,8 +7,8 @@ namespace bundles\lincko\api\models\libs;
 use \Exception;
 use \libs\Json;
 use \libs\STR;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
@@ -27,6 +27,7 @@ abstract class ModelLincko extends Model {
 	use SoftDeletes;
 	protected $dates = ['deleted_at'];
 	protected $with_trash = false;
+	protected static $with_trash_global = false;
 
 	protected $guarded = array('*');
 
@@ -379,6 +380,9 @@ abstract class ModelLincko extends Model {
 			$query = $query
 			->where('id', -1); //Force to return null
 		}
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {
@@ -457,6 +461,16 @@ abstract class ModelLincko extends Model {
 	public function createdBy(){
 		if(isset($this->created_by)){
 			return $this->created_by;
+		}
+		return false;
+	}
+
+	//Check if the user has access to the object
+	public static function getModel($id){
+		if($model = static::find($id)){
+			if($model->checkAccess()){
+				return $model;
+			}
 		}
 		return false;
 	}
@@ -1311,6 +1325,13 @@ abstract class ModelLincko extends Model {
 		$this->with_trash = $trash;
 	}
 
+	//True: will display with trashed
+	//False (default): will display only not deleted
+	public static function enableTrashGlocal($trash=false){
+		$trash = (boolean) $trash;
+		self::$with_trash_global = $trash;
+	}
+
 	/*
 		Note: The following information are note built in this method, but are necessary to outup a element Read:
 			- _parent: array(0,1)
@@ -1331,6 +1352,9 @@ abstract class ModelLincko extends Model {
 					unset($temp->$key);
 					$temp->{$prefix.$key} = (string)$temp_field;
 				}
+			}
+			if(isset($this->deleted_at) && !is_null($this->deleted_at) && $this->deleted_at instanceof Carbon){
+				$temp->deleted_at = $this->deleted_at->format('Y-m-d H:i:s');
 			}
 			$temp = json_encode($temp, $options);
 		} else {
@@ -1393,6 +1417,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function pivots_format($form, $history_save=true){
+		//toto => if the value saved is default or unchanged, we do not record history
 		$app = self::getApp();
 		$save = false;
 		foreach ($form as $key => $list) {
@@ -1512,7 +1537,8 @@ abstract class ModelLincko extends Model {
 		}
 		if($touch){
 			$this->touch();
-			$this->setForceSchema();
+			//$this->setForceSchema();
+			$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
 		}
 		return $success;
 	}

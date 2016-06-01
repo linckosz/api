@@ -132,6 +132,7 @@ class Workspaces extends ModelLincko {
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 1);
 		});
+		//We do not allow to gather deleted workspaces
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

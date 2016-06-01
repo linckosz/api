@@ -140,6 +140,9 @@ class Chats extends ModelLincko {
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 1);
 		});
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

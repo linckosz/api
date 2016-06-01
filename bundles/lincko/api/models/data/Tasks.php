@@ -120,7 +120,7 @@ class Tasks extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'users' => array('in_charge', 'approver'),
 		'tasks' => array('delay'),
-		'files' => array(),
+		'files' => array('access'),
 	);
 
 	//Many(Tasks) to One(Projects)
@@ -207,6 +207,9 @@ class Tasks extends ModelLincko {
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 0);
 		}, '<', 1);
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

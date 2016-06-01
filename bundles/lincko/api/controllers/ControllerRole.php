@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
+use \libs\STR;
 use \bundles\lincko\api\models\data\Roles;
 use \bundles\lincko\api\models\libs\Data;
 
@@ -86,6 +87,9 @@ class ControllerRole extends Controller {
 		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
+		}
+		if(isset($form->name) && is_string($form->name)){
+			$form->name = trim(STR::break_line_conv($form->name,' '));
 		}
 		if(isset($form->perm_grant)){
 			$form->perm_grant = (int) boolval($form->perm_grant);

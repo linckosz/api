@@ -28,7 +28,7 @@ $app->configureMode('development', function () use ($app) {
 	ini_set('opcache.enable', '0');
 	$app->lincko->showError = true; //Force to see Error message
 	//Force to delay (microseconds) to simulate network slow speed
-	usleep(500000); //500ms
+	//usleep(500000); //500ms
 });
 
 require_once $path.'/config/autoload.php' ;

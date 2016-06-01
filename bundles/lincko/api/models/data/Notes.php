@@ -76,7 +76,7 @@ class Notes extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'files' => array(),
+		'files' => array('access'),
 	);
 
 	//Many(Notes) to One(Projects)
@@ -91,7 +91,7 @@ class Notes extends ModelLincko {
 
 	//Many(Tasks) to Many(Files)
 	public function files(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'users_x_notes', 'notes_id', 'files_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'notes_x_files', 'notes_id', 'files_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////
@@ -150,6 +150,9 @@ class Notes extends ModelLincko {
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 0);
 		}, '<', 1);
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

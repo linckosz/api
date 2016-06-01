@@ -184,7 +184,10 @@ class Comments extends ModelLincko {
 					}
 				}
 			});
-		});		
+		});
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

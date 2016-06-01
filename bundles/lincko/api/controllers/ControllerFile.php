@@ -89,14 +89,41 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		$parent_type = null;
 		$parent_id = null;
+		$attached = false;
+		$pivot = false;
 		if(isset($data['parent_type']) && isset($data['parent_id'])){
-			$parent_type = $data['parent_type'];
-			$parent_id = $data['parent_id'];
-		} else { //By default store into MyPlaceholder
-			if($personal_private = Projects::getPersonal()){
-				$parent_type = 'projects';
-				$parent_id = $personal_private->id;
+			//Hard attach
+			if(in_array($data['parent_type'], Files::getParentListHard())){
+				if($class = Files::getClass($data['parent_type'])){
+					if($parent = $class::getModel($data['parent_id'])){
+						$parent_type = $data['parent_type'];
+						$parent_id = $data['parent_id'];
+						$attached = true;
+					}
+				}
 			}
+			//Soft attach
+			else if(in_array($data['parent_type'], Files::getParentList())){
+				if($class = Files::getClass($data['parent_type'])){
+					$parent = $class::getModel($data['parent_id']);
+					if($parent && method_exists($class, 'projects')){
+						if($project = $parent->projects()->first()){
+							$parent_type = 'projects';
+							$parent_id = $project->id;
+							$attached = true;
+							$pivot = new \stdClass;
+							$pivot->{$data['parent_type'].'>access'} = new \stdClass;
+							$pivot->{$data['parent_type'].'>access'}->$data['parent_id'] = true;
+						}
+					}
+				}
+			}
+		}
+
+		//By default store into MyPlaceholder
+		if(!$attached && $personal_private = Projects::getPersonal()){
+			$parent_type = 'projects';
+			$parent_id = $personal_private->id;
 		}
 
 		$success = false;
@@ -112,6 +139,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							$model->size = $fileArray['size'][$j];
 							$model->parent_type = $parent_type;
 							$model->parent_id = $parent_id;
+							if(is_object($pivot)){
+								$model->pivots_format($pivot, false);
+							}
 							if($model->save()){
 								$model->setForceSchema();
 								$success = true;
@@ -130,6 +160,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						$model->size = $fileArray['size'];
 						$model->parent_type = $parent_type;
 						$model->parent_id = $parent_id;
+						if(is_object($pivot)){
+							$model->pivots_format($pivot, false);
+						}
 						if($model->save()){
 							$model->setForceSchema();
 							$success = true;
