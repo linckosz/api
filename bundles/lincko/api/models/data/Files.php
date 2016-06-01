@@ -30,6 +30,8 @@ class Files extends ModelLincko {
 		'updated_by',
 		'version_of',
 		'name',
+		'category',
+		'comment',
 		'ori_type',
 		'ori_ext',
 		'thu_type',
@@ -91,7 +93,8 @@ class Files extends ModelLincko {
 	protected $imagequalitycomp = '70';
 	protected $videoquality = 1; //[0]480p / [1]720p / [2]1080p
 
-	protected $list_types = array(
+	protected $category = 'file'; //Store in file by default
+	protected static $list_categories = array(
 		'image' => array('image/bmp', 'image/x-windows-bmp', 'image/gif', 'image/jpeg', 'image/pjpeg', 'image/png', 'image/vnd.wap.wbmp'),
 
 		'video' => array('application/asx', 'application/vnd.ms-asf', 'application/vnd.rn-realmedia', 'application/vnd.rn-realmedia-vbr', 'application/x-mplayer2', 'application/x-pn-mpg', 'application/x-troff-msvideo', 'content/unknown', 'image/mov', 'image/mpg', 'video/3gpp', 'video/avi', 'video/dvd', 'video/mp4', 'video/mp4v-es', 'video/mpeg', 'video/mpeg2', 'video/mpg', 'video/msvideo', 'video/quicktime', 'video/xmpg2', 'video/x-flv', 'video/x-m4v', 'video/x-matroska', 'video/x-mpeg', 'video/x-mpeg2a', 'video/x-mpg', 'video/x-msvideo', 'video/x-ms-asf', 'video/x-ms-asf-plugin', 'video/x-ms-wm', 'video/x-ms-wmv', 'video/x-ms-wmx', 'video/x-quicktime', 'video/webm'),
@@ -206,34 +209,42 @@ class Files extends ModelLincko {
 	
 	public function save(array $options = array()){
 		$app = self::getApp();
-		if($this->error!=0 || !$this->fileformat()){
-			return false;
+		if(!$this->id){ //Only copy a file for new items
+			if($this->error!=0 || !$this->fileformat()){
+				return false;
+			}
+			if($this->size > 1000000000){
+				$msg = $app->trans->getBRUT('api', 3, 4); //File empty
+				$json = new Json($msg, true, 400);
+				$json->render();
+				return false;
+			}
+
+			try {
+				$this->server_path = $app->lincko->filePath;
+				$this->setCategory();
+				$this->link = md5(uniqid());
+				$folder_ori = new Folders;
+				$folder_ori->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/');
+				copy($this->tmp_name, $folder_ori->getPath().$this->link);
+				$this->thu_type = null;
+				$this->thu_ext = null;
+				//if($this->ori_type=='image' || $this->ori_type=='video'){ //toto, need to create jpeg for videos
+				if($this->category=='image'){
+					$folder_thu = new Folders;
+					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
+					$this->thu_type = $this->ori_type;
+					$this->thu_ext = $this->ori_ext;
+					copy($this->tmp_name, $folder_thu->getPath().$this->link);
+				}
+				$this->progress = 100;
+				if($this->category=='video'){
+					$this->progress = 0; //Only video needs significant time for compression
+				}
+			} catch(\Exception $e){
+				return false;
+			}
 		}
-		if($this->size > 1000000000){
-			$msg = $app->trans->getBRUT('api', 3, 4); //File empty
-			$json = new Json($msg, true, 400);
-			$json->render();
-			return false;
-		}
-
-		try {
-			$this->server_path = $app->lincko->filePath;
-			$folder_ori = new Folders;
-			$folder_ori->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/');
-			$folder_thu = new Folders;
-			$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
-			$this->link = md5(uniqid());
-
-			$this->thu_ext = $this->ori_ext;
-			$this->thu_type = $this->ori_type;
-
-			copy($this->tmp_name, $folder_ori->getPath().$this->link);
-			copy($this->tmp_name, $folder_thu->getPath().$this->link);
-			$this->progress = 100;
-		} catch(\Exception $e){
-			return false;
-		}
-
 		$return = parent::save($options);
 		return $return;
 	}
@@ -241,6 +252,17 @@ class Files extends ModelLincko {
 
 	public static function getParentListHard(){
 		return static::$parent_list_hard;
+	}
+
+	public function setCategory(){
+		$this->ori_type = strtolower($this->ori_type);
+		foreach (static::$list_categories as $category => $list) {
+			if(in_array($this->ori_type, $list)){
+				$this->category = $category;
+				break;
+			}
+		}
+		return $this->category;
 	}
 
 

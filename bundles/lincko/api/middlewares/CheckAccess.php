@@ -105,6 +105,7 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 
 		$route = $app->router->getMatchedRoutes($app->request->getMethod(), $app->request->getResourceUri());
+		\libs\Watch::php($app->request->getResourceUri(), '$route', __FILE__, false, false, true);
 		if (is_array($route) && count($route) > 0) {
 			$route = $route[0];
 		}
@@ -233,28 +234,37 @@ class CheckAccess extends \Slim\Middleware {
 
 		//For file uploading, make a specific process
 		if(preg_match("/^([a-z]+\.)file\..*:8443$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
-			$file_error = true;
-			if($this->checkRoute()!==false){
-				$post = $app->request->post();
-				if(
-					   isset($post['shangzai_puk'])
-					&& isset($post['parent_type'])
-					&& isset($post['parent_id'])
-					&& isset($post['workspace'])
-					&& isset($post['fingerprint'])
-					&& isset($post['api_upload'])
-				){
-					$data = new \stdClass;
+	
+			if($app->lincko->method_suffix == '_post'){ //File uploading
+				$file_error = true;
+				if($this->checkRoute()!==false){
 					$post = $app->request->post();
-					$data->public_key = Datassl::decrypt($post['shangzai_puk'], $app->lincko->security['private_key']);
-					$data->api_key = $post['api_upload'];
-					$data->workspace = $post['workspace'];
-					$data->fingerprint = $post['fingerprint'];
-					$data->data = new \stdClass;
-					$data->checksum = 0;//md5($data->private_key.json_encode($data->data));
-					$this->data = $data;
-					$file_error = false;
-					$this->upload = true;
+					if(
+						   isset($post['shangzai_puk'])
+						&& isset($post['parent_type'])
+						&& isset($post['parent_id'])
+						&& isset($post['workspace'])
+						&& isset($post['fingerprint'])
+						&& isset($post['api_upload'])
+					){
+						$data = new \stdClass;
+						$post = $app->request->post();
+						$data->public_key = Datassl::decrypt($post['shangzai_puk'], $app->lincko->security['private_key']);
+						$data->api_key = $post['api_upload'];
+						$data->workspace = $post['workspace'];
+						$data->fingerprint = $post['fingerprint'];
+						$data->data = new \stdClass;
+						$data->checksum = 0;//md5($data->private_key.json_encode($data->data));
+						$this->data = $data;
+						$file_error = false;
+						$this->upload = true;
+					}
+				}
+			} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/(\w+)\/(\d+)\/(?:link|thumbnail)\/\d+\/.+\.\w+$/ui", $app->request->getResourceUri())){ //File reading
+				if($this->checkRoute()!==false){
+					//toto =>we have to improve for security
+					\libs\Watch::php($this->route, '$route', __FILE__, false, false, true);
+					return $this->next->call();
 				}
 			}
 		}
