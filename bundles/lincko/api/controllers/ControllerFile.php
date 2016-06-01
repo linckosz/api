@@ -6,6 +6,7 @@ namespace bundles\lincko\api\controllers;
 use \libs\Json;
 use \libs\Controller;
 use \libs\Datassl;
+use \libs\SimpleImage;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Files;
@@ -223,5 +224,43 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return false;
 	}
 
+	public function file_open_get($workspace, $uid, $type, $id){
+		$app = $this->app;
+		ob_clean();
+		flush();
+		$file = Files::find($id);
+		if($type=='thumbnail' && is_null($file->thu_type)){ //If the thumbnail is not available we download
+			$type = 'download';
+		}
+		if($type=='link' && $file->category!='image'){ //If the file is different than an image we download by default
+			$type = 'download';
+		}
+		if($type=='download'){
+			$path = $file->server_path.'/'.$file->created_by.'/'.$file->link;
+			if(filesize($path)>0){
+				header('Content-Description: File Transfer');
+				header('Content-Type: application/force-download;');
+				header('Content-Disposition: attachment; filename="'.$file->name.'"');
+				header('Content-Transfer-Encoding: binary');
+				header('Expires: 0');
+				header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+				header('Pragma: public');
+				header('Content-Length: ' . filesize($path));
+				readfile($path);
+			}
+		} else if($type=='link' || $type=='thumbnail'){
+			if($type=='thumbnail'){
+				$path = $file->server_path.'/'.$file->created_by.'/thumbnail/'.$file->link;
+			} else {
+				$path = $file->server_path.'/'.$file->created_by.'/'.$file->link;
+			}
+			if(filesize($path)>0){
+				$src = new SimpleImage($path);
+				$src->output();
+				unset($src);
+			}
+		}
+		return exit(0);
+	}
 
 }

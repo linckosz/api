@@ -44,23 +44,17 @@ $app->group('/file', function () use ($app) {
 	->name('file_result');
 
 	$app->get(
-		'/restore',
-		'\bundles\lincko\api\controllers\ControllerFile:restore'.$app->lincko->method_suffix
+		'/:workspace/:uid/:type/:id/:name',
+		'\bundles\lincko\api\controllers\ControllerFile:file_open_get'
 	)
+	->conditions(array(
+		'workspace' => '\d+',
+		'uid' => '\w+',
+		'type' => 'link|thumbnail|download',
+		'id' => '\d+',
+		'name' => '.+\.\w+',
+	))
 	->name('file_open_get');
 
 });
-
-$app->get(
-	'/file/:pubkey/:workspace/:type/:id/:name',
-	'\bundles\lincko\api\controllers\ControllerFile:file_open_get'
-)
-->conditions(array(
-	'pubkey' => '\w+',
-	'pubkey' => '\d+',
-	'type' => 'link|thumbnail',
-	'id' => '\d+',
-	'name' => '.+\.\w+',
-))
-->name('file_open_get');
 

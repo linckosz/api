@@ -105,7 +105,6 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 
 		$route = $app->router->getMatchedRoutes($app->request->getMethod(), $app->request->getResourceUri());
-		\libs\Watch::php($app->request->getResourceUri(), '$route', __FILE__, false, false, true);
 		if (is_array($route) && count($route) > 0) {
 			$route = $route[0];
 		}
@@ -234,7 +233,6 @@ class CheckAccess extends \Slim\Middleware {
 
 		//For file uploading, make a specific process
 		if(preg_match("/^([a-z]+\.)file\..*:8443$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
-	
 			if($app->lincko->method_suffix == '_post'){ //File uploading
 				$file_error = true;
 				if($this->checkRoute()!==false){
@@ -260,10 +258,9 @@ class CheckAccess extends \Slim\Middleware {
 						$this->upload = true;
 					}
 				}
-			} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/(\w+)\/(\d+)\/(?:link|thumbnail)\/\d+\/.+\.\w+$/ui", $app->request->getResourceUri())){ //File reading
+			} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/\d+\/\w+\/(?:link|thumbnail|download)\/\d+\/.+\.\w+$/ui", $app->request->getResourceUri())){ //File reading
 				if($this->checkRoute()!==false){
-					//toto =>we have to improve for security
-					\libs\Watch::php($this->route, '$route', __FILE__, false, false, true);
+					//toto => Big security issue, anyone can see files! It should go thrugh front end server later
 					return $this->next->call();
 				}
 			}
@@ -290,7 +287,7 @@ class CheckAccess extends \Slim\Middleware {
 			$signout = true;
 			$status = 403;
 
-		//Check if the public key provided matchs. There is 2 kinds, one is standard with limited access to credential operations, the other is unique per device connection and correspond to a duo device(client side)/users_id(server side) and has whole access to the user workspace.
+		//Check if the public key provided matches. There is 2 kinds, one is standard with limited access to credential operations, the other is unique per device connection and correspond to a duo device(client side)/users_id(server side) and has whole access to the user workspace.
 		} else if(!$this->checkPublicKey()) {
 			$msg = $app->trans->getBRUT('api', 0, 2); //Please sign in.
 			$status = 401;
