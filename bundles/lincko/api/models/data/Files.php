@@ -262,6 +262,7 @@ class Files extends ModelLincko {
 				break;
 			}
 		}
+		//\libs\Watch::php($this->category, '$category', __FILE__, false, false, true);
 		return $this->category;
 	}
 
