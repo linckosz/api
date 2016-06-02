@@ -23,6 +23,7 @@ class Projects extends ModelLincko {
 		'temp_id',
 		'created_at',
 		'updated_at',
+		'deleted_at',
 		'created_by',
 		'title',
 		'description',

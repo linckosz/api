@@ -244,6 +244,7 @@ class CheckAccess extends \Slim\Middleware {
 						&& isset($post['parent_id'])
 						&& isset($post['workspace'])
 						&& isset($post['fingerprint'])
+						&& isset($post['temp_id'])
 						&& isset($post['api_upload'])
 					){
 						$data = new \stdClass;
@@ -253,7 +254,7 @@ class CheckAccess extends \Slim\Middleware {
 						$data->workspace = $post['workspace'];
 						$data->fingerprint = $post['fingerprint'];
 						$data->data = new \stdClass;
-						$data->checksum = 0;//md5($data->private_key.json_encode($data->data));
+						$data->checksum = 0;
 						$this->data = $data;
 						$file_error = false;
 						$this->upload = true;

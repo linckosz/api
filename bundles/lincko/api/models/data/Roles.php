@@ -18,7 +18,6 @@ class Roles extends ModelLincko {
 	public $timestamps = true;
 
 	protected $hidden = array(
-		'deleted_at',
 		'updated_by',
 		'deleted_by',
 	);

@@ -22,6 +22,7 @@ class Tasks extends ModelLincko {
 		'temp_id',
 		'created_at',
 		'updated_at',
+		'deleted_at',
 		'approved_at',
 		'created_by',
 		'updated_by',

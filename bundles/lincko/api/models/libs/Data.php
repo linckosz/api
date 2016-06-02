@@ -582,7 +582,11 @@ class Data {
 
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($models as $id => $model) {
-					$result_bis->$uid->$table_name->$id = new \stdClass;
+					if(isset($model->deleted_at) && !is_null($model->deleted_at)){
+							$result_bis->$uid->$table_name->$id = false;
+					} else {
+						$result_bis->$uid->$table_name->$id = true;
+					}
 				}
 			}
 
@@ -842,6 +846,43 @@ class Data {
 					}
 				}
 			}
+			$list_models = self::getModels();
+			foreach ($tree_access as $table_name => $users) {
+				if(isset($result_bis->$uid->$table_name) && isset($list_models[$table_name])){
+					$class = $list_models[$table_name];
+					if(isset($class::getDependenciesVisible()['users'])){
+						$dependencies_visible_users = $class::getDependenciesVisible()['users'];
+						foreach ($users as $users_id => $models) {
+							foreach ($models as $id => $pivot_array) {
+								if(isset($result_bis->$uid->$table_name->$id)){
+									if(!isset($result_bis->$uid->$table_name->$id->_users)){ $result_bis->$uid->$table_name->$id->_users = new \stdClass; }
+									if(!isset($result_bis->$uid->$table_name->$id->_users->$users_id)){
+										$temp = new \stdClass;
+										$error = false;
+										foreach ($dependencies_visible_users as $key) {
+											if(!isset($pivot_array[$key])){
+												$error = true;
+												break;
+											} else {
+												$temp->$key = $pivot_array[$key];
+											}
+										}
+										if($error){
+											continue;
+										}
+										$result_bis->$uid->$table_name->$id->_users->$users_id = $temp;
+									}
+									//$result_bis->$uid->$table_name->$id = (object) array_merge((array) $result_bis->$uid->$table_name->$id, (array) $temp);
+									\libs\Watch::php($temp, 'temp', __FILE__, false, false, true);
+								}
+							}
+						}
+					}
+				}
+			}
+				
+
+
 			$histories = Users::getHistories($list_id, $list_models, $this->history_detail);
 			foreach ($histories as $table_name => $models) {
 				foreach ($models as $id => $temp) {

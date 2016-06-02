@@ -90,6 +90,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		$parent_type = null;
 		$parent_id = null;
+		$temp_id = null;
 		$attached = false;
 		$pivot = false;
 		if(isset($data['parent_type']) && isset($data['parent_id'])){
@@ -140,6 +141,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							$model->size = $fileArray['size'][$j];
 							$model->parent_type = $parent_type;
 							$model->parent_id = $parent_id;
+							$model->temp_id = $data['temp_id'];
 							if(is_object($pivot)){
 								$model->pivots_format($pivot, false);
 							}
@@ -161,6 +163,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						$model->size = $fileArray['size'];
 						$model->parent_type = $parent_type;
 						$model->parent_id = $parent_id;
+						$model->temp_id = $data['temp_id'];
 						if(is_object($pivot)){
 							$model->pivots_format($pivot, false);
 						}
