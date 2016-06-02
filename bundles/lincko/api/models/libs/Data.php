@@ -872,8 +872,6 @@ class Data {
 										}
 										$result_bis->$uid->$table_name->$id->_users->$users_id = $temp;
 									}
-									//$result_bis->$uid->$table_name->$id = (object) array_merge((array) $result_bis->$uid->$table_name->$id, (array) $temp);
-									\libs\Watch::php($temp, 'temp', __FILE__, false, false, true);
 								}
 							}
 						}
