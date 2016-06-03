@@ -387,6 +387,19 @@ class Data {
 
 		//Insure we get all users information (it can be a heavy operation over the time, need to careful)
 		$result->users = Users::getUsersContacts($tree_id, $visible);
+		//\libs\Watch::php($result , '$var', __FILE__, false, false, true);
+		/*
+		foreach ($result->users as $key => $user) {
+			if($file = $user->profile){
+				if(!isset($result->files)){ $result->files = new \stdClass; }
+				if(!isset($result->files)){ $result->files = new \stdClass; }
+
+					$tree_access['files'][$uid][$file->id]['access']
+				
+			}
+		}
+		*/
+		
 
 		if($this->item_detail){
 
@@ -521,10 +534,12 @@ class Data {
 				if(isset($list_models[$table_name])){
 					$class = $list_models[$table_name];
 					foreach ($models as $key => $model) {
-						if(!isset($tree_owner[$table_name])){ $tree_owner[$table_name] = array(); }
-						foreach ($tree_id['users'] as $users_id) {
-							if(!isset($tree_owner[$table_name][$users_id])){ $tree_owner[$table_name][$users_id] = array(); }
-							$tree_owner[$table_name][$users_id][$model->id] = $model->getPermissionOwner($users_id);
+						if(isset($tree_id['users'] )){
+							if(!isset($tree_owner[$table_name])){ $tree_owner[$table_name] = array(); }
+							foreach ($tree_id['users'] as $users_id) {
+								if(!isset($tree_owner[$table_name][$users_id])){ $tree_owner[$table_name][$users_id] = array(); }
+								$tree_owner[$table_name][$users_id][$model->id] = $model->getPermissionOwner($users_id);
+							}
 						}
 					}
 				}
@@ -594,8 +609,10 @@ class Data {
 
 			$root_uid = array();
 			//Build the tree per user
-			foreach ($tree_id['users'] as $users_id) {
-				$root_uid[(int)$users_id] = array( 0 => json_decode(json_encode($root_0)) ); //No Super applied (0) at the root level
+			if(isset($tree_id['users'])){
+				foreach ($tree_id['users'] as $users_id) {
+					$root_uid[(int)$users_id] = array( 0 => json_decode(json_encode($root_0)) ); //No Super applied (0) at the root level
+				}
 			}
 
 			$tree_access_users = array();

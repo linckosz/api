@@ -27,6 +27,7 @@ class Users extends ModelLincko {
 		'firstname',
 		'lastname',
 		'gender',
+		'profile_pic',
 		'_parent',
 		'_lock',
 		'_visible',
@@ -64,6 +65,7 @@ class Users extends ModelLincko {
 
 	protected $model_integer = array(
 		'gender',
+		'profile_pic',
 	);
 
 	protected $model_boolean = array(
@@ -127,6 +129,11 @@ class Users extends ModelLincko {
 	//Many(Users) to Many(Roles)
 	public function perm($users_id=false){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Roles', 'users_x_roles_x', 'users_id', 'roles_id')->withPivot('access', 'relation_id', 'parent_type', 'single');
+	}
+
+	//One(Projects) to Many(Tasks)
+	public function profile(){
+		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Files', 'profile_pic');
 	}
 
 ////////////////////////////////////////////

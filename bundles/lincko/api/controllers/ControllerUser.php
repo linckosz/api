@@ -96,6 +96,9 @@ class ControllerUser extends Controller {
 		if(isset($form->gender)){
 			$form->gender = (int) boolval($form->gender);
 		}
+		if(isset($form->profile_pic) && is_numeric($form->profile_pic)){
+			$form->profile_pic = (int) $form->profile_pic;
+		}
 		return $this->form = $form;
 	}
 
@@ -142,6 +145,7 @@ class ControllerUser extends Controller {
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
+			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
 
 			$app->flashNow('signout', true);
 			$limit = 1;
@@ -289,6 +293,7 @@ class ControllerUser extends Controller {
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
+			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){

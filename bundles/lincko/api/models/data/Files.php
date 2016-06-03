@@ -94,7 +94,7 @@ class Files extends ModelLincko {
 	protected $imagequalitycomp = '70';
 	protected $videoquality = 1; //[0]480p / [1]720p / [2]1080p
 
-	protected $category = 'file'; //Store in file by default
+	//public $category = 'file'; //Store in file by default
 	protected static $list_categories = array(
 		'image' => array('image/bmp', 'image/x-windows-bmp', 'image/gif', 'image/jpeg', 'image/pjpeg', 'image/png', 'image/vnd.wap.wbmp'),
 
@@ -128,6 +128,11 @@ class Files extends ModelLincko {
 	//Many(Files) to Many(Projects)
 	public function projects(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'comments', 'id', 'parent_id');
+	}
+
+	//One(Files) to Many(Users)
+	public function profile(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Users', 'profile_pic');
 	}
 
 ////////////////////////////////////////////
@@ -176,6 +181,12 @@ class Files extends ModelLincko {
 						->where('files.parent_type', $this->var['parent_type'])
 						->whereIn('files.parent_id', $this->var['parent_id_array']);
 					});
+					if($table_name=='users'){
+						$query = $query
+						->orWhereHas('profile', function ($query){
+							//Toto => This is a problem, it get all pictures profile from all users
+						});
+					}
 				}
 			}
 		})
@@ -263,7 +274,6 @@ class Files extends ModelLincko {
 				break;
 			}
 		}
-		//\libs\Watch::php($this->category, '$category', __FILE__, false, false, true);
 		return $this->category;
 	}
 
