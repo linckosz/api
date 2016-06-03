@@ -35,6 +35,9 @@ abstract class ModelLincko extends Model {
 
 	protected static $schema_table = array();
 
+	//Force to save user access for the user itself
+	protected static $save_user_acecss = true;
+
 	//(used in "toJson()") This is the field to show in the content of history (it will add a prefix "+", which is used for search tool too)
 	protected $show_field = false;
 
@@ -1426,9 +1429,10 @@ abstract class ModelLincko extends Model {
 				$column = $match[2];
 				foreach ($list as $type_id => $value) {
 					//We cannot block or authorize itself
-					if($column=='access' && $type_id==$app->lincko->data['uid']){
+					if($column=='access' && $type_id==$app->lincko->data['uid'] && !static::$save_user_acecss){
 						continue;
-					} else if(is_numeric($type_id) && (int)$type_id>0){
+					} else
+					if(is_numeric($type_id) && (int)$type_id>0){
 						$save = true;
 						if($this->pivots_var==null){ $this->pivots_var = new \stdClass; }
 						if(!isset($this->pivots_var->$type)){ $this->pivots_var->$type = new \stdClass; }

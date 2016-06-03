@@ -33,6 +33,8 @@ class Notes extends ModelLincko {
 
 	// CUSTOMIZATION //
 
+	protected static $save_user_acecss = false;
+
 	protected $show_field = 'title';
 
 	protected $search_fields = array(

@@ -45,7 +45,7 @@ class Data {
 			$msg = array_merge(
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
-					'partial' => $this->getLatest(),
+					'partial' => $this->getLatest($lastvisit),
 					'lastvisit' => $lastvisit,
 				),
 				$msg
@@ -63,7 +63,7 @@ class Data {
 		return true;
 	}
 
-	protected function setLastVisit($timestamp='false'){
+	protected function setLastVisit($timestamp='false'){ //toto => Why a string?
 		if(is_integer($timestamp)){
 			if($timestamp>0){
 				return $this->lastvisit = (new \DateTime('@'.$timestamp))->format('Y-m-d H:i:s');
@@ -71,7 +71,8 @@ class Data {
 			return $this->lastvisit = false;
 		} else if(isset($this->data->data->lastvisit)){
 			if(is_integer($this->data->data->lastvisit) && $this->data->data->lastvisit>0){
-				return $this->lastvisit = (new \DateTime('@'.$this->data->data->lastvisit))->format('Y-m-d H:i:s');
+				$timestamp = $this->data->data->lastvisit - 1;
+				return $this->lastvisit = (new \DateTime('@'.$timestamp))->format('Y-m-d H:i:s');
 			}
 			return $this->lastvisit = false;
 		}
