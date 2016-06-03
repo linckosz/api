@@ -374,14 +374,18 @@ class Data {
 		}
 		
 		foreach ($users as $users_id) {
-			$tree_id['users'][$users_id] = $users_id;
+			if(isset($tree_id['users'])){
+				$tree_id['users'][$users_id] = $users_id;
+			}
 		}
 
 		$tree_access = $this::getAccesses($tree_id); //Check if at least other users have access
 		//Get the list of all users that have access
 		foreach ($tree_access as $type => $type_list) {
 			foreach ($type_list as $users_id => $value) {
-				$tree_id['users'][$users_id] = $users_id;
+				if(isset($tree_id['users'])){
+					$tree_id['users'][$users_id] = $users_id;
+				}
 			}
 		}
 
@@ -418,18 +422,20 @@ class Data {
 
 			//Tell if the user has super access to the workspace
 			$work_super = array();
-			foreach ($tree_id['users'] as $users_id) {
-				$work_super[$users_id] = array();
-				if(isset($tree_access['workspaces'][$users_id])){
-					foreach ($tree_access['workspaces'][$users_id] as $value) {
-						if($value['super']){
-							$work_super[$users_id][(int)$value['workspaces_id']] = $value['super'];
+			if(isset($tree_id['users'])){
+				foreach ($tree_id['users'] as $users_id) {
+					$work_super[$users_id] = array();
+					if(isset($tree_access['workspaces'][$users_id])){
+						foreach ($tree_access['workspaces'][$users_id] as $value) {
+							if($value['super']){
+								$work_super[$users_id][(int)$value['workspaces_id']] = $value['super'];
+							}
 						}
 					}
-				}
-				if(isset($work_super[$users_id])){
-					//Insure to reject super permission for shared workspace
-					unset($work_super[$users_id][0]);
+					if(isset($work_super[$users_id])){
+						//Insure to reject super permission for shared workspace
+						unset($work_super[$users_id][0]);
+					}
 				}
 			}
 
@@ -472,11 +478,13 @@ class Data {
 			if(!isset($tree_roles_id['workspaces'])){
 				$tree_roles_id['workspaces'] = array();
 			}
-			foreach ($tree_id['users'] as $users_id) {
-				if(!isset($tree_roles_id['workspaces'][(int)$users_id])){
-					$tree_roles_id['workspaces'][(int)$users_id] = array();
+			if(isset($tree_id['users'])){
+				foreach ($tree_id['users'] as $users_id) {
+					if(!isset($tree_roles_id['workspaces'][(int)$users_id])){
+						$tree_roles_id['workspaces'][(int)$users_id] = array();
+					}
+					$tree_roles_id['workspaces'][(int)$users_id][0] = 1;
 				}
-				$tree_roles_id['workspaces'][(int)$users_id][0] = 1;
 			}
 		}
 
@@ -819,37 +827,39 @@ class Data {
 					}
 
 					$result_bis->$uid->$table_name->$id->_perm = new \stdClass;
-					//Set permission per user
-					foreach ($tree_id['users'] as $users_id) {
-						//Check access first
-						if(
-							   !isset($tree_access_users[$table_name])
-							|| !isset($tree_access_users[$table_name][$users_id])
-							|| !isset($tree_access_users[$table_name][$users_id][$id])
-						){
-							continue;
-						}
-						$perm_owner = 0; //tree_owner
-						if(isset($tree_owner[$table_name]) && isset($tree_owner[$table_name][$users_id]) && isset($tree_owner[$table_name][$users_id][$id])){ $perm_owner = $tree_owner[$table_name][$users_id][$id]; }
-						$perm_super = 0; //tree_super
-						if(isset($tree_super[$table_name]) && isset($tree_super[$table_name][$users_id]) && isset($tree_super[$table_name][$users_id][$id])){ $perm_super = $tree_super[$table_name][$users_id][$id]; }
-						$perm_single = 0; //tree_single (priority on single over Role)
-						$perm_role = 0; //tree_role
-						if(isset($tree_single[$table_name]) && isset($tree_single[$table_name][$users_id]) && isset($tree_single[$table_name][$users_id][$id])){
-							$perm_single = $tree_single[$table_name][$users_id][$id];
-						} else if(isset($tree_role[$table_name]) && isset($tree_role[$table_name][$users_id]) && isset($tree_role[$table_name][$users_id][$id])){
-							$perm_role = $tree_role[$table_name][$users_id][$id];
-							if(!isset($result_bis->$uid->roles) || !isset($result_bis->$uid->roles->$perm_role)){
-								$perm_role = 0; //If the role is not register we set to viewer
+					if(isset($tree_id['users'])){
+						//Set permission per user
+						foreach ($tree_id['users'] as $users_id) {
+							//Check access first
+							if(
+								   !isset($tree_access_users[$table_name])
+								|| !isset($tree_access_users[$table_name][$users_id])
+								|| !isset($tree_access_users[$table_name][$users_id][$id])
+							){
+								continue;
 							}
-						}
-						$role_id = 0; //tree_role
-						if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$users_id]) && isset($tree_roles_id[$table_name][$users_id][$id])){ $role_id = $tree_roles_id[$table_name][$users_id][$id]; }
+							$perm_owner = 0; //tree_owner
+							if(isset($tree_owner[$table_name]) && isset($tree_owner[$table_name][$users_id]) && isset($tree_owner[$table_name][$users_id][$id])){ $perm_owner = $tree_owner[$table_name][$users_id][$id]; }
+							$perm_super = 0; //tree_super
+							if(isset($tree_super[$table_name]) && isset($tree_super[$table_name][$users_id]) && isset($tree_super[$table_name][$users_id][$id])){ $perm_super = $tree_super[$table_name][$users_id][$id]; }
+							$perm_single = 0; //tree_single (priority on single over Role)
+							$perm_role = 0; //tree_role
+							if(isset($tree_single[$table_name]) && isset($tree_single[$table_name][$users_id]) && isset($tree_single[$table_name][$users_id][$id])){
+								$perm_single = $tree_single[$table_name][$users_id][$id];
+							} else if(isset($tree_role[$table_name]) && isset($tree_role[$table_name][$users_id]) && isset($tree_role[$table_name][$users_id][$id])){
+								$perm_role = $tree_role[$table_name][$users_id][$id];
+								if(!isset($result_bis->$uid->roles) || !isset($result_bis->$uid->roles->$perm_role)){
+									$perm_role = 0; //If the role is not register we set to viewer
+								}
+							}
+							$role_id = 0; //tree_role
+							if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$users_id]) && isset($tree_roles_id[$table_name][$users_id][$id])){ $role_id = $tree_roles_id[$table_name][$users_id][$id]; }
 
-						$result_bis->$uid->$table_name->$id->_perm->$users_id = array(
-							(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
-							(int)$role_id,
-						);
+							$result_bis->$uid->$table_name->$id->_perm->$users_id = array(
+								(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
+								(int)$role_id,
+							);
+						}
 					}
 				}
 			}
