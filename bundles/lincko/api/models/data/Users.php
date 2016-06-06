@@ -31,6 +31,7 @@ class Users extends ModelLincko {
 		'_parent',
 		'_lock',
 		'_visible',
+		'_invitation',
 	);
 
 	// CUSTOMIZATION //
@@ -44,6 +45,8 @@ class Users extends ModelLincko {
 	protected $contactsLock = false; //By default do not lock the user
 
 	protected $contactsVisibility = false; //By default do not make the user visible
+
+	protected static $invitation_list = false; //Get List of invitation
 
 	protected $name_code = 600;
 
@@ -71,6 +74,7 @@ class Users extends ModelLincko {
 	protected $model_boolean = array(
 		'in_charge',
 		'approver',
+		'_invitation',
 	);
 
 	protected static $permission_sheet = array(
@@ -118,12 +122,12 @@ class Users extends ModelLincko {
 
 	//Many(Users) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_link')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_link')->withPivot('access', 'invitation');
 	}
 
 	//Many(Users) to Many(Users)
 	public function usersLinked(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id_link', 'users_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id_link', 'users_id')->withPivot('access', 'invitation');
 	}
 
 	//Many(Users) to Many(Roles)
@@ -143,7 +147,7 @@ class Users extends ModelLincko {
 			   (isset($form->id) && !self::validNumeric($form->id, true))
 			|| (isset($form->email) && !self::validEmail($form->email, true))
 			|| (isset($form->password) && !self::validPassword($form->password, true))
-			|| (isset($form->username) && !self::validChar($form->username, true))
+			|| (isset($form->username) && !self::validChar($form->username, true) && !self::validTextNotEmpty($form->username, true))
 			|| (isset($form->firstname) && !self::validChar($form->firstname, true))
 			|| (isset($form->lastname) && !self::validChar($form->lastname, true))
 			|| (isset($form->gender) && !self::validBoolean($form->gender, true))
@@ -175,7 +179,11 @@ class Users extends ModelLincko {
 				$app = self::getApp();
 				$query
 				->where('users_id', $app->lincko->data['uid'])
-				->where('access', 1);
+				->where(function ($query) {
+					$query
+					->where('access', 1)
+					->orWhere('invitation', 1);
+				});
 			})
 			->orWhere('users.id', $app->lincko->data['uid']);
 		});
@@ -249,6 +257,32 @@ class Users extends ModelLincko {
 		return $this->contactsVisibility;
 	}
 
+	public function setInvitation(){
+		$app = self::getApp();
+		$this->_invitation = false;
+		if(self::$invitation_list===false){
+			self::$invitation_list = array();
+			if($theUser = $this->getUser()){
+				if($contacts = $theUser->users){
+					foreach ($contacts as $key => $value) {
+						self::$invitation_list[$value->id] = (boolean) $value->pivot->invitation;
+					}
+				}
+			}
+		}
+		if(!isset(self::$invitation_list[$this->id])){
+			self::$invitation_list[$this->id] = false;
+		}
+		$this->_invitation = self::$invitation_list[$this->id];
+		if($this->_invitation){
+			$this->contactsVisibility = false;
+			if(!isset(self::$contacts_list[$this->id])){ self::$contacts_list[$this->id] = new \stdClass; }
+			$this->_lock = self::$contacts_list[$this->id][0] = false;
+			$this->_visible = self::$contacts_list[$this->id][1] = false;
+		}
+		return $this->_invitation;
+	}
+
 	protected function updateContactAttributes(){
 		if(isset(self::$contacts_list[$this->id])){
 			$this->_lock = self::$contacts_list[$this->id][0];
@@ -257,6 +291,7 @@ class Users extends ModelLincko {
 			$this->_lock = $this->getContactsLock();
 			$this->_visible = $this->getContactsVisibility();
 		}
+		$this->setInvitation($this->id);
 		return true;
 	}
 

@@ -255,17 +255,23 @@ abstract class ModelLincko extends Model {
 
 	public static function validChar($data, $optional=false){
 		if($optional && empty($data)){ return true; }
-		$return = is_string($data) && strlen(trim($data))>0 && preg_match("/^.{1,104}$/u", $data);
+		$return = is_string($data) && strlen(trim($data))>=0 && preg_match("/^.{0,104}$/u", $data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validTitle($data, $optional=false){
 		if($optional && empty($data)){ return true; }
-		$return = is_string($data) && strlen(trim($data))>0 && preg_match("/^.{1,200}$/u", $data);
+		$return = is_string($data) && strlen(trim($data))>=0 && preg_match("/^.{0,200}$/u", $data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validText($data, $optional=false){
+		if($optional && empty($data)){ return true; }
+		$return = is_string($data);
+		return self::noValidMessage($return, __FUNCTION__);
+	}
+
+	public static function validTextNotEmpty($data, $optional=false){
 		if($optional && empty($data)){ return true; }
 		$return = is_string($data) && strlen(trim($data))>0;
 		return self::noValidMessage($return, __FUNCTION__);

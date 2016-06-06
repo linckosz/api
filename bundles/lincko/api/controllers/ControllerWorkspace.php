@@ -68,6 +68,12 @@ class ControllerWorkspace extends Controller {
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
+		if(isset($form->name) && is_string($form->name)){
+			$form->name = trim(STR::break_line_conv($form->name,' '));
+			if(strlen($form->name)==0){
+				$form->name = $app->trans->getBRUT('api', 16, 0); //New Workspace
+			}
+		}
 		if(isset($form->domain) && is_string($form->domain)){
 			$form->domain = trim($form->domain);
 		}

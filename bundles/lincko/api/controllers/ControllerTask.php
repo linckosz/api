@@ -87,6 +87,9 @@ class ControllerTask extends Controller {
 		}
 		if(isset($form->title) && is_string($form->title)){
 			$form->title = trim(STR::break_line_conv($form->title,' '));
+			if(strlen($form->title)==0){
+				$form->title = $app->trans->getBRUT('api', 9, 0); //New Task
+			}
 		}
 		if(isset($form->start) && is_numeric($form->start)){
 			$form->start = (new \DateTime('@'.$form->start))->format('Y-m-d H:i:s');

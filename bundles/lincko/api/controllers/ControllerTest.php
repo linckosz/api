@@ -713,13 +713,12 @@ class ControllerTest extends Controller {
 					//$query->where('id', $app->lincko->data['uid']);
 				});
 				*/
-			$tp = Files::whereHas('profile', function ($query){
-				$query->where('id', 3);
-			})->get()->toArray();
 		//$tp = Chats::getModel(135);
 
 		//$class = Files::getClass('notes');
 		//$tp = $class::getModel('61');
+
+		$tp = Users::getItems()->get()->toArray();
 
 		//Display mysql requests
 		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

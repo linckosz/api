@@ -251,7 +251,7 @@ class Tasks extends ModelLincko {
 				break;
 			}
 		}
-		if($new){
+		if(Projects::getModel($this->parent_id)->personal_private == $app->lincko->data['uid']){
 			$pivots = new \stdClass;
 			$pivots->{'users>in_charge'} = new \stdClass;
 			$pivots->{'users>in_charge'}->{$app->lincko->data['uid']} = true;

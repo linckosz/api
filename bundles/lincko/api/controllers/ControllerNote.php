@@ -74,6 +74,9 @@ class ControllerNote extends Controller {
 		}
 		if(isset($form->title) && is_string($form->title)){
 			$form->title = trim(STR::break_line_conv($form->title,' '));
+			if(strlen($form->title)==0){
+				$form->title = $app->trans->getBRUT('api', 10, 0); //New Note
+			}
 		}
 		return $this->form = $form;
 	}

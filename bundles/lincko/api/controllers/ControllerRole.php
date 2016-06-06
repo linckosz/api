@@ -90,6 +90,9 @@ class ControllerRole extends Controller {
 		}
 		if(isset($form->name) && is_string($form->name)){
 			$form->name = trim(STR::break_line_conv($form->name,' '));
+			if(strlen($form->name)==0){
+				$form->name = $app->trans->getBRUT('api', 17, 0); //New Role
+			}
 		}
 		if(isset($form->perm_grant)){
 			$form->perm_grant = (int) boolval($form->perm_grant);
