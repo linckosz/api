@@ -250,6 +250,13 @@ class Tasks extends ModelLincko {
 				}
 				break;
 			}
+			/*
+				//toto => the line below allow edit for user that are only readers but with right of approver or assignment
+				if($details = $this->users()->theUser()->first()){
+					$pivot = $details->pivot;
+					//Need to continue to code
+				}
+			*/
 		}
 		if(Projects::getModel($this->parent_id)->personal_private == $app->lincko->data['uid']){
 			$pivots = new \stdClass;

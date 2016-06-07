@@ -263,6 +263,7 @@ class Data {
 
 	public static function getAccesses($tree_id){
 		$app = \Slim\Slim::getInstance();
+		$uid = $app->lincko->data['uid'];
 		$tree_access = array();
 		if(isset($tree_id['users'])){
 			$list_models = self::getModels();
@@ -838,6 +839,21 @@ class Data {
 								   !isset($tree_access_users[$table_name])
 								|| !isset($tree_access_users[$table_name][$users_id])
 								|| !isset($tree_access_users[$table_name][$users_id][$id])
+							){
+								continue;
+							}
+							//Reject any outside users from personal project
+							if(
+								   $table_name == 'projects'
+								&& $users_id != $uid
+								&& $result_bis->$uid->$table_name->$id->personal_private == $uid
+							){
+								continue;
+							}
+							//Reject any outside personal project
+							if(
+								   $table_name == 'projects'
+								&& $result_bis->$uid->$table_name->$id->personal_private != $uid
 							){
 								continue;
 							}

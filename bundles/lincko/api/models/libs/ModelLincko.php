@@ -1479,19 +1479,11 @@ abstract class ModelLincko extends Model {
 						}
 						$value = (string) $value;
 						if(!$success){ break; }
-						$pivot_exists = false;
 						$pivot = false;
 						if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
 							$pivot_relation = $this->$type();
 							if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
 								if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
-									$pivot_exists = true;
-								} else if($class = $this::getClass($type)){ //Check if the Class exists
-									$pivot = $class::find($type_id);
-								}
-							}
-							if($pivot){
-								if($pivot_exists){
 									//Update an existing pivot
 									$value_old = (string) $pivot->pivot->$column;
 									if($value_old != $value){

@@ -58,6 +58,7 @@ class Users extends ModelLincko {
 		'lastname' => 602,//[{un|ucfirst}] modified [{hh}] profile
 		'gender' => 602,//[{un|ucfirst}] modified [{hh}] profile
 		'email' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'pivot_invitation_1' => 695, //[{un|ucfirst}] has invited [{[{cun|ucfirst}]}]
 		'pivot_access_0' => 696, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to [{hh}] profile
 		'pivot_access_1' => 697, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to [{hh}] profile
 		'_restore' => 698,//[{un|ucfirst}] restored [{hh}] profile
@@ -421,6 +422,33 @@ class Users extends ModelLincko {
 
 	public function getUsername(){
 		return $this->username;
+	}
+
+	public function pivots_format($form, $history_save=true){
+		$app = self::getApp();
+		$save = parent::pivots_format($form, $history_save);
+		if(isset($this->pivots_var->users)){
+			if(!isset($this->pivots_var->usersLinked)){ $this->pivots_var->usersLinked = new \stdClass; }
+			foreach ($this->pivots_var->users as $users_id => $column_list) {
+				if(!isset($this->pivots_var->usersLinked->$users_id)){ $this->pivots_var->usersLinked->$users_id = new \stdClass; }
+				foreach ($column_list as $column => $value) {
+					//This insure to give or block access to both users in case of invitation
+					if($column=='access'){
+						$save = true;
+						$access = $value[0];
+						$this->pivots_var->users->$users_id->invitation = array(false, false);
+						$this->pivots_var->usersLinked->$users_id->invitation = array(false, false);
+						if($access){
+							$this->pivots_var->usersLinked->$users_id->access = array(true, true);
+						} else {
+							$this->pivots_var->usersLinked->$users_id->access = array(false, true);
+						}
+						Users::find($users_id)->touchUpdateAt();
+					}
+				}
+			}
+		}
+		return $save;	
 	}
 
 }

@@ -718,7 +718,8 @@ class ControllerTest extends Controller {
 		//$class = Files::getClass('notes');
 		//$tp = $class::getModel('61');
 
-		$tp = Users::getItems()->get()->toArray();
+		//$tp = Tasks::getModel(290)->users()->theUser()->first()->pivot;
+		$tp = Tasks::find(1323)->users()->theUser()->first();//->pivot;
 
 		//Display mysql requests
 		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
