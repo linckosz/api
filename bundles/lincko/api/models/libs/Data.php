@@ -855,7 +855,7 @@ class Data {
 								   $table_name == 'projects'
 								&& $result_bis->$uid->$table_name->$id->personal_private != $uid
 							){
-								continue;
+								//continue;
 							}
 							$perm_owner = 0; //tree_owner
 							if(isset($tree_owner[$table_name]) && isset($tree_owner[$table_name][$users_id]) && isset($tree_owner[$table_name][$users_id][$id])){ $perm_owner = $tree_owner[$table_name][$users_id][$id]; }
