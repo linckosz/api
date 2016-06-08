@@ -719,10 +719,10 @@ class ControllerTest extends Controller {
 		//$tp = $class::getModel('61');
 
 		//$tp = Tasks::getModel(290)->users()->theUser()->first()->pivot;
-		$tp = Tasks::find(1323)->users()->theUser()->first();//->pivot;
+		$tp = Users::where('email', 'bruno@lincko.cn')->where('id', '<>', $app->lincko->data['uid'])->first();
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 
