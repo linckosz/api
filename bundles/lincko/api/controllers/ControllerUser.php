@@ -421,4 +421,45 @@ class ControllerUser extends Controller {
 		return true;
 	}
 
+	public function find_post(){
+		$app = $this->app;
+
+		$form = $this->form;
+
+		\libs\Watch::php($form, '$form', __FILE__, false, false, true);
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+
+		
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Users::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+			$errfield = 'id';
+		}
+		else if($model = Users::find($form->id)){
+			if($model->checkAccess(false)){
+				$uid = $app->lincko->data['uid'];
+				$key = $model->getTable();
+				$msg = $app->trans->getBRUT('api', 15, 4); //Account accessed.
+				$data = new Data();
+				$force_partial = new \stdClass;
+				$force_partial->$uid = new \stdClass;
+				$force_partial->$uid->$key = new \stdClass;
+				$force_partial->$uid->$key->{$form->id} = new \stdClass;
+				$partial = $data->getMissing($force_partial);
+				if(isset($partial) && isset($partial->$uid) && !empty($partial->$uid)){
+					$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial, 'info' => 'reading')));
+					return true;
+				}
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 }

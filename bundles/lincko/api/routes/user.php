@@ -54,4 +54,10 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_resign'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/find',
+		'\bundles\lincko\api\controllers\ControllerUser:find'.$app->lincko->method_suffix
+	)
+	->name('user_find'.$app->lincko->method_suffix);
+
 });

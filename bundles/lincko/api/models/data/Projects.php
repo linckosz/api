@@ -240,7 +240,7 @@ class Projects extends ModelLincko {
 		$uid = $app->lincko->data['uid'];
 		$save = parent::pivots_format($form, $history_save);
 		//Disallow any access to personal project from outside users
-		if($this->personal_private = $uid && isset($this->pivots_var->users)){
+		if($this->personal_private == $uid && isset($this->pivots_var->users)){
 			foreach ($this->pivots_var->users as $users_id => $column_list) {
 				if($users_id!=$uid){
 					foreach ($column_list as $column => $value) {
