@@ -477,7 +477,7 @@ abstract class ModelLincko extends Model {
 	//Check if the user has access to the object
 	public static function getModel($id){
 		if($model = static::find($id)){
-			if($model->checkAccess()){
+			if($model->checkAccess(false)){
 				return $model;
 			}
 		}

@@ -11,6 +11,7 @@ use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\libs\Data;
+use \bundles\lincko\api\models\libs\Invitation;
 use \bundles\lincko\api\models\data\Workspaces;
 
 /*
@@ -110,7 +111,10 @@ class ControllerUser extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!$app->lincko->data['create_user']){
+		if(isset($form->invitation_beta) && ($form->invitation_beta=='' || Invitation::where('code', '=', $form->invitation_beta)->first())){ //optional
+			$errmsg = $app->trans->getBRUT('api', 15, 27); //You need an invitation link unused to be able to join us.
+		}
+		else if(!$app->lincko->data['create_user']){
 			$errmsg = $app->trans->getBRUT('api', 15, 19); //You need to sign out from the application before being able to create a new user account.
 		}
 		else if(!isset($form->email) || !Users::validEmail($form->email)){ //Required
@@ -203,7 +207,7 @@ class ControllerUser extends Controller {
 							$app->flashNow('uid', $authorize['uid']);
 						}
 					}
-						
+
 					//Send congrat email
 					$mail = new Email();
 					$mail->addAddress($email, $username);
@@ -211,7 +215,26 @@ class ControllerUser extends Controller {
 					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br /><br />Best regards,<br /><br />'.$app->lincko->title.' team</body></html>');
 					$mail->sendLater();
 
-					$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 15, 2)."\n".$app->trans->getBRUT('api', 15, 11)),)); //Account created. Check your email for validation code.
+					//Invitation
+					if(isset($form->invitation_code)){
+						$invitation_code = $form->invitation_code;
+						$invitation = Invitation::where('code', '=', $invitation_code)->first();
+						$guest = Users::find($model->id);
+						if($guest){
+							$pivot = new \stdClass;
+							//For guest & host
+							$pivot->{'users>access'} = new \stdClass;
+							$pivot->{'users>access'}->{$invitation->created_by} = true;
+							$guest->pivots_format($pivot);
+							$guest->save();
+							//Record for invotation
+							$invitation->guest = $guest->id;
+							$invitation->used = true;
+							$invitation->save();
+						}
+					}
+
+					$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)."\n".$app->trans->getBRUT('api', 15, 11)),)); //Account created. Check your email for validation code.
 					return true;
 				}
 			}
@@ -429,14 +452,20 @@ class ControllerUser extends Controller {
 		$errfield = 'undefined';
 
 		$form = $this->form;
-		if(is_array($form)){
-			$email = mb_strtolower($form[0]);
+		if(is_array($form) || is_object($form)){
+			foreach ($form as $key => $value) {
+				$email = mb_strtolower($value);
+				break; //Insure to take the first one only
+			}
 			if($user = Users::where('email', $email)->first()){ //Account found
-				\libs\Watch::php($user, '$user', __FILE__, false, false, true);
 				$data = new \stdClass;
 				$data->myself = false;
 				if($user->id == $app->lincko->data['uid']){
 					$data->myself = true;
+				}
+				$data->contact = false;
+				if(Users::getModel($user->id)){
+					$data->contact = true;
 				}
 				$data->id = $user->id;
 				$data->username = $user->username;
@@ -452,7 +481,69 @@ class ControllerUser extends Controller {
 			}
 		}
 
-		\libs\Watch::php($form, '$form', __FILE__, false, false, true);
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function invite_post(){
+		$app = $this->app;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		$form = $this->form;
+		if(is_array($form) || is_object($form)){
+			$form = (object) $form;
+			\libs\Watch::php($form, '$form', __FILE__, false, false, true);
+			if(!$form->exists && isset($form->email)){\libs\Watch::php(11, '$11', __FILE__, false, false, true);
+				if(!Users::where('email', $form->email)->first()){
+					$user = Users::getUser();
+					$username = $user->username;
+					$invitation = new Invitation();
+					$invitation->save();
+					$code = $invitation->code;
+					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
+					$mail = new Email();
+					$mail->addAddress($form->email);
+					$mail->setSubject('[Lincko] Invitation');
+					$mail->msgHTML('<html><body>Hello,<br /><br />'.ucfirst($username).' invited you to join him to use Lincko!<br />Please click on this link:<br /><br /><a href="'.$link.'">'.$link.'</a><br /><br />Best regards,<br /><br />'.ucfirst($app->lincko->title).' team</body></html>');
+					if($mail->sendLater()){
+						$data = true;
+						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+						return true;
+					}
+				}
+			} else if($form->exists && isset($form->users_id)){\libs\Watch::php(22, '$22', __FILE__, false, false, true);
+				if($guest = Users::find($form->users_id)){
+					$user = Users::getUser();
+					$pivot = new \stdClass;
+					$pivot->{'usersLinked>invitation'} = new \stdClass;
+					$pivot->{'usersLinked>invitation'}->{$form->users_id} = true;
+					$pivot->{'usersLinked>access'} = new \stdClass;
+					$pivot->{'usersLinked>access'}->{$form->users_id} = false;
+					$user->pivots_format($pivot);
+					$user->save();
+					$mail = new Email();
+					$mail->addAddress($guest->email);
+					$mail->setSubject('[Lincko] Invitation');
+					$mail->msgHTML('<html><body>Hello,<br /><br />'.ucfirst($user->username).' invited you to join him to use Lincko!<br />Connect to your account to answer.<br /><br />Best regards,<br /><br />'.ucfirst($app->lincko->title).' team</body></html>');
+					if($mail->sendLater()){
+						$data = true;
+						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+						return true;
+					}
+				}
+				
+			}
+			$data = false;
+			$msg = $app->trans->getBRUT('api', 15, 25); //Invitation failed to send.
+			$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+			return true;
+		}
+
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
 		return false;
 	}
