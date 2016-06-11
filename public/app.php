@@ -17,6 +17,8 @@ $app->configureMode('production', function () use ($app) {
 		'log.enable' => true,
 	));
 	ini_set('display_errors', '0');
+	$app->lincko->data['invitation_beta'] = true;
+	$app->lincko->data['allow_create_user'] = true;
 });
 
 // Only invoked if mode is "development"
@@ -26,6 +28,8 @@ $app->configureMode('development', function () use ($app) {
 	));
 	ini_set('display_errors', '0');
 	ini_set('opcache.enable', '0');
+	$app->lincko->data['invitation_beta'] = true;
+	$app->lincko->data['allow_create_user'] = true;
 	$app->lincko->showError = true; //Force to see Error message
 	//Force to delay (microseconds) to simulate network slow speed
 	//usleep(500000); //500ms

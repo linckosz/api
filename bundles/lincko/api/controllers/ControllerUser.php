@@ -111,7 +111,10 @@ class ControllerUser extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(isset($form->invitation_beta) && ($form->invitation_beta=='' || Invitation::where('code', '=', $form->invitation_beta)->first())){ //optional
+		if(!$app->lincko->data['allow_create_user']){
+			$errmsg = $app->trans->getBRUT('api', 15, 2); //Because of server maintenance, we temporarily do not allow the creation of new user account, please try later.
+		}
+		else if(isset($form->invitation_beta) && ($form->invitation_beta=='' || Invitation::where('code', '=', $form->invitation_beta)->first())){ //optional
 			$errmsg = $app->trans->getBRUT('api', 15, 27); //You need an invitation link unused to be able to join us.
 		}
 		else if(!$app->lincko->data['create_user']){
