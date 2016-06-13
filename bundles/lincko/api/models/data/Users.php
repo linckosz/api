@@ -277,7 +277,7 @@ class Users extends ModelLincko {
 		$this->_invitation = self::$invitation_list[$this->id];
 		if($this->_invitation){
 			$this->contactsVisibility = false;
-			if(!isset(self::$contacts_list[$this->id])){ self::$contacts_list[$this->id] = new \stdClass; }
+			if(!isset(self::$contacts_list[$this->id])){ self::$contacts_list[$this->id] = array(); }
 			$this->_lock = self::$contacts_list[$this->id][0] = false;
 			$this->_visible = self::$contacts_list[$this->id][1] = false;
 		}

@@ -212,10 +212,12 @@ class ControllerUser extends Controller {
 					}
 
 					//Send congrat email
+					$link = 'https://'.$app->lincko->domain;
 					$mail = new Email();
 					$mail->addAddress($email, $username);
-					$mail->setSubject('Congratulation');
-					$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br /><br />Best regards,<br /><br />'.$app->lincko->title.' team</body></html>');
+					$mail->setSubject('Congratulations on joining Lincko!');
+					//$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br /><br />Best regards,<br /><br />'.$app->lincko->title.' team</body></html>');
+					$mail->msgHTML('<html><body>Hello '.ucfirst($username).',<br /><br />Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey to accomplish great things.<br /><br />At any time, if you have questions or feedback, do not hesitate to contact our support[mailto:support@lincko.com]. If you enjoy using Lincko, let us know what you like and what you would like to see in future versions. We are currently in Beta and are hoping to get a lot of feedback to make our product better for you.<br /><br />For more information you can follow us on Facebook, WeChat, or sign up for our newsletter on <a href="'.$link.'">'.$link.'</a>.<br /><br />Kind regards,<br />The Lincko team</body></html>');
 					$mail->sendLater();
 
 					//Invitation
@@ -498,8 +500,7 @@ class ControllerUser extends Controller {
 		$form = $this->form;
 		if(is_array($form) || is_object($form)){
 			$form = (object) $form;
-			\libs\Watch::php($form, '$form', __FILE__, false, false, true);
-			if(!$form->exists && isset($form->email)){\libs\Watch::php(11, '$11', __FILE__, false, false, true);
+			if(!$form->exists && isset($form->email)){
 				if(!Users::where('email', $form->email)->first()){
 					$user = Users::getUser();
 					$username = $user->username;
@@ -509,8 +510,8 @@ class ControllerUser extends Controller {
 					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
 					$mail = new Email();
 					$mail->addAddress($form->email);
-					$mail->setSubject('[Lincko] Invitation');
-					$mail->msgHTML('<html><body>Hello,<br /><br />'.ucfirst($username).' invited you to join him to use Lincko!<br />Please click on this link:<br /><br /><a href="'.$link.'">'.$link.'</a><br /><br />Best regards,<br /><br />'.ucfirst($app->lincko->title).' team</body></html>');
+					$mail->setSubject('Your invitation to join Lincko');
+					$mail->msgHTML('<html><body>Hello,<br /><br />'.ucfirst($username).' has invited you to join Lincko. Lincko helps you accomplish great things by connecting your team in new ways. Use the link below to create an account and start collaborating with '.ucfirst($username).' on your projects.<br /><br /><a href="'.$link.'">'.$link.'</a><br /><br />Kind regards,<br />The Lincko team</body></html>');
 					if($mail->sendLater()){
 						$data = true;
 						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
@@ -518,9 +519,11 @@ class ControllerUser extends Controller {
 						return true;
 					}
 				}
-			} else if($form->exists && isset($form->users_id)){\libs\Watch::php(22, '$22', __FILE__, false, false, true);
+			} else if($form->exists && isset($form->users_id)){
 				if($guest = Users::find($form->users_id)){
 					$user = Users::getUser();
+					$username = $user->username;
+					$username_guest = $guest->username;
 					$pivot = new \stdClass;
 					$pivot->{'usersLinked>invitation'} = new \stdClass;
 					$pivot->{'usersLinked>invitation'}->{$form->users_id} = true;
@@ -528,10 +531,11 @@ class ControllerUser extends Controller {
 					$pivot->{'usersLinked>access'}->{$form->users_id} = false;
 					$user->pivots_format($pivot);
 					$user->save();
+					$link = 'https://'.$app->lincko->domain;
 					$mail = new Email();
 					$mail->addAddress($guest->email);
-					$mail->setSubject('[Lincko] Invitation');
-					$mail->msgHTML('<html><body>Hello,<br /><br />'.ucfirst($user->username).' invited you to join him to use Lincko!<br />Connect to your account to answer.<br /><br />Best regards,<br /><br />'.ucfirst($app->lincko->title).' team</body></html>');
+					$mail->setSubject('New Lincko collaboration request');
+					$mail->msgHTML('<html><body>Hello '.ucfirst($username_guest).',<br /><br />You have a new collaboration request!<br /><br />'.ucfirst($username).' has invited you to collaborate together using Lincko. Sign into your account and access your Contacts to accept the invitation.<br /><br /><a href="'.$link.'">'.$link.'</a><br /><br />Kind regards,<br />The Lincko team</body></html>');
 					if($mail->sendLater()){
 						$data = true;
 						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
