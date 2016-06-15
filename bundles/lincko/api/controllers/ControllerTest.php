@@ -9,6 +9,7 @@ use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\libs\PivotUsers;
+use \bundles\lincko\api\models\libs\Invitation;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\Workspaces;
@@ -702,7 +703,7 @@ class ControllerTest extends Controller {
 			}
 		}
 		*/
-
+		/*
 		$guest = Users::find(23);
 		$users_id = 3;
 		$pivot = new \stdClass;
@@ -714,6 +715,25 @@ class ControllerTest extends Controller {
 		//$pivot->{'usersLinked>access'}->$users_id = true;
 		$guest->pivots_format($pivot);
 		$guest->save();
+		*/
+						$invitation_code = '0frucjvs';
+						$invitation = Invitation::where('code', '=', $invitation_code)->first();
+						$guest = Users::find(68);
+						if($guest){
+							$pivot = new \stdClass;
+							if($invitation->created_by>0 && Users::find($invitation->created_by)){
+								//For guest & host
+								$pivot->{'users>access'} = new \stdClass;
+								$pivot->{'users>access'}->{$invitation->created_by} = true;
+								$guest->pivots_format($pivot);
+								\libs\Watch::php( $guest, '$guest', __FILE__, false, false, true);
+								$guest->save();
+							}
+							//Record for invotation
+							$invitation->guest = $guest->id;
+							$invitation->used = true;
+							$invitation->save();
+						}
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

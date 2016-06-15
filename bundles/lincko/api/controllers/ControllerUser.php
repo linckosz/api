@@ -154,6 +154,9 @@ class ControllerUser extends Controller {
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
 			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
 
+			
+
+
 			$app->flashNow('signout', true);
 			$limit = 1;
 			$email = mb_strtolower($model->email);
@@ -174,7 +177,17 @@ class ControllerUser extends Controller {
 				}
 			}
 
-			if(Users::where('username', '=', $username)->orWhere('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
+			$invitation = false;
+			$invitation_used = false;
+			if(isset($form->invitation_code)){
+				$invitation_code = $form->invitation_code;
+				$invitation = Invitation::where('code', '=', $invitation_code)->first();
+				$invitation_used = $invitation->used;
+			}
+
+			if($invitation_used){
+				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
+			} else if(Users::where('username', '=', $username)->orWhere('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
 				//If the field username is missing, we keep the standard error message.
 				if(isset($model->username)){
 					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 18); //Username already in use.
@@ -192,6 +205,7 @@ class ControllerUser extends Controller {
 				$model->internal_email = $internal_email;
 				$model->pivots_format($form, false);
 				if($model->save()){
+					$app->lincko->data['uid'] = $model->id;
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', false);
 					$app->flashNow('username', $model->username);
@@ -221,22 +235,22 @@ class ControllerUser extends Controller {
 					$mail->sendLater();
 
 					//Invitation
-					if(isset($form->invitation_code)){
-						$invitation_code = $form->invitation_code;
-						$invitation = Invitation::where('code', '=', $invitation_code)->first();
-						$guest = Users::find($model->id);
-						if($guest){
-							$pivot = new \stdClass;
+					if($invitation){
+						$pivot = new \stdClass;
+						if($invitation->created_by>0 && Users::find($invitation->created_by)){
 							//For guest & host
 							$pivot->{'users>access'} = new \stdClass;
 							$pivot->{'users>access'}->{$invitation->created_by} = true;
-							$guest->pivots_format($pivot);
-							$guest->save();
-							//Record for invotation
-							$invitation->guest = $guest->id;
-							$invitation->used = true;
-							$invitation->save();
+							$model->pivots_format($pivot);
+							//\libs\Watch::php( 'controller', '$pivots_save', __FILE__, false, false, true);
+							//\libs\Watch::php( $model, '$pivots_save', __FILE__, false, false, true);
+							//usleep(500000); //500ms => make sure that the database is up to date
+							$model->save();
 						}
+						//Record for invotation
+						$invitation->guest = $model->id;
+						$invitation->used = true;
+						$invitation->save();
 					}
 
 					$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)."\n".$app->trans->getBRUT('api', 15, 11)),)); //Account created. Check your email for validation code.

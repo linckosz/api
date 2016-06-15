@@ -220,7 +220,7 @@ class Projects extends ModelLincko {
 		$app = self::getApp();
 		if(self::where('personal_private', $app->lincko->data['uid'])->take(1)->count() <= 0){
 			$project = new self();
-			$project->title = 'Private';
+			$project->title = 'Personal Space';
 			$project->personal_private = $app->lincko->data['uid'];
 			$project->parent_id = 0;
 			if($project->save()){
