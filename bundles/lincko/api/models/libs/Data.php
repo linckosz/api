@@ -406,7 +406,7 @@ class Data {
 		}
 		*/
 
-		//\libs\Watch::php($result->users , '$var', __FILE__, false, false, true);
+		//\libs\Watch::php($tree_access , '$tree_access', __FILE__, false, false, true);
 		
 
 		if($this->item_detail){
@@ -628,7 +628,6 @@ class Data {
 			}
 
 			$tree_access_users = array();
-			
 			foreach ($root_uid as $users_id => $root) {
 
 				//Super (ok) & for guesses deletes it if inaccessible
@@ -868,13 +867,15 @@ class Data {
 								$perm_single = $tree_single[$table_name][$users_id][$id];
 							} else if(isset($tree_role[$table_name]) && isset($tree_role[$table_name][$users_id]) && isset($tree_role[$table_name][$users_id][$id])){
 								$perm_role = $tree_role[$table_name][$users_id][$id];
-								if(!isset($result_bis->$uid->roles) || !isset($result_bis->$uid->roles->$perm_role)){
-									$perm_role = 0; //If the role is not register we set to viewer
-								}
 							}
 							$role_id = 0; //tree_role
-							if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$users_id]) && isset($tree_roles_id[$table_name][$users_id][$id])){ $role_id = $tree_roles_id[$table_name][$users_id][$id]; }
-
+							if(isset($tree_roles_id[$table_name]) && isset($tree_roles_id[$table_name][$users_id]) && isset($tree_roles_id[$table_name][$users_id][$id])){
+								$role_id = $tree_roles_id[$table_name][$users_id][$id];
+							}
+							if(!isset($result_bis->$uid->roles) || !isset($result_bis->$uid->roles->$role_id)){
+								$role_id = 0; //tree_role
+								$perm_role = 0; //If the role is not register we set to viewer
+							}
 							$result_bis->$uid->$table_name->$id->_perm->$users_id = array(
 								(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
 								(int)$role_id,
@@ -893,6 +894,7 @@ class Data {
 					}
 				}
 			}
+			
 			$list_models = self::getModels();
 			foreach ($tree_access as $table_name => $users) {
 				if(isset($result_bis->$uid->$table_name) && isset($list_models[$table_name])){
@@ -901,6 +903,14 @@ class Data {
 						$dependencies_visible_users = $class::getDependenciesVisible()['users'];
 						foreach ($users as $users_id => $models) {
 							foreach ($models as $id => $pivot_array) {
+								//Check access first
+								if(
+									   !isset($tree_access_users[$table_name])
+									|| !isset($tree_access_users[$table_name][$users_id])
+									|| !isset($tree_access_users[$table_name][$users_id][$id])
+								){
+									continue;
+								}
 								if(isset($result_bis->$uid->$table_name->$id)){
 									if(!isset($result_bis->$uid->$table_name->$id->_users)){ $result_bis->$uid->$table_name->$id->_users = new \stdClass; }
 									if(!isset($result_bis->$uid->$table_name->$id->_users->$users_id)){

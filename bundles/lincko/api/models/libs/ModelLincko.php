@@ -245,11 +245,15 @@ abstract class ModelLincko extends Model {
 
 	public static function validType($data, $optional=false){
 		if($optional && empty($data)){ return true; }
-		$parent_list = static::$parent_list;
-		if(!is_array($parent_list) && is_string($parent_list)){
-			$parent_list = array($parent_list);
+		if(is_null($data)){ //It can be at root level
+			return true;
+		} else {
+			$parent_list = static::$parent_list;
+			if(!is_array($parent_list) && is_string($parent_list)){
+				$parent_list = array($parent_list);
+			}
+			$return = is_string($data) && !empty($parent_list) && in_array($data, $parent_list) && preg_match("/^[a-z]{0,104}$/u", $data);
 		}
-		$return = is_string($data) && !empty($parent_list) && in_array($data, $parent_list) && preg_match("/^[a-z]{0,104}$/u", $data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 

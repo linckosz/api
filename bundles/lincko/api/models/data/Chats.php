@@ -156,4 +156,14 @@ class Chats extends ModelLincko {
 		}
 	}
 
+	public function checkPermissionAllow($level, $msg=false){
+		$app = self::getApp();
+		$this->checkUser();
+		$level = $this->formatLevel($level);
+		if($level==1 && is_null($this->parent) && $this->parent_id<=0){
+			return true; // Allow creation at root level
+		}
+		return parent::checkPermissionAllow($level);
+	}
+
 }

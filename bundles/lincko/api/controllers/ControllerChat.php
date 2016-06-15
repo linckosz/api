@@ -73,6 +73,9 @@ class ControllerChat extends Controller {
 		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
+			if(is_null($form->parent_type)){ //At root level
+				$form->parent_id = 0;
+			}
 		}
 		if(isset($form->title) && is_string($form->title)){
 			$form->title = trim(STR::break_line_conv($form->title,' '));
