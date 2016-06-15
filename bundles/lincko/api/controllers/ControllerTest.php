@@ -5,6 +5,7 @@ namespace bundles\lincko\api\controllers;
 use \libs\Controller;
 use \libs\Email;
 use \libs\Json;
+use \libs\STR;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
@@ -716,6 +717,7 @@ class ControllerTest extends Controller {
 		$guest->pivots_format($pivot);
 		$guest->save();
 		*/
+		/*
 						$invitation_code = '0frucjvs';
 						$invitation = Invitation::where('code', '=', $invitation_code)->first();
 						$guest = Users::find(68);
@@ -734,6 +736,9 @@ class ControllerTest extends Controller {
 							$invitation->used = true;
 							$invitation->save();
 						}
+		*/
+		$tp = 'abc http://lincko.com abc';
+		$tp = STR::UrlToShortLink($tp);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

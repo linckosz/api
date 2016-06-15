@@ -34,7 +34,10 @@ class Email extends \PHPMailer {
 	}
 
 	//Keep a record of the Mail object to be sent later after rendering
-	public function sendLater(){
+	public function sendLater($mail_template){
+		$this->msgHTML($mail_template);
+		$html = new \Html2Text\Html2Text($mail_template);
+		$this->AltBody = $html->getText();
 		$param = $this->param;
 		$param->List[] = $this;
 		return true;

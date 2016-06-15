@@ -228,11 +228,24 @@ class ControllerUser extends Controller {
 					//Send congrat email
 					$link = 'https://'.$app->lincko->domain;
 					$mail = new Email();
+
+					$mail_subject = $app->trans->getBRUT('api', 1003, 1); //Congratulations on joining Lincko!
+					$mail_body_array = array(
+						'mail_username' => ucfirst($username),
+						'mail_link' => ucfirst($link),
+					);
+					$mail_body = $app->trans->getBRUT('api', 1003, 2, $mail_body_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
+
+					$mail_template_array = array(
+						'mail_head' => $mail_subject,
+						'mail_body' => $mail_body,
+						'mail_foot' => '',
+					);
+					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
 					$mail->addAddress($email, $username);
-					$mail->setSubject('Congratulations on joining Lincko!');
-					//$mail->msgHTML('<html><body>Hello,<br /><br />Congratulations, you\'ve created an account on '.$app->lincko->title.' website!<br /><br />Best regards,<br /><br />'.$app->lincko->title.' team</body></html>');
-					$mail->msgHTML('<html><body>Hello '.ucfirst($username).',<br /><br />Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey to accomplish great things.<br /><br />At any time, if you have questions or feedback, do not hesitate to contact our support[mailto:support@lincko.com]. If you enjoy using Lincko, let us know what you like and what you would like to see in future versions. We are currently in Beta and are hoping to get a lot of feedback to make our product better for you.<br /><br />For more information you can follow us on Facebook, WeChat, or sign up for our newsletter on <a href="'.$link.'">'.$link.'</a>.<br /><br />Kind regards,<br />The Lincko team</body></html>');
-					$mail->sendLater();
+					$mail->setSubject($mail_subject);
+					$mail->sendLater($mail_template);
 
 					//Invitation
 					if($invitation){
@@ -523,10 +536,25 @@ class ControllerUser extends Controller {
 					$code = $invitation->code;
 					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
 					$mail = new Email();
+
+					$mail_subject = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
+					$mail_body_array = array(
+						'mail_username' => ucfirst($username),
+						'mail_link' => ucfirst($link),
+					);
+					$mail_body = $app->trans->getBRUT('api', 1001, 2, $mail_body_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
+					$mail_foot = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
+
+					$mail_template_array = array(
+						'mail_head' => $mail_subject,
+						'mail_body' => $mail_body,
+						'mail_foot' => $mail_foot,
+					);
+					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
 					$mail->addAddress($form->email);
-					$mail->setSubject('Your invitation to join Lincko');
-					$mail->msgHTML('<html><body>Hello,<br /><br />'.ucfirst($username).' has invited you to join Lincko. Lincko helps you accomplish great things by connecting your team in new ways. Use the link below to create an account and start collaborating with '.ucfirst($username).' on your projects.<br /><br /><a href="'.$link.'">'.$link.'</a><br /><br />Kind regards,<br />The Lincko team</body></html>');
-					if($mail->sendLater()){
+					$mail->setSubject($mail_subject);
+					if($mail->sendLater($mail_template)){
 						$data = true;
 						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
 						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
@@ -547,10 +575,25 @@ class ControllerUser extends Controller {
 					$user->save();
 					$link = 'https://'.$app->lincko->domain;
 					$mail = new Email();
+
+					$mail_subject = $app->trans->getBRUT('api', 1002, 1); //New Lincko collaboration request
+					$mail_body_array = array(
+						'mail_username_guest' => ucfirst($username_guest),
+						'mail_username' => ucfirst($username),
+						'mail_link' => $link,
+					);
+					$mail_body = $app->trans->getBRUT('api', 1002, 2, $mail_body_array); //You have a new collaboration request!<br><br>@@mail_username~~ has invited you to collaborate together using Lincko.
+
+					$mail_template_array = array(
+						'mail_head' => $mail_subject,
+						'mail_body' => $mail_body,
+						'mail_foot' => '',
+					);
+					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
 					$mail->addAddress($guest->email);
-					$mail->setSubject('New Lincko collaboration request');
-					$mail->msgHTML('<html><body>Hello '.ucfirst($username_guest).',<br /><br />You have a new collaboration request!<br /><br />'.ucfirst($username).' has invited you to collaborate together using Lincko. Sign into your account and access your Contacts to accept the invitation.<br /><br /><a href="'.$link.'">'.$link.'</a><br /><br />Kind regards,<br />The Lincko team</body></html>');
-					if($mail->sendLater()){
+					$mail->setSubject($mail_subject);
+					if($mail->sendLater($mail_template)){
 						$data = true;
 						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
 						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
