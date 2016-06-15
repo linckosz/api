@@ -136,7 +136,7 @@ class History extends ModelLincko {
 				$class = Users::getClass($type);
 				if($class){
 					foreach ($list_id as $id => $timestamp) {
-						if($model = $class::find($id)){
+						if($model = $class::withTrashed()->find($id)){
 							if(strpos($model->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
 								$noticed_by = $model->noticed_by.';'.$app->lincko->data['uid'].';';
 								$class::where('id', $id)->getQuery()->update(['noticed_by' => $noticed_by]);

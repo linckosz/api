@@ -69,14 +69,6 @@ class STR {
 		return $text;
 	}
 
-	//Replace links in a email to clicable links
-	public static function UrlToShortLink($text){
-		$pattern = "`((?:https?|ftp)://\S+?)(?=[[:punct:]]?(?:\s|\Z)|\Z|<)`"; 
-		$target = '<a href="${0}" target="_blank" style="cursor:pointer;cursor:hand;">${0}</a>';
-		$text = preg_replace($pattern, $target, $text);
-		return $text;
-	}
-
 
 
 

@@ -232,7 +232,7 @@ class ControllerUser extends Controller {
 					$mail_subject = $app->trans->getBRUT('api', 1003, 1); //Congratulations on joining Lincko!
 					$mail_body_array = array(
 						'mail_username' => ucfirst($username),
-						'mail_link' => ucfirst($link),
+						'mail_link' => $link,
 					);
 					$mail_body = $app->trans->getBRUT('api', 1003, 2, $mail_body_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
 
@@ -540,7 +540,7 @@ class ControllerUser extends Controller {
 					$mail_subject = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
 					$mail_body_array = array(
 						'mail_username' => ucfirst($username),
-						'mail_link' => ucfirst($link),
+						'mail_link' => $link,
 					);
 					$mail_body = $app->trans->getBRUT('api', 1001, 2, $mail_body_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
 					$mail_foot = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
@@ -551,6 +551,10 @@ class ControllerUser extends Controller {
 						'mail_foot' => $mail_foot,
 					);
 					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
+					\libs\Watch::php($app->lincko->path.'/public/lincko/api/images/email/shared/image-1.jpg', '$var', __FILE__, false, false, true);
+
+					$mail->addEmbeddedImage( $app->lincko->path.'/public/lincko/api/images/email/shared/image-1.jpg', '/bundles/lincko/launch/public/images/email/image-1.jpg', 'image-1.jpg');
 
 					$mail->addAddress($form->email);
 					$mail->setSubject($mail_subject);

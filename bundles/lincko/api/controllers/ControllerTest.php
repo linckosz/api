@@ -737,8 +737,7 @@ class ControllerTest extends Controller {
 							$invitation->save();
 						}
 		*/
-		$tp = 'abc http://lincko.com abc';
-		$tp = STR::UrlToShortLink($tp);
+					$tp = Tasks::withTrashed()->find(1740);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
