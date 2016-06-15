@@ -232,7 +232,7 @@ class CheckAccess extends \Slim\Middleware {
 		$resignin = false;
 
 		//For file uploading, make a specific process
-		if(preg_match("/^([a-z]+\.)file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
+		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
 			if($app->lincko->method_suffix == '_post'){ //File uploading
 				$file_error = true;
 				if($this->checkRoute()!==false){
@@ -261,7 +261,7 @@ class CheckAccess extends \Slim\Middleware {
 				}
 			} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/\d+\/\w+\/(?:link|thumbnail|download)\/\d+\/.+\.\w+$/ui", $app->request->getResourceUri())){ //File reading
 				if($this->checkRoute()!==false){
-					//toto => Big security issue, anyone can see files! It should go thrugh front end server later
+					//toto => Big security issue, anyone can see files! It should go through front end server later
 					return $this->next->call();
 				}
 			}
