@@ -124,7 +124,7 @@ $app->lincko->email->CharSet = 'utf-8';
 $app->lincko->email->Abuse = 'abuse@'.$app->lincko->domain;
 $app->lincko->email->Sender = 'noreply@'.$app->lincko->domain;
 $app->lincko->email->From = 'noreply@'.$app->lincko->domain;
-$app->lincko->email->FromName = $app->lincko->title.' server';
+$app->lincko->email->FromName = $app->lincko->title.' team';
 $app->lincko->email->List = array();
 
 //Translator parameters
