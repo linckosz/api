@@ -408,6 +408,7 @@ class ControllerUser extends Controller {
 							$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
 						}
 						if(isset($authorize['public_key'])){
+							//\libs\Watch::php($authorize, '$authorize', __FILE__, false, false, false); //toto => why short public_key
 							$app->flashNow('public_key', $authorize['public_key']);
 							$app->lincko->translation['user_username'] = ucfirst($user->username);
 							$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
@@ -551,10 +552,6 @@ class ControllerUser extends Controller {
 						'mail_foot' => $mail_foot,
 					);
 					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-					\libs\Watch::php($app->lincko->path.'/public/lincko/api/images/email/shared/image-1.jpg', '$var', __FILE__, false, false, true);
-
-					$mail->addEmbeddedImage( $app->lincko->path.'/public/lincko/api/images/email/shared/image-1.jpg', '/bundles/lincko/launch/public/images/email/image-1.jpg', 'image-1.jpg');
 
 					$mail->addAddress($form->email);
 					$mail->setSubject($mail_subject);
