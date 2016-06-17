@@ -36,7 +36,10 @@ abstract class ModelLincko extends Model {
 	protected static $schema_table = array();
 
 	//Force to save user access for the user itself
-	protected static $save_user_acecss = true;
+	protected static $save_user_access = true;
+
+	//It force to save, even if dirty is empty
+	protected $force_save = false;
 
 	//(used in "toJson()") This is the field to show in the content of history (it will add a prefix "+", which is used for search tool too)
 	protected $show_field = false;
@@ -1129,6 +1132,10 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
+	public function forceSaving($force=true){
+		$this->force_save = (boolean) $force;
+	}
+
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
 		if(!$this->checkAccess()){
@@ -1233,7 +1240,7 @@ abstract class ModelLincko extends Model {
 		}
 		$dirty = $this->getDirty();
 		//do nothing if dirty is empty
-		if(count($dirty)<=0){
+		if(!$this->force_save && count($dirty)<=0){
 			return true;
 		}
 		$db = Capsule::connection($this->connection);
@@ -1439,7 +1446,7 @@ abstract class ModelLincko extends Model {
 				$column = $match[2];
 				foreach ($list as $type_id => $value) {
 					//We cannot block or authorize itself
-					if($column=='access' && $type_id==$app->lincko->data['uid'] && !static::$save_user_acecss){
+					if($column=='access' && $type_id==$app->lincko->data['uid'] && !static::$save_user_access){
 						continue;
 					} else
 					if(is_numeric($type_id) && (int)$type_id>0){

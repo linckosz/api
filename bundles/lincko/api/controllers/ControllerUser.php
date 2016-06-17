@@ -255,9 +255,7 @@ class ControllerUser extends Controller {
 							$pivot->{'users>access'} = new \stdClass;
 							$pivot->{'users>access'}->{$invitation->created_by} = true;
 							$model->pivots_format($pivot);
-							//\libs\Watch::php( 'controller', '$pivots_save', __FILE__, false, false, true);
-							//\libs\Watch::php( $model, '$pivots_save', __FILE__, false, false, true);
-							//usleep(500000); //500ms => make sure that the database is up to date
+							$model->forceSaving();
 							$model->save();
 						}
 						//Record for invotation

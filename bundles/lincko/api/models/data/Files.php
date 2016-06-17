@@ -44,7 +44,7 @@ class Files extends ModelLincko {
 
 	// CUSTOMIZATION //
 
-	protected static $save_user_acecss = false;
+	protected static $save_user_access = false;
 
 	protected $show_field = 'name';
 
