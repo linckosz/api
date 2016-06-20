@@ -1470,10 +1470,6 @@ abstract class ModelLincko extends Model {
 		}
 		$success = true;
 		$touch = false;
-		//\libs\Watch::php( 'pivots_save', '$pivots_save', __FILE__, false, false, true);
-		//checkAccess and checkPermissionAllow are previously used in save()
-		//\libs\Watch::php($this, '$this->pivots_var1', __FILE__, false, false, true);
-		//\libs\Watch::php($this->pivots_var, '$this->pivots_var2', __FILE__, false, false, true);
 		if(is_object($this->pivots_var)){
 			foreach ($this->pivots_var as $type => $type_id_list) {
 				if(!$success){ break; }
@@ -1560,8 +1556,8 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By preference, keep it protected
-	//public function getUserPivotValue($column, $users_id=false){
-	protected function getUserPivotValue($column, $users_id=false){
+	public function getUserPivotValue($column, $users_id=false){
+	//protected function getUserPivotValue($column, $users_id=false){
 		$app = self::getApp();
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];

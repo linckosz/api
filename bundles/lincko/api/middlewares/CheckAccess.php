@@ -29,7 +29,6 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 		$data = $this->data;
 		$form = $data->data;
-
 		if(isset($form->email) && isset($form->password)){
 			$form->password = Datassl::decrypt($form->password, $form->email);
 			if(Users::isValid($form)){

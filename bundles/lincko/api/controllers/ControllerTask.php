@@ -159,13 +159,13 @@ class ControllerTask extends Controller {
 		else if($model = new Tasks()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
-			if(isset($form->title)){ $model->title = $form->title; } //Optional
-			$model->comment = $form->comment;
+			$model->title = $form->title;
+			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 			if(isset($form->start)){ $model->start = $form->start; } //Optional
 			if(isset($form->duration)){ $model->duration = $form->duration; } //Optional
 			if(isset($form->fixed)){ $model->fixed = $form->fixed; } //Optional
 			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional
-			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(isset($form->status)){ $model->status = $form->status; } //Optional
 			if(isset($form->progress)){ $model->progress = $form->progress; } //Optional
 			$model->pivots_format($form, false);
 			if($model->save()){
@@ -270,7 +270,7 @@ class ControllerTask extends Controller {
 			if(isset($form->duration)){ $model->duration = $form->duration; } //Optional
 			if(isset($form->fixed)){ $model->fixed = $form->fixed; } //Optional
 			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional
-			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(isset($form->status)){ $model->status = $form->status; } //Optional
 			if(isset($form->progress)){ $model->progress = $form->progress; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);

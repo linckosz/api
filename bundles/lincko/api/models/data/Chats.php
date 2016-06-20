@@ -23,6 +23,7 @@ class Chats extends ModelLincko {
 		'updated_at',
 		'deleted_at',
 		'title',
+		'single',
 		'_parent',
 	);
 
@@ -56,6 +57,10 @@ class Chats extends ModelLincko {
 	);
 
 	protected static $parent_list = array(null, 'workspaces', 'projects');
+
+	protected $model_boolean = array(
+		'single',
+	);
 
 	protected static $permission_sheet = array(
 		2, //[RCU] owner

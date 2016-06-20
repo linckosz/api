@@ -269,4 +269,23 @@ class ControllerProject extends Controller {
 		return false;
 	}
 
+	public function my_project_get(){
+		$app = $this->app;
+		$form = $this->form;
+
+		$failmsg = $app->trans->getBRUT('api', 12, 3)."\n"; //Project access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		if($model = Projects::getPersonal()){
+			if($model->checkAccess(false) && $model->personal_private == $app->lincko->data['uid']){
+				$app->render(200, array('msg' => $model->id));
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 }

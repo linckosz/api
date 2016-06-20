@@ -6,7 +6,9 @@ namespace bundles\lincko\api\controllers;
 use \libs\Controller;
 use \libs\STR;
 use \bundles\lincko\api\models\data\Chats;
+use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\libs\Data;
+use \bundles\lincko\api\models\libs\PivotUsers;
 
 /*
 
@@ -83,6 +85,9 @@ class ControllerChat extends Controller {
 				$form->title = $app->trans->getBRUT('api', 13, 0); //New Discussion group
 			}
 		}
+		if(isset($form->single) && is_numeric($form->single)){
+			$form->single = (int) $form->single;
+		}
 		return $this->form = $form;
 	}
 
@@ -115,8 +120,31 @@ class ControllerChat extends Controller {
 				$model->parent_type = null;
 				$model->parent_id = 0;
 			}
-			$model->pivots_format($form, false);
-			if($model->save()){
+			$save = true;
+			if(isset($form->single)){ //Optional, create single user chat
+				$exits = false;
+				$pivot = new PivotUsers(array('chats'));
+				if($pivot->tableExists($pivot->getTable())){
+					$list = $pivot->where('users_id', $app->lincko->data['uid'])->where('single', $form->single)->withTrashed()->get();
+					if($list->count()>0){
+						$save = false;
+					}
+				}
+				if($save && $guest = Users::find($form->single)){
+					$pivots = new \stdClass;
+					$pivots->{'users>access'} = new \stdClass;
+					$pivots->{'users>access'}->{$app->lincko->data['uid']} = true;
+					$pivots->{'users>access'}->{$form->single} = true;
+					$pivots->{'users>single'} = new \stdClass;
+					$pivots->{'users>single'}->{$app->lincko->data['uid']} = $form->single;
+					$pivots->{'users>single'}->{$form->single} = $app->lincko->data['uid'];
+					$model->single = true;
+					$model->pivots_format($pivots, false);
+				}
+			} else {
+				$model->pivots_format($form, false);
+			}
+			if($save && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 13, 2)); //Discussion group created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -195,7 +223,9 @@ class ControllerChat extends Controller {
 			}
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
-			if(count($dirty)>0 || $pivots){
+			if($model->single){
+				$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
+			} else if(count($dirty)>0 || $pivots){
 				if($model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 13, 6)); //Discussion group updated.
 					$data = new Data();
