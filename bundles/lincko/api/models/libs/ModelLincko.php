@@ -1470,6 +1470,7 @@ abstract class ModelLincko extends Model {
 		}
 		$success = true;
 		$touch = false;
+		//checkAccess and CheckPermissionAllow are previously used in save()
 		if(is_object($this->pivots_var)){
 			foreach ($this->pivots_var as $type => $type_id_list) {
 				if(!$success){ break; }
@@ -1549,8 +1550,8 @@ abstract class ModelLincko extends Model {
 		}
 		if($touch){
 			$this->touch();
-			//$this->setForceSchema();
-			$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
+			$this->setForceSchema();
+			//$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
 		}
 		return $success;
 	}

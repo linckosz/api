@@ -159,6 +159,9 @@ $app->lincko->data['invitation_code'] = ''; //The code grab by the link
 
 $app->lincko->data['lastvisit'] = time()-1; //Less one second to avoid missing timestamp at the same time
 
+//It will set to true some fields if the API key has access to some part of the application
+$app->lincko->api = array();
+
 //List of route names accepted without sigining in
 $app->lincko->routeFilter = array(
 	'user_signin_post',

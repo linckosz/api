@@ -97,7 +97,9 @@ class CheckAccess extends \Slim\Middleware {
 	protected function checkAPI(){
 		$app = $this->app;
 		$data = $this->data;
-		return Api::find($data->api_key);
+		$api = Api::find($data->api_key);
+		$app->lincko->api = $api->toArray();
+		return $api;
 	}
 
 	protected function checkRoute(){

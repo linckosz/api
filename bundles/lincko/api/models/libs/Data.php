@@ -501,7 +501,7 @@ class Data {
 					if(
 						   $full_schema //For Schema
 						|| $model->updated_at >= $lastvisit_obj //For Latest
-						|| (!is_null($this->partial) && isset($this->partial->$uid) && isset($this->partial->$uid->$key) && isset($this->partial->$uid->$key->{$model->id})) //For Missing
+						|| !is_null($this->partial) //For Missing
 					){
 						if(!isset($result_bis->$uid->$key)){
 							$result_bis->$uid->$key = new \stdClass;
@@ -819,6 +819,7 @@ class Data {
 				
 			}
 
+			//toto => _perm is missing at first object creation (should be with missing or partial)
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($result_bis->$uid->$table_name as $id => $temp) {
 					//Delete temp_id if the user is not concerned
@@ -1003,6 +1004,34 @@ class Data {
 					$result_bis->$uid->{'_history_title'}->$table_name = $model->getHistoryTitles();
 				} else {
 					$result_bis->$uid->{'_history_title'}->$table_name = new \stdClass;
+				}
+			}
+		}
+
+		//This is a kind of overkilling CPU usage, but it works
+		if(!is_null($this->partial)){
+			if(isset($this->partial->$uid)){
+				foreach ($result_bis->$uid as $table_name => $models) {
+					if(isset($this->partial->$uid->$table_name)){
+						foreach ($models as $id => $model) {
+							if(!isset($this->partial->$uid->$table_name->$id)){
+								unset($result_bis->$uid->$table_name->$id);
+							}
+						}
+					} else {
+						unset($result_bis->$uid->$table_name);
+					}
+				}
+			} else {
+				unset($result_bis->$uid);
+			}
+		}
+
+		//Delete the part that the application doesn't have access
+		if(!isset($app->lincko->api['x_i_am_god']) || !$app->lincko->api['x_i_am_god']){
+			foreach ($result_bis->$uid as $table_name => $models) {
+				if(!isset($app->lincko->api['x_'.$table_name]) || !$app->lincko->api['x_'.$table_name]){
+					unset($result_bis->$uid->$table_name);
 				}
 			}
 		}

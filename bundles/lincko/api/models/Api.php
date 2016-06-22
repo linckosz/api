@@ -14,7 +14,18 @@ class Api extends Model {
 
 	public $timestamps = false;
 
-	protected $visible = array();
+	protected $visible = array(
+		'x_i_am_god',
+		'x_chats',
+		'x_comments',
+		'x_files',
+		'x_notes',
+		'x_projects',
+		'x_roles',
+		'x_tasks',
+		'x_users',
+		'x_workspaces',
+	);
 
 	/////////////////////////////////////
 
