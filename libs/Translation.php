@@ -245,7 +245,7 @@ class Translation {
 		if(!isset($this->list[$bundle]) && Capsule::schema($bundle)->hasTable('translation')){
 			$this->list[$bundle] = array();
 			$list = &$this->list[$bundle]; //Pointer
-			$sql = 'SHOW FULL COLUMNS FROM `translation` WHERE LOWER(`Type`)=\'text\';';
+			$sql = 'SHOW FULL COLUMNS FROM `translation` WHERE LOWER(`Type`)=\'text\' AND `Field`<>\'comment\' AND `Comment`<>\'\';';
 			$db = Capsule::connection($bundle);
 			$data = $db->select( $db->raw($sql) );
 			foreach ($data as $key => $value) {
@@ -366,7 +366,7 @@ class Translation {
 		$bundle = $this->bundle;
 		$listfull = array();
 		if(isset($app->lincko->databases[$bundle]) && Capsule::schema($bundle)->hasTable('translation')){
-			$sql = 'SHOW FULL COLUMNS FROM `translation` WHERE LOWER(`Type`)=\'text\';';
+			$sql = 'SHOW FULL COLUMNS FROM `translation` WHERE LOWER(`Type`)=\'text\' AND `Field`<>\'comment\' AND `Comment`<>\'\';';
 			$db = Capsule::connection($bundle);
 			$data = $db->select( $db->raw($sql) );
 			foreach ($data as $key => $value) {
