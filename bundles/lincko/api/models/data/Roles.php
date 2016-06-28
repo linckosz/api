@@ -178,7 +178,7 @@ class Roles extends ModelLincko {
 			$msg = $app->trans->getBRUT('api', 17, 5)."\n".$app->trans->getBRUT('api', 0, 5); //Role update failed. You are not allowed to edit the server data.
 			\libs\Watch::php($msg, 'Missing arguments', __FILE__, true);
 			$json = new Json($msg, true, 406);
-			$json->render();
+			$json->render(406);
 			return false;
 		}
 		if($new){

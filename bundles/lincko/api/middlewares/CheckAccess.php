@@ -323,7 +323,7 @@ class CheckAccess extends \Slim\Middleware {
 		}
 
 		$json = new Json($msg, $error, $status, $signout, $resignin);
-		$json->render();
+		$json->render($status);
 		return false;
 
 	}

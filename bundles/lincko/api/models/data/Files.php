@@ -237,7 +237,7 @@ class Files extends ModelLincko {
 			if($this->size > 1000000000){
 				$msg = $app->trans->getBRUT('api', 3, 4); //File empty
 				$json = new Json($msg, true, 400);
-				$json->render();
+				$json->render(400);
 				return false;
 			}
 

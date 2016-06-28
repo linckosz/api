@@ -1152,7 +1152,7 @@ class ControllerTest extends Controller {
 		\libs\Watch::php( '!!!!!!!!!!  END  !!!!!!!!!!' , 'Permissions', __FILE__, false, false, true);
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		$json = new Json('OK', false);
-		$json->render();
+		$json->render(200);
 		return true;
 	}
 

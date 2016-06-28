@@ -118,7 +118,7 @@ function sendMsg(){
 	$msg = $app->trans->getBRUT('default', 1, 2);
 	if($app->lincko->jsonException){
 		$json = new Json($msg, true, 500, false, false, array(), $app->lincko->showError);
-		$json->render();
+		$json->render(500);
 	} else {
 		echo $msg;
 	}

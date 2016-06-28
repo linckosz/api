@@ -32,9 +32,10 @@ class Json {
 		return true;
 	}
 
-	public function render(){
+	public function render($status=200){
 		ob_clean();
 		header("Content-type: application/json; charset=UTF-8");
+		http_response_code($status);
 		echo json_encode($this->json);
 		return exit(0);
 	}

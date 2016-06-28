@@ -1087,7 +1087,7 @@ abstract class ModelLincko extends Model {
 			\libs\Watch::php($suffix." :\n".parent::toJson(), $msg, __FILE__, true);
 			if(!self::$debugMode){
 				$json = new Json($msg, true, 406);
-				$json->render();
+				$json->render(406);
 			}
 			return false;
 		}
@@ -1141,7 +1141,7 @@ abstract class ModelLincko extends Model {
 		\libs\Watch::php($detail, $msg, __FILE__, true);
 		if(!self::$debugMode){
 			$json = new Json($msg, true, 406);
-			$json->render();
+			$json->render(406);
 		}
 		return false;
 	}
@@ -1207,7 +1207,7 @@ abstract class ModelLincko extends Model {
 				$msg = $app->trans->getBRUT('api', 4, 1); //Unable to create the item, your request lacks arguments: @@missing_arguments~~
 				\libs\Watch::php($msg, 'Missing arguments', __FILE__, true);
 				$json = new Json($msg, true, 406);
-				$json->render();
+				$json->render(406);
 				return false;
 			}
 		} else {
@@ -1226,7 +1226,7 @@ abstract class ModelLincko extends Model {
 			$msg = $app->trans->getBRUT('api', 4, 2); //The format is not valid (@@table_name~~), some fields do not match the minimum request, or are missing: @@fields_not_valid~~
 			\libs\Watch::php($this, $msg, __FILE__, true);
 			$json = new Json($msg, true, 406);
-			$json->render();
+			$json->render(406);
 			return false;
 		}
 
