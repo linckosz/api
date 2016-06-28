@@ -146,6 +146,12 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return $this->form = $form;
 	}
 
+	public function create_options(){
+		$app = $this->app;
+		$app->render(200, array('msg' => 'OK'));
+		return true;
+	}
+
 	public function create_post(){
 		$app = $this->app;
 		$this->setFields();

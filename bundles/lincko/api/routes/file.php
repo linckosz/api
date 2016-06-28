@@ -6,10 +6,11 @@ $app = \Slim\Slim::getInstance();
 
 $app->group('/file', function () use ($app) {
 
-	$app->post(
+	$app->map(
 		'/create',
 		'\bundles\lincko\api\controllers\ControllerFile:create'.$app->lincko->method_suffix
 	)
+	->via('POST', 'OPTIONS')
 	->name('file_create'.$app->lincko->method_suffix);
 
 	$app->post(
@@ -41,7 +42,7 @@ $app->group('/file', function () use ($app) {
 		'\bundles\lincko\api\controllers\ControllerFile:result'
 	)
 	->via('GET', 'POST', 'OPTIONS', 'HEAD')
-	->name('file_result');
+	->name('file_result'.$app->lincko->method_suffix);
 
 	$app->get(
 		'/:workspace/:uid/:type/:id/:name',
