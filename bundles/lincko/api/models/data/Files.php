@@ -9,6 +9,7 @@ use \libs\Json;
 use \libs\Folders;
 use \libs\IptcManager;
 use \libs\SimpleImage;
+use WideImage\WideImage;
 
 class Files extends ModelLincko {
 
@@ -38,6 +39,8 @@ class Files extends ModelLincko {
 		'thu_type',
 		'thu_ext',
 		'size',
+		'width',
+		'height',
 		'progress',
 		'_parent',
 	);
@@ -56,8 +59,9 @@ class Files extends ModelLincko {
 
 	protected $archive = array(
 		'created_at' => 901, //[{un|ucfirst}] created a new file
-		'_' => 902,//[{un|ucfirst}] modified a file
-		'name' => 903,//[{un|ucfirst}] changed a file name
+		'_' => 902, //[{un|ucfirst}] modified a file
+		'name' => 903, //[{un|ucfirst}] changed a file name
+		'comment' => 904, //[{un|ucfirst}] modified a file description
 		'pivot_access_0' => 996, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a file
 		'pivot_access_1' => 997, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a file
 		'_restore' => 998,//[{un|ucfirst}] restored a file
@@ -80,6 +84,8 @@ class Files extends ModelLincko {
 	protected $model_integer = array(
 		'version_of',
 		'size',
+		'width',
+		'height',
 		'progress',
 	);
 
@@ -145,6 +151,7 @@ class Files extends ModelLincko {
 			|| (isset($form->parent_type) && !self::validType($form->parent_type, true))
 			|| (isset($form->parent_id) && !self::validNumeric($form->parent_id, true))
 			|| (isset($form->name) && !self::validTitle($form->name, true))
+			|| (isset($form->comment) && !self::validText($form->comment, true))
 		){
 			return false;
 		}
@@ -247,9 +254,12 @@ class Files extends ModelLincko {
 				if($this->category=='image'){
 					$folder_thu = new Folders;
 					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
-					$this->thu_type = $this->ori_type;
-					$this->thu_ext = $this->ori_ext;
-					copy($this->tmp_name, $folder_thu->getPath().$this->link);
+					$this->thu_type = 'image/jpeg';
+					$this->thu_ext = 'jpg';
+					$src = WideImage::load($this->tmp_name);
+					$src = $src->resize(256, 256, 'inside', 'any');
+					$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
+					rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
 				}
 				$this->progress = 100;
 				if($this->category=='video'){

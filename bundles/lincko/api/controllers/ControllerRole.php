@@ -190,7 +190,7 @@ class ControllerRole extends Controller {
 			if(isset($form->perm_chats)){ $model->perm_chats = $form->perm_chats; } //Optional
 			if(isset($form->perm_comments)){ $model->perm_comments = $form->perm_comments; } //Optional
 			$model->pivots_format($form, false);
-			if($model->save()){
+			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 17, 2)); //Role created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -307,7 +307,7 @@ class ControllerRole extends Controller {
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
-				if($model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 17, 6)); //Role updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200);

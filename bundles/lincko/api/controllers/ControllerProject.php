@@ -107,7 +107,7 @@ class ControllerProject extends Controller {
 			$model->title = $form->title;
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
 			$model->pivots_format($form, false);
-			if($model->save()){
+			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 2)); //Project created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -184,7 +184,7 @@ class ControllerProject extends Controller {
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
-				if($model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 12, 6)); //Project updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200);

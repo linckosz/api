@@ -119,7 +119,7 @@ class ControllerComment extends Controller {
 				$model->parent_id = 0;
 			}
 			$model->pivots_format($form, false);
-			if($model->save()){
+			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 2)); //Message created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -200,7 +200,7 @@ class ControllerComment extends Controller {
 		}
 		else if($model = Comments::find($form->id)){
 			$model->recalled_by = (int)$app->lincko->data['uid'];
-			if($model->save()){
+			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 24)); //Message recalled.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 200);

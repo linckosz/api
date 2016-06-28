@@ -525,6 +525,9 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getParent(){
+		if(!is_null($this->parent_item)){
+			return $this->parent_item;
+		}
 		$this->setParentAttributes();
 		if(is_string($this->parent_type) && is_integer($this->_parent[1]) && $class = $this::getClass($this->parent_type)){
 			if($this->parent_item = $class::find($this->_parent[1])){
@@ -533,6 +536,17 @@ abstract class ModelLincko extends Model {
 		}
 		$this->parent_item = false;
 		return $this->parent_item;
+	}
+
+	public function getParentAccess(){
+		$parent = $this->getParent();
+		if(is_null($this->parent_type)){
+			return true; //Accept any model attached to root
+		}
+		if($parent->checkAccess(false)){
+			return $parent;
+		}
+		return false;
 	}
 
 	public static function setDebugMode($onoff=false){
@@ -869,7 +883,7 @@ abstract class ModelLincko extends Model {
 		if (isset($this->id) && isset($this->viewed_by)) {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
-				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]);
+				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]); //toto => with about 200+ viewed, it crsh (1317 Query execution was interrupted)
 				$this->touchUpdateAt();
 				return true;
 			}
@@ -1066,12 +1080,12 @@ abstract class ModelLincko extends Model {
 		}
 		if($this->accessibility){
 			return true;
-		} else {
+		} else if($show_msg){
 			$suffix = $this->getTable();
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 			$suffix = $this->getTable();
 			\libs\Watch::php($suffix." :\n".parent::toJson(), $msg, __FILE__, true);
-			if($show_msg && !self::$debugMode){
+			if(!self::$debugMode){
 				$json = new Json($msg, true, 406);
 				$json->render();
 			}

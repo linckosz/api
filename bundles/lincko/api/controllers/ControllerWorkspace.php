@@ -109,7 +109,7 @@ class ControllerWorkspace extends Controller {
 			if(isset($form->domain)){ $model->domain = $form->domain; } //Optional
 			if(isset($form->url)){ $model->url = $form->url; } //Optional
 			$model->pivots_format($form, true);
-			if($model->save()){
+			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 16, 2)); //Workspace created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -186,7 +186,7 @@ class ControllerWorkspace extends Controller {
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
-				if($model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 16, 6)); //Workspace updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200);

@@ -66,4 +66,10 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_invite'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/my_user',
+		'\bundles\lincko\api\controllers\ControllerUser:my_user'.$app->lincko->method_suffix
+	)
+	->name('user_my_user'.$app->lincko->method_suffix);
+
 });

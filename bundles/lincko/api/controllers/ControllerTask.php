@@ -168,7 +168,7 @@ class ControllerTask extends Controller {
 			if(isset($form->status)){ $model->status = $form->status; } //Optional
 			if(isset($form->progress)){ $model->progress = $form->progress; } //Optional
 			$model->pivots_format($form, false);
-			if($model->save()){
+			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 2)); //Task created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -275,7 +275,7 @@ class ControllerTask extends Controller {
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
-				if($model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 9, 6)); //Task updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200);

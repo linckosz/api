@@ -204,7 +204,7 @@ class ControllerUser extends Controller {
 				$model->username_sha1 = $username_sha1;
 				$model->internal_email = $internal_email;
 				$model->pivots_format($form, false);
-				if($model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$app->lincko->data['uid'] = $model->id;
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', false);
@@ -353,7 +353,7 @@ class ControllerUser extends Controller {
 				if(isset($form->username) && Users::where('username', '=', $form->username)->first()){
 					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 18); //Username already in use.
 					$errfield = 'username';
-				} else if($model->save()){
+				} else if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200);
@@ -605,6 +605,25 @@ class ControllerUser extends Controller {
 			$msg = $app->trans->getBRUT('api', 15, 25); //Invitation failed to send.
 			$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
 			return true;
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function my_user_get(){
+		$app = $this->app;
+		$form = $this->form;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		if($model = Users::getUser()){
+			if($model->checkAccess(false)){
+				$app->render(200, array('msg' => $model->toJson()));
+				return true;
+			}
 		}
 
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));

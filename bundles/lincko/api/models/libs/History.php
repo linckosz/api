@@ -139,7 +139,7 @@ class History extends ModelLincko {
 						if($model = $class::withTrashed()->find($id)){
 							if(strpos($model->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
 								$noticed_by = $model->noticed_by.';'.$app->lincko->data['uid'].';';
-								$class::where('id', $id)->getQuery()->update(['noticed_by' => $noticed_by]);
+								$class::where('id', $id)->getQuery()->update(['noticed_by' => $noticed_by]); //toto => with about 200+ viewed, it crsh (1317 Query execution was interrupted)
 								$model->touchUpdateAt();
 								if(!$partial){ $partial = new \stdClass; }
 								if(!isset($partial->$uid)){ $partial->$uid = new \stdClass; }

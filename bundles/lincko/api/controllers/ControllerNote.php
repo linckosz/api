@@ -107,7 +107,7 @@ class ControllerNote extends Controller {
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			$model->comment = $form->comment;
 			$model->pivots_format($form, false);
-			if($model->save()){
+			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 2)); //Note created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -184,7 +184,7 @@ class ControllerNote extends Controller {
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
-				if($model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 10, 6)); //Note updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200);

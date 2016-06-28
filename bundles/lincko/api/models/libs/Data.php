@@ -102,17 +102,21 @@ class Data {
 	}
 
 	protected function setPartial($force_partial=false){
+		$app = $this->app;
 		if($force_partial){
-			return $this->partial = $force_partial;
+			$this->partial = $force_partial;
 		} else if(is_object($this->partial)){
-			return $this->partial;
+			$this->partial;
 		} else if(isset($this->data->data->partial)){
 			if(is_object($this->data->data->partial)){
-				return $this->partial = $this->data->data->partial;
+				$this->partial = $this->data->data->partial;
 			}
 		}
 		//This will help missing and history to not scan the whole database if we do not provide a partial parameter
-		return $this->partial = new \stdClass;
+		$uid = $app->lincko->data['uid'];
+		if(!isset($this->partial)){ $this->partial = new \stdClass; }
+		if(!isset($this->partial->$uid)){ $this->partial->$uid = new \stdClass; }
+		return $this->partial;
 	}
 
 	public static function getModels(){
@@ -355,6 +359,10 @@ class Data {
 			$full_schema = true;
 		}
 
+		if(!is_null($this->partial) && !isset($this->partial->$uid) && empty((array)$this->partial->$uid)){
+			return null;
+		}
+
 		$tp = $this::getTrees();
 		$tree_scan = $tp[0];
 		$tree_desc = $tp[1];
@@ -522,18 +530,22 @@ class Data {
 		unset($result);
 		
 		//Delete the useless part if partial
-		if(!is_null($this->partial) && isset($this->partial->$uid)){
-			foreach ($result_bis->$uid as $key => $models) {
-				if(!isset($this->partial->$uid->$key)){
-					unset($result_bis->$uid->$key);
-					unset($tree_id[$key]);
-					continue;
-				} else {
-					foreach ($models as $key_bis => $model) {
-						if(!isset($this->partial->$uid->$key->key_bis)){
-							unset($result_bis->$uid->$key->key_bis);
-							unset($tree_id[$key][$key_bis]);
-							continue;
+		if(!is_null($this->partial)){
+			if(!isset($this->partial->$uid)){
+				$result_bis->$uid = new \stdClass;
+			} else {
+				foreach ($result_bis->$uid as $key => $models) {
+					if(!isset($this->partial->$uid->$key)){
+						unset($result_bis->$uid->$key);
+						unset($tree_id[$key]);
+						continue;
+					} else {
+						foreach ($models as $key_bis => $model) {
+							if(!isset($this->partial->$uid->$key->key_bis)){
+								unset($result_bis->$uid->$key->key_bis);
+								unset($tree_id[$key][$key_bis]);
+								continue;
+							}
 						}
 					}
 				}

@@ -144,7 +144,7 @@ class ControllerChat extends Controller {
 			} else {
 				$model->pivots_format($form, false);
 			}
-			if($save && $model->save()){
+			if($save && $model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 13, 2)); //Discussion group created.
 				$data = new Data();
 				$data->dataUpdateConfirmation($msg, 201);
@@ -226,7 +226,7 @@ class ControllerChat extends Controller {
 			if($model->single){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 			} else if(count($dirty)>0 || $pivots){
-				if($model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 13, 6)); //Discussion group updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200);
