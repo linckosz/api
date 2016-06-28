@@ -529,6 +529,8 @@ class Data {
 
 		unset($result);
 		
+		/*
+		toto => the partial deletion should occure here, but because of _perm and dependencies that need the whole data, we had to move it at the end, need to be reworked
 		//Delete the useless part if partial
 		if(!is_null($this->partial)){
 			if(!isset($this->partial->$uid)){
@@ -551,6 +553,7 @@ class Data {
 				}
 			}
 		}
+		*/
 
 		if($this->item_detail){
 			//Onwer (ok) , it needs to works with model, not array convertion
@@ -1020,7 +1023,7 @@ class Data {
 			}
 		}
 
-		//This is a kind of overkilling CPU usage, but it works
+		//toto => This is a kind of overkilling CPU usage, but it works, it must be done at the end for the moment if not we will have issue with _perm and dependencies
 		if(!is_null($this->partial)){
 			if(isset($this->partial->$uid)){
 				foreach ($result_bis->$uid as $table_name => $models) {
