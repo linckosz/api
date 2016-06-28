@@ -425,7 +425,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 			if($type=='download'){
 				$path = $file->server_path.'/'.$file->created_by.'/'.$file->link;
-				if(filesize($path)>0){
+				if(filesize($path)!==false){
 					header('Content-Description: File Transfer');
 					header('Content-Type: application/force-download;');
 					header('Content-Disposition: attachment; filename="'.$file->name.'"');
@@ -444,7 +444,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					$path = $file->server_path.'/'.$file->created_by.'/'.$file->link;
 					$content_type = $file->ori_type;
 				}
-				if(filesize($path)>0){
+				if(filesize($path)!==false){
 					//http://stackoverflow.com/questions/2000715/answering-http-if-modified-since-and-http-if-none-match-in-php/2015665#2015665
 					$timestamp = filemtime($path); 
 					$gmt_mtime = gmdate('r', $timestamp);

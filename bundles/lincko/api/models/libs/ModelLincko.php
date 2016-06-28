@@ -540,7 +540,7 @@ abstract class ModelLincko extends Model {
 
 	public function getParentAccess(){
 		$parent = $this->getParent();
-		if(is_null($this->parent_type)){
+		if(!$parent){
 			return true; //Accept any model attached to root
 		}
 		if($parent->checkAccess(false)){
@@ -1271,6 +1271,7 @@ abstract class ModelLincko extends Model {
 			}
 			$db->commit();
 		} catch(\Exception $e){
+			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 			$return = null;
 			$db->rollback();
 		}

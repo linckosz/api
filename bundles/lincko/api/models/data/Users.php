@@ -373,6 +373,7 @@ class Users extends ModelLincko {
 			}
 			$db->commit();
 		} catch(\Exception $e){
+			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 			$return = null;
 			$db->rollback();
 		}

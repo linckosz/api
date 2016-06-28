@@ -254,18 +254,26 @@ class Files extends ModelLincko {
 				if($this->category=='image'){
 					$folder_thu = new Folders;
 					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
-					$this->thu_type = 'image/jpeg';
-					$this->thu_ext = 'jpg';
-					$src = WideImage::load($this->tmp_name);
-					$src = $src->resize(256, 256, 'inside', 'any');
-					$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
-					rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
+					try {
+						$this->thu_type = 'image/jpeg';
+						$this->thu_ext = 'jpg';
+						$src = WideImage::load($this->tmp_name);
+						$src = $src->resize(256, 256, 'inside', 'any');
+						$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
+						rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
+					} catch(\Exception $e){
+						\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
+						$this->thu_type = 'image/png';
+						$this->thu_ext = 'png';
+						copy($app->lincko->path.'/bundles/lincko/api/public/images/generic/unavailable.png', $folder_thu->getPath().$this->link);
+					}
 				}
 				$this->progress = 100;
 				if($this->category=='video'){
 					$this->progress = 0; //Only video needs significant time for compression
 				}
 			} catch(\Exception $e){
+				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 				return false;
 			}
 		}
@@ -301,7 +309,7 @@ class Files extends ModelLincko {
 	//$file must be a full link
 	protected function fileformat(){
 		$this->ori_ext = false;
-		if(is_file($this->tmp_name) && filesize($this->tmp_name)){
+		if(is_file($this->tmp_name) && filesize($this->tmp_name)!==false){
 			/*
 			[IMAGETYPE_GIF] => 1
 			[IMAGETYPE_JPEG] => 2
