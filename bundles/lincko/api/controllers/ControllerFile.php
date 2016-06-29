@@ -281,7 +281,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 		}
 
-		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		$app->render(200, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
 		return false;
 	}
 
@@ -437,6 +437,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					header('Pragma: public');
 					header('Content-Length: ' . filesize($path));
 					readfile($path);
+					return exit(0);
 				}
 			} else if($type=='link' || $type=='thumbnail'){
 				if($type=='thumbnail'){
