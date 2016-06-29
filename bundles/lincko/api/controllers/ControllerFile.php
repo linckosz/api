@@ -246,7 +246,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 		}
 
-		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		$json = new Json($errmsg, true, 401);
+		//The status cannot be 401 because uploadjs error message are used in done
+		$json->render(200);
+
 		return false;
 	}
 
@@ -281,7 +284,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 		}
 
-		$app->render(200, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
 		return false;
 	}
 

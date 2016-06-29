@@ -41,15 +41,25 @@ class Data {
 	public function dataUpdateConfirmation($msg, $status=200){
 		$app = $this->app;
 		if($this->setLastVisit()){
-			$lastvisit = time()-1;
-			$msg = array_merge(
-				array(
-					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
-					'partial' => $this->getLatest($lastvisit),
-					'lastvisit' => $lastvisit,
-				),
-				$msg
-			);
+			if(isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
+				$lastvisit = time()-1;
+				$msg = array_merge(
+					array(
+						'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
+						'partial' => $this->getLatest($lastvisit),
+						'lastvisit' => $lastvisit,
+					),
+					$msg
+				);
+			} else {
+				$msg = array_merge(
+					array(
+						'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
+						'partial' => $this->getLatest(),
+					),
+					$msg
+				);
+			}
 		} else {
 			$msg = array_merge(
 				array(
