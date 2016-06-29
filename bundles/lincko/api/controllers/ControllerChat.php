@@ -80,9 +80,11 @@ class ControllerChat extends Controller {
 			}
 		}
 		if(isset($form->title) && is_string($form->title)){
-			$form->title = trim(STR::break_line_conv($form->title,' '));
+			$form->title = trim(STR::break_line_conv(STR::br2space($form->title),' '));
 			if(strlen($form->title)==0){
 				$form->title = $app->trans->getBRUT('api', 13, 0); //New Discussion group
+			} else if(strlen($form->title)>200){
+				$form->title = substr($form->title, 0, 197).'...';
 			}
 		}
 		if(isset($form->single) && is_numeric($form->single)){

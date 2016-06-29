@@ -86,9 +86,11 @@ class ControllerTask extends Controller {
 			$form->parent_id = (int) $form->parent_id;
 		}
 		if(isset($form->title) && is_string($form->title)){
-			$form->title = trim(STR::break_line_conv($form->title,' '));
+			$form->title = trim(STR::break_line_conv(STR::br2space($form->title),' '));
 			if(strlen($form->title)==0){
 				$form->title = $app->trans->getBRUT('api', 9, 0); //New Task
+			} else if(strlen($form->title)>200){
+				$form->title = substr($form->title, 0, 197).'...';
 			}
 		}
 		if(isset($form->start) && is_numeric($form->start)){

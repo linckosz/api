@@ -70,9 +70,11 @@ class ControllerProject extends Controller {
 			$form->temp_id = trim($form->temp_id);
 		}
 		if(isset($form->title) && is_string($form->title)){
-			$form->title = trim(STR::break_line_conv($form->title,' '));
+			$form->title = trim(STR::break_line_conv(STR::br2space($form->title),' '));
 			if(strlen($form->title)==0){
 				$form->title = $app->trans->getBRUT('api', 12, 0); //New Project
+			} else if(strlen($form->title)>200){
+				$form->title = substr($form->title, 0, 197).'...';
 			}
 		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){

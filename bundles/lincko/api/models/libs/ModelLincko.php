@@ -1565,8 +1565,8 @@ abstract class ModelLincko extends Model {
 		}
 		if($touch){
 			$this->touch();
-			$this->setForceSchema();
-			//$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
+			//$this->setForceSchema();
+			$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
 		}
 		return $success;
 	}

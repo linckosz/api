@@ -73,9 +73,11 @@ class ControllerNote extends Controller {
 			$form->parent_id = (int) $form->parent_id;
 		}
 		if(isset($form->title) && is_string($form->title)){
-			$form->title = trim(STR::break_line_conv($form->title,' '));
+			$form->title = trim(STR::break_line_conv(STR::br2space($form->title),' '));
 			if(strlen($form->title)==0){
 				$form->title = $app->trans->getBRUT('api', 10, 0); //New Note
+			} else if(strlen($form->title)>200){
+				$form->title = substr($form->title, 0, 197).'...';
 			}
 		}
 		return $this->form = $form;

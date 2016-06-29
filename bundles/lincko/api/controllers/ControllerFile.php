@@ -93,9 +93,11 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$form->parent_id = (int) $form->parent_id;
 		}
 		if(isset($form->name) && is_string($form->name)){
-			$form->name = trim(STR::break_line_conv($form->name,' '));
+			$form->name = trim(STR::break_line_conv(STR::br2space($form->name),' '));
 			if(strlen($form->name)==0){
 				$form->name = $app->trans->getBRUT('api', 14, 0); //New File
+			} else if(strlen($form->name)>104){
+				$form->name = substr($form->name, 0, 101).'...';
 			}
 		}
 		if(isset($form->version_of) && is_numeric($form->version_of)){
