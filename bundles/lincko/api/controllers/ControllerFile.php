@@ -8,6 +8,7 @@ use \libs\Controller;
 use \libs\Datassl;
 use \libs\SimpleImage;
 use \libs\File;
+use \libs\STR;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Files;
