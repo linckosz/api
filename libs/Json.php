@@ -33,6 +33,10 @@ class Json {
 	}
 
 	public function render($status=200){
+		$app = \Slim\Slim::getInstance();
+		if($app->lincko->http_code_ok){
+			$status = 200;
+		}
 		ob_clean();
 		header("Content-type: application/json; charset=UTF-8");
 		http_response_code($status);

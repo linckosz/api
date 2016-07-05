@@ -44,6 +44,9 @@ $app->lincko->time_start = 0;
 //Application title
 $app->lincko->title = 'Lincko';
 
+//at True it forces a HTTP code response to 200, mainly used to received feedbacks for file posting
+$app->lincko->http_code_ok = false;
+
 //Domain name
 if(isset($_SERVER["SERVER_HOST"])){
 	$app->lincko->domain = $_SERVER["SERVER_HOST"];

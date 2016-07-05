@@ -46,7 +46,7 @@ $app->group('/file', function () use ($app) {
 
 	$app->get(
 		'/:workspace/:uid/:type/:id/:name',
-		'\bundles\lincko\api\controllers\ControllerFile:file_open_get'
+		'\bundles\lincko\api\controllers\ControllerFile:open_get'
 	)
 	->conditions(array(
 		'workspace' => '\d+',
@@ -56,6 +56,15 @@ $app->group('/file', function () use ($app) {
 		'name' => '.+\.\w+',
 	))
 	->name('file_open_get');
+
+	$app->post(
+		'/progress/:id',
+		'\bundles\lincko\api\controllers\ControllerFile:progress_post'
+	)
+	->conditions(array(
+		'id' => '\d+',
+	))
+	->name('file_progress_post');
 
 });
 

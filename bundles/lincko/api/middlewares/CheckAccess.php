@@ -234,7 +234,12 @@ class CheckAccess extends \Slim\Middleware {
 
 		//For file uploading, make a specific process
 		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
-			if($app->lincko->method_suffix == '_post'){ //File uploading
+			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $app->request->getResourceUri()) ){ //Video conversion
+				//Security is not important here since we do not use POSt as variable to be injected somewhere
+				if($this->checkRoute()!==false){
+					return $this->next->call();
+				}
+			} else if($app->lincko->method_suffix == '_post'){ //File uploading
 				$file_error = true;
 				if($this->checkRoute()!==false){
 					$post = $app->request->post();
@@ -253,8 +258,11 @@ class CheckAccess extends \Slim\Middleware {
 						$data->api_key = $post['api_upload'];
 						$data->workspace = $post['workspace'];
 						$data->fingerprint = $post['fingerprint'];
-						$data->data = new \stdClass;
 						$data->checksum = 0;
+						if(isset($post['http_code_ok']) && $post['http_code_ok']){
+							$data->http_code_ok = (bool) $post['http_code_ok'];
+						}
+						$data->data = new \stdClass;
 						$this->data = $data;
 						$file_error = false;
 						$this->upload = true;
@@ -271,6 +279,11 @@ class CheckAccess extends \Slim\Middleware {
 					return $this->next->call();
 				}
 			}
+		}
+
+		//This is used to force HTTP to be ok (200)
+		if(isset($data->http_code_ok) && $data->http_code_ok){
+			$app->lincko->http_code_ok = (bool) $data->http_code_ok;
 		}
 
 		//Check if file access has an error

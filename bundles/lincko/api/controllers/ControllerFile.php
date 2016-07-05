@@ -12,10 +12,9 @@ use \libs\STR;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Files;
+use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\Data;
 use WideImage\WideImage;
-
-use phpthumb;
 
 class ControllerFile extends Controller {
 
@@ -127,6 +126,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							$form->parent_type = 'projects';
 							$form->parent_id = $project->id;
 							$attached = true;
+							if(!isset($form->pivot)){
+								$form->pivot = new \stdClass;
+							}
 							if(!isset($form->pivot->{$form->parent_type.'>access'})){
 								$form->pivot->{$form->parent_type.'>access'} = new \stdClass;
 							}
@@ -247,9 +249,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 		}
 
+		//We have to use Json object to be able to get back the message attached
 		$json = new Json($errmsg, true, 401);
-		//The status cannot be 401 because uploadjs error message are used in done
-		$json->render(200);
+		$json->render(401);
 
 		return false;
 	}
@@ -413,7 +415,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return false;
 	}
 
-	public function file_open_get($workspace, $uid, $type, $id){
+	public function open_get($workspace, $uid, $type, $id){
 		$app = $this->app;
 		ob_clean();
 		flush();
@@ -431,10 +433,15 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 			if($type=='download'){
 				$path = $file->server_path.'/'.$file->created_by.'/'.$file->link;
+				$name = $file->name;
+				if($file->progress<100 && $file->category=='video'){
+					$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/mp4.png';
+					$name = 'converting.png';
+				}
 				if(filesize($path)!==false){
 					header('Content-Description: File Transfer');
 					header('Content-Type: application/force-download;');
-					header('Content-Disposition: attachment; filename="'.$file->name.'"');
+					header('Content-Disposition: attachment; filename="'.$name.'"');
 					header('Content-Transfer-Encoding: binary');
 					header('Expires: 0');
 					header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
@@ -502,6 +509,48 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$src->output('png');
 		
 		return exit(0);
+	}
+
+	//This is a process to run in background, so we are not expecting an output
+	public function progress_post($id){
+		$app = $this->app;
+		$file = Files::find($id);
+		if($file){
+			//\libs\Watch::php($file, '$post2', __FILE__, false, false, true);
+			set_time_limit(24*3600); //Set to 1 day workload at the most
+			$path = $file->server_path.'/'.$file->created_by.'/convert/'.$file->link;
+			$loop = true;
+			/*
+			while($loop){
+				$handle = fopen($path, 'r');
+				if($handle){
+					if(filesize($path)>0){
+						$contents = fread($handle, filesize($path)); //Oblige, sinon n'affiche pas
+					}
+					//$regprog = "/\b.*?frame=\s*?(\d*?)\s*?fps\b/i";
+					$regprog = "/\b.*?frame=\s*?(\d+)\s*?.*?\b/i";
+					$lasttime = -1;
+					preg_match_all($regprog,$contents,$matches,PREG_SET_ORDER);
+					foreach($matches as $i => $value) {
+						$lasttime = $i;
+					}
+					if($lasttime>=0){
+						foreach($matches[$lasttime] as $j => $value) {
+							$video_cible_frame = intval($matches[$lasttime][1]);
+						}
+					}
+					
+					if($video_cible_frame>0 && $video_source_frame>0){
+						$progress = round(10000*$video_cible_frame/$video_source_frame)/100;
+						if($progress<0){$progress=0;}
+						else if($progress>100){$progress=100;}
+					}
+				}
+				fclose($handle);
+			}
+			*/
+		}
+		return true;
 	}
 
 }

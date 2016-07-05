@@ -28,7 +28,7 @@ foreach($app->lincko->middlewares as $v) {
 }
 
 foreach($app->lincko->hooks as $v) {
-	//Load each hooks in order of appearance in the arra
+	//Load each hooks in order of appearance in the array
 	//['bundle name', 'subfolder\function name', 'the.hook.name', priority value],
 	$hook = str_replace('/', '\\', 'bundles\\'.$v[0].'\\hooks\\'.$v[1]);
 	$app->hook($v[2], $hook, $v[3]);

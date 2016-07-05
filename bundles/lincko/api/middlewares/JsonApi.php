@@ -6,6 +6,9 @@ namespace bundles\lincko\api\middlewares;
 class JsonApiView extends \JsonApiView {
 	public function render($status=200, $data = NULL) {
 		$app = \Slim\Slim::getInstance();
+		if($app->lincko->http_code_ok){
+			$status = 200;
+		}
 		
 		//Clean the output to keep only the last Json message
 		ob_clean();

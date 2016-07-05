@@ -7,6 +7,7 @@ use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Projects;
 use \libs\Json;
 use \libs\Folders;
+use \libs\Video;
 use \libs\IptcManager;
 use \libs\SimpleImage;
 use WideImage\WideImage;
@@ -230,28 +231,28 @@ class Files extends ModelLincko {
 	
 	public function save(array $options = array()){
 		$app = self::getApp();
+		$new = false;
 		if(!$this->id){ //Only copy a file for new items
 			if($this->error!=0 || !$this->fileformat()){
 				return false;
 			}
 			if($this->size > 1000000000){
-				$msg = $app->trans->getBRUT('api', 3, 4); //File empty
+				$msg = $app->trans->getBRUT('api', 3, 7); //File too large
 				$json = new Json($msg, true, 400);
 				$json->render(400);
 				return false;
 			}
-
 			try {
 				$this->server_path = $app->lincko->filePath;
 				$this->setCategory();
 				$this->link = md5(uniqid());
 				$folder_ori = new Folders;
 				$folder_ori->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/');
-				copy($this->tmp_name, $folder_ori->getPath().$this->link);
 				$this->thu_type = null;
 				$this->thu_ext = null;
-				//if($this->ori_type=='image' || $this->ori_type=='video'){ //toto, need to create jpeg for videos
+				$this->progress = 100;
 				if($this->category=='image'){
+					copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					$folder_thu = new Folders;
 					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
 					try {
@@ -267,17 +268,55 @@ class Files extends ModelLincko {
 						$this->thu_ext = 'png';
 						copy($app->lincko->path.'/bundles/lincko/api/public/images/generic/unavailable.png', $folder_thu->getPath().$this->link);
 					}
-				}
-				$this->progress = 100;
-				if($this->category=='video'){
+				} else if($this->category=='video'){
 					$this->progress = 0; //Only video needs significant time for compression
+					$this->size = 0;
+					$folder_thu = new Folders;
+					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
+					$folder_txt = new Folders;
+					$folder_txt->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/convert/');
+					$this->thu_type = 'image/jpeg';
+					$this->thu_ext = 'jpg';
+					$video = new Video($this->tmp_name, $folder_ori->getPath().$this->link, $folder_thu->getPath().$this->link, $folder_txt->getPath().$this->link);
+					if($video->thumbnail()!==0){
+						return false;
+					}
+					if($video->convert(2)!==0){
+						return false;
+					}
+				} else {
+					copy($this->tmp_name, $folder_ori->getPath().$this->link);
+					//No thumbnail for other kind of files
 				}
+				$new = true;
 			} catch(\Exception $e){
 				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 				return false;
 			}
 		}
 		$return = parent::save($options);
+
+		if($new && $this->category=='video'){
+			sleep(1); //wait 1s to make sure the conversion is starting
+			$url = $app->environment['slim.url_scheme'].'://'.$app->request->headers->Host.'/file/progress/'.$this->id;
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+			curl_setopt($ch, CURLOPT_POSTFIELDS, null);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+			curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+			curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+					'Content-Type: application/json; charset=UTF-8',
+					'Content-Length: ' . mb_strlen(null),
+				)
+			);
+			curl_exec($ch);
+			@curl_close($ch);
+		}
+		
 		return $return;
 	}
 
@@ -297,6 +336,15 @@ class Files extends ModelLincko {
 		return $this->category;
 	}
 
+	public function getCategory(){
+		return $this->category;
+	}
+
+	public function setProgress(){
+		if($this->category == 'video' && $this->progress < 100){
+
+		}
+	}
 
 
 	

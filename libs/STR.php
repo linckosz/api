@@ -60,6 +60,11 @@ class STR {
 		return preg_replace("/<br\s*?\/?>/", ' ', $text);
 	}
 
+	//Convert BR to LN
+	public static function br2ln($text) {
+		return preg_replace("/<br\s*?\/?>/", "\n", $text);
+	}
+
 	private static function name_to_numerical($string) {
 		$tab = Ord_table::singleton();
 		return strtr($string, $tab);

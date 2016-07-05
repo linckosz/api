@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
+use \libs\STR;
 use \bundles\lincko\api\models\data\Comments;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\Data;
@@ -74,6 +75,9 @@ class ControllerComment extends Controller {
 		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
+		}
+		if(isset($form->comment) && is_string($form->comment)){
+			$form->comment = STR::br2ln(trim($form->comment));
 		}
 		return $this->form = $form;
 	}
