@@ -342,7 +342,47 @@ class Files extends ModelLincko {
 
 	public function setProgress(){
 		if($this->category == 'video' && $this->progress < 100){
-
+			set_time_limit(24*3600); //Set to 1 day workload at the most
+			$path = $this->server_path.'/'.$this->created_by.'/convert/'.$this->link;
+			$file = $this->server_path.'/'.$this->created_by.'/'.$this->link;
+			$loop = true;
+			$progress = 100;
+			usleep(500000); //500ms
+			while($loop){
+				$handle = fopen($path, 'r');
+				if($handle){
+					if(filesize($path)>0){
+						$contents = fread($handle, filesize($path));
+						$reg_duration = "/\b.*?Duration:\s*?(\d\d):(\d\d):(\d\d)\.(\d\d).*\b/i";
+						if(preg_match_all($reg_duration, $contents, $matches, PREG_SET_ORDER)){
+							$match = $matches[count($matches)-1];
+							$duration = $match[1]*360000 + $match[2]*6000 + $match[3]*100 + $match[4];
+							$reg_time  = "/ time=\s*?(\d\d):(\d\d):(\d\d)\.(\d\d) /i";
+							if(preg_match_all($reg_time, $contents, $matches, PREG_SET_ORDER)){
+								$match = $matches[count($matches)-1];
+								$time = $match[1]*360000 + $match[2]*6000 + $match[3]*100 + $match[4];
+								$reg_size  = "/\b.*?\d Lsize=.*\b/i";
+								if($time == 0 || $duration == 0){
+									$progress = 0;
+								} else if($time>=$duration || preg_match_all($reg_size, $contents)){
+									$progress = 100;
+								} else {
+									$progress = round(100*$time/$duration);
+									if($progress<0){ $progress = 0; }
+									else if($progress>100){ $progress = 100; }
+								}
+							}
+						}
+					}
+				}
+				fclose($handle);
+				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => (int) filesize($file)]); //toto => with about 200+ viewed, it crsh (1317 Query execution was interrupted)
+				$this->touchUpdateAt();
+				usleep(500000); //500ms
+				if($progress>=100){ 
+					$loop = false;
+				}
+			}
 		}
 	}
 

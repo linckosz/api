@@ -514,41 +514,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 	//This is a process to run in background, so we are not expecting an output
 	public function progress_post($id){
 		$app = $this->app;
-		$file = Files::find($id);
-		if($file){
-			//\libs\Watch::php($file, '$post2', __FILE__, false, false, true);
-			set_time_limit(24*3600); //Set to 1 day workload at the most
-			$path = $file->server_path.'/'.$file->created_by.'/convert/'.$file->link;
-			$loop = true;
-			/*
-			while($loop){
-				$handle = fopen($path, 'r');
-				if($handle){
-					if(filesize($path)>0){
-						$contents = fread($handle, filesize($path)); //Oblige, sinon n'affiche pas
-					}
-					//$regprog = "/\b.*?frame=\s*?(\d*?)\s*?fps\b/i";
-					$regprog = "/\b.*?frame=\s*?(\d+)\s*?.*?\b/i";
-					$lasttime = -1;
-					preg_match_all($regprog,$contents,$matches,PREG_SET_ORDER);
-					foreach($matches as $i => $value) {
-						$lasttime = $i;
-					}
-					if($lasttime>=0){
-						foreach($matches[$lasttime] as $j => $value) {
-							$video_cible_frame = intval($matches[$lasttime][1]);
-						}
-					}
-					
-					if($video_cible_frame>0 && $video_source_frame>0){
-						$progress = round(10000*$video_cible_frame/$video_source_frame)/100;
-						if($progress<0){$progress=0;}
-						else if($progress>100){$progress=100;}
-					}
-				}
-				fclose($handle);
-			}
-			*/
+		if($file = Files::find($id)){
+			$file->setProgress();
 		}
 		return true;
 	}

@@ -128,7 +128,7 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters - Alphanumeric
 			$errfield = 'password';
 		}
-		else if(isset($form->username) && !Users::validChar($form->username, true) && !Users::validTextNotEmpty($form->username, true)){ //Optional
+		else if(isset($form->username) && (!Users::validChar($form->username, true) || !Users::validTextNotEmpty($form->username, true))){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 10); //We could not validate the username format: - 104 characters max - Without space
 			$errfield = 'username';
 		}
@@ -320,12 +320,15 @@ class ControllerUser extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		$errfield = 'undefined';
 
+		\libs\Watch::php(Users::validTextNotEmpty($form->username, true), '$var', __FILE__, false, false, true);
+		\libs\Watch::php($form->username, '$var', __FILE__, false, false, true);
+
 		if(!isset($form->id) || !Users::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 27); //We could not validate the user account ID.
 			$errfield = 'id';
 		}
 		//"email" and "password" are treated differently for security reason
-		else if(isset($form->username) && !Users::validChar($form->username, true) && !Users::validTextNotEmpty($form->username, true)){ //Optional
+		else if(isset($form->username) && (!Users::validChar($form->username, true) || !Users::validTextNotEmpty($form->username, true))){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 10); //We could not validate the username format: - 104 characters max - Without space
 			$errfield = 'username';
 		}

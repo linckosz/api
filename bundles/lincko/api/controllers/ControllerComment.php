@@ -195,7 +195,7 @@ class ControllerComment extends Controller {
 		$form = $this->form;
 
 		$failmsg = $app->trans->getBRUT('api', 11, 23)."\n"; //Message recall failed.
-		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 11, 25); //You can only recall a message within 2 minutes.
 		$errfield = 'undefined';
 
 		if(!isset($form->id) || !Comments::validNumeric($form->id)){ //Required

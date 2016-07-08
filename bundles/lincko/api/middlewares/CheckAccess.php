@@ -268,7 +268,8 @@ class CheckAccess extends \Slim\Middleware {
 						$this->upload = true;
 					}
 				}
-			} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/\d+\/\w+\/(?:link|thumbnail|download)\/\d+\/.+\.\w+$/ui", $app->request->getResourceUri())){ //File reading
+			//} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/\d+\/\w+\/(?:link|thumbnail|download)\/\d+\/.+\.\w+$/ui", $app->request->getResourceUri())){ //File reading
+			} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/\d+\/\w+\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri())){ //File reading
 				if($this->checkRoute()!==false){
 					//toto => Big security issue, anyone can see files! It should go through front end server later, work with PHP session
 					return $this->next->call();

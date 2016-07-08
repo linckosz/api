@@ -217,37 +217,37 @@ abstract class ModelLincko extends Model {
 
 	//The value has to be previously converted (int)boolval(var) because of MySQL => 0|1
 	public static function validBoolean($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_numeric($data) && ($data==0 || $data==1);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validNumeric($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_numeric($data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validRCUD($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_numeric($data) && $data>=0 && $data<=3;
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validProgress($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_numeric($data) && $data>=0 && $data<=100;
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validDate($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u", $data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validType($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		if(is_null($data)){ //It can be at root level
 			return true;
 		} else {
@@ -261,51 +261,51 @@ abstract class ModelLincko extends Model {
 	}
 
 	public static function validChar($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && strlen(trim($data))>=0 && preg_match("/^.{0,104}$/u", $data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validTitle($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && strlen(trim($data))>=0 && preg_match("/^.{0,200}$/u", $data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validText($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validTextNotEmpty($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && strlen(trim($data))>0;
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	//191 is limited by MySQL for Indexing
 	public static function validDomain($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && preg_match("/^.{1,191}$/u", trim($data)) && preg_match("/^[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", trim($data));
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validURL($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && preg_match("/^[a-zA-Z0-9]{3,104}$/u", trim($data));
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	//191 is limited by MySQL for Indexing
 	public static function validEmail($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && preg_match("/^.{1,191}$/u", trim($data)) && preg_match("/^.{1,100}@.*\..{2,4}$/ui", trim($data)) && preg_match("/^[_a-z0-9-%+]+(\.[_a-z0-9-%+]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", trim($data));
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
 	public static function validPassword($data, $optional=false){
-		if($optional && empty($data)){ return true; }
+		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && preg_match("/^[\w\d]{6,60}$/u", $data);
 		return $return;
 	}

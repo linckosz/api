@@ -53,7 +53,7 @@ $app->group('/file', function () use ($app) {
 		'uid' => '\w+',
 		'type' => 'link|thumbnail|download',
 		'id' => '\d+',
-		'name' => '.+\.\w+',
+		'name' => '.+',
 	))
 	->name('file_open_get');
 
