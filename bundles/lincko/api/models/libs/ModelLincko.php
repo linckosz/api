@@ -697,18 +697,17 @@ abstract class ModelLincko extends Model {
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id})){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = new \stdClass; }
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->timestamp = (integer)$created_at;
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->type = (string)$value->parent_type;
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->id = (integer)$value->parent_id;
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (integer)$value->createdBy();
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$value->attribute;
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->not = (boolean)$not;
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->cod = (integer)$value->code;
-							if($history_detail || strlen($value->old)<500){
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
-							}
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$value->attribute;
 							if(!empty($value->parameters)){
 								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
+							}
+							if($history_detail){
+								if(strlen($value->old)<500){
+									$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
+								}
 							}
 						}
 					} catch (Exception $obj_exception) {
@@ -737,18 +736,17 @@ abstract class ModelLincko extends Model {
 				}
 				if(!isset($history->$created_at)){ $history->$created_at = new \stdClass; }
 				if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
-				$history->$created_at->{$value->id}->timestamp = (integer)$created_at;
-				$history->$created_at->{$value->id}->type = (string)$value->parent_type;
-				$history->$created_at->{$value->id}->id = (integer)$value->parent_id;
-				$history->$created_at->{$value->id}->by = (integer)$value->createdBy();
 				$history->$created_at->{$value->id}->att = (string)$value->attribute;
+				$history->$created_at->{$value->id}->by = (integer)$value->createdBy();
 				$history->$created_at->{$value->id}->not = (boolean)$not;
 				$history->$created_at->{$value->id}->cod = (integer)$value->code;
-				if($history_detail || strlen($value->old)<500){
-					$history->$created_at->{$value->id}->old = $value->old;
-				}
 				if(!empty($value->parameters)){
 					$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
+				}
+				if($history_detail){
+					if(strlen($value->old)<500){
+						$history->$created_at->{$value->id}->old = $value->old;
+					}
 				}
 			}
 		}
@@ -756,7 +754,7 @@ abstract class ModelLincko extends Model {
 		return $history;
 	}
 
-	public function getHistoryCreation(array $parameters = array()){
+	public function getHistoryCreation($history_detail=false, array $parameters = array()){
 		$app = self::getApp();
 		$history = new \stdClass;
 		$created_at = (new \DateTime($this->created_at))->getTimestamp();
@@ -777,16 +775,15 @@ abstract class ModelLincko extends Model {
 		if(isset($this->created_by)){
 			$created_by = $this->created_by;
 		}
-		$history->$created_at->{'0'}->timestamp = (integer) $created_at;
-		$history->$created_at->{'0'}->type = (string) $this->getTable();
-		$history->$created_at->{'0'}->id = (integer) $this->id;
-		$history->$created_at->{'0'}->by = (integer) $created_by;
 		$history->$created_at->{'0'}->att = 'created_at';
-		$history->$created_at->{'0'}->old = null;
+		$history->$created_at->{'0'}->by = (integer) $created_by;
 		$history->$created_at->{'0'}->not = (boolean) $not;
 		$history->$created_at->{'0'}->cod = (integer) $code;
 		if(!empty($parameters)){
 			$history->$created_at->{'0'}->par = (object) $parameters;
+		}
+		if($history_detail){
+			$history->$created_at->{'0'}->old = null;
 		}
 		return $history;
 	}

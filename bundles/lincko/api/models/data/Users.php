@@ -341,7 +341,7 @@ class Users extends ModelLincko {
 	}
 
 	//Do not show creation event
-	public function getHistoryCreation(array $parameters = array()){
+	public function getHistoryCreation($history_detail=false, array $parameters = array()){
 		return new \stdClass;
 	}
 
