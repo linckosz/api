@@ -112,7 +112,7 @@ class ControllerNote extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 2)); //Note created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201);
+				$data->dataUpdateConfirmation($msg, 201, true);
 				return true;
 			}
 		}

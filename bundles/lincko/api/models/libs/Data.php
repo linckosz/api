@@ -38,7 +38,7 @@ class Data {
 		$this->history_detail = false;
 	}
 
-	public function dataUpdateConfirmation($msg, $status=200){
+	public function dataUpdateConfirmation($msg, $status=200, $show=false){
 		$app = $this->app;
 		if($this->setLastVisit()){
 			if(isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
@@ -69,7 +69,7 @@ class Data {
 				$msg
 			);
 		}
-		$app->render($status, array('msg' => $msg,));
+		$app->render($status, array('msg' => $msg, 'show' => $show,));
 		return true;
 	}
 

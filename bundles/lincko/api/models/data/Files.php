@@ -59,7 +59,7 @@ class Files extends ModelLincko {
 	protected $name_code = 900;
 
 	protected $archive = array(
-		'created_at' => 901, //[{un|ucfirst}] created a new file
+		'created_at' => 901, //[{un|ucfirst}] uploaded a file
 		'_' => 902, //[{un|ucfirst}] modified a file
 		'name' => 903, //[{un|ucfirst}] changed a file name
 		'comment' => 904, //[{un|ucfirst}] modified a file description
