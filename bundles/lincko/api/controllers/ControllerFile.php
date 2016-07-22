@@ -161,7 +161,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$app = $this->app;
 		$this->setFields();
 		$form = $this->form;
-		$failmsg = $app->trans->getBRUT('api', 14, 1)."\n"; //NFile upload failed.
+		$failmsg = $app->trans->getBRUT('api', 14, 1)."\n"; //File upload failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
@@ -425,6 +425,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$file = Files::find($id);
 		if($file && $file->checkAccess(false)){
 			$content_type = 'application/force-download';
+			if($file->progress<100 && $file->category=='video'){
+				$file->checkProgress();
+			}
 			if($type=='thumbnail' && is_null($file->thu_type)){ //If the thumbnail is not available we download
 				$type = 'download';
 			}

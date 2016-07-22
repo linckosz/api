@@ -193,17 +193,17 @@ class Video {
 				if($quality==1){//LOW quality (360p)
 					$this->scale(640);
 					$filter = $this->filter;
-					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 32 $filter -acodec libvo_aacenc -ab 36000 -ar 44100 -ac 1 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>$txt; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
+					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 32 $filter -acodec aac -ab 36000 -ar 44100 -ac 1 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>$txt; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
 				}
 				else if($quality==2){ //MEDIUM quality (540p) (use 856 for 480p) (use 960 for 540p)
 					$this->scale(856);
 					$filter = $this->filter;
-					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 30 $filter -acodec libvo_aacenc -ab 64000 -ar 44100 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>$txt; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
+					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 30 $filter -acodec aac -ab 64000 -ar 44100 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>$txt; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
 				}
 				else if($quality==3){//HIGH quality (720p)
 					$this->scale(1280);
 					$filter = $this->filter;
-					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 28 $filter -acodec libvo_aacenc -ab 96000 -ar 44100 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>$txt; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
+					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 28 $filter -acodec aac -ab 96000 -ar 44100 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>$txt; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
 				}
 			}
 		}

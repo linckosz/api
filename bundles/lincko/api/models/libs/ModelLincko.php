@@ -16,6 +16,7 @@ use Illuminate\Database\Schema\Builder as Schema;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\Comments;
+use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Roles;
@@ -34,6 +35,7 @@ abstract class ModelLincko extends Model {
 ////////////////////////////////////////////
 
 	protected static $schema_table = array();
+	protected static $schema_default = array();
 
 	//Force to save user access for the user itself
 	protected static $save_user_access = true;
@@ -102,6 +104,9 @@ abstract class ModelLincko extends Model {
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
 	protected static $parent_list = null;
 
+	//Keep a record of children tree structure
+	protected static $children_tree = null;
+
 	//This enable or disable the ability to give a permission to a single element.
 	protected static $allow_single = false;
 	//This enable or disable the ability to give a role permission to a single element with it's children.
@@ -152,6 +157,9 @@ abstract class ModelLincko extends Model {
 		END
 	*/
 
+	//From pivot table, at true it accepts only access at 1, at false it rejects access at 0 but include parent at access at 1
+	protected static $access_accept = true;
+
 	//Vraiable used to pass some values through scopes
 	protected $var = array();
 
@@ -162,8 +170,193 @@ abstract class ModelLincko extends Model {
 	//List of relations we want to make available on client side
 	protected static $dependencies_visible = array();
 
-	//
+	//ivot to update
 	protected $pivots_var = null;
+
+	public function getChildrenTree($item=true){
+		if(is_null(self::$children_tree)){
+			$list_models = Data::getModels();
+			$tree_desc = new \stdClass;
+			foreach($list_models as $value) {
+				$model = new $value;
+				//Ascendant
+				$child = 'tree_'.$model->getTable();
+				$table = $model->getTable();
+				if( !isset(${$child}) ){
+					${$child} = new \stdClass;
+				}
+				$parentList = array();
+				$parentType = $model::getParentList();
+				$parentList['tree_desc'] = 'tree_desc';
+				if(is_array($parentType)){ //A list a parent
+					foreach($parentType as $name) {
+						if(array_key_exists($name, $list_models)){
+							$parentList[$name] = 'tree_'.$name;
+						}
+					}
+				} else if($parentType == '*' || $parentType == '+'){ //All are parents
+					if($parentType == '*'){
+						$parentList['tree_desc'] = 'tree_desc';
+					}
+					foreach($list_models as $value_bis) {
+						$table_bis = (new $value_bis)->getTable();
+						$parentList[$table_bis] = 'tree_'.$table_bis;
+					}
+				} else if(array_key_exists($parentType, $list_models)){ //Has one parent
+					$parentList[$parentType] = 'tree_'.$parentType;
+				}
+				unset($parentList[$table]); //Avoid recursivity
+				foreach($parentList as $name => $parent) {
+					if( !isset(${$parent}) ){
+						${$parent} = new \stdClass;
+					}
+					$root_child = $model->getTable();
+					${$parent}->$child = ${$child};
+					unset(${$parent}->$child); //This helps to delete the prefix 'tree'
+					${$parent}->$root_child = ${$child};
+				}
+				unset($parentList);
+			}
+			self::$children_tree = $tree_desc;
+		}
+		if($item){
+			if(isset(self::$children_tree->{$this->getTable()})){
+				return self::$children_tree->{$this->getTable()};
+			}
+			return false;
+		}
+		return self::$children_tree;
+	}
+
+	public function setPerm(){
+		$children_tree = $this->getChildrenTree();
+
+		// List up all children table (including the item)
+		$list_tables = array();
+		$list_tables[$this->getTable()] = $this->getTable();
+		$loop = true;
+		$tree_tp = $children_tree;
+		while(count($tree_tp)>0 && $loop){
+			$loop = false;
+			foreach ($tree_tp as $key => $value) {
+				$list_tables[$key] = $key;
+				if(count($value)<=0){
+					$loop = true;
+					unset($tree_tp[$key]);
+					foreach ($tree_tp as $key_bis => $value_bis) {
+						$key_tp = array_search($key, $value_bis);
+						if($key_tp!==false){
+							unset($tree_tp[$key_bis][$key_tp]);
+						}
+					}
+				}
+			}
+		}
+		$temp = (new Data())->getTrees($list_tables);
+		$children = array($temp[2], (array)$temp[3]);
+		//\libs\Watch::php($children, '$children', __FILE__, false, false, true);
+
+		$all = $children;
+
+		//List up all parents
+		$root = $this;
+		$parents = array(array(), array());
+		$model = $this;
+		while($model = $model->getParent()){
+			$root = $model;
+			$parents[0][$model->getTable()][$model->id] = $model->id;
+			$parents[1][$model->getTable()][$model->id] = $model;
+		}
+		//\libs\Watch::php($parents, '$parents', __FILE__, false, false, true);
+
+		$all[0] = array_merge($all[0], $parents[0]);
+		$all[1] = array_merge((array)$all[1], (array) $parents[1]);
+
+		//List up all users involved at highest level (workspace)
+		$users = array(array(), array());
+		$class = $root::getClass();
+		$list = $class::filterPivotAccessList([$root->id], false, true);
+		foreach ($list as $uid => $value) {
+			//Normaly the root level must have $access_accept at true (workspaces, chats, users, projects)
+			if($root::$access_accept && reset($value)['access']){
+				$users[0]['users'][$uid] = $uid;
+			}
+		}
+
+		$all[0] = array_merge($all[0], $users[0]);
+		$all[1] = array_merge((array)$all[1], (array) $users[1]);
+
+		$users[1] = Users::getItems($users[0], true);
+
+		$tree_access = Data::getAccesses($all[0]);
+		\libs\Watch::php($users, '$users', __FILE__, false, false, true);
+
+	}
+
+	public function setPerm_old(){
+		$app = self::getApp();
+		$users = array();
+
+		$tree_super = array();
+
+		$list_id = array();
+		$models[] = $this;
+		$model = $this;
+		while($model = $model->getParent()){
+			$models[] = $model;
+			$list_id[$model->getTable()][$model->id] = $model->id;
+		}
+		$models = array_reverse($models);
+
+		// Get the list of users from farest to Closet parent
+		foreach ($models as $key => $model) {
+			$class = $model::getClass();
+			$list = $class::filterPivotAccessList([$model->id], false, true);
+			foreach ($list as $uid => $value) {
+				if($model::$access_accept && reset($value)['access']){
+					$users[$uid] = array(0, 0); //Add user
+					if($model->getTable()=='workspaces' && reset($value)['super']){
+						$tree_super['workspaces'][$uid][$model->id] = $model::$permission_sheet[1];
+					}
+				} else if(!reset($value)['access']){
+					unset($users[$uid]); //Delete user
+				}
+			}
+		}
+		\libs\Watch::php($users, '$users', __FILE__, false, false, true);
+
+
+		// Table / Users / ID
+
+
+
+		//Get the role id
+		$roles = array();
+		foreach ($users as $key => $value) {
+			$roles[$key] = 0;
+			if($app->lincko->data['workspace_id']==0){
+				$roles[$key] = 1; //Give adminsitrator role by default for each users
+			}
+		}
+		$list = PivotUsersRoles::getAllRoles($list_id, $users);
+		$list_roles = array();
+		foreach ($list as $key => $model) {
+			$list_roles[$model->parent_type][$model->parent_id][$model->users_id] = $model->roles_id;
+		}
+		\libs\Watch::php($list_roles, '$list_roles', __FILE__, false, false, true);
+		foreach ($models as $key => $model) {
+			if(isset($list_roles[$model->getTable()][$model->id])){
+				$role = (int) isset($roles[$model->getTable()][$model->id]);
+			}
+		}
+		\libs\Watch::php($role, '$role', __FILE__, false, false, true);
+
+		//Super		
+
+		// Get real Role perm from closest parent to farest
+
+		// if perm is different, Update children? It will be overkilling CPU
+	}
 
 	//No need to abstract it, but need to redefined for the Models that use it
 	public function users(){
@@ -314,7 +507,10 @@ abstract class ModelLincko extends Model {
 
 	//Scan the list and tell if the user has an access to it by filtering it (mainly used for Data.php)
 	//The unaccesible one will be deleted in Data.php by hierarchy
-	public static function filterPivotAccessList(array $list, $suffix='_id'){
+	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
+		if($suffix===false){
+			$suffix = '_id';
+		}
 		$result = array();
 		$table = (new static)->getTable();
 		$attributes = array( 'table' => $table, );
@@ -322,7 +518,7 @@ abstract class ModelLincko extends Model {
 		if($pivot->tableExists($pivot->getTable())){
 			$pivot = $pivot->whereIn($table.$suffix, $list)->withTrashed()->get();
 			foreach ($pivot as $key => $value) {
-				if($value->access){
+				if($all || $value->access){
 					$uid = (integer) $value->users_id;
 					$id = (integer) $value->{$table.$suffix};
 					if(!isset($result[$uid])){ $result[$uid] = array(); }
@@ -359,8 +555,8 @@ abstract class ModelLincko extends Model {
 				$sql = 'select `table_name` from `information_schema`.`tables` where `table_schema` = ?;';
 				$db = Capsule::connection($connection);
 				$database = Capsule::schema($connection)->getConnection()->getDatabaseName();
-				$tables = $db->select( $sql , [$database] );
-				foreach ($tables as $value) {
+				$data = $db->select( $sql , [$database] );
+				foreach ($data as $value) {
 					if(isset($value->table_name)){
 						self::$schema_table[$connection][$value->table_name] = true;
 					}
@@ -373,8 +569,27 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
-	public static function getTablesList(){
-		return self::$schema_table;
+	public function getDefaultValue($table){
+		$connection = $this->getConnectionName();
+			if(!isset(self::$schema_default[$connection])){
+				if($this->tableExists($table)){
+				self::$schema_table[$connection] = array();
+				$database = Capsule::schema($connection)->getConnection()->getDatabaseName();
+				$sql = 'select table_name, column_name, column_default from `information_schema`.`columns` where `table_schema` = ?;';
+				$db = Capsule::connection($connection);
+				$data = $db->select( $sql , [$database] );
+				foreach ($data as $value) {
+					if(!isset(self::$schema_default[$connection][$value->table_name])){
+						self::$schema_default[$connection][$value->table_name] = array();
+					}
+					self::$schema_default[$connection][$value->table_name][$value->column_name] = $value->column_default;
+				}
+			}
+		}
+		if(isset(self::$schema_default[$connection][$table])){
+			return self::$schema_default[$connection][$table];
+		}
+		return false;
 	}
 
 	//This function helps to get all instance related to the user itself only
@@ -638,7 +853,7 @@ abstract class ModelLincko extends Model {
 										if(!isset($dependencies->$table->{$dep->id})){ $dependencies->$table->{$dep->id} = new \stdClass; }
 										if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency})){ $dependencies->$table->{$dep->id}->{'_'.$dependency} = new \stdClass; }
 										if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
-										foreach ($dependencies_fields as $field) {
+										foreach ($dependencies_fields[1] as $field) {
 											if(isset($value->pivot->$field)){
 												$field_value = $dep->formatAttributes($field, $value->pivot->$field);
 												$dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id}->$field = $field_value;
@@ -916,8 +1131,6 @@ abstract class ModelLincko extends Model {
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
 		}
-		if( !isset(self::$permission_users[$users_id]) ){ self::$permission_users[$users_id] = array(); }
-		if( !isset(self::$permission_users[$users_id][$this->getTable()]) ){ self::$permission_users[$users_id][$this->getTable()] = array(); }
 		if(  isset(self::$permission_users[$users_id][$this->getTable()][$this->id]) ){
 			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
@@ -989,7 +1202,7 @@ abstract class ModelLincko extends Model {
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
 		}
-		if( isset(self::$permission_users[$users_id]) && isset(self::$permission_users[$users_id][$this->getTable()]) && isset(self::$permission_users[$users_id][$this->getTable()][$this->id]) ){
+		if(isset(self::$permission_users[$users_id][$this->getTable()][$this->id])){
 			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
 		$model = $this;
@@ -1048,6 +1261,11 @@ abstract class ModelLincko extends Model {
 			break;
 		}
 		return $perm;
+	}
+
+	public function whoHasAccess(){
+		$users = new \stdClass;
+		return $this->users;
 	}
 
 	//It checks if the user has access to it

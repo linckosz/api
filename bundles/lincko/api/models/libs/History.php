@@ -128,7 +128,6 @@ class History extends ModelLincko {
 			//Update History
 			foreach ($histories as $history) {
 				$history->save();
-				if(!isset($parent_list[$history->parent_type])){ $parent_list[$history->parent_type] = array(); }
 				$parent_list[$history->parent_type][$history->parent_id] = true;
 			}
 			//Update object itself

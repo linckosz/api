@@ -161,8 +161,8 @@ class Users extends ModelLincko {
 ////////////////////////////////////////////
 
 	//Only add access at true
-	public static function filterPivotAccessList(array $list, $suffix='_id'){
-		return parent::filterPivotAccessList($list, '_id_link');
+	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
+		return parent::filterPivotAccessList($list, '_id_link', $all);
 	}
 
 	//Add these functions to insure that nobody can make them disappear
@@ -206,6 +206,7 @@ class Users extends ModelLincko {
 	}
 
 	//List all users directly attached to the corresponding object
+	//toto => heavy operation and not sure if it's usefull if we can previously knows the list of users
 	public function scopegetUsers($query, $list=array()){
 		$this->var['list'] = $list;
 		foreach ($list as $key => $value) {
@@ -222,7 +223,6 @@ class Users extends ModelLincko {
 					$query
 					->whereIn($this->var['table'].'.id', $this->var['list'][$this->var['table']]);
 				});
-
 			}
 		}
 		return $query;
@@ -230,16 +230,16 @@ class Users extends ModelLincko {
 
 	public static function getUsersContacts($list=array(), $visible=array()){
 		$app = self::getApp();
-		$result = self::getUsers($list)->get();
-		foreach($result as $key => $value) {
-			$result[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
+		$users = self::whereIn('id', $list)->get();
+		foreach($users as $key => $value) {
+			$users[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
 			if($value->id == $app->lincko->data['uid']){
-				$result[$key]->contactsLock = true; //We do not allow to reject the user itself
+				$users[$key]->contactsLock = true; //We do not allow to reject the user itself
 			} else if(in_array($value->id, $visible)){
-				$result[$key]->contactsVisibility = true; //We make all users inside the userlist visible, expect the user itself
+				$users[$key]->contactsVisibility = true; //We make all users inside the userlist visible, expect the user itself
 			}
 		}
-		return $result;
+		return $users;
 	}
 
 	public function getContactsLock(){

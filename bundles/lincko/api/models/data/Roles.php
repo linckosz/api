@@ -73,6 +73,8 @@ class Roles extends ModelLincko {
 		3, //[RCUD] max allow || super
 	);
 
+	protected static $access_accept = false;
+
 ////////////////////////////////////////////
 
 	//Many(Roles) to Many(Users)
@@ -108,7 +110,7 @@ class Roles extends ModelLincko {
 ////////////////////////////////////////////
 
 	//Give access to all, will be delete later by hierarchy
-	public static function filterPivotAccessList(array $list, $suffix='_id'){
+	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
 		return array();
 	}
 
@@ -118,7 +120,6 @@ class Roles extends ModelLincko {
 			'access' => 1, //Default is accessible
 		);
 		foreach ($uid_list as $uid) {
-			if(!isset($result[$uid])){ $result[$uid] = array(); }
 			foreach ($list as $value) {
 				if(!isset($result[$uid][$value])){
 					$result[$uid][$value] = (array) $default;

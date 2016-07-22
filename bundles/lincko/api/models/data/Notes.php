@@ -75,11 +75,13 @@ class Notes extends ModelLincko {
 		3, //[RCUD] owner
 		3, //[RCUD] max allow || super
 	);
+
+	protected static $access_accept = false;
 	
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'files' => array('access'),
+		'files' => array('notes_x_files', array('access')),
 	);
 
 	//Many(Notes) to One(Projects)
@@ -119,7 +121,6 @@ class Notes extends ModelLincko {
 			'access' => 1, //Default is accessible
 		);
 		foreach ($uid_list as $uid) {
-			if(!isset($result[$uid])){ $result[$uid] = array(); }
 			foreach ($list as $value) {
 				if(!isset($result[$uid][$value])){
 					$result[$uid][$value] = (array) $default;

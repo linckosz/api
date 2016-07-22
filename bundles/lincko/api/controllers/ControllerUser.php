@@ -320,9 +320,6 @@ class ControllerUser extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		$errfield = 'undefined';
 
-		\libs\Watch::php(Users::validTextNotEmpty($form->username, true), '$var', __FILE__, false, false, true);
-		\libs\Watch::php($form->username, '$var', __FILE__, false, false, true);
-
 		if(!isset($form->id) || !Users::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 27); //We could not validate the user account ID.
 			$errfield = 'id';

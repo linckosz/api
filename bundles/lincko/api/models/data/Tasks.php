@@ -117,13 +117,15 @@ class Tasks extends ModelLincko {
 		3, //[RCUD] owner
 		3, //[RCUD] max allow || super
 	);
+
+	protected static $access_accept = false;
 	
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'users' => array('in_charge', 'approver'),
-		'tasks' => array('delay'),
-		'files' => array('access'),
+		'users' => array('users_x_tasks', array('in_charge', 'approver')),
+		'tasks' => array('tasks_x_tasks', array('delay')),
+		'files' => array('tasks_x_files', array('access')),
 	);
 
 	//Many(Tasks) to One(Projects)
@@ -176,7 +178,6 @@ class Tasks extends ModelLincko {
 			'approver' => 0,
 		);
 		foreach ($uid_list as $uid) {
-			if(!isset($result[$uid])){ $result[$uid] = array(); }
 			foreach ($list as $value) {
 				if(!isset($result[$uid][$value])){
 					$result[$uid][$value] = (array) $default;

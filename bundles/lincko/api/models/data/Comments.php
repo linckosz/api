@@ -64,6 +64,8 @@ class Comments extends ModelLincko {
 		2, //[RCU] owner
 		2, //[RCU] max allow || super
 	);
+
+	protected static $access_accept = false;
 	
 ////////////////////////////////////////////
 
@@ -127,7 +129,7 @@ class Comments extends ModelLincko {
 ////////////////////////////////////////////
 
 	//Give access to all, will be delete later by hierarchy
-	public static function filterPivotAccessList(array $list, $suffix='_id'){
+	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
 		return array();
 	}
 
@@ -137,7 +139,6 @@ class Comments extends ModelLincko {
 			'access' => 1, //Default is accessible
 		);
 		foreach ($uid_list as $uid) {
-			if(!isset($result[$uid])){ $result[$uid] = array(); }
 			foreach ($list as $value) {
 				if(!isset($result[$uid][$value])){
 					$result[$uid][$value] = (array) $default;

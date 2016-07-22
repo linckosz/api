@@ -43,6 +43,7 @@ class Files extends ModelLincko {
 		'width',
 		'height',
 		'progress',
+		'error',
 		'_parent',
 	);
 
@@ -90,12 +91,18 @@ class Files extends ModelLincko {
 		'progress',
 	);
 
+	protected $model_boolean = array(
+		'error',
+	);
+
 	protected static $allow_single = true;
 
 	protected static $permission_sheet = array(
 		3, //[RCUD] owner
 		3, //[RCUD] max allow || super
 	);
+
+	protected static $access_accept = false;
 	
 ////////////////////////////////////////////
 
@@ -167,7 +174,6 @@ class Files extends ModelLincko {
 			'access' => 1, //Default is accessible
 		);
 		foreach ($uid_list as $uid) {
-			if(!isset($result[$uid])){ $result[$uid] = array(); }
 			foreach ($list as $value) {
 				if(!isset($result[$uid][$value])){
 					$result[$uid][$value] = (array) $default;
@@ -277,6 +283,11 @@ class Files extends ModelLincko {
 					$folder_txt->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/convert/');
 					$this->thu_type = 'image/jpeg';
 					$this->thu_ext = 'jpg';
+					if($dot = strrpos($this->name, '.')){
+						$this->name = substr($this->name, 0, $dot).'.mp4';
+					}
+					$this->ori_type = 'video/mp4';
+					$this->ori_ext = 'mp4';
 					$video = new Video($this->tmp_name, $folder_ori->getPath().$this->link, $folder_thu->getPath().$this->link, $folder_txt->getPath().$this->link);
 					if($video->thumbnail()!==0){
 						return false;
@@ -298,28 +309,11 @@ class Files extends ModelLincko {
 
 		if($new && $this->category=='video'){
 			sleep(1); //wait 1s to make sure the conversion is starting
-			$url = $app->environment['slim.url_scheme'].'://'.$app->request->headers->Host.'/file/progress/'.$this->id;
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-			curl_setopt($ch, CURLOPT_POSTFIELDS, null);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 1);
-			curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
-			curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-					'Content-Type: application/json; charset=UTF-8',
-					'Content-Length: ' . mb_strlen(null),
-				)
-			);
-			curl_exec($ch);
-			@curl_close($ch);
+			$this->checkProgress();
 		}
 		
 		return $return;
 	}
-
 
 	public static function getParentListHard(){
 		return static::$parent_list_hard;
@@ -340,14 +334,45 @@ class Files extends ModelLincko {
 		return $this->category;
 	}
 
+	public function checkProgress(){
+		if($this->category=='video' && $this->progress<100 && !$this->error && isset($this->id)){
+			$app = self::getApp();
+			
+			$path = $this->server_path.'/'.$this->created_by.'/convert/'.$this->link;
+			if(is_file($path) && time()-filemtime($path) < 60 && $this->progress>=1){ //If the conversion file is less than 1 minutes, we should be in middle of conversion
+				return true;
+			}
+			$url = $app->environment['slim.url_scheme'].'://'.$app->request->headers->Host.'/file/progress/'.$this->id;
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+			curl_setopt($ch, CURLOPT_POSTFIELDS, null);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+			curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+			curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+					'Content-Type: application/json; charset=UTF-8',
+					'Content-Length: ' . mb_strlen(null),
+				)
+			);
+			curl_exec($ch);
+			@curl_close($ch);
+		}
+		return true;
+	}
+
 	public function setProgress(){
-		if($this->category == 'video' && $this->progress < 100){
+		if($this->category == 'video' && $this->progress < 100 && !$this->error){
 			set_time_limit(24*3600); //Set to 1 day workload at the most
 			$path = $this->server_path.'/'.$this->created_by.'/convert/'.$this->link;
 			$file = $this->server_path.'/'.$this->created_by.'/'.$this->link;
 			$loop = true;
 			$progress = 100;
+			$try = 10; //5s of try
 			usleep(500000); //500ms
+			$this::where('id', $this->id)->getQuery()->update(['progress' => 1]);
 			while($loop){
 				$handle = fopen($path, 'r');
 				if($handle){
@@ -372,16 +397,35 @@ class Files extends ModelLincko {
 									else if($progress>100){ $progress = 100; }
 								}
 							}
+							if(!is_file($file) || filesize($file)<=0){
+								$try--;
+								$progress = 0;
+							} else if(filemtime($path) < time()-3600){ //If the conversion log is more than one hour without modification, we considerate it as fail
+								$progress = 100;
+								$try = 0;
+							}
 						}
 					}
 				}
 				fclose($handle);
-				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => (int) filesize($file)]); //toto => with about 200+ viewed, it crsh (1317 Query execution was interrupted)
+				$size = 0;
+				if(is_file($file)){
+					$size = (int) filesize($file);
+				}
+				if($progress<1){
+					$progress = 1; //1% helps to show we are in middle of compression
+				} else if($progress>100){
+					$progress = 100;
+				}
+				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => $size]);
 				$this->touchUpdateAt();
 				usleep(500000); //500ms
-				if($progress>=100){ 
+				if($progress>=100 || $try<=0){ 
 					$loop = false;
 				}
+			}
+			if($try<=0){
+				$this::where('id', $this->id)->getQuery()->update(['progress' => 100, 'size' => 0, 'error' => 1]);
 			}
 		}
 	}

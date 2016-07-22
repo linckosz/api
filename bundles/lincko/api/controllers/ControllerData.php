@@ -113,7 +113,6 @@ class ControllerData extends Controller {
 				if(preg_match("/^([a-z_]+)_(\d+)$/ui", $string, $matches)){
 					$type = $matches[1];
 					$id = $matches[2];
-					if(!isset($list[$type])){ $list[$type] = array(); }
 					$list[$type][$id] = $timestamp;
 				}
 			}

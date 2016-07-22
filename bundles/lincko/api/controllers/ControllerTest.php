@@ -718,26 +718,51 @@ class ControllerTest extends Controller {
 		$guest->save();
 		*/
 		/*
-						$invitation_code = '0frucjvs';
-						$invitation = Invitation::where('code', '=', $invitation_code)->first();
-						$guest = Users::find(68);
-						if($guest){
-							$pivot = new \stdClass;
-							if($invitation->created_by>0 && Users::find($invitation->created_by)){
-								//For guest & host
-								$pivot->{'users>access'} = new \stdClass;
-								$pivot->{'users>access'}->{$invitation->created_by} = true;
-								$guest->pivots_format($pivot);
-								\libs\Watch::php( $guest, '$guest', __FILE__, false, false, true);
-								$guest->save();
-							}
-							//Record for invotation
-							$invitation->guest = $guest->id;
-							$invitation->used = true;
-							$invitation->save();
-						}
+		$invitation_code = '0frucjvs';
+		$invitation = Invitation::where('code', '=', $invitation_code)->first();
+		$guest = Users::find(68);
+		if($guest){
+			$pivot = new \stdClass;
+			if($invitation->created_by>0 && Users::find($invitation->created_by)){
+				//For guest & host
+				$pivot->{'users>access'} = new \stdClass;
+				$pivot->{'users>access'}->{$invitation->created_by} = true;
+				$guest->pivots_format($pivot);
+				\libs\Watch::php( $guest, '$guest', __FILE__, false, false, true);
+				$guest->save();
+			}
+			//Record for invotation
+			$invitation->guest = $guest->id;
+			$invitation->used = true;
+			$invitation->save();
+		}
 		*/
-					$tp = Tasks::withTrashed()->find(1740);
+		//$tp = Tasks::find(1655);
+		//$tp = Tasks::filterPivotAccessList([1655], false, true);
+		
+		
+		//$tp = Tasks::find(20);
+		$tp = Tasks::find(1655);
+		//$tp = $tp->getChildrenTree();
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		$tp = $tp->setPerm();
+
+
+
+
+		//$tp = $tp->getDefaultValue('users_x_tasks');
+
+		//$id = array('tasks' => array(2806, 2809, 112, 113));
+		//$id = array('tasks' => array(49, 92, 112, 113));
+		//$tp = Tasks::getDependencies($id, array(Tasks::getClass()));
+
+		/*
+		$tp = array('in_charge' => 2, 'approver' => 4);
+		foreach ($tp as $key => $value) {
+			\libs\Watch::php( $value, $key, __FILE__, false, false, true);
+		}
+		*/
+		
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
