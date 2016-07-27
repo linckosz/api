@@ -96,6 +96,7 @@ class ControllerChat extends Controller {
 	public function create_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 13, 1)."\n"; //Discussion group creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -149,7 +150,7 @@ class ControllerChat extends Controller {
 			if($save && $model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 13, 2)); //Discussion group created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
 				return true;
 			}
 		}
@@ -194,6 +195,7 @@ class ControllerChat extends Controller {
 	public function update_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 13, 5)."\n"; //Discussion group update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
@@ -231,7 +233,7 @@ class ControllerChat extends Controller {
 				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 13, 6)); //Discussion group updated.
 					$data = new Data();
-					$data->dataUpdateConfirmation($msg, 200);
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 					return true;
 				}
 			} else {

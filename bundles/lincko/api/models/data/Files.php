@@ -45,6 +45,7 @@ class Files extends ModelLincko {
 		'progress',
 		'error',
 		'_parent',
+		'_perm',
 	);
 
 	// CUSTOMIZATION //
@@ -167,21 +168,6 @@ class Files extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
-
-	//This is used because by default not all IDs are stored in pivot table
-	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
-		$default = array(
-			'access' => 1, //Default is accessible
-		);
-		foreach ($uid_list as $uid) {
-			foreach ($list as $value) {
-				if(!isset($result[$uid][$value])){
-					$result[$uid][$value] = (array) $default;
-				}
-			}
-		}
-		return $result;
-	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
@@ -349,7 +335,7 @@ class Files extends ModelLincko {
 			curl_setopt($ch, CURLOPT_POSTFIELDS, null);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 1); //Cannot use MS, it will crash the request
 			curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
 			curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
 			curl_setopt($ch, CURLOPT_HTTPHEADER, array(

@@ -29,6 +29,7 @@ class Projects extends ModelLincko {
 		'description',
 		'personal_private',
 		'_parent',
+		'_perm',
 	);
 
 	// CUSTOMIZATION //

@@ -315,6 +315,7 @@ class ControllerUser extends Controller {
 	public function update_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 15, 5)."\n"; //Account update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
@@ -356,7 +357,7 @@ class ControllerUser extends Controller {
 				} else if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account updated.
 					$data = new Data();
-					$data->dataUpdateConfirmation($msg, 200);
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 					return true;
 				}
 			} else {

@@ -86,6 +86,7 @@ class ControllerProject extends Controller {
 	public function create_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 12, 1)."\n"; //Project creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -112,7 +113,7 @@ class ControllerProject extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 2)); //Project created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
 				return true;
 			}
 		}
@@ -158,6 +159,7 @@ class ControllerProject extends Controller {
 	public function update_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 12, 5)."\n"; //Project update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
@@ -189,7 +191,7 @@ class ControllerProject extends Controller {
 				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 12, 6)); //Project updated.
 					$data = new Data();
-					$data->dataUpdateConfirmation($msg, 200);
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 					return true;
 				}
 			} else {

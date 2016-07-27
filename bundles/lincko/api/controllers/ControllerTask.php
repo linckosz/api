@@ -94,6 +94,7 @@ class ControllerTask extends Controller {
 			}
 		}
 		if(isset($form->start) && is_numeric($form->start)){
+			$form->start = (int) $form->start;
 			$form->start = (new \DateTime('@'.$form->start))->format('Y-m-d H:i:s');
 		}
 		if(isset($form->duration) && is_numeric($form->duration)){
@@ -117,6 +118,7 @@ class ControllerTask extends Controller {
 	public function create_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 9, 1)."\n"; //Task creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -173,7 +175,7 @@ class ControllerTask extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 2)); //Task created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, true);
+				$data->dataUpdateConfirmation($msg, 201, true, $lastvisit);
 				return true;
 			}
 		}
@@ -219,6 +221,7 @@ class ControllerTask extends Controller {
 	public function update_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 9, 5)."\n"; //Task update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
@@ -280,7 +283,7 @@ class ControllerTask extends Controller {
 				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 9, 6)); //Task updated.
 					$data = new Data();
-					$data->dataUpdateConfirmation($msg, 200);
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 					return true;
 				}
 			} else {

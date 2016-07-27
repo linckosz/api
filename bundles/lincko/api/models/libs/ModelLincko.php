@@ -15,7 +15,7 @@ use Illuminate\Database\Schema\Builder as Schema;
 
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
-use \bundles\lincko\api\models\libs\Comments;
+use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Workspaces;
@@ -42,6 +42,9 @@ abstract class ModelLincko extends Model {
 
 	//It force to save, even if dirty is empty
 	protected $force_save = false;
+
+	//It forces to recalculate the permission field of all children
+	protected $change_permission = false;
 
 	//(used in "toJson()") This is the field to show in the content of history (it will add a prefix "+", which is used for search tool too)
 	protected $show_field = false;
@@ -170,193 +173,8 @@ abstract class ModelLincko extends Model {
 	//List of relations we want to make available on client side
 	protected static $dependencies_visible = array();
 
-	//ivot to update
+	//Pivot to update
 	protected $pivots_var = null;
-
-	public function getChildrenTree($item=true){
-		if(is_null(self::$children_tree)){
-			$list_models = Data::getModels();
-			$tree_desc = new \stdClass;
-			foreach($list_models as $value) {
-				$model = new $value;
-				//Ascendant
-				$child = 'tree_'.$model->getTable();
-				$table = $model->getTable();
-				if( !isset(${$child}) ){
-					${$child} = new \stdClass;
-				}
-				$parentList = array();
-				$parentType = $model::getParentList();
-				$parentList['tree_desc'] = 'tree_desc';
-				if(is_array($parentType)){ //A list a parent
-					foreach($parentType as $name) {
-						if(array_key_exists($name, $list_models)){
-							$parentList[$name] = 'tree_'.$name;
-						}
-					}
-				} else if($parentType == '*' || $parentType == '+'){ //All are parents
-					if($parentType == '*'){
-						$parentList['tree_desc'] = 'tree_desc';
-					}
-					foreach($list_models as $value_bis) {
-						$table_bis = (new $value_bis)->getTable();
-						$parentList[$table_bis] = 'tree_'.$table_bis;
-					}
-				} else if(array_key_exists($parentType, $list_models)){ //Has one parent
-					$parentList[$parentType] = 'tree_'.$parentType;
-				}
-				unset($parentList[$table]); //Avoid recursivity
-				foreach($parentList as $name => $parent) {
-					if( !isset(${$parent}) ){
-						${$parent} = new \stdClass;
-					}
-					$root_child = $model->getTable();
-					${$parent}->$child = ${$child};
-					unset(${$parent}->$child); //This helps to delete the prefix 'tree'
-					${$parent}->$root_child = ${$child};
-				}
-				unset($parentList);
-			}
-			self::$children_tree = $tree_desc;
-		}
-		if($item){
-			if(isset(self::$children_tree->{$this->getTable()})){
-				return self::$children_tree->{$this->getTable()};
-			}
-			return false;
-		}
-		return self::$children_tree;
-	}
-
-	public function setPerm(){
-		$children_tree = $this->getChildrenTree();
-
-		// List up all children table (including the item)
-		$list_tables = array();
-		$list_tables[$this->getTable()] = $this->getTable();
-		$loop = true;
-		$tree_tp = $children_tree;
-		while(count($tree_tp)>0 && $loop){
-			$loop = false;
-			foreach ($tree_tp as $key => $value) {
-				$list_tables[$key] = $key;
-				if(count($value)<=0){
-					$loop = true;
-					unset($tree_tp[$key]);
-					foreach ($tree_tp as $key_bis => $value_bis) {
-						$key_tp = array_search($key, $value_bis);
-						if($key_tp!==false){
-							unset($tree_tp[$key_bis][$key_tp]);
-						}
-					}
-				}
-			}
-		}
-		$temp = (new Data())->getTrees($list_tables);
-		$children = array($temp[2], (array)$temp[3]);
-		//\libs\Watch::php($children, '$children', __FILE__, false, false, true);
-
-		$all = $children;
-
-		//List up all parents
-		$root = $this;
-		$parents = array(array(), array());
-		$model = $this;
-		while($model = $model->getParent()){
-			$root = $model;
-			$parents[0][$model->getTable()][$model->id] = $model->id;
-			$parents[1][$model->getTable()][$model->id] = $model;
-		}
-		//\libs\Watch::php($parents, '$parents', __FILE__, false, false, true);
-
-		$all[0] = array_merge($all[0], $parents[0]);
-		$all[1] = array_merge((array)$all[1], (array) $parents[1]);
-
-		//List up all users involved at highest level (workspace)
-		$users = array(array(), array());
-		$class = $root::getClass();
-		$list = $class::filterPivotAccessList([$root->id], false, true);
-		foreach ($list as $uid => $value) {
-			//Normaly the root level must have $access_accept at true (workspaces, chats, users, projects)
-			if($root::$access_accept && reset($value)['access']){
-				$users[0]['users'][$uid] = $uid;
-			}
-		}
-
-		$all[0] = array_merge($all[0], $users[0]);
-		$all[1] = array_merge((array)$all[1], (array) $users[1]);
-
-		$users[1] = Users::getItems($users[0], true);
-
-		$tree_access = Data::getAccesses($all[0]);
-		\libs\Watch::php($users, '$users', __FILE__, false, false, true);
-
-	}
-
-	public function setPerm_old(){
-		$app = self::getApp();
-		$users = array();
-
-		$tree_super = array();
-
-		$list_id = array();
-		$models[] = $this;
-		$model = $this;
-		while($model = $model->getParent()){
-			$models[] = $model;
-			$list_id[$model->getTable()][$model->id] = $model->id;
-		}
-		$models = array_reverse($models);
-
-		// Get the list of users from farest to Closet parent
-		foreach ($models as $key => $model) {
-			$class = $model::getClass();
-			$list = $class::filterPivotAccessList([$model->id], false, true);
-			foreach ($list as $uid => $value) {
-				if($model::$access_accept && reset($value)['access']){
-					$users[$uid] = array(0, 0); //Add user
-					if($model->getTable()=='workspaces' && reset($value)['super']){
-						$tree_super['workspaces'][$uid][$model->id] = $model::$permission_sheet[1];
-					}
-				} else if(!reset($value)['access']){
-					unset($users[$uid]); //Delete user
-				}
-			}
-		}
-		\libs\Watch::php($users, '$users', __FILE__, false, false, true);
-
-
-		// Table / Users / ID
-
-
-
-		//Get the role id
-		$roles = array();
-		foreach ($users as $key => $value) {
-			$roles[$key] = 0;
-			if($app->lincko->data['workspace_id']==0){
-				$roles[$key] = 1; //Give adminsitrator role by default for each users
-			}
-		}
-		$list = PivotUsersRoles::getAllRoles($list_id, $users);
-		$list_roles = array();
-		foreach ($list as $key => $model) {
-			$list_roles[$model->parent_type][$model->parent_id][$model->users_id] = $model->roles_id;
-		}
-		\libs\Watch::php($list_roles, '$list_roles', __FILE__, false, false, true);
-		foreach ($models as $key => $model) {
-			if(isset($list_roles[$model->getTable()][$model->id])){
-				$role = (int) isset($roles[$model->getTable()][$model->id]);
-			}
-		}
-		\libs\Watch::php($role, '$role', __FILE__, false, false, true);
-
-		//Super		
-
-		// Get real Role perm from closest parent to farest
-
-		// if perm is different, Update children? It will be overkilling CPU
-	}
 
 	//No need to abstract it, but need to redefined for the Models that use it
 	public function users(){
@@ -505,6 +323,611 @@ abstract class ModelLincko extends Model {
 
 ////////////////////////////////////////////
 
+	public function getChildrenTree($item=true){
+		if(is_null(self::$children_tree)){
+			$list_models = Data::getModels();
+			$tree_desc = new \stdClass;
+			foreach($list_models as $value) {
+				$model = new $value;
+				//Ascendant
+				$child = 'tree_'.$model->getTable();
+				$table = $model->getTable();
+				if( !isset(${$child}) ){
+					${$child} = new \stdClass;
+				}
+				$parentList = array();
+				$parentType = $model::getParentList();
+				$parentList['tree_desc'] = 'tree_desc';
+				if(is_array($parentType)){ //A list a parent
+					foreach($parentType as $name) {
+						if(array_key_exists($name, $list_models)){
+							$parentList[$name] = 'tree_'.$name;
+						}
+					}
+				} else if($parentType == '*' || $parentType == '+'){ //All are parents
+					if($parentType == '*'){
+						$parentList['tree_desc'] = 'tree_desc';
+					}
+					foreach($list_models as $value_bis) {
+						$table_bis = (new $value_bis)->getTable();
+						$parentList[$table_bis] = 'tree_'.$table_bis;
+					}
+				} else if(array_key_exists($parentType, $list_models)){ //Has one parent
+					$parentList[$parentType] = 'tree_'.$parentType;
+				}
+				unset($parentList[$table]); //Avoid recursivity
+				foreach($parentList as $name => $parent) {
+					if( !isset(${$parent}) ){
+						${$parent} = new \stdClass;
+					}
+					$root_child = $model->getTable();
+					${$parent}->$child = ${$child};
+					unset(${$parent}->$child); //This helps to delete the prefix 'tree'
+					${$parent}->$root_child = ${$child};
+				}
+				unset($parentList);
+			}
+			self::$children_tree = $tree_desc;
+		}
+		if($item){
+			if(isset(self::$children_tree->{$this->getTable()})){
+				return self::$children_tree->{$this->getTable()};
+			}
+			return false;
+		}
+		return self::$children_tree;
+	}
+
+	public function getChildren(){
+		$list_tables[$this->getTable()] = $this->getTable();
+		$loop = true;
+		$tree_tp = $this->getChildrenTree();
+		while(count($tree_tp)>0 && $loop){
+			$loop = false;
+			foreach ($tree_tp as $key => $value) {
+				$list_tables[$key] = $key;
+				if(count($value)<=0){
+					$loop = true;
+					unset($tree_tp[$key]);
+					foreach ($tree_tp as $key_bis => $value_bis) {
+						$key_tp = array_search($key, $value_bis);
+						if($key_tp!==false){
+							unset($tree_tp[$key_bis][$key_tp]);
+						}
+					}
+				}
+			}
+		}
+
+		$tp = Data::getModels();
+		$list_models = array();
+		foreach ($list_tables as $table_name) {
+			if(isset($tp[$table_name])){
+				$list_models[$table_name] = $tp[$table_name];
+			}
+		}
+		
+		$tree_scan = array();
+		$tree_desc = new \stdClass;
+		foreach($list_models as $value) {
+			$model = new $value;
+			//Ascendant
+			$child = 'tree_'.$model->getTable();
+			$table = $model->getTable();
+			if( !isset(${$child}) ){
+				${$child} = new \stdClass;
+			}
+			$parentList = array();
+			$parentType = $model::getParentList();
+			if(count($parentType)==0){ //It's in the root
+				$parentList['tree_desc'] = 'tree_desc';
+			} else if(is_array($parentType)){ //A list a parent
+				foreach($parentType as $name) {
+					if(array_key_exists($name, $list_models)){
+						$parentList[$name] = 'tree_'.$name;
+					} else if($name == null){ //It's in the root
+						$parentList['tree_desc'] = 'tree_desc';
+					}
+				}
+			} else if($parentType == '*' || $parentType == '+'){ //All are parents
+				if($parentType == '*'){
+					$parentList['tree_desc'] = 'tree_desc';
+				}
+				foreach($list_models as $value_bis) {
+					$table_bis = (new $value_bis)->getTable();
+					$parentList[$table_bis] = 'tree_'.$table_bis;
+				}
+			} else { //Has one parent
+				if(array_key_exists($parentType, $list_models)){
+					$parentList[$parentType] = 'tree_'.$parentType;
+				} else {
+					$parentList['tree_desc'] = 'tree_desc';
+				}
+			}
+			foreach($parentList as $name => $parent) {
+				if( !isset($tree_scan[$table]) ){
+					$tree_scan[$table] = array();
+				}
+				if(array_key_exists($name, $list_models)){
+					$tree_scan[$table][] = $name;
+				}
+			}
+			unset($parentList[$table]); //Avoid recursivity
+			foreach($parentList as $name => $parent) {
+				if( !isset(${$parent}) ){
+					${$parent} = new \stdClass;
+				}
+				$root_child = $model->getTable();
+				${$parent}->$child = ${$child};
+				unset(${$parent}->$child); //This helps to delete the prefix 'tree'
+				${$parent}->$root_child = ${$child};
+			}
+			unset($parentList);
+		}
+
+		// Get all ID with parent dependencies
+		$loop = true;
+		$tree_id = array();
+		$tree_id[$this->getTable()][$this->id] = $this->id;
+		$current_id = array();
+		$current_id[$this->getTable()][$this->id] = $this->id;
+		$result = new \stdClass;
+		while($loop){
+			$loop = false;
+			$temp = array();
+			foreach ($tree_scan as $table => $children) {
+				$list = array();
+				foreach ($children as $child) {
+					if(isset($current_id[$child])){
+						$list[$child] = $current_id[$child];
+					}
+				}
+				if(count($list)>0){
+					$class = $list_models[$table];
+					$class::enableTrashGlobal(true);
+					$result_bis = $class::getKids($list);
+					$class::enableTrashGlobal(false);
+
+					if(isset($result->$table)){
+						$result->$table = $result->$table->merge($result_bis);
+					} else {
+						$result->$table = $result_bis;
+					}
+					foreach ($result_bis as $value_bis) {
+						$temp[$table][$value_bis->id] = $value_bis->id;
+					}
+					unset($result_bis);
+				}
+			}
+			$current_id = array();
+			foreach ($temp as $table => $list) {
+				foreach ($list as $id) {
+					if(!isset($tree_id[$table][$id])){ //Insure to not record twice the same ID to not enter inside an infinite loop
+						$current_id[$table][$id] = $id;
+						$tree_id[$table][$id] = $id;
+					}
+				}
+			}
+			if(count($current_id)>0){
+				$loop = true;
+			}
+		}
+		return array($tree_scan, $tree_desc, $tree_id, $result);
+	}
+
+	public function setPerm(){
+		$app = self::getApp();
+		$list_models = Data::getModels();
+		$all = array();
+
+		// List up all children table
+		$children = array();
+		$tp = array();
+		$temp = $this->getChildren();
+		foreach ($temp[3] as $table => $list) {
+			foreach ($list as $model) {
+				$children[$table][$model->id] = $model;
+			}
+		}
+		//Include the item into Children
+		$children[$this->getTable()][$this->id] = $this;
+		$all = array_merge($all, $children);
+		unset($temp);
+
+		//List up all parents
+		$root = $this;
+		$parents = array();
+		$model = $this;
+		while($model = $model->getParent()){
+			$root = $model;
+			$parents[$model->getTable()][$model->id] = $model;
+			$list_tables[$model->getTable()] = $model->getTable();
+		}
+		$all = array_merge($all, $parents);
+
+		//List up all users involved at highest level (workspace)
+		$users = array();
+		$users['users'] = array();
+		$users_id = array();
+		$users_id['users'] = array();
+		$class = $root::getClass();
+		$list = $class::filterPivotAccessList([$root->id], false, true);
+		foreach ($list as $uid => $value) {
+			//Normaly the root level must have $access_accept at true (workspaces, chats, users, projects)
+			if($root::$access_accept && reset($value)['access']){
+				$users_id['users'][$uid] = $uid; //Root users
+			}
+		}
+		$list = Users::whereIn('id', $users_id['users'])->get();
+		foreach ($list as $model) {
+			$users['users'][$model->id] = $model;
+		}
+		$all = array_merge($all, $users);
+		unset($users_id);
+
+		//List up all roles
+		$roles = array();
+		$roles['roles'] = array();
+		$list = Roles::getItems()->get();
+		foreach ($list as $model) {
+			$roles['roles'][$model->id] = $model;
+		}
+		$all = array_merge($all, $roles);
+		unset($roles);
+
+		//Make sure that the _perm string will be always in the same order
+		foreach ($all as $table => $models) {
+			ksort($all[$table]);
+		}
+
+		$all_id = array();
+		foreach ($all as $table => $models) {
+			foreach ($models as $id => $model) {
+				$all_id[$table][$id] = $id;
+				$model->setParentAttributes();
+			}
+		}
+		$tree_access = Data::getAccesses($all_id);
+
+		$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
+		$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
+		$tree_single = array(); //Permission allowed for the user at single element level (Priority 3 / cutomized)
+		$tree_role = array(); //Permission allowed for the user according the herited Roles(Priority 4 / cutomized) => Need to scan the tree to assigned children
+		$tree_roles_id = array();
+
+		//Tell if the user has super access to the workspace
+		$work_super = array();
+		if(isset($all_id['users'])){
+			foreach ($all_id['users'] as $users_id) {
+				$work_super[$users_id] = array();
+				if(isset($tree_access['workspaces'][$users_id])){
+					foreach ($tree_access['workspaces'][$users_id] as $value) {
+						if($value['super']){
+							$work_super[$users_id][(int)$value['workspaces_id']] = $value['super'];
+						}
+					}
+				}
+				if(isset($work_super[$users_id])){
+					//Insure to reject super permission for shared workspace
+					unset($work_super[$users_id][0]);
+				}
+			}
+		}
+
+		$pivot = PivotUsersRoles::getRoles($all_id);
+		//\libs\Watch::php($pivot, '$pivot', __FILE__, false, false, true);
+		foreach ($pivot as $value) {
+			$table_name = $value->parent_type;
+			$id = $value->parent_id;
+			$users_id = $value->users_id;
+			if(isset($all[$table_name][$id])){
+				$model = $all[$table_name][$id];
+				//Single (ok)
+				if($value->single){
+					if($model::getRoleAllow()[0]){ //Single (RCUD)
+						$tree_single[$table_name][$users_id][$id] = (int) $value->single;
+					}
+				}
+				//Role (will affect children)
+				if($value->roles_id && isset($all_id['roles'][$value->roles_id])){ //The last condition insure that the Role was not deleted
+					if($model::getRoleAllow()[1]){ //Role (Role ID)
+						$tree_roles_id[$table_name][$users_id][$id] = (int) $value->roles_id;
+					}
+				}
+			}
+		}
+
+		//By default, give Administrator role to all users inside shared workspace
+		if($app->lincko->data['workspace_id']==0){
+			if(isset($all_id['users'])){
+				foreach ($all_id['users'] as $users_id) {
+					$tree_roles_id['workspaces'][(int)$users_id][0] = 1;
+				}
+			}
+		}
+
+		//Onwer (ok) , it needs to works with model, not array convertion
+		foreach ($all as $table_name => $models) {
+			foreach ($models as $key => $model) {
+				if(isset($all_id['users'] )){
+					foreach ($all_id['users'] as $users_id) {
+						$tree_owner[$table_name][$users_id][$model->id] = $model->getPermissionOwner($users_id);
+					}
+				}
+			}
+		}
+
+		//Descendant tree with IDs
+		${$this->getTable().'_'.$this->id} = new \stdClass;
+		for ($i = 1; $i <= 2; $i++) { //Loop 2 times to be sure to attach all IDs
+			foreach ($all as $name => $models) {
+				foreach ($models as $id => $model) {
+					$model = $all[$name][$id];
+					$pname = (string)$model->_parent[0];
+					$pid = (int)$model->_parent[1];
+					$id = (int)$id;
+					if(empty($pname)){
+						$pname = 'root';
+						$pid = 0;
+					}
+					if(!isset(${$pname.'_'.$pid})){
+						${$pname.'_'.$pid} = new \stdClass;
+					}
+					if(!isset(${$pname.'_'.$pid}->$name)){
+						${$pname.'_'.$pid}->$name = new \stdClass;
+					}
+					if(isset(${$name.'_'.$id})){
+						${$pname.'_'.$pid}->$name->$id = ${$name.'_'.$id};
+					} else {
+						${$pname.'_'.$pid}->$name->$id = false;
+						${$name.'_'.$id} = new \stdClass;
+					}
+				}
+			}
+		}
+		$root_0 = new \stdClass;
+		$root_0->{$this->getTable()} = new \stdClass;
+		$root_0->{$this->getTable()}->{$this->id} = ${$this->getTable().'_'.$this->id};
+
+		$root_uid = array();
+		//Build the tree per user
+		if(isset($all_id['users'])){
+			foreach ($all_id['users'] as $users_id) {
+				$root_uid[(int)$users_id] = array( 0 => json_decode(json_encode($root_0)) ); //No Super applied (0) at the root level
+			}
+		}
+
+		$tree_access_users = array();
+		foreach ($root_uid as $users_id => $root) {
+
+			//Super (ok) & for guesses deletes it if inaccessible
+			$arr = $root_uid[$users_id];
+			$arr_tp = $arr;
+			$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
+			while(!empty($arr)){
+				$arr_tp = array();
+				foreach ($arr as $super => $list) {
+					foreach ($list as $table_name => $models) {
+						if( !isset($tree_access[$table_name][$users_id]) ){
+							continue;
+						}
+						$super_perm = 0; //[R]
+						$class = false;
+						if(isset($list_models[$table_name])){
+							$class = $list_models[$table_name];
+						}
+						if($super && $class){
+							$super_perm = $class::getPermissionSheet()[1];
+						}
+						foreach ($models as $id => $model) {
+							if(
+								   !isset($tree_access[$table_name][$users_id][$id]['access'])
+								|| !$tree_access[$table_name][$users_id][$id]['access']
+							){
+								continue;
+							} else {
+								$tree_access_users[$table_name][$users_id][$id] = true;
+							}
+							$super_perm_model = $super_perm;
+							$super_tp = $super;
+							//We only check at worspace level
+							if($table_name == 'workspaces' && isset($work_super[$users_id][$id])){
+								$super_tp = 0; //(workspace $id<=0) Insure nobody has super access to shared workspace
+								if($id > 0){
+									$super_tp = $work_super[$users_id][$id];
+								}
+							}
+							if($super_tp != $super){
+								$super_perm_model = 0;
+								if($super_tp && $class){
+									$super_perm_model = $class::getPermissionSheet()[1];
+								}
+							}
+							$tree_super[$table_name][$users_id][$id] = $super_perm_model;
+							if(!empty((array)$model)){
+								if(!isset($arr_tp[$super_tp])){
+									$arr_tp[$super_tp] = $model;
+								} else {
+									foreach ($model as $key => $value) {
+										if(!isset($arr_tp[$super_tp]->$key)){
+											$arr_tp[$super_tp]->$key = $value;
+										} else {
+											$arr_tp[$super_tp]->$key = (object) array_merge((array) $arr_tp[$super_tp]->$key, (array) $value);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				$arr = $arr_tp;
+				$i--;
+				if($i<=0){
+					$arr = array();
+					break;
+				}
+			}
+
+			//Role (ok)
+			$roles = $all['roles'];
+			$arr = $root_uid[$users_id];
+			$arr_tp = $arr;
+			$i = 1000; //Avoid infinite loop (1000 nested level, which should never happened)
+			while(!empty($arr)){
+				$arr_tp = array();
+				foreach ($arr as $role => $list) {
+					foreach ($list as $table_name => $models) {
+						if( !isset($tree_access[$table_name][$users_id]) ){
+							continue;
+						}
+						$role_perm = 0; //[R]
+						$max_perm = 0; //[R]
+						$class = false;
+						$allow_role = false;
+						if(isset($list_models[$table_name])){
+							$class = $list_models[$table_name];
+							$allow_role = $class::getRoleAllow()[1];
+							if($role > 0){
+								$max_perm = $class::getPermissionSheet()[1];
+							}
+						}
+						if($max_perm > 0 && isset($roles[$role])){
+							if(isset($roles[$role]->{'perm_'.$table_name})){ //Per model
+								$role_perm = $roles[$role]->{'perm_'.$table_name};
+							} else { //General
+								$role_perm = $roles[$role]->perm_all;
+							}
+							//We check the limit of the permission
+							if($role_perm > $max_perm){
+								$role_perm = $max_perm;
+							}
+						}
+						foreach ($models as $id => $model) {
+							if(
+								   !isset($tree_access[$table_name][$users_id][$id]['access'])
+								|| !$tree_access[$table_name][$users_id][$id]['access']
+							){
+								continue;
+							}
+							$role_perm_elem = $role_perm;
+							$role_tp = $role;
+							if($allow_role && isset($tree_roles_id[$table_name][$users_id][$id])){
+								$role_tp = $tree_roles_id[$table_name][$users_id][$id];
+							} else {
+								$tree_roles_id[$table_name][$users_id][$id] = $role_tp;
+							}
+							if($role_tp != $role){
+								$max_perm_elem = 0; //[R]
+								if($role_tp > 0 && $class){
+									$max_perm_elem = $class::getPermissionSheet()[1];
+								}
+								if($max_perm_elem > 0 && isset($roles[$role_tp])){
+									if(isset($roles[$role_tp]->{'perm_'.$table_name})){ //Per model
+										$role_perm_elem = $roles[$role_tp]->{'perm_'.$table_name};
+									} else { //General
+										$role_perm_elem = $roles[$role_tp]->perm_all;
+									}
+									//We check the limit of the permission
+									if($role_perm_elem > $max_perm_elem){
+										$role_perm_elem = $max_perm_elem;
+									}
+								}
+							}
+							$tree_role[$table_name][$users_id][$id] = $role_perm_elem;
+							if(!empty((array)$model)){
+								if(!isset($arr_tp[$role_tp])){
+									$arr_tp[$role_tp] = $model;
+								} else {
+									foreach ($model as $key => $value) {
+										if(!isset($arr_tp[$role_tp]->$key)){
+											$arr_tp[$role_tp]->$key = $value;
+										} else {
+											$arr_tp[$role_tp]->$key = (object) array_merge((array) $arr_tp[$role_tp]->$key, (array) $value);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				$arr = $arr_tp;
+				$i--;
+				if($i<=0){
+					$arr = array();
+					break;
+				}
+			}
+			
+		}
+
+		$all_perm = array();
+		foreach ($children as $table_name => $models) {
+			foreach ($children[$table_name] as $id => $temp) {
+				$perm_new = '';
+				$perm_old = (string) $children[$table_name][$id]->_perm;
+				if(isset($all_id['users'])){
+					//Set permission per user
+					foreach ($all_id['users'] as $users_id) {
+						//Check access first
+						if( !isset($tree_access_users[$table_name][$users_id][$id]) ){
+							continue;
+						}
+						$perm_owner = 0; //tree_owner
+						if(isset($tree_owner[$table_name][$users_id][$id])){ $perm_owner = $tree_owner[$table_name][$users_id][$id]; }
+						$perm_super = 0; //tree_super
+						if(isset($tree_super[$table_name][$users_id][$id])){ $perm_super = $tree_super[$table_name][$users_id][$id]; }
+						$perm_single = 0; //tree_single (priority on single over Role)
+						$perm_role = 0; //tree_role
+						if(isset($tree_single[$table_name][$users_id][$id])){
+							$perm_single = $tree_single[$table_name][$users_id][$id];
+						} else if(isset($tree_role[$table_name][$users_id][$id])){
+							$perm_role = $tree_role[$table_name][$users_id][$id];
+						}
+						$role_id = 0; //tree_role
+						if(isset($tree_roles_id[$table_name][$users_id][$id])){
+							$role_id = $tree_roles_id[$table_name][$users_id][$id];
+						}
+						if(!isset($all['roles'][$role_id])){
+							$role_id = 0; //tree_role
+							$perm_role = 0; //If the role is not register we set to viewer
+						}
+						if(empty($perm_new)){
+							$perm_new = new \stdClass;
+						}
+						$perm_new->$users_id = array(
+							(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
+							(int)$role_id,
+						);
+					}
+				}
+				$perm_new = (string) json_encode($perm_new);
+				if($perm_new != $perm_old){
+					$all_perm[$perm_new][$table_name][$id] = $id;
+				}
+			}
+		}
+
+		$users_tables = array();
+		$time = $this->freshTimestamp();
+		foreach ($all_perm as $json => $list) {
+			foreach ($list as $table_name => $ids) {
+				if(isset($list_models[$table_name])){
+					$class = $list_models[$table_name];
+					$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json]);
+					$users = json_decode($json);
+					if(is_object($users)){
+						foreach ($users as $users_id => $value) {
+							$users_tables[$users_id][$table_name] = true;
+						}
+					}
+				}
+			}
+		}
+		
+		Updates::informUsers($users_tables, $time);
+
+	}
+
 	//Scan the list and tell if the user has an access to it by filtering it (mainly used for Data.php)
 	//The unaccesible one will be deleted in Data.php by hierarchy
 	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
@@ -530,7 +953,18 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By default just return the list as it is
-	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array(), $default = array('access' => 1)){
+		if(!static::$access_accept){
+			foreach ($uid_list as $uid) {
+				foreach ($list as $value) {
+					if(!isset($result[$uid][$value])){
+						$result[$uid][$value] = (array) $default;
+					} else if(!$result[$uid][$value]['access']){
+						unset($result[$uid][$value]);
+					}
+				}
+			}
+		}
 		return $result;
 	}
 
@@ -626,32 +1060,76 @@ abstract class ModelLincko extends Model {
 	}
 
 	//This function does the same as getItems, but the calculation is heavier since it's requesting every parent, getItems is using a list to simulate dependencies (previously got in Data.php)
-	public function scopegetLinked($query, $with=false){
+	public function scopegetLinked_newtotest($query, $trash=false){
+		if($trash || $this->with_trash){
+			$query = $query->withTrashed();
+		}
+		return $query->getItems();
+	}
+
+	public function scopegetLinked($query, $with=false, $trash=false){
+		//Why did I use getTree with parents to get ID? It seems useless since getItems() should return the same list
+		//If no issue over the time, just delete the code below
 		$arr = array();
-		$parentType = $this::getParentList();
-		if(count($parentType)>0){
-			if(is_string($parentType)){
-				if(method_exists(get_called_class(), $parentType)){
-					$arr[] = $parentType;
-				}
-			} else if(is_array($parentType)){
-				foreach ($parentType as $type) {
-					if(method_exists(get_called_class(), $type)){
-						$arr[] = $type;
+		if($with){
+			$parentType = $this::getParentList();
+			if(count($parentType)>0){
+				if(is_string($parentType)){
+					if(method_exists(get_called_class(), $parentType)){
+						$arr[$parentType] = $parentType;
+					}
+				} else if(is_array($parentType)){
+					foreach ($parentType as $type) {
+						if(method_exists(get_called_class(), $type)){
+							$arr[$type] = $type;
+						}
 					}
 				}
 			}
-		}
-		if($with){
 			foreach ($arr as $type) {
-				$query = $query->with($type);
+				//$query = $query->with($type);
 			}
 		}
-		$list = (new Data())->getTrees($arr)[2];
-		if($this->with_trash){
+		$list = Data::getTrees($arr, 2);
+		if($trash || $this->with_trash){
 			$query = $query->withTrashed();
 		}
 		return $query->getItems($list);
+	}
+
+	public function scopegetKids($query, $list=array()){
+		$app = self::getApp();
+		$this->var['condition'] = false; //this insire that there is at least one condition to avoid to list all table
+		$table = $this->getTable();
+		$query = $query
+		->where(function ($query) use ($list, $table) {
+			foreach ($list as $table_name => $list_id) {
+				if(is_array($this::$parent_list) && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
+					$this->var['condition'] = true;
+					$query = $query
+					->orWhere(function ($query) use ($table_name, $list_id, $table) {
+						$query
+						->where($table.'.parent_type', $table_name)
+						->whereIn($table.'.parent_id', $list_id);
+					});
+				} else if($table_name == $this::$parent_list && $this::getClass($table_name)){
+					$this->var['condition'] = true;
+					$query = $query
+					->orWhere(function ($query) use ($table_name, $list_id, $table) {
+						$query
+						->whereIn($table.'.parent_id', $list_id);
+					});
+				}
+			}
+		});
+		if(!$this->var['condition']){
+			return false;
+		}
+		if(self::$with_trash_global){
+			$query = $query->withTrashed();
+		}
+		$result = $query->get();
+		return $result;
 	}
 
 	public static function isParent($type){
@@ -1269,7 +1747,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	//It checks if the user has access to it
-	public function checkAccess($show_msg=true){
+	public function checkAccess($show_msg=true){return true;//toto => very bad design, but can check _perm field
 		$app = self::getApp();
 		$this->checkUser();
 		if(!is_bool($this->accessibility)){
@@ -1410,7 +1888,7 @@ abstract class ModelLincko extends Model {
 			if(in_array('updated_by', $columns)){
 				$this->updated_by = $app->lincko->data['uid'];
 			}
-
+			$this->change_permission = true;
 			$missing_arguments = array();
 			foreach($this::$foreign_keys as $key => $value) {
 				if(!isset($this->$key)){
@@ -1481,9 +1959,27 @@ abstract class ModelLincko extends Model {
 				$this->attributes[$key] = $value;
 			}
 			$this->pivots_save();
+			$users_tables = array();
+			if(isset($this->_perm)){
+				$temp = json_decode($this->_perm);
+				foreach ($temp as $key => $value) {
+					$users_tables[$key][$this->getTable()] = true;
+				}
+			}
 			if($parent){
 				$parent->touchUpdateAt();
+				if(isset($parent->_perm)){
+					$temp = json_decode($parent->_perm);
+					foreach ($temp as $key => $value) {
+						$users_tables[$key][$parent->getTable()] = true;
+					}
+				}
 			}
+			if($this->change_permission){
+				$this->setPerm();
+			}
+			Updates::informUsers($users_tables);
+
 			$db->commit();
 		} catch(\Exception $e){
 			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
@@ -1538,7 +2034,7 @@ abstract class ModelLincko extends Model {
 				$this->deleted_by = $app->lincko->data['uid'];
 				$this->setHistory('_delete');
 				$this->save();
-				$this->setForceSchema();
+				//$this->setForceSchema(); //toto => Why did we set force schema here? because we keep element on front side, even if deleted
 			}
 			parent::delete();
 		}
@@ -1561,7 +2057,7 @@ abstract class ModelLincko extends Model {
 				$this->deleted_at = null;
 				$this->setHistory('_restore');
 				$this->save();
-				$this->setForceSchema();
+				//$this->setForceSchema(); //toto => Why did we set force schema here? because we keep element on front side, even if deleted
 			}
 			parent::restore();
 		}
@@ -1577,7 +2073,7 @@ abstract class ModelLincko extends Model {
 
 	//True: will display with trashed
 	//False (default): will display only not deleted
-	public static function enableTrashGlocal($trash=false){
+	public static function enableTrashGlobal($trash=false){
 		$trash = (boolean) $trash;
 		self::$with_trash_global = $trash;
 	}
@@ -1639,6 +2135,10 @@ abstract class ModelLincko extends Model {
 		}
 		foreach($this->model_boolean as $value) {
 			if(isset($temp->$value)){  $temp->$value = (boolean)$temp->$value; }
+		}
+
+		if(isset($this->_perm)){
+			$temp->_perm = json_decode($this->_perm);
 		}
 		
 		$temp = json_encode($temp, $options);
@@ -1729,6 +2229,9 @@ abstract class ModelLincko extends Model {
 									$value_old = (string) $pivot->pivot->$column;
 									if($value_old != $value){
 										if($pivot_relation->updateExistingPivot($type_id, array($column => $value))){
+											if($column=='access'){
+												$this->change_permission = true;
+											}
 											$touch = true;
 											if($history_save){
 												$parameters = array();
@@ -1753,6 +2256,9 @@ abstract class ModelLincko extends Model {
 										$pivot_relation->attach($type_id, array('access' => true, $column => $value)); //attach() return nothing
 									} else {
 										$pivot_relation->attach($type_id, array($column => $value)); //attach() return nothing
+									}
+									if($column=='access' || $column=='parent_id' || $column=='parent_type'){
+										$this->change_permission = true;
 									}
 									$touch = true;
 									if($history_save){
@@ -1780,8 +2286,9 @@ abstract class ModelLincko extends Model {
 		}
 		if($touch){
 			$this->touch();
+			//toto => Wy check the schema here?
 			//$this->setForceSchema();
-			$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
+			//$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
 		}
 		return $success;
 	}

@@ -24,6 +24,7 @@ class Workspaces extends ModelLincko {
 		'domain',
 		'url',
 		'_parent',
+		'_perm',
 	);
 
 	// CUSTOMIZATION //

@@ -5,29 +5,21 @@ namespace bundles\lincko\api\models\libs;
 
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
-use \bundles\lincko\api\models\data\Users;
-use \libs\Email;
 
-class Invitation extends ModelLincko {
+class Updates extends ModelLincko {
 
 	protected $connection = 'data';
 
-	protected $table = 'invitation';
-	protected $morphClass = 'invitation';
+	protected $table = 'updates';
+	protected $morphClass = 'updates';
 
 	protected $primaryKey = 'id';
 
 	public $timestamps = true;
 
-	protected $visible = array(
-		'code',
-	);
+	protected $visible = array();
 
 	protected $accessibility = true;
-
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
 
 	protected static $permission_sheet = array(
 		0, //[R] owner
@@ -51,20 +43,31 @@ class Invitation extends ModelLincko {
 	}
 
 	public function save(array $options = array()){
-		$app = self::getApp();
-		if(!isset($this->id)){ //set code for new
-			$this->code = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyz"), 0, 8);
-			while( self::where('code', '=', $this->code)->first() ){
-				$this->code = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyz"), 0, 8);
-			}
-			$this->created_by = $app->lincko->data['uid'];
-			$this->used = false;
-		} else {
-			$this->guest = $app->lincko->data['uid'];
-			$this->used = true;
-		}
+		//Skip ModelLincko save procedure
 		$return = Model::save($options);
 		return $return;
+	}
+
+	//It tells which users has to be informed of the modification by Global Timestamp check, it help to sve calculation time
+	public static function informUsers($users_tables, $time=false){
+		if(!$time){
+			$time = (new self)->freshTimestamp();
+		}
+		$columns = array_flip(self::getColumns());
+		foreach ($users_tables as $users_id => $list) {
+			$updates = Updates::find($users_id);
+			if(!$updates){
+				$updates = new Updates;
+				$updates->id = $users_id;
+			}
+			foreach ($list as $table_name => $value) {
+				if(isset($columns[$table_name])){
+					$updates->$table_name = $time;
+				}
+			}
+			$updates->save();
+		}
+		return true;
 	}
 
 	public function checkAccess($show_msg=true){

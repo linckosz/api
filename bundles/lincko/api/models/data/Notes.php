@@ -29,6 +29,7 @@ class Notes extends ModelLincko {
 		'comment',
 		'_parent',
 		'_files',
+		'_perm',
 	);
 
 	// CUSTOMIZATION //
@@ -114,21 +115,6 @@ class Notes extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
-
-	//This is used because by default not all IDs are stored in pivot table
-	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
-		$default = array(
-			'access' => 1, //Default is accessible
-		);
-		foreach ($uid_list as $uid) {
-			foreach ($list as $value) {
-				if(!isset($result[$uid][$value])){
-					$result[$uid][$value] = (array) $default;
-				}
-			}
-		}
-		return $result;
-	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects

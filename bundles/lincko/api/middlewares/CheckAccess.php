@@ -210,7 +210,7 @@ class CheckAccess extends \Slim\Middleware {
 	protected function checkSum(){
 		$app = $this->app;
 		$data = $this->data;
-		if($this->upload){ //We do not check checksum for files
+		if($app->lincko->method_suffix == '_get' || $this->upload){ //We do not check checksum for files
 			return true;
 		}
 		$authorization = $this->authorization;

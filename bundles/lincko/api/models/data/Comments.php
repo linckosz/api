@@ -25,6 +25,7 @@ class Comments extends ModelLincko {
 		'recalled_by',
 		'comment',
 		'_parent',
+		'_perm',
 	);
 
 	// CUSTOMIZATION // 
@@ -131,21 +132,6 @@ class Comments extends ModelLincko {
 	//Give access to all, will be delete later by hierarchy
 	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
 		return array();
-	}
-
-	//This is used because by default not all IDs are stored in pivot table
-	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
-		$default = array(
-			'access' => 1, //Default is accessible
-		);
-		foreach ($uid_list as $uid) {
-			foreach ($list as $value) {
-				if(!isset($result[$uid][$value])){
-					$result[$uid][$value] = (array) $default;
-				}
-			}
-		}
-		return $result;
 	}
 
 	//Add these functions to insure that nobody can make them disappear

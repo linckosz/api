@@ -19,7 +19,6 @@ function my_autoload($pClassName){
 	$pClassName = str_replace('\\', '/', $pClassName);
 	if(file_exists($app->lincko->path.'/'.$pClassName.'.php')){
 		include_once($app->lincko->path.'/'.$pClassName.'.php');
-		time_checkpoint($pClassName.'.php');
 	}
 }
 

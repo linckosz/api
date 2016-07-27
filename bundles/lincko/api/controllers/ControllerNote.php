@@ -86,6 +86,7 @@ class ControllerNote extends Controller {
 	public function create_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 10, 1)."\n"; //Note creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -112,7 +113,7 @@ class ControllerNote extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 2)); //Note created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, true);
+				$data->dataUpdateConfirmation($msg, 201, true, $lastvisit);
 				return true;
 			}
 		}
@@ -158,6 +159,7 @@ class ControllerNote extends Controller {
 	public function update_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 10, 5)."\n"; //Note update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
@@ -189,7 +191,7 @@ class ControllerNote extends Controller {
 				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 10, 6)); //Note updated.
 					$data = new Data();
-					$data->dataUpdateConfirmation($msg, 200);
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 					return true;
 				}
 			} else {

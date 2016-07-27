@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;
 
-use Illuminate\Database\Capsule\Manager as Capsule;
-
 class History extends ModelLincko {
 
 	protected $connection = 'data';

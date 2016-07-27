@@ -740,14 +740,76 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::find(1655);
 		//$tp = Tasks::filterPivotAccessList([1655], false, true);
 		
-		
+		//$tp = Tasks::find(39);
+		//$tp = Tasks::find(278);
 		//$tp = Tasks::find(20);
-		$tp = Tasks::find(1655);
-		//$tp = $tp->getChildrenTree();
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
-		$tp = $tp->setPerm();
+		//$tp = Tasks::find(1655);
+		//$tp = Projects::find(285);
+		//$tp = Projects::find(3);
+		//$tp = Chats::find(346); //Problem because 346 is part of project
+		//$tp = Tasks::find(1674);
+		//$tp = Workspaces::find(2);
+		//$tp = Projects::find(61);
+		//$tp = Chats::find(25);
+		//$tp = $tp->setPerm();
+		//$tp = $tp->getChildren();
+		//$tp = Tasks::find(266);
+		//$tp = $tp->->getTrees()[2]['tasks'];
+		//$tp = $tp->->getTrees()[2]['tasks'];
+		//$tp = $tp->getLinked()->get();
+		//$tp = $tp->getItems()->get();
+
+		//\time_checkpoint(1);
+/*
+		$tp = Data::getTrees(false, 3);
+		$array = array();
+		foreach ($tp->comments as $key => $value) {
+			$array[$value->id] = $value->id;
+		}
+		\libs\Watch::php( count($array), '$array', __FILE__, false, false, true);
+		\time_checkpoint('getTrees');
+*/
+/*
+		$tp = Comments::getLinked(true)->get();
+		$array = array();
+		foreach ($tp as $key => $value) {
+			$array[$value->id] = $value->id;
+		}
+		\libs\Watch::php( count($array), '$array', __FILE__, false, false, true);
+		\time_checkpoint('getLinked(true)');
+*/
+/*
+		$tp = Comments::getLinked_todelete(false, true)->get();
+		$array = array();
+		foreach ($tp as $key => $value) {
+			$array[$value->id] = $value->id;
+		}
+		\libs\Watch::php( count($array), '$array', __FILE__, false, false, true);
+		\time_checkpoint('getLinked_todelete(false, true)');
+*/
 
 
+		$tp = Comments::getLinked_todelete(true, true)->get();
+		//$tp = Comments::getItems()->get();
+		$array = array();
+		foreach ($tp as $key => $value) {
+			$array[$value->id] = $value->id;
+		}
+		\libs\Watch::php( count($array), 'count $array', __FILE__, false, false, true);
+		//s\time_checkpoint('getLinked_todelete(true, true)');
+
+		/*
+
+		$array = array();
+		foreach ($tp as $key => $value) {
+			$array[$value->id] = $value->id;
+		}
+		\libs\Watch::php( $array, '$array', __FILE__, false, false, true);
+		*/
+
+		//Roles::getQuery()->update(['_perm' => '']);
+		//Roles::getQuery()->where('parent_id', '<>', null)->update(['_perm' => 1]);
+		//Roles::Where('parent_id', '<>', null)->update(['_perm' => 1]);
 
 
 		//$tp = $tp->getDefaultValue('users_x_tasks');
@@ -762,13 +824,30 @@ class ControllerTest extends Controller {
 			\libs\Watch::php( $value, $key, __FILE__, false, false, true);
 		}
 		*/
-		
 
+		
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 
+		//----------------------------------------
+		//The permission purge
+		/*
+		$count = array();
+		$models = Data::getModels();
+		foreach ($models as $table => $class) {
+			$count[$table] = 0;
+			$all = $class::all();
+			foreach ($all as $model) {
+				if(isset($model->_perm) && empty($model->_perm)){
+					$model->setPerm();
+					$count[$table]++;
+				}
+			}
+		}
+		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
+		*/
 		
 
 		//----------------------------------------

@@ -32,6 +32,7 @@ class Users extends ModelLincko {
 		'_lock',
 		'_visible',
 		'_invitation',
+		'_perm',
 	);
 
 	// CUSTOMIZATION //

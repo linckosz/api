@@ -29,7 +29,7 @@ class ControllerData extends Controller {
 		$schema = NULL;
 		$info = NULL;
 		$data_lastvisit = $data->getTimestamp();
-		$lastvisit = time()-1;
+		$lastvisit = time();
 
 		if($user->getForceSchema() > $data_lastvisit){
 			$info = 'reset';

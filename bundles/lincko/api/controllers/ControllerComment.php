@@ -85,6 +85,7 @@ class ControllerComment extends Controller {
 	public function create_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 11, 1)."\n"; //Message creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -126,7 +127,7 @@ class ControllerComment extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 2)); //Message created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
 				return true;
 			}
 		}
@@ -193,6 +194,7 @@ class ControllerComment extends Controller {
 	public function recall_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 11, 23)."\n"; //Message recall failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 11, 25); //You can only recall a message within 2 minutes.
@@ -207,7 +209,7 @@ class ControllerComment extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 24)); //Message recalled.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 200);
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 				return true;
 			}
 		}

@@ -29,7 +29,7 @@ class Tasks extends ModelLincko {
 		'approved_by',
 		'title',
 		'comment',
-		'duration',
+		'duration', //A negative value means there is no due date
 		'fixed',
 		'approved',
 		'status',
@@ -39,6 +39,7 @@ class Tasks extends ModelLincko {
 		'_tasks',
 		'_users',
 		'_files',
+		'_perm',
 	);
 
 	// CUSTOMIZATION //
@@ -171,20 +172,13 @@ class Tasks extends ModelLincko {
 ////////////////////////////////////////////
 
 	//This is used because by default not all IDs are stored in pivot table
-	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array()){
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array(), $default = array('access' => 1)){
 		$default = array(
-			'access' => 1, //Default is accessible
+			'access' => 1,
 			'in_charge' => 0,
 			'approver' => 0,
 		);
-		foreach ($uid_list as $uid) {
-			foreach ($list as $value) {
-				if(!isset($result[$uid][$value])){
-					$result[$uid][$value] = (array) $default;
-				}
-			}
-		}
-		return $result;
+		return parent::filterPivotAccessListDefault($list, $uid_list, $result, $default);
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){

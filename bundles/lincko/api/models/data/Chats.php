@@ -25,6 +25,7 @@ class Chats extends ModelLincko {
 		'title',
 		'single',
 		'_parent',
+		'_perm',
 	);
 
 	// CUSTOMIZATION //

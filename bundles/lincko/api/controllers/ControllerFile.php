@@ -161,6 +161,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$app = $this->app;
 		$this->setFields();
 		$form = $this->form;
+		$lastvisit = time();
+
 		$failmsg = $app->trans->getBRUT('api', 14, 1)."\n"; //File upload failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
@@ -201,7 +203,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
 							$model->pivots_format($form, false);
 							if($model->getParentAccess() && $model->save()){
-								$model->setForceSchema();
+								//$model->setForceSchema(); //toto => Why did we set force schema here?
 								$success = true;
 							} else {
 								$success = false;
@@ -224,7 +226,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
 						$model->pivots_format($form, false);
 						if($model->getParentAccess() && $model->save()){
-							$model->setForceSchema();
+							//$model->setForceSchema(); //toto => Why did we set force schema here?
 							$success = true;
 						} else {
 							$success = false;
@@ -239,7 +241,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if($success){
 			$msg = array('msg' => $app->trans->getBRUT('api', 14, 2)); //File uploaded.
 			$data = new Data();
-			$data->dataUpdateConfirmation($msg, 201);
+			$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
 			return true;
 		} else {
 			if(isset($_FILES)){
@@ -295,6 +297,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$app = $this->app;
 		$this->setFields();
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 14, 5)."\n"; //File update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
@@ -331,7 +334,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 14, 6)); //File updated.
 					$data = new Data();
-					$data->dataUpdateConfirmation($msg, 200);
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 					return true;
 				}
 			} else {
