@@ -742,9 +742,9 @@ class ControllerTest extends Controller {
 		
 		//$tp = Tasks::find(39);
 		//$tp = Tasks::find(278);
-		//$tp = Tasks::find(20);
-		//$tp = Tasks::find(1655);
-		//$tp = Projects::find(285);
+		//$tp = Tasks::find(39);
+		//$tp = Comments::find(5252); //5120-5252
+		//$tp = Projects::find(385); //4888 - 5120
 		//$tp = Projects::find(3);
 		//$tp = Chats::find(346); //Problem because 346 is part of project
 		//$tp = Tasks::find(1674);
@@ -788,7 +788,7 @@ class ControllerTest extends Controller {
 		\time_checkpoint('getLinked_todelete(false, true)');
 */
 
-
+/*
 		$tp = Comments::getLinked_todelete(true, true)->get();
 		//$tp = Comments::getItems()->get();
 		$array = array();
@@ -797,7 +797,7 @@ class ControllerTest extends Controller {
 		}
 		\libs\Watch::php( count($array), 'count $array', __FILE__, false, false, true);
 		//s\time_checkpoint('getLinked_todelete(true, true)');
-
+*/
 		/*
 
 		$array = array();
@@ -824,7 +824,6 @@ class ControllerTest extends Controller {
 			\libs\Watch::php( $value, $key, __FILE__, false, false, true);
 		}
 		*/
-
 		
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
@@ -838,9 +837,10 @@ class ControllerTest extends Controller {
 		$models = Data::getModels();
 		foreach ($models as $table => $class) {
 			$count[$table] = 0;
-			$all = $class::all();
+			$all = $class::withTrashed()->get();
 			foreach ($all as $model) {
-				if(isset($model->_perm) && empty($model->_perm)){
+				//if(isset($model->_perm) && empty($model->_perm)){
+				if(isset($model->_perm)){
 					$model->setPerm();
 					$count[$table]++;
 				}

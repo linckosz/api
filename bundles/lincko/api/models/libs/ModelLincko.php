@@ -498,6 +498,7 @@ abstract class ModelLincko extends Model {
 					}
 					unset($result_bis);
 				}
+				
 			}
 			$current_id = array();
 			foreach ($temp as $table => $list) {
@@ -531,7 +532,7 @@ abstract class ModelLincko extends Model {
 		}
 		//Include the item into Children
 		$children[$this->getTable()][$this->id] = $this;
-		$all = array_merge($all, $children);
+		$all = array_replace_recursive($all, $children);
 		unset($temp);
 
 		//List up all parents
@@ -543,7 +544,7 @@ abstract class ModelLincko extends Model {
 			$parents[$model->getTable()][$model->id] = $model;
 			$list_tables[$model->getTable()] = $model->getTable();
 		}
-		$all = array_merge($all, $parents);
+		$all = array_replace_recursive($all, $parents);
 
 		//List up all users involved at highest level (workspace)
 		$users = array();
@@ -562,7 +563,7 @@ abstract class ModelLincko extends Model {
 		foreach ($list as $model) {
 			$users['users'][$model->id] = $model;
 		}
-		$all = array_merge($all, $users);
+		$all = array_replace_recursive($all, $users);
 		unset($users_id);
 
 		//List up all roles
@@ -572,7 +573,7 @@ abstract class ModelLincko extends Model {
 		foreach ($list as $model) {
 			$roles['roles'][$model->id] = $model;
 		}
-		$all = array_merge($all, $roles);
+		$all = array_replace_recursive($all, $roles);
 		unset($roles);
 
 		//Make sure that the _perm string will be always in the same order
@@ -588,6 +589,8 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		$tree_access = Data::getAccesses($all_id);
+
+		\libs\Watch::php($all_id, '$all_id', __FILE__, false, false, true);
 
 		$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
 		$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
