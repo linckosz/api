@@ -41,23 +41,14 @@ class Data {
 
 	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0){
 		$app = $this->app;
-		if($this->setLastVisit($lastvisit)){
-			$msg = array_merge(
-				array(
-					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
-					'partial' => $this->getLatest($lastvisit),
-				),
-				$msg
-			);
-		} else {
-			$msg = array_merge(
-				array(
-					'msg' => $app->trans->getBRUT('api', 8888, 13), //Server OK
-					'partial' => $this->getNewest(),
-				),
-				$msg
-			);
-		}
+		//$this->setLastVisit($lastvisit);
+		$msg = array_merge(
+			array(
+				'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
+				'partial' => $this->getLatest($lastvisit),
+			),
+			$msg
+		);
 		$app->render($status, array('msg' => $msg, 'show' => $show,));
 		return true;
 	}

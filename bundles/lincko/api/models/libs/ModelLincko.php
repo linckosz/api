@@ -46,6 +46,9 @@ abstract class ModelLincko extends Model {
 	//It forces to recalculate the permission field of all children
 	protected $change_permission = false;
 
+	//It forces to check the schema for all users concerned
+	protected $change_schema = false;
+
 	//(used in "toJson()") This is the field to show in the content of history (it will add a prefix "+", which is used for search tool too)
 	protected $show_field = false;
 
@@ -590,7 +593,7 @@ abstract class ModelLincko extends Model {
 		}
 		$tree_access = Data::getAccesses($all_id);
 
-		\libs\Watch::php($all_id, '$all_id', __FILE__, false, false, true);
+		//\libs\Watch::php($all_id, '$all_id', __FILE__, false, false, true);
 
 		$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
 		$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
@@ -1264,6 +1267,17 @@ abstract class ModelLincko extends Model {
 	//Only check the structure of the database
 	public function setForceSchema(){
 		$timestamp = time();
+		if(isset($this->_perm)){
+			$list = json_decode($this->_perm);
+			$users = array();
+			foreach ($list as $users_id => $perm) {
+				$users[$users_id] = $users_id;
+			}
+			if(!empty($users)){
+				Users::getQuery()->whereIn('id', $users)->update(['check_schema' => $timestamp]);
+				return true;
+			}
+		}
 		$list = array(
 			$this->getTable() => array($this->id),
 		);
@@ -1576,8 +1590,9 @@ abstract class ModelLincko extends Model {
 		if (isset($this->id) && isset($this->viewed_by)) {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
-				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]); //toto => with about 200+ viewed, it crsh (1317 Query execution was interrupted)
+				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]); //toto => with about 200+ viewed, it crash (1317 Query execution was interrupted)
 				$this->touchUpdateAt();
+				usleep(5000); //5ms (trying to avoid crash (1317 Query execution was interrupted) when over +200 viewed to updated)
 				return true;
 			}
 		}
@@ -1750,7 +1765,63 @@ abstract class ModelLincko extends Model {
 	}
 
 	//It checks if the user has access to it
-	public function checkAccess($show_msg=true){return true;//toto => very bad design, but can check _perm field
+	public function checkAccess($show_msg=true){
+
+		//return true;//toto => very bad design, but can check _perm field
+		$app = self::getApp();
+		$this->checkUser();
+		$uid = $app->lincko->data['uid'];
+		if(!is_bool($this->accessibility)){
+			$this->accessibility = (bool) false; //By default, for security reason, we do not allow the access
+			//If the element exists, we check if we can find it by getLinked
+			if(isset($this->id)){
+				if(isset($this->_perm)){
+					$perm = json_decode($this->_perm);
+					if(isset($perm->$uid)){
+						$this->accessibility = (bool) true;
+					}
+				}
+				else if($this->getLinked()->whereId($this->id)->take(1)->count() > 0){
+					$this->accessibility = (bool) true;
+				}
+			}
+			//If it's a new element, we check if we can access it's parent (we don't have to care about element linked to Workspaces|NULL since ID will be current workspace, so $parent will exists)
+			else {
+				$parent = $this->getParent();
+				if($parent){
+					if(isset($parent->_perm)){
+						$perm = json_decode($parent->_perm);
+						if(isset($perm->$uid)){
+							$this->accessibility = (bool) true;
+						}
+					} else {
+						$this->accessibility = $parent->checkAccess($show_msg);
+					}
+				}
+				//Root directory
+				else if(empty($parent_type) && empty($parent_id)){
+					$this->accessibility = (bool) true;
+				}
+			}
+			
+		}
+		if($this->accessibility){
+			return true;
+		} else if($show_msg){
+			$suffix = $this->getTable();
+			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+			$suffix = $this->getTable();
+			\libs\Watch::php($suffix." :\n".parent::toJson(), $msg, __FILE__, true);
+			if(!self::$debugMode){
+				$json = new Json($msg, true, 406);
+				$json->render(406);
+			}
+			return false;
+		}
+	}
+
+	//It checks if the user has access to it
+	public function checkAccess_toto($show_msg=true){
 		$app = self::getApp();
 		$this->checkUser();
 		if(!is_bool($this->accessibility)){
@@ -1953,6 +2024,9 @@ abstract class ModelLincko extends Model {
 		if(!$this->force_save && count($dirty)<=0){
 			return true;
 		}
+		if(isset($dirty['parent_type']) || isset($dirty['parent_id'])){
+			$this->change_permission = true;
+		}
 		$db = Capsule::connection($this->connection);
 		$db->beginTransaction(); //toto: It has to be tested with user creation because it involve 2 transaction together
 		try {
@@ -1978,6 +2052,9 @@ abstract class ModelLincko extends Model {
 					}
 				}
 			}
+			if($this->change_schema){
+				$this->setForceSchema();
+			}
 			if($this->change_permission){
 				$this->setPerm();
 			}
@@ -2002,9 +2079,8 @@ abstract class ModelLincko extends Model {
 					$new = null;
 					if(isset($original[$key])){ $old = $original[$key]; }
 					if(isset($dirty[$key])){ $new = $dirty[$key]; }
-					$code = $this->getArchiveCode($key, $new);
-					$code_key = array_search($code, $this->archive);
-					if($code_key && $code_key != '_'){ //We excluse default modification
+					//We excluse default modification
+					if(isset($this->archive[$key])){
 						$this->setHistory($key, $new, $old);
 					}
 				}
@@ -2234,6 +2310,9 @@ abstract class ModelLincko extends Model {
 										if($pivot_relation->updateExistingPivot($type_id, array($column => $value))){
 											if($column=='access'){
 												$this->change_permission = true;
+												if(!(bool)$value){
+													$this->change_schema = true;
+												}
 											}
 											$touch = true;
 											if($history_save){
@@ -2241,9 +2320,8 @@ abstract class ModelLincko extends Model {
 												if($type=='users'){
 													$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 												}
-												$code = $this->getArchiveCode('pivot_'.$column, $value);
-												$code_key = array_search($code, $this->archive);
-												if($code_key && $code_key != '_'){ //We excluse default modification
+												//We excluse default modification
+												if(isset($this->archive['pivot_'.$column])){
 													$this->setHistory($column, $value, $value_old, $parameters, $type, $type_id);
 												}
 											}
@@ -2260,8 +2338,11 @@ abstract class ModelLincko extends Model {
 									} else {
 										$pivot_relation->attach($type_id, array($column => $value)); //attach() return nothing
 									}
-									if($column=='access' || $column=='parent_id' || $column=='parent_type'){
+									if($column=='access'){
 										$this->change_permission = true;
+										if(!(bool)$value){
+											$this->change_schema = true;
+										}
 									}
 									$touch = true;
 									if($history_save){
@@ -2269,9 +2350,8 @@ abstract class ModelLincko extends Model {
 										if($type=='users'){
 											$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 										}
-										$code = $this->getArchiveCode('pivot_'.$column, $value);
-										$code_key = array_search($code, $this->archive);
-										if($code_key && $code_key != '_'){ //We excluse default modification
+										//We excluse default modification
+										if(isset($this->archive['pivot_'.$column])){
 											$this->setHistory($column, $value, null, $parameters, $type, $type_id);
 										}
 									}
@@ -2290,6 +2370,7 @@ abstract class ModelLincko extends Model {
 		if($touch){
 			$this->touch();
 			//toto => Wy check the schema here?
+
 			//$this->setForceSchema();
 			//$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
 		}
