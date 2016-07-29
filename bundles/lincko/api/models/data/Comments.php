@@ -207,7 +207,6 @@ class Comments extends ModelLincko {
 	}
 
 	public function toJson($detail=true, $options = 0){
-		$app = self::getApp();
 		if(!empty($this->recalled_by)){
 			$this->comment = '...';
 			$temp = parent::toJson($detail, $options);
@@ -218,6 +217,17 @@ class Comments extends ModelLincko {
 			$temp = parent::toJson($detail, $options);
 		}
 		return $temp;
+	}
+
+	public function toVisible(){
+		if(!empty($this->recalled_by)){
+			$this->comment = '...';
+			$model = parent::toVisible();
+			$model->new = false;
+		} else {
+			$model = parent::toVisible();
+		}
+		return $model;
 	}
 	
 }

@@ -32,7 +32,6 @@ class Users extends ModelLincko {
 		'_lock',
 		'_visible',
 		'_invitation',
-		'_perm',
 	);
 
 	// CUSTOMIZATION //
@@ -420,6 +419,24 @@ class Users extends ModelLincko {
 		$temp->new = 0;
 		$temp = json_encode($temp, $options);
 		return $temp;
+	}
+
+	public function toVisible(){
+		$app = self::getApp();
+		$this->updateContactAttributes();
+		//the play with accessibility allow Data.php to gather information about some other users that are not in the user contact list
+		$accessibility = $this->accessibility;
+		$this->accessibility = true;
+		$model = parent::toVisible();
+		$this->accessibility = $accessibility;
+		//Do not show email for all other users
+		if($this->id == $app->lincko->data['uid']){
+			$model->email = $this->email;
+		} else {
+			$model->email = "";
+		}
+		$model->new = false;
+		return $model;
 	}
 
 	public function getUsername(){

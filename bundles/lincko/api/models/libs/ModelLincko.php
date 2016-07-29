@@ -984,6 +984,24 @@ abstract class ModelLincko extends Model {
 		return $result;
 	}
 
+	//By default just return the list as it is
+	public static function filterPivotAccessGetDefault(){
+		$result = array();
+		$list = static::filterPivotAccessListDefault(array('users'), array(0));
+		if(isset($list[0]['users'])){
+			$result = $list[0]['users'];
+		}
+		if(isset(static::getDependenciesVisible()['users'])){
+			$visible = static::getDependenciesVisible()['users'][1];
+			foreach ($result as $key => $value) {
+				if(!in_array($key, $visible)){
+					unset($result[$key]);
+				}
+			}
+		}
+		return $result;
+	}
+
 	public static function getApp(){
 		if(is_null(self::$app)){
 			self::$app = \Slim\Slim::getInstance();
@@ -1322,7 +1340,8 @@ abstract class ModelLincko extends Model {
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
 	public static function getDependencies(array $list_id, array $classes){
-		$dependencies = new \stdClass;
+		//$dependencies = new \stdClass;
+		$dependencies = array();
 		foreach ($classes as $table => $class) {
 			$model = new $class;
 			$data = null;
@@ -1354,14 +1373,15 @@ abstract class ModelLincko extends Model {
 							foreach ($dependencies_visible as $dependency => $dependencies_fields) {
 								foreach ($dep->$dependency as $key => $value) {
 									if(isset($value->pivot->access) && isset($dependencies_visible[$dependency])){
-										if(!isset($dependencies->$table)){ $dependencies->$table = new \stdClass; }
-										if(!isset($dependencies->$table->{$dep->id})){ $dependencies->$table->{$dep->id} = new \stdClass; }
-										if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency})){ $dependencies->$table->{$dep->id}->{'_'.$dependency} = new \stdClass; }
-										if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
+										//if(!isset($dependencies->$table)){ $dependencies->$table = new \stdClass; }
+										//if(!isset($dependencies->$table->{$dep->id})){ $dependencies->$table->{$dep->id} = new \stdClass; }
+										//if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency})){ $dependencies->$table->{$dep->id}->{'_'.$dependency} = new \stdClass; }
+										//if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
 										foreach ($dependencies_fields[1] as $field) {
 											if(isset($value->pivot->$field)){
 												$field_value = $dep->formatAttributes($field, $value->pivot->$field);
-												$dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id}->$field = $field_value;
+												//$dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id}->$field = $field_value;
+												$dependencies[$table][$dep->id]['_'.$dependency][$value->id][$field] = $field_value;
 											}
 										}
 									}
@@ -2071,6 +2091,9 @@ abstract class ModelLincko extends Model {
 			return true;
 		}
 		if(isset($dirty['parent_type']) || isset($dirty['parent_id'])){
+			if(isset($this->id)){
+				$this->change_schema = true;
+			}
 			$this->change_permission = true;
 		}
 		$db = Capsule::connection($this->connection);
@@ -2159,7 +2182,6 @@ abstract class ModelLincko extends Model {
 				$this->deleted_by = $app->lincko->data['uid'];
 				$this->setHistory('_delete');
 				$this->save();
-				//$this->setForceSchema(); //toto => Why did we set force schema here? because we keep element on front side, even if deleted
 			}
 			parent::delete();
 		}
@@ -2182,7 +2204,6 @@ abstract class ModelLincko extends Model {
 				$this->deleted_at = null;
 				$this->setHistory('_restore');
 				$this->save();
-				//$this->setForceSchema(); //toto => Why did we set force schema here? because we keep element on front side, even if deleted
 			}
 			parent::restore();
 		}
@@ -2270,6 +2291,60 @@ abstract class ModelLincko extends Model {
 		return $temp;
 	}
 
+	public function toVisible(){
+		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
+		$app = self::getApp();
+		$this->setParentAttributes();
+		$model = new \stdClass;
+		if(!empty($this->visible)){
+			foreach ($this->visible as $key) {
+				$prefix = $this->getPrefix($key); //It's used for word search on Front side (+/- prefix)
+				$model->{$prefix.$key} = $this->$key;
+			}
+		} else {
+			$model = json_decode(parent::toJson());
+			foreach ($model as $key => $value) {
+				$prefix = $this->getPrefix($key);
+				$model->{$prefix.$key} = $value;
+			}
+		}
+
+		//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
+		$model->new = false;
+		if(isset($this->viewed_by)){
+			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
+				$model->new = true;
+			}
+		}
+
+		foreach(self::$class_timestamp as $value) {
+			if(isset($model->$value)){  $model->$value = (int) (new \DateTime($model->$value))->getTimestamp(); }
+		}
+		foreach($this->model_timestamp as $value) {
+			if(isset($model->$value)){  $model->$value = (int) (new \DateTime($model->$value))->getTimestamp(); }
+		}
+		//Convert number to integer. NULL will stay NULL thanks to isset()
+		foreach(self::$class_integer as $value) {
+			if(isset($model->$value)){  $model->$value = (int) $model->$value; }
+		}
+		foreach($this->model_integer as $value) {
+			if(isset($model->$value)){  $model->$value = (int) $model->$value; }
+		}
+		//Convert boolean.
+		foreach(self::$class_boolean as $value) {
+			if(isset($model->$value)){  $model->$value = (boolean) $model->$value; }
+		}
+		foreach($this->model_boolean as $value) {
+			if(isset($model->$value)){  $model->$value = (boolean) $model->$value; }
+		}
+
+		if(isset($this->_perm)){
+			$model->_perm = json_decode($this->_perm);
+		}
+		
+		return $model;
+	}
+
 	protected function formatAttributes($attribute, $value){
 		if(in_array($attribute, self::$class_timestamp) || in_array($attribute, $this->model_timestamp)){
 			$value = (int)(new \DateTime($value))->getTimestamp();
@@ -2284,9 +2359,9 @@ abstract class ModelLincko extends Model {
 	protected function getPrefix($value){
 		$prefix = '';
 		if($value === $this->show_field){
-			$prefix = "+";
+			$prefix = '+';
 		} else if(in_array($value, $this->search_fields)){
-			$prefix = "-";
+			$prefix = '-';
 		}
 		return $prefix;
 	}
@@ -2415,10 +2490,6 @@ abstract class ModelLincko extends Model {
 		}
 		if($touch){
 			$this->touch();
-			//toto => Wy check the schema here?
-
-			//$this->setForceSchema();
-			//$this->setForceReset(); //[toto] This is wrong, it should be setForceSchema, but this is a quicker way to solve temporary issue (_perm, _tasks, etc  were not refreshed, setForceSchema must include some kind of md5 to compare content of object)
 		}
 		return $success;
 	}

@@ -824,10 +824,16 @@ class ControllerTest extends Controller {
 			\libs\Watch::php( $value, $key, __FILE__, false, false, true);
 		}
 		*/
+
+		//(new Data)->getLatest(1469774351);
+		//$tp = (new Data)->getTimeobject();
+
+		$tp = Tasks::filterPivotAccessGetDefault();
+		//$tp = json_decode($tp->toJson());
 		
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 
 		//----------------------------------------

@@ -1,5 +1,6 @@
 <?php
 
+// \time_checkpoint('ok');
 function time_checkpoint($msg=''){
 	global $app;
 	if(isset($app->lincko) && $app->lincko->time_record && class_exists('\\libs\\Watch')){

@@ -38,7 +38,7 @@ After run
 $app->lincko = new \stdClass;
 
 //Used to track operation time
-$app->lincko->time_record = false;
+$app->lincko->time_record = true;
 $app->lincko->time_start = 0;
 
 //Application title

@@ -19,9 +19,11 @@ class Data {
 	protected $data = NULL;
 	protected static $models = NULL;
 	protected $lastvisit = false; //Format 'Y-m-d H:i:s'
-	protected $lastvisit_timestamp = false;
+	protected $lastvisit_timestamp = 0;
+	protected $lastvisit_object = false;
 	protected $partial = NULL;
 
+	protected $full_schema = false;
 	protected $item_detail = true;
 	protected $history_detail = false;
 	protected $action = NULL;
@@ -41,14 +43,25 @@ class Data {
 
 	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0){
 		$app = $this->app;
-		//$this->setLastVisit($lastvisit);
-		$msg = array_merge(
-			array(
-				'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
-				'partial' => $this->getLatest($lastvisit),
-			),
-			$msg
-		);
+		if($this->setLastVisit() && $lastvisit>0){
+			$lastvisit = time();
+			$msg = array_merge(
+				array(
+					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
+					'partial' => $this->getLatest(),
+					'lastvisit' => $lastvisit,
+				),
+				$msg
+			);
+		} else {
+			$msg = array_merge(
+				array(
+					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
+					'partial' => $this->getLatest($lastvisit),
+				),
+				$msg
+			);
+		}
 		$app->render($status, array('msg' => $msg, 'show' => $show,));
 		return true;
 	}
@@ -97,17 +110,22 @@ class Data {
 	protected function setLastVisit($timestamp='false'){ //toto => Why a string?
 		if(is_integer($timestamp)){
 			if($timestamp>0){
-				return $this->lastvisit = (new \DateTime('@'.$timestamp))->format('Y-m-d H:i:s');
+				$this->lastvisit_timestamp = $timestamp;
+				$this->lastvisit_object = new \DateTime('@'.$timestamp);
+				return $this->lastvisit = $this->lastvisit_object->format('Y-m-d H:i:s');
 			}
 			return $this->lastvisit = false;
 		} else if(isset($this->data->data->lastvisit)){
 			if(is_integer($this->data->data->lastvisit) && $this->data->data->lastvisit>0){
 				$timestamp = $this->data->data->lastvisit - 1;
-				return $this->lastvisit = (new \DateTime('@'.$timestamp))->format('Y-m-d H:i:s');
+				$this->lastvisit_timestamp = $timestamp;
+				$this->lastvisit_object = new \DateTime('@'.$timestamp);
+				return $this->lastvisit = $this->lastvisit_object->format('Y-m-d H:i:s');
 			}
-			return $this->lastvisit = false;
 		}
-		return $this->lastvisit = (new \DateTime())->format('Y-m-d H:i:s');
+		$this->lastvisit_timestamp = 0;
+		$this->lastvisit_object = false;
+		return $this->lastvisit = false;
 	}
 
 	public function getTimestamp(){
@@ -116,19 +134,9 @@ class Data {
 		} else if($this->lastvisit){
 			return $this->lastvisit_timestamp = (new \DateTime($this->lastvisit))->getTimestamp();
 		} else if($this->setLastVisit()){
-			return $this->lastvisit_timestamp = (new \DateTime($this->lastvisit))->getTimestamp();
+			return $this->lastvisit_timestamp;
 		} else {
 			return 0;
-		}
-	}
-
-	public function getTimeobject(){
-		if($this->lastvisit){
-			return new \DateTime($this->lastvisit);
-		} else if($this->setLastVisit()){
-			return new \DateTime($this->lastvisit);
-		} else {
-			return false;
 		}
 	}
 
@@ -136,8 +144,6 @@ class Data {
 		$app = $this->app;
 		if($force_partial){
 			$this->partial = $force_partial;
-		} else if(is_object($this->partial)){
-			$this->partial;
 		} else if(isset($this->data->data->partial)){
 			if(is_object($this->data->data->partial)){
 				$this->partial = $this->data->data->partial;
@@ -271,7 +277,7 @@ class Data {
 							while($nested){ //$nested is used for element that are linked to each others
 								$nested = false;
 								$class::enableTrashGlobal(true);
-								$result_bis = $class::getItems($list, true);
+								$result_bis = $class::getItems($list, true); //toto => try (new function, to work with stored database instead of always calculating it)
 								$class::enableTrashGlobal(false);
 								if(isset($result->$key)){
 									$result->$key = $result->$key->merge($result_bis);
@@ -361,15 +367,9 @@ class Data {
 		$this->action = 'latest';
 		$this->reinit();
 		$this->setLastVisit($timestamp);
-		$this->partial = NULL;
-		return $this->getList();
-	}
-
-	public function getNewest(){
-		$this->action = 'newest';
-		$this->reinit();
-		$app = $this->app;
-		$this->lastvisit = (new \DateTime('@'.$app->lincko->data['lastvisit']))->format('Y-m-d H:i:s');
+		if($this->lastvisit_timestamp<=0){
+			$this->full_schema = true;
+		}
 		$this->partial = NULL;
 		return $this->getList();
 	}
@@ -378,6 +378,7 @@ class Data {
 		$this->action = 'schema';
 		$this->reinit();
 		$this->lastvisit = false;
+		$this->full_schema = true; //We force to get the whole tree
 		$this->partial = NULL;
 		$this->item_detail = false;
 		return $this->getList();
@@ -406,29 +407,22 @@ class Data {
 		$uid = $app->lincko->data['uid'];
 		$workid = $app->lincko->data['workspace_id'];
 		$list_models = self::getModels();
-		$full_schema = false;
-		//If the lastvisit is not set, and we do not work with partial database, we force to get all details
-		if(!$this->lastvisit && is_null($this->partial) && !$this->history_detail){
-			$full_schema = true;
-		}
 
-		$updates = array();
-		if(!is_null($this->partial) && !isset($this->partial->$uid) && empty((array)$this->partial->$uid)){
-			return null;
-		} else if(isset($this->partial) && isset($this->partial->$uid)){
-			foreach ($this->partial->$uid as $table => $value) {
-				$updates[$table] = true;
+		//---OK---
+		if($this->action == 'latest'){
+			$updates = array();
+			if(!is_null($this->partial) && !isset($this->partial->$uid) && empty((array)$this->partial->$uid)){
+				return null;
+			} else if(isset($this->partial) && isset($this->partial->$uid)){
+				foreach ($this->partial->$uid as $table => $value) {
+					$updates[$table] = true;
+				}
 			}
-		}
-
-		$lastvisit_obj = $this->getTimeobject();
-		if(!$full_schema){
 			if($arr = Updates::find($uid)){
-				$lastvisit_obj = $this->getTimeobject();
 				foreach ($list_models as $table => $value) {
 					if(isset($arr->{$table})){
 						$time = new \DateTime($arr->{$table});
-						if($time >= $lastvisit_obj){
+						if($time >= $this->lastvisit_object){
 							$updates[$table] = true;
 						}	
 					}
@@ -440,6 +434,8 @@ class Data {
 			}
 		}
 
+		//toto => we can try to store in database (Updates) list of IDs with timetamp
+		//toto => MEDIUM CPU hunger
 		$tp = $this::getTrees();
 		$tree_scan = $tp[0];
 		$tree_desc = $tp[1];
@@ -447,27 +443,59 @@ class Data {
 		$result = $tp[3];
 		unset($tp);
 
+		//---OK---
 		$users = array();
 		foreach ($result as $models) {
 			foreach ($models as $model) {
+				//toto => MEDIUM CPU hunger
 				$users = array_merge($users, $model->setContacts());
 			}
 		}
 
+		//---OK---
 		$visible = array();
 		if(isset($tree_id['users'])){
 			$visible = $tree_id['users'];
 			$users = array_merge($tree_id['users'], $users);
 		}
 		
+		//---OK---
 		foreach ($users as $users_id) {
 			if(isset($tree_id['users'])){
 				$tree_id['users'][$users_id] = $users_id;
 			}
 		}
 
-		$tree_access = $this::getAccesses($tree_id); //Check if at least other users have access
+		//---OK---
+		$users = array();
+		$users['users'] = $tree_id['users'];
+		$users_access = $this::getAccesses($users); //Check if at least other users have access (since we narrow to users only, the calulation is ligth)
 
+		//---OK---
+		$tree_access = array();
+		foreach ($users_access as $type => $type_list) {
+			foreach ($type_list as $users_id => $models) {
+				foreach ($models as $id => $value) {
+					$tree_access[$type][$users_id][$id] = true;
+				}
+			}
+		}
+
+		//---OK---
+		foreach ($result as $type => $models) {
+			foreach ($models as $model) {
+				if(isset($model->_perm)){
+					if($perm = json_decode($model->_perm)){
+						foreach ($perm as $users_id => $value) {
+							$tree_access[$type][$users_id][$model->id] = true;
+						}
+					}
+				}
+			}
+		}
+
+
+		//---OK---
 		//Get the list of all users that have access
 		foreach ($tree_access as $type => $type_list) {
 			foreach ($type_list as $users_id => $value) {
@@ -476,21 +504,19 @@ class Data {
 				}
 			}
 		}
+		$all_users = $tree_id['users'];
 
-		//Insure we get all users information (it can be a heavy operation over the time, need to careful)
+		//---OK---
 		$result->users = Users::getUsersContacts($tree_id['users'], $visible);
-		
-		//Limit result with timestamp of lastvisit
+
+		//---OK---
 		$result_bis = new \stdClass;
 		$result_bis->$uid = new \stdClass;
-		if($lastvisit_obj && $this->getTimestamp()>0){
+		if($this->action=='latest' && $this->lastvisit_timestamp>0){ //latest
+			//Limit result with timestamp of lastvisit
 			foreach ($result as $key => $models) {
 				foreach ($models as $key_bis => $model) {
-					if(
-						   $full_schema //For Schema
-						|| $model->updated_at >= $lastvisit_obj //For Latest
-						|| !is_null($this->partial) //For Missing
-					){
+					if( $model->updated_at >= $this->lastvisit_object ){
 						if(!isset($result_bis->$uid->$key)){
 							$result_bis->$uid->$key = new \stdClass;
 						}
@@ -498,35 +524,54 @@ class Data {
 					}
 				}
 			}
-		} else {
+		} else if(is_object($this->partial)){ //missing + history
+			//Only get a part of the data
+			foreach ($result as $key => $models) {
+				if(isset($this->partial->$uid->$key)){
+					$result_bis->$uid->$key = new \stdClass;
+					foreach ($models as $key_bis => $model) {
+						if(isset($this->partial->$uid->$key->{$model->id})){
+							$result_bis->$uid->$key->{$model->id} = $model;
+						}
+					}
+				}
+			}
+		} else { // schema + latest(0)
+			//Get all
 			foreach ($result as $key => $models) {
 				$result_bis->$uid->$key = new \stdClass;
 				foreach ($models as $key_bis => $model) {
-					$result_bis->$uid->$key->{$model->id} = $model;
+						$result_bis->$uid->$key->{$model->id} = $model;
 				}
 			}
 		}
-
 		unset($result);
 
+		//toto => HIGH CPU hunger, but cannot be optimized more
 		$list_id = array();
 		foreach ($result_bis->$uid as $table_name => $models) {
 			$list_id[$table_name] = array();
 			foreach ($models as $id => $model) {
-				$list_id[$table_name][] = $id;
+				$list_id[$table_name][$id] = $id;
 				unset($temp);
 				$temp = new \stdClass;
-				$temp = json_decode($model->toJson());
-				unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
-				//Get only creation history to avoid mysql overload
-				$temp->history = $model->getHistoryCreation();
+				if($this->item_detail){
+					$model->accessibility = true;
+					//$temp = json_decode($model->toJson());
+					$temp = $model->toVisible();
+					unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
+					//Get only creation history to avoid mysql overload
+					$temp->history = $model->getHistoryCreation();
+				} else {
+					//need delete information for schema
+					$temp->deleted_at = $model->deleted_at;
+				}
 				$temp->_parent = $model->setParentAttributes();
 				$result_bis->$uid->$table_name->$id = $temp;
 			}
 		}
 
 		$root_0 = new \stdClass;
-
 		//Descendant tree with IDs
 		$root_0->workspaces = new \stdClass;
 		${'workspaces_'.$workid} = $root_0->workspaces->$workid = new \stdClass; //Must initialize for share workspace because the database doesn't exists
@@ -557,7 +602,6 @@ class Data {
 		}
 
 		if(!$this->item_detail){
-
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($models as $id => $model) {
 					if(isset($model->deleted_at) && !is_null($model->deleted_at)){
@@ -584,57 +628,40 @@ class Data {
 
 			//Get dependency (all ManyToMany that have other fields than access)
 			$dependencies = Users::getDependencies($list_id, $list_models);
-			foreach ($dependencies as $table_name => $models) {
-				foreach ($models as $id => $temp) {
-					if(isset($result_bis->$uid->$table_name->$id)){
-						$result_bis->$uid->$table_name->$id = (object) array_merge((array) $result_bis->$uid->$table_name->$id, (array) $temp);
+
+			foreach ($result_bis->$uid as $table_name => $models) {
+				if(!isset($dependencies[$table_name])){
+					continue;
+				}
+				$class = $list_models[$table_name];
+				$default = false;
+				$default_list = array();
+				if(isset($class::getDependenciesVisible()['users'])){
+					$default = $class::filterPivotAccessGetDefault();
+					foreach ($all_users as $key => $value) {
+						$default_list[$key] = $default;
 					}
 				}
-			}
-			
-			$list_models = self::getModels();
-			foreach ($tree_access as $table_name => $users) {
-				if(isset($result_bis->$uid->$table_name) && isset($list_models[$table_name])){
-					$class = $list_models[$table_name];
-					if(isset($class::getDependenciesVisible()['users'])){
-						$dependencies_visible_users = $class::getDependenciesVisible()['users'][1];
-						foreach ($users as $users_id => $models) {
-							foreach ($models as $id => $pivot_array) {
-								//Check access first
-								if(
-									   !isset($tree_access_users[$table_name])
-									|| !isset($tree_access_users[$table_name][$users_id])
-									|| !isset($tree_access_users[$table_name][$users_id][$id])
-								){
-									continue;
-								}
-								if(isset($result_bis->$uid->$table_name->$id)){
-									if(!isset($result_bis->$uid->$table_name->$id->_users)){ $result_bis->$uid->$table_name->$id->_users = new \stdClass; }
-									if(!isset($result_bis->$uid->$table_name->$id->_users->$users_id)){
-										$temp = new \stdClass;
-										$error = false;
-										foreach ($dependencies_visible_users as $key) {
-											if(!isset($pivot_array[$key])){
-												$error = true;
-												break;
-											} else {
-												$temp->$key = $pivot_array[$key];
-											}
-										}
-										if($error){
-											continue;
-										}
-										$result_bis->$uid->$table_name->$id->_users->$users_id = $temp;
-									}
-								}
+				foreach ($models as $id => $model) {
+					$deps = array();
+					if(isset($dependencies[$table_name][$id]['_users'])){
+						$deps = (array) $dependencies[$table_name][$id]['_users'];
+					}
+					$default_full = array();
+					foreach ($default_list as $users_id => $value) {
+						if(isset($tree_access[$table_name][$users_id][$id])){
+							if(isset($deps[$users_id])){
+								$default_full[$users_id] = (array) $deps[$users_id];
+							} else {
+								$default_full[$users_id] = $default_list[$users_id];
 							}
 						}
 					}
+					$result_bis->$uid->$table_name->$id->_users = (object) $default_full;
 				}
 			}
-				
 
-
+			//toto => HIGH CPU hunger
 			$histories = Users::getHistories($list_id, $list_models, $this->history_detail);
 			foreach ($histories as $table_name => $models) {
 				foreach ($models as $id => $temp) {
@@ -667,8 +694,8 @@ class Data {
 		}
 
 		//Get the relations list
-		if($full_schema){
-			$result_bis->$uid->{'_tree'} = $root_0;
+		if($this->full_schema){
+			$result_bis->$uid->{'_tree'} = $root_0; //toto => can optimize LOW, root_0 is not used in schema
 			$result_bis->$uid->{'_history_title'} = new \stdClass;
 		}
 
@@ -683,7 +710,7 @@ class Data {
 		}
 
 		if(
-			$full_schema
+			$this->full_schema
 			||
 			(
 				!is_null($this->partial)
@@ -704,25 +731,6 @@ class Data {
 			}
 		}
 
-		//toto => This is a kind of overkilling CPU usage, but it works, it must be done at the end for the moment if not we will have issue with _perm and dependencies
-		if(!is_null($this->partial)){
-			if(isset($this->partial->$uid)){
-				foreach ($result_bis->$uid as $table_name => $models) {
-					if(isset($this->partial->$uid->$table_name)){
-						foreach ($models as $id => $model) {
-							if(!isset($this->partial->$uid->$table_name->$id)){
-								unset($result_bis->$uid->$table_name->$id);
-							}
-						}
-					} else {
-						unset($result_bis->$uid->$table_name);
-					}
-				}
-			} else {
-				unset($result_bis->$uid);
-			}
-		}
-
 		//Delete the part that the application doesn't have access
 		if(!isset($app->lincko->api['x_i_am_god']) || !$app->lincko->api['x_i_am_god']){
 			foreach ($result_bis->$uid as $table_name => $models) {
@@ -731,7 +739,7 @@ class Data {
 				}
 			}
 		}
-		
+
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, false, false, true);
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 		return $result_bis;
