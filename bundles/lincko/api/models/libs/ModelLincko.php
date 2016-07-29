@@ -1716,12 +1716,19 @@ abstract class ModelLincko extends Model {
 		$role = false;
 		$perm = 0; //Only allow reading
 
+		$model = $this;
+		if(!$this->id){ //If new item, we check role of parent only
+			if($model = $model->getParent()){
+				$check_single = false;
+			}
+		}
+
 		$role = false;
-		if($this::$allow_role || $this::$allow_single){
-			$pivot = $this->getRolePivotValue($users_id);
+		if($model::$allow_role || $model::$allow_single){
+			$pivot = $model->getRolePivotValue($users_id);
 			if(!$pivot[0]){ //Check for shared workspace
-				$this->setParentAttributes();
-				if($this->parent_type=='workspaces' && $this->parent_id==0){
+				$model->setParentAttributes();
+				if($model->parent_type=='workspaces' && $model->parent_id==0){
 					//By default, give Administrator role to all users inside shared workspace
 					if($role = Roles::find(1)){
 						if(isset($role->{'perm_'.$suffix})){ //Per model
@@ -1732,9 +1739,9 @@ abstract class ModelLincko extends Model {
 					}
 				}
 			} else {
-				if($this::$allow_single && $pivot[2]){ //Priority on single over Role
+				if($check_single && $model::$allow_single && $pivot[2]){ //Priority on single over Role
 					$perm = $pivot[2];
-				} else if($this::$allow_role && $pivot[1]){
+				} else if($model::$allow_role && $pivot[1]){
 					if($role = Roles::find($pivot[1])){
 						if(isset($role->{'perm_'.$suffix})){ //Per model
 							$perm = $role->{'perm_'.$suffix};
@@ -1750,7 +1757,6 @@ abstract class ModelLincko extends Model {
 
 
 		/*
-		$model = $this;
 		$loop = 20; //It avoids infinite loop
 		while($loop>=0){
 			$loop--;
@@ -2443,14 +2449,14 @@ abstract class ModelLincko extends Model {
 	public function getRolePivotValue($users_id){
 		if(isset($this->_perm)){
 			$perm = json_decode($this->_perm);
-			if(isset($perm[$users_id])){
+			if(isset($perm->$users_id)){
 				$roles_id = null;
 				$single = null;
 				if($this::$allow_role){
-					$roles_id = $perm[$users_id][0];
+					$roles_id = $perm->{$users_id}[1];
 				}
 				if($this::$allow_single){
-					$single = $perm[$users_id][1];
+					$single = $perm->{$users_id}[0];
 				}
 				return array(true, $roles_id, $single);
 			}
