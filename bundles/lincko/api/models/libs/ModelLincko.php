@@ -545,7 +545,6 @@ abstract class ModelLincko extends Model {
 		while($model = $model->getParent()){
 			$root = $model;
 			$parents[$model->getTable()][$model->id] = $model;
-			$list_tables[$model->getTable()] = $model->getTable();
 		}
 		$all = array_replace_recursive($all, $parents);
 
@@ -579,6 +578,20 @@ abstract class ModelLincko extends Model {
 		$all = array_replace_recursive($all, $roles);
 		unset($roles);
 
+		//Add shared workspace manually because it does not exists
+		if(
+			   ( is_string($root::$parent_list) && $root::$parent_list=='workspaces' && isset($root->parent_id) && empty($root->parent_id) )
+			|| ( is_array($root::$parent_list) && in_array('workspaces', $root::$parent_list) && isset($root->parent_type) && $root->parent_type=='workspace' && isset($root->parent_id) && empty($root->parent_id) )
+		){
+			$workspace = array();
+			$root = new $list_models['workspaces'];
+			$root->id = 0;
+			$root->setParentAttributes();
+			$workspace['workspaces'][0] = $root;
+			$all = array_replace_recursive($all, $workspace);
+		}
+		
+
 		//Make sure that the _perm string will be always in the same order
 		foreach ($all as $table => $models) {
 			ksort($all[$table]);
@@ -592,8 +605,6 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		$tree_access = Data::getAccesses($all_id);
-
-		//\libs\Watch::php($all_id, '$all_id', __FILE__, false, false, true);
 
 		$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
 		$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
@@ -692,8 +703,8 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		$root_0 = new \stdClass;
-		$root_0->{$this->getTable()} = new \stdClass;
-		$root_0->{$this->getTable()}->{$this->id} = ${$this->getTable().'_'.$this->id};
+		$root_0->{$root->getTable()} = new \stdClass;
+		$root_0->{$root->getTable()}->{$root->id} = ${$root->getTable().'_'.$root->id};
 
 		$root_uid = array();
 		//Build the tree per user
@@ -863,7 +874,6 @@ abstract class ModelLincko extends Model {
 					break;
 				}
 			}
-			
 		}
 
 		$all_perm = array();
@@ -1701,12 +1711,46 @@ abstract class ModelLincko extends Model {
 		if(isset(self::$permission_users[$users_id][$this->getTable()][$this->id])){
 			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
-		$model = $this;
 		$check_single = true; //We only check single of the model itself, not its parents
 		$suffix = $this->getTable();
 		$role = false;
 		$perm = 0; //Only allow reading
-		$table = array();
+
+		$role = false;
+		if($this::$allow_role || $this::$allow_single){
+			$pivot = $this->getRolePivotValue($users_id);
+			if(!$pivot[0]){ //Check for shared workspace
+				$this->setParentAttributes();
+				if($this->parent_type=='workspaces' && $this->parent_id==0){
+					//By default, give Administrator role to all users inside shared workspace
+					if($role = Roles::find(1)){
+						if(isset($role->{'perm_'.$suffix})){ //Per model
+							$perm = $role->{'perm_'.$suffix};
+						} else { //General
+							$perm = $role->perm_all;
+						}
+					}
+				}
+			} else {
+				if($this::$allow_single && $pivot[2]){ //Priority on single over Role
+					$perm = $pivot[2];
+				} else if($this::$allow_role && $pivot[1]){
+					if($role = Roles::find($pivot[1])){
+						if(isset($role->{'perm_'.$suffix})){ //Per model
+							$perm = $role->{'perm_'.$suffix};
+						} else { //General
+							$perm = $role->perm_all;
+						}
+					}
+				}
+			}
+		}
+
+		self::$permission_users[$users_id][$this->getTable()][$this->id] = $perm;
+
+
+		/*
+		$model = $this;
 		$loop = 20; //It avoids infinite loop
 		while($loop>=0){
 			$loop--;
@@ -1756,18 +1800,14 @@ abstract class ModelLincko extends Model {
 			$loop = 0;
 			break;
 		}
-		return $perm;
-	}
+		*/
 
-	public function whoHasAccess(){
-		$users = new \stdClass;
-		return $this->users;
+
+		return $perm;
 	}
 
 	//It checks if the user has access to it
 	public function checkAccess($show_msg=true){
-
-		//return true;//toto => very bad design, but can check _perm field
 		$app = self::getApp();
 		$this->checkUser();
 		$uid = $app->lincko->data['uid'];
@@ -2401,16 +2441,16 @@ abstract class ModelLincko extends Model {
 
 	//By preference, keep it protected
 	public function getRolePivotValue($users_id){
-	//protected function getRolePivotValue($users_id){
-		if($roles = $this->rolesUsers()){ //This insure that the Role was not previously deleted
-			if($role = $roles->wherePivot('users_id', $users_id)->first()){
+		if(isset($this->_perm)){
+			$perm = json_decode($this->_perm);
+			if(isset($perm[$users_id])){
 				$roles_id = null;
 				$single = null;
 				if($this::$allow_role){
-					$roles_id = $role->pivot->roles_id;
+					$roles_id = $perm[$users_id][0];
 				}
 				if($this::$allow_single){
-					$single = $role->pivot->single;
+					$single = $perm[$users_id][1];
 				}
 				return array(true, $roles_id, $single);
 			}

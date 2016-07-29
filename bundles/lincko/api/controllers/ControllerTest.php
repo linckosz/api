@@ -742,9 +742,9 @@ class ControllerTest extends Controller {
 		
 		//$tp = Tasks::find(39);
 		//$tp = Tasks::find(278);
-		//$tp = Tasks::find(39);
+		//$tp = Tasks::find(4423);
 		//$tp = Comments::find(5252); //5120-5252
-		//$tp = Projects::find(385); //4888 - 5120
+		//$tp = Projects::find(376); //4888 - 5120
 		//$tp = Projects::find(3);
 		//$tp = Chats::find(346); //Problem because 346 is part of project
 		//$tp = Tasks::find(1674);
@@ -827,7 +827,7 @@ class ControllerTest extends Controller {
 		
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 
 		//----------------------------------------
