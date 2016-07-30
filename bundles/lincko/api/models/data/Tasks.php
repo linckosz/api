@@ -224,8 +224,18 @@ class Tasks extends ModelLincko {
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		if($key == 'parent_id'){
 			$parameters['tt'] = $this->title;
-			if($project = Projects::find($new)){
-				$parameters['pj'] = $project->title;
+			$parameters['tid'] = $this->id;
+			if($project_from = Projects::find($old)){
+				$project_from->setHistory('_tasks', 0, 1, $parameters); //Move out
+				$project_from->touchUpdateAt();
+			}
+			if($project_to = Projects::find($new)){
+				$project_to->setHistory('_tasks', 1, 0, $parameters); //Move in
+				$project_to->touchUpdateAt();
+				$parameters['pj'] = $project_to->title;
+				return true; //Allow return if we don't want double record of task move
+			} else {
+				$parameters['pj'] = $app->trans->getBRUT('api', 0, 2); //unknown
 			}
 		}
 		parent::setHistory($key, $new, $old, $parameters);
