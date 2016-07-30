@@ -1738,7 +1738,8 @@ abstract class ModelLincko extends Model {
 
 		$model = $this;
 		if(!$this->id){ //If new item, we check role of parent only
-			if($model = $model->getParent()){
+			if($parent = $model->getParent()){
+				$model = $parent;
 				$check_single = false;
 			}
 		}

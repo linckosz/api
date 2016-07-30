@@ -93,10 +93,12 @@ class Folders {
 	}
 
 	public function createSymlink($target, $link){
-		if($this->createPath($link)){
-			if(rmdir($link)){
-				if(symlink($target, $link)){
-					return $this->setPath($link);
+		if(!is_dir($link)){
+			if($this->createPath($link)){
+				if(rmdir($link)){
+					if(symlink($target, $link)){
+						return $this->setPath($link);
+					}
 				}
 			}
 		}
