@@ -832,6 +832,11 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::filterPivotAccessGetDefault();
 		//$tp = json_decode($tp->toJson());
 
+		$tp = new Tasks;
+		\libs\Watch::php( Tasks::getColumns(), '$tp', __FILE__, false, false, true);
+		$tp = new Users;
+		\libs\Watch::php( Users::getColumns(), '$tp', __FILE__, false, false, true);
+
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);

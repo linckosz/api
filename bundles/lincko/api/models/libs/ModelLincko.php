@@ -929,11 +929,14 @@ abstract class ModelLincko extends Model {
 			foreach ($list as $table_name => $ids) {
 				if(isset($list_models[$table_name])){
 					$class = $list_models[$table_name];
-					$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json]);
-					$users = json_decode($json);
-					if(is_object($users)){
-						foreach ($users as $users_id => $value) {
-							$users_tables[$users_id][$table_name] = true;
+					$column = $class::getColumns();
+					if(in_array('_perm', $column)){\libs\Watch::php($column, $class, __FILE__, false, false, true);
+						$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json]);
+						$users = json_decode($json);
+						if(is_object($users)){
+							foreach ($users as $users_id => $value) {
+								$users_tables[$users_id][$table_name] = true;
+							}
 						}
 					}
 				}
