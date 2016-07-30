@@ -60,6 +60,8 @@ class Workspaces extends ModelLincko {
 		2, //[RCU] max allow || super
 	);
 
+	protected static $has_perm = true;
+
 ////////////////////////////////////////////
 
 	//Many(Workspaces) to Many(Users)

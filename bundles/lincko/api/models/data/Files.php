@@ -104,6 +104,8 @@ class Files extends ModelLincko {
 	);
 
 	protected static $access_accept = false;
+
+	protected static $has_perm = true;
 	
 ////////////////////////////////////////////
 

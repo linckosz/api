@@ -82,6 +82,8 @@ class Users extends ModelLincko {
 		2, //[RCU] owner
 		1, //[RC] max allow || super
 	);
+
+	protected static $has_perm = false;
 	
 ////////////////////////////////////////////
 

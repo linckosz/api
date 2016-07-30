@@ -68,6 +68,8 @@ class Chats extends ModelLincko {
 		3, //[RCUD] max allow || super
 	);
 
+	protected static $has_perm = true;
+
 ////////////////////////////////////////////
 
 	//Many(Chats) to Many(Users)

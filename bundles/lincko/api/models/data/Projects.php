@@ -78,6 +78,8 @@ class Projects extends ModelLincko {
 		3, //[RCUD] max allow || super
 	);
 
+	protected static $has_perm = true;
+
 ////////////////////////////////////////////
 
 	//Many(Projects) to Many(Users)

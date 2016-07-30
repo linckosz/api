@@ -43,6 +43,9 @@ abstract class ModelLincko extends Model {
 	//It force to save, even if dirty is empty
 	protected $force_save = false;
 
+	//It helps to limit a SQL if it's specified as boolean
+	protected static $has_perm = null;
+
 	//It forces to recalculate the permission field of all children
 	protected $change_permission = false;
 
@@ -929,8 +932,7 @@ abstract class ModelLincko extends Model {
 			foreach ($list as $table_name => $ids) {
 				if(isset($list_models[$table_name])){
 					$class = $list_models[$table_name];
-					$column = $class::getColumns();
-					if(in_array('_perm', $column)){\libs\Watch::php($column, $class, __FILE__, false, false, true);
+					if((is_bool($class::$has_perm) && $class::$has_perm) || in_array('_perm', $class::getColumns())){ //has_perm is a shortcut to limit some SQL calls
 						$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json]);
 						$users = json_decode($json);
 						if(is_object($users)){
