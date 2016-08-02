@@ -60,10 +60,10 @@ class Tasks extends ModelLincko {
 		'_' => 502,//[{un|ucfirst}] modified a task
 		'title' => 503,//[{un|ucfirst}] changed a task title
 		'comment' => 504, //[{un|ucfirst}] modified a task content
-		'duration' => 502, //[{un|ucfirst}] modified a task
+		'duration' => 506, //[{un|ucfirst}] modified a task due date
 		'fixed' => 502, //[{un|ucfirst}] modified a task
 		'status' => 502, //[{un|ucfirst}] modified a task
-		'start' => 502, //[{un|ucfirst}] modified a task
+		'start' => 506, //[{un|ucfirst}] modified a task due date
 		'progress' => 502, //[{un|ucfirst}] modified a task
 		'parent_id' => 505, //[{un|ucfirst}] moved a task to the project "[{pj|ucfirst}]"
 		'pivot_delay' => 550, //[{un|ucfirst}] modified a task delay

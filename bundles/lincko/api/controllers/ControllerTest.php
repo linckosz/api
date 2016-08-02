@@ -22,6 +22,7 @@ use \bundles\lincko\api\models\data\Roles;
 use \bundles\lincko\api\models\data\Comments;
 use \bundles\lincko\api\models\data\Notes;
 use \bundles\lincko\api\models\data\Files;
+use \bundles\lincko\api\models\data\Settings;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
@@ -832,10 +833,7 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::filterPivotAccessGetDefault();
 		//$tp = json_decode($tp->toJson());
 
-		$tp = new Tasks;
-		\libs\Watch::php( Tasks::getColumns(), '$tp', __FILE__, false, false, true);
-		$tp = new Users;
-		\libs\Watch::php( Users::getColumns(), '$tp', __FILE__, false, false, true);
+		$tp = Settings::find(3)->toJson();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

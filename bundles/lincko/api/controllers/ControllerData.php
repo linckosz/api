@@ -5,6 +5,7 @@ namespace bundles\lincko\api\controllers;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Settings;
 
 use \libs\Controller;
 
@@ -160,6 +161,25 @@ class ControllerData extends Controller {
 			$app->render(200, array('msg' => array('msg' => $msg,)));
 		}
 
+		return true;
+	}
+
+	public function settings_post(){
+		$app = $this->app;
+		$data = $this->data;
+		$uid = $app->lincko->data['uid'];
+		if(isset($data->data) && isset($data->data->settings)){
+			$settings = Settings::find($uid);
+			if(!$settings){
+				$settings = new Settings;
+				$settings->id = $uid;
+			}
+			$settings->users = (string) $data->data->settings;
+			$settings->save();
+			$app->render(200, array('show' => false, 'msg' => 'Settings recorded', 'error' => false));
+			return true;
+		}
+		$app->render(200, array('show' => false, 'msg' => 'Settings not recorded', 'error' => true));
 		return true;
 	}
 

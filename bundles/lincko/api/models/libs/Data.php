@@ -66,55 +66,16 @@ class Data {
 		return true;
 	}
 
-/*
-	$this->partial
-	public function dataUpdateConfirmation_old($msg, $status=200, $show=false, $partial=null){
-		$app = $this->app;
-		if(is_object($partial)){
-			$uid = $app->lincko->data['uid'];
-			$this->partial = new \stdClass;
-			$this->partial->$uid = $partial;
-		}
-		if($this->setLastVisit()){
-			if(isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
-				$msg = array_merge(
-					array(
-						'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
-						'partial' => $this->getLatest($lastvisit),
-						//'lastvisit' => $lastvisit,
-					),
-					$msg
-				);
-			} else {
-				$msg = array_merge(
-					array(
-						'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
-						'partial' => $this->getLatest(),
-					),
-					$msg
-				);
-			}
-		} else {
-			$msg = array_merge(
-				array(
-					'msg' => $app->trans->getBRUT('api', 8888, 13), //Server OK
-					'partial' => $this->getNewest(),
-				),
-				$msg
-			);
-		}
-		$app->render($status, array('msg' => $msg, 'show' => $show,));
-		return true;
-	}
-*/
 	protected function setLastVisit($timestamp='false'){ //toto => Why a string?
+		$this->lastvisit_timestamp = 0;
+		$this->lastvisit_object = false;
+		$this->lastvisit = false;
 		if(is_integer($timestamp)){
 			if($timestamp>0){
 				$this->lastvisit_timestamp = $timestamp;
 				$this->lastvisit_object = new \DateTime('@'.$timestamp);
 				return $this->lastvisit = $this->lastvisit_object->format('Y-m-d H:i:s');
 			}
-			return $this->lastvisit = false;
 		} else if(isset($this->data->data->lastvisit)){
 			if(is_integer($this->data->data->lastvisit) && $this->data->data->lastvisit>0){
 				$timestamp = $this->data->data->lastvisit - 1;
@@ -123,8 +84,6 @@ class Data {
 				return $this->lastvisit = $this->lastvisit_object->format('Y-m-d H:i:s');
 			}
 		}
-		$this->lastvisit_timestamp = 0;
-		$this->lastvisit_object = false;
 		return $this->lastvisit = false;
 	}
 
@@ -695,15 +654,11 @@ class Data {
 
 		//Get the relations list
 		if($this->full_schema){
-			$result_bis->$uid->{'_tree'} = $root_0; //toto => can optimize LOW, root_0 is not used in schema
 			$result_bis->$uid->{'_history_title'} = new \stdClass;
 		}
 
 		//It gather the fields we need to workspace only
 		if(!is_null($this->partial) && isset($this->partial->$uid)){
-			if($this->item_detail && isset($this->partial->$uid->{'_tree'})){
-				$result_bis->$uid->{'_tree'} = $root_0;
-			}
 			if(isset($this->partial->$uid->{'_history_title'})){
 				$result_bis->$uid->{'_history_title'} = new \stdClass;
 			}

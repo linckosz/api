@@ -54,4 +54,10 @@ $app->group('/data', function () use ($app) {
 	)
 	->name('data_viewed'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/settings',
+		'\bundles\lincko\api\controllers\ControllerData:settings'.$app->lincko->method_suffix
+	)
+	->name('data_settings'.$app->lincko->method_suffix);
+
 });
