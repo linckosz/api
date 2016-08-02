@@ -100,7 +100,7 @@ class ControllerNote extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
 			$errfield = 'title';
 		}
-		else if(!isset($form->comment) || !Notes::validText($form->comment)){ //Required
+		else if(isset($form->comment) && !Notes::validText($form->comment, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
@@ -108,7 +108,7 @@ class ControllerNote extends Controller {
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
-			$model->comment = $form->comment;
+			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 			$model->pivots_format($form, false);
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 2)); //Note created.
