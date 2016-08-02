@@ -110,7 +110,7 @@ class ControllerComment extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
-		else if(!isset($form->comment) || !Comments::validTextNotEmpty($form->comment)){ //Required
+		else if(!isset($form->comment) || !Comments::validText($form->comment)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
