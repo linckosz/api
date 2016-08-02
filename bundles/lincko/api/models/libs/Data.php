@@ -671,7 +671,6 @@ class Data {
 				!is_null($this->partial)
 				&& isset($this->partial->$uid)
 				&& isset($this->partial->$uid->{'_history_title'})
-				&& isset($this->partial->$uid->{'_history_title'}->$table_name)
 			)
 		)
 		{
