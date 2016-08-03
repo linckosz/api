@@ -940,12 +940,15 @@ abstract class ModelLincko extends Model {
 								$users_tables[$users_id][$table_name] = true;
 							}
 						}
+						$users_tables[$app->lincko->data['uid']][$table_name] = true;
 					}
 				}
 			}
 		}
 		
 		Updates::informUsers($users_tables, $time);
+
+		return $users_tables; //Give the list of what has been updated
 
 	}
 
@@ -2111,6 +2114,7 @@ abstract class ModelLincko extends Model {
 				$this->attributes[$key] = $value;
 			}
 			$this->pivots_save();
+			//Make sure we set here users_tables before setPerm to inform users that migth be removed, Users::informUsers is also called inside setPerm for new Users
 			$users_tables = array();
 			if(isset($this->_perm)){
 				$temp = json_decode($this->_perm);
@@ -2131,7 +2135,12 @@ abstract class ModelLincko extends Model {
 				$this->setForceSchema();
 			}
 			if($this->change_permission){
-				$this->setPerm();
+				$users_tables_updated = $this->setPerm();
+				foreach ($users_tables_updated as $key => $value) {
+					foreach ($value as $table_name => $value) {
+						unset($users_tables[$key][$table_name]); //No need to informed twice users already informed, it reduces SQL calls
+					}
+				}
 			}
 			Updates::informUsers($users_tables);
 
