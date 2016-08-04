@@ -73,7 +73,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		} else {
 			$form = $this->data->data;
 		}
-		
 		//Convert NULL to empty string to help isset returning true
 		foreach ($form as $key => $value) {
 			if(!is_numeric($value) && empty($value)){ //Exclude 0 to become an empty string
@@ -123,16 +122,13 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					$parent = $class::getModel($form->parent_id);
 					if($parent && method_exists($class, 'projects')){
 						if($project = $parent->projects()->first()){
+							$attached = true;
+							if(!isset($form->{$form->parent_type.'>access'})){
+								$form->{$form->parent_type.'>access'} = new \stdClass;
+							}
+							$form->{$form->parent_type.'>access'}->{$form->parent_id} = true;
 							$form->parent_type = 'projects';
 							$form->parent_id = $project->id;
-							$attached = true;
-							if(!isset($form->pivot)){
-								$form->pivot = new \stdClass;
-							}
-							if(!isset($form->pivot->{$form->parent_type.'>access'})){
-								$form->pivot->{$form->parent_type.'>access'} = new \stdClass;
-							}
-							$form->pivot->{$form->parent_type.'>access'}->{$form->parent_id} = true;
 						}
 					}
 				}
@@ -147,7 +143,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				}
 			}
 		}
-		
 		return $this->form = $form;
 	}
 
@@ -330,8 +325,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
-			if(count($dirty)>0 || $pivots){
-				if($model->getParentAccess() && $model->save()){
+			if(count($dirty)>0 || $pivots){//\libs\Watch::php(111, '$pivots', __FILE__, false, false, true);
+				if($model->getParentAccess() && $model->save()){//\libs\Watch::php(222, '$pivots', __FILE__, false, false, true);
 					$msg = array('msg' => $app->trans->getBRUT('api', 14, 6)); //File updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);

@@ -1784,60 +1784,6 @@ abstract class ModelLincko extends Model {
 
 		self::$permission_users[$users_id][$this->getTable()][$this->id] = $perm;
 
-
-		/*
-		$loop = 20; //It avoids infinite loop
-		while($loop>=0){
-			$loop--;
-			$role = false;
-			if(!in_array($model->getTable(), $table)){ //It avoids to loop the same model
-				if($model::$allow_role || $model::$allow_single){
-					$pivot = $model->getRolePivotValue($users_id);
-					if(!$pivot[0]){ //Check for shared workspace
-						$model->setParentAttributes();
-						if($model->parent_type=='workspaces' && $model->parent_id==0){
-							//By default, give Administrator role to all users inside shared workspace
-							if($role = Roles::find(1)){
-								if(isset($role->{'perm_'.$suffix})){ //Per model
-									$perm = $role->{'perm_'.$suffix};
-								} else { //General
-									$perm = $role->perm_all;
-								}
-								$loop = 0;
-								break;
-							}
-						}
-					}
-					if($pivot[0]){
-						if($check_single && $model::$allow_single && $pivot[2]){ //Priority on single over Role
-							$perm = $pivot[2];
-							$loop = 0;
-							break;
-						} else if($model::$allow_role && $pivot[1]){
-							if($role = Roles::find($pivot[1])){
-								if(isset($role->{'perm_'.$suffix})){ //Per model
-									$perm = $role->{'perm_'.$suffix};
-								} else { //General
-									$perm = $role->perm_all;
-								}
-								$loop = 0;
-								break;
-							}
-						}
-					}
-				}
-				$table[] = $model->getTable();
-				if($model = $model->getParent()){
-					$check_single = false;
-					continue;
-				}
-			}
-			$loop = 0;
-			break;
-		}
-		*/
-
-
 		return $perm;
 	}
 
@@ -2105,6 +2051,19 @@ abstract class ModelLincko extends Model {
 			}
 			$this->change_permission = true;
 		}
+
+		try {
+			$return = parent::save($options);
+			//Reapply the fields that were not part of table columns
+			foreach ($attributes as $key => $value) {
+				$this->attributes[$key] = $value;
+			}
+			$this->pivots_save();
+		} catch(\Exception $e){
+			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
+		}
+		/*
+		//Using Transaction can lock the table and create some issues
 		$db = Capsule::connection($this->connection);
 		$db->beginTransaction(); //toto: It has to be tested with user creation because it involve 2 transaction together
 		try {
@@ -2114,42 +2073,43 @@ abstract class ModelLincko extends Model {
 				$this->attributes[$key] = $value;
 			}
 			$this->pivots_save();
-			//Make sure we set here users_tables before setPerm to inform users that migth be removed, Users::informUsers is also called inside setPerm for new Users
-			$users_tables = array();
-			if(isset($this->_perm)){
-				$temp = json_decode($this->_perm);
-				foreach ($temp as $key => $value) {
-					$users_tables[$key][$this->getTable()] = true;
-				}
-			}
-			if($parent){
-				$parent->touchUpdateAt();
-				if(isset($parent->_perm)){
-					$temp = json_decode($parent->_perm);
-					foreach ($temp as $key => $value) {
-						$users_tables[$key][$parent->getTable()] = true;
-					}
-				}
-			}
-			if($this->change_schema){
-				$this->setForceSchema();
-			}
-			if($this->change_permission){
-				$users_tables_updated = $this->setPerm();
-				foreach ($users_tables_updated as $key => $value) {
-					foreach ($value as $table_name => $value) {
-						unset($users_tables[$key][$table_name]); //No need to informed twice users already informed, it reduces SQL calls
-					}
-				}
-			}
-			Updates::informUsers($users_tables);
-
 			$db->commit();
 		} catch(\Exception $e){
 			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 			$return = null;
 			$db->rollback();
 		}
+		*/
+
+		//Make sure we set here users_tables before setPerm to inform users that migth be removed, Users::informUsers is also called inside setPerm for new Users
+		$users_tables = array();
+		if(isset($this->_perm)){
+			$temp = json_decode($this->_perm);
+			foreach ($temp as $key => $value) {
+				$users_tables[$key][$this->getTable()] = true;
+			}
+		}
+		if($parent){
+			$parent->touchUpdateAt();
+			if(isset($parent->_perm)){
+				$temp = json_decode($parent->_perm);
+				foreach ($temp as $key => $value) {
+					$users_tables[$key][$parent->getTable()] = true;
+				}
+			}
+		}
+		if($this->change_schema){
+			$this->setForceSchema();
+		}
+		if($this->change_permission){
+			$users_tables_updated = $this->setPerm();
+			foreach ($users_tables_updated as $key => $value) {
+				foreach ($value as $table_name => $value) {
+					unset($users_tables[$key][$table_name]); //No need to informed twice users already informed, it reduces SQL calls
+				}
+			}
+		}
+		Updates::informUsers($users_tables);
 
 		if($new){
 			$this->new_model = true;
