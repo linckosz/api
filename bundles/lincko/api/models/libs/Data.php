@@ -587,7 +587,15 @@ class Data {
 
 			//Get dependency (all ManyToMany that have other fields than access)
 			$dependencies = Users::getDependencies($list_id, $list_models);
+			foreach ($dependencies as $table_name => $deps_ids) {
+				foreach ($deps_ids as $id => $attributes) {
+					foreach ($attributes as $attribute => $value) {
+						$result_bis->$uid->$table_name->$id->$attribute = (object) $value;
+					}
+				}
+			}
 
+			//For _users to fulfill with default for all users (it's slightly different than $dependencies which only get existing links, it does not default)
 			foreach ($result_bis->$uid as $table_name => $models) {
 				if(!isset($dependencies[$table_name])){
 					continue;

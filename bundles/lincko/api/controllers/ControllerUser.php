@@ -154,9 +154,6 @@ class ControllerUser extends Controller {
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
 			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
 
-			
-
-
 			$app->flashNow('signout', true);
 			$limit = 1;
 			$email = mb_strtolower($model->email);
@@ -181,11 +178,14 @@ class ControllerUser extends Controller {
 			$invitation_used = false;
 			if(isset($form->invitation_code)){
 				$invitation_code = $form->invitation_code;
-				$invitation = Invitation::where('code', '=', $invitation_code)->first();
-				$invitation_used = $invitation->used;
+				if($invitation = Invitation::where('code', '=', $invitation_code)->first()){
+					$invitation_used = $invitation->used;
+				}
 			}
 
-			if($invitation_used){
+			if(!$invitation){
+				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
+			} else if($invitation_used){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
 			} else if(Users::where('username', '=', $username)->orWhere('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
 				//If the field username is missing, we keep the standard error message.
@@ -355,7 +355,7 @@ class ControllerUser extends Controller {
 					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 18); //Username already in use.
 					$errfield = 'username';
 				} else if($model->getParentAccess() && $model->save()){
-					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account updated.
+					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account information updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 					return true;
@@ -424,13 +424,18 @@ class ControllerUser extends Controller {
 							} else {
 								$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
 							}
-
 						}
 						$app->flashNow('username', $user->username);
 						$app->render(200, array('msg' => array('msg' => $msg)));
 						return true;
+					} else {
+						$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 31); //Sign in failed. Wrong password.
 					}
+				} else {
+					$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 0, 7); //Sign in failed. Please try again.
 				}
+			} else {
+				$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 32); //Sign in failed. This account does not exist.
 			}
 		}
 		//Hide the password to avoid hacking

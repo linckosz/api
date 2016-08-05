@@ -61,7 +61,6 @@ class Roles extends ModelLincko {
 		'parent_id',
 		'roles_id',
 		'single',
-		'_perm',
 	);
 
 	protected $model_boolean = array(

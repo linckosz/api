@@ -198,7 +198,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
 							$model->pivots_format($form, false);
 							if($model->getParentAccess() && $model->save()){
-								//$model->setForceSchema(); //toto => Why did we set force schema here?
 								$success = true;
 							} else {
 								$success = false;
@@ -221,7 +220,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
 						$model->pivots_format($form, false);
 						if($model->getParentAccess() && $model->save()){
-							//$model->setForceSchema(); //toto => Why did we set force schema here?
 							$success = true;
 						} else {
 							$success = false;
@@ -325,8 +323,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
-			if(count($dirty)>0 || $pivots){//\libs\Watch::php(111, '$pivots', __FILE__, false, false, true);
-				if($model->getParentAccess() && $model->save()){//\libs\Watch::php(222, '$pivots', __FILE__, false, false, true);
+			if(count($dirty)>0 || $pivots){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 14, 6)); //File updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);

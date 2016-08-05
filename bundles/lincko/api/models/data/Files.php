@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\data\Projects;
 use \libs\Json;
 use \libs\Folders;
@@ -42,6 +43,7 @@ class Files extends ModelLincko {
 		'size',
 		'width',
 		'height',
+		'orientation',
 		'progress',
 		'error',
 		'_parent',
@@ -89,6 +91,7 @@ class Files extends ModelLincko {
 		'size',
 		'width',
 		'height',
+		'orientation',
 		'progress',
 	);
 
@@ -131,7 +134,7 @@ class Files extends ModelLincko {
 
 	//Many(Files) to Many(Tasks)
 	public function tasks(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'files_x_files', 'files_id', 'tasks_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_files', 'files_id', 'tasks_id')->withPivot('access');
 	}
 
 	//Many(Files) to Many(Notes)
@@ -222,6 +225,57 @@ class Files extends ModelLincko {
 		return true;
 	}
 
+	public function setOrientation(){
+		$orientation = 1;
+		$flip_x = false;
+		$flip_y = false;
+		$angle = false;
+		if(isset($this->tmp_name)){
+			if($exif = exif_read_data($this->tmp_name)){
+				if(isset($exif['Orientation'])){
+					$orientation = $exif['Orientation'];
+					switch ($exif['Orientation']) {
+						case 1:
+							// 1 => Do nothing
+							break;
+						case 2:
+							// 2 => Flip horizontal (x)
+							$flip_x = true;
+							break;
+						case 3:
+							// 3 => Rotate 180 clockwise (180)
+							$angle = 180;
+							break;
+						case 4:
+							// 4 => vertical flip (y)
+							$flip_y = true;
+							break;
+						case 5:
+							// 5 => Rotate 90 clockwise and flip vertically (90 + y)
+							$flip_y = true;
+							$angle = 90;
+							break;
+						case 6:
+							// 6 => Rotate 90 clockwise
+							$angle = 90;
+							break;
+						case 7:
+							// 7 => Rotate 90 clockwise and flip horizontally (90 + x)
+							$flip_x = true;
+							$angle = 90;
+							break;
+						case 8:
+							// 8 => Rotate 270 clockwise (270)
+							$angle = 270;
+							break;
+					}
+				}
+			}
+		}
+		$this->orientation = $orientation;
+		return array($flip_x, $flip_y, $angle);
+	}
+
 	
 	public function save(array $options = array()){
 		$app = self::getApp();
@@ -249,11 +303,15 @@ class Files extends ModelLincko {
 					copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					$folder_thu = new Folders;
 					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
+					$orientation = $this->setOrientation();
 					try {
 						$this->thu_type = 'image/jpeg';
 						$this->thu_ext = 'jpg';
 						$src = WideImage::load($this->tmp_name);
 						$src = $src->resize(256, 256, 'inside', 'any');
+						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
+						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
+						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
 						$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
 						rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
 					} catch(\Exception $e){
@@ -356,11 +414,15 @@ class Files extends ModelLincko {
 			set_time_limit(24*3600); //Set to 1 day workload at the most
 			$path = $this->server_path.'/'.$this->created_by.'/convert/'.$this->link;
 			$file = $this->server_path.'/'.$this->created_by.'/'.$this->link;
+			$users_tables = array();
+			$users_tables[$this->created_by] = array();
+			$users_tables[$this->created_by]['files'] = true;
 			$loop = true;
 			$progress = 100;
 			$try = 10; //5s of try
-			usleep(500000); //500ms
 			$this::where('id', $this->id)->getQuery()->update(['progress' => 1]);
+			Updates::informUsers($users_tables);
+			usleep(500000); //500ms
 			while($loop){
 				$handle = fopen($path, 'r');
 				if($handle){
@@ -405,16 +467,28 @@ class Files extends ModelLincko {
 				} else if($progress>100){
 					$progress = 100;
 				}
-				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => $size]);
-				$this->touchUpdateAt();
-				usleep(500000); //500ms
+				
 				if($progress>=100 || $try<=0){ 
 					$loop = false;
+					$temp = json_decode($this->_perm);
+					if(is_object($temp)){
+						foreach ($temp as $key => $value) {
+							$users_tables[$key]['files'] = true;
+						}
+					}
 				}
+
+				$time = $this->freshTimestamp();
+				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => $size, 'updated_at' => $time]);
+				Updates::informUsers($users_tables);
+				usleep(500000); //500ms
 			}
 			if($try<=0){
-				$this::where('id', $this->id)->getQuery()->update(['progress' => 100, 'size' => 0, 'error' => 1]);
+				$time = $this->freshTimestamp();
+				$this::where('id', $this->id)->getQuery()->update(['progress' => 100, 'size' => $size, 'error' => 1, 'updated_at' => $time]);
+				Updates::informUsers($users_tables);
 			}
+
 		}
 	}
 

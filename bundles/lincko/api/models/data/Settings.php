@@ -18,7 +18,7 @@ class Settings extends ModelLincko {
 
 	protected $visible = array(
 		'id',
-		'users',
+		'setup',
 	);
 
 	// CUSTOMIZATION //
@@ -29,12 +29,21 @@ class Settings extends ModelLincko {
 		2, //[RCUD] owner
 		2, //[RCUD] max allow || super
 	);
+
+	protected static $has_perm = false;
 	
+////////////////////////////////////////////
+
+	//Many(comments) to One(Users)
+	public function users(){
+		return $this->hasOne('\\bundles\\lincko\\api\\models\\data\\Users', 'id');
+	}
+
 ////////////////////////////////////////////
 
 	public static function isValid($form){
 		if(
-			   (isset($form->users) && !self::validText($form->users, true))
+			   (isset($form->setup) && !self::validText($form->setup, true))
 		){
 			return false;
 		}

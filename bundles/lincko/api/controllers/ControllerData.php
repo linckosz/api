@@ -167,6 +167,7 @@ class ControllerData extends Controller {
 	public function settings_post(){
 		$app = $this->app;
 		$data = $this->data;
+		$lastvisit = time();
 		$uid = $app->lincko->data['uid'];
 		if(isset($data->data) && isset($data->data->settings)){
 			$settings = Settings::find($uid);
@@ -174,10 +175,16 @@ class ControllerData extends Controller {
 				$settings = new Settings;
 				$settings->id = $uid;
 			}
-			$settings->users = (string) $data->data->settings;
-			$settings->save();
-			$app->render(200, array('show' => false, 'msg' => 'Settings recorded', 'error' => false));
-			return true;
+			$settings->setup = $data->data->settings;
+			$dirty = $settings->getDirty();
+			if(count($dirty)>0){
+				if($settings->save()){
+					$msg = array('msg' => 'Settings recorded');
+					$data = new Data();
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
+					return true;
+				}
+			}
 		}
 		$app->render(200, array('show' => false, 'msg' => 'Settings not recorded', 'error' => true));
 		return true;

@@ -635,7 +635,7 @@ abstract class ModelLincko extends Model {
 		}
 
 		$pivot = PivotUsersRoles::getRoles($all_id);
-		//\libs\Watch::php($pivot, '$pivot', __FILE__, false, false, true);
+		
 		foreach ($pivot as $value) {
 			$table_name = $value->parent_type;
 			$id = $value->parent_id;
@@ -940,8 +940,8 @@ abstract class ModelLincko extends Model {
 								$users_tables[$users_id][$table_name] = true;
 							}
 						}
-						$users_tables[$app->lincko->data['uid']][$table_name] = true;
 					}
+					$users_tables[$app->lincko->data['uid']][$table_name] = true;
 				}
 			}
 		}
@@ -1186,10 +1186,10 @@ abstract class ModelLincko extends Model {
 
 	public static function getColumns(){
 		$model = new static();		
-		$schema = $model->getConnection()->getSchemaBuilder();
 		if(!isset(self::$columns[$model->getTable()])){
 			self::$columns[$model->getTable()] = array();
 		}
+		$schema = $model->getConnection()->getSchemaBuilder();
 		self::$columns[$model->getTable()] = $schema->getColumnListing($model->getTable());
 		return self::$columns[$model->getTable()];
 	}
@@ -1938,6 +1938,49 @@ abstract class ModelLincko extends Model {
 		$this->force_save = (boolean) $force;
 	}
 
+	public function getDirty(){
+		$dirty = parent::getDirty();
+		$columns = self::getColumns();
+		foreach ($dirty as $key => $value) {
+			if(!in_array($key, $columns)){
+				unset($dirty[$key]);
+			}
+		}
+		return $dirty;
+	}
+
+	public function getUsersTable($users_tables=array()){
+		$app = self::getApp();
+		$users_tables[$app->lincko->data['uid']][$this->getTable()] = true;
+		if(isset($this->_perm)){
+			$temp = json_decode($this->_perm);
+			foreach ($temp as $key => $value) {
+				$users_tables[$key][$this->getTable()] = true;
+			}
+		} else if($this->getTable()=='users'){
+			$temp = Users::filterPivotAccessList(array($app->lincko->data['uid']), false, true);
+			if($temp){
+				foreach ($temp as $key => $value) {
+					$users_tables[$key]['users'] = true;
+				}
+			}
+		} else if($this->getTable()=='settings'){
+			$users_tables[$app->lincko->data['uid']][$this->getTable()] = true;
+		} else {
+			$temp = $this->users;
+			if($temp){
+				try {
+					foreach ($temp as $key => $value) {
+						$users_tables[$value->id][$this->getTable()] = true;
+					}
+				} catch (Exception $obj_exception) {
+					$users_tables[$temp->id][$this->getTable()] = true;
+				}
+			}
+		}
+		return $users_tables;
+	}
+
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
 		if(!$this->checkAccess()){
@@ -2082,22 +2125,14 @@ abstract class ModelLincko extends Model {
 		*/
 
 		//Make sure we set here users_tables before setPerm to inform users that migth be removed, Users::informUsers is also called inside setPerm for new Users
-		$users_tables = array();
-		if(isset($this->_perm)){
-			$temp = json_decode($this->_perm);
-			foreach ($temp as $key => $value) {
-				$users_tables[$key][$this->getTable()] = true;
-			}
-		}
+
+		$users_tables = $this->getUsersTable();
+
+		//$parent
 		if($parent){
-			$parent->touchUpdateAt();
-			if(isset($parent->_perm)){
-				$temp = json_decode($parent->_perm);
-				foreach ($temp as $key => $value) {
-					$users_tables[$key][$parent->getTable()] = true;
-				}
-			}
+			$users_tables = $parent->touchUpdateAt($users_tables, false);
 		}
+
 		if($this->change_schema){
 			$this->setForceSchema();
 		}
@@ -2135,12 +2170,22 @@ abstract class ModelLincko extends Model {
 	}
 
 	//This will update updated_at, even if the user doesn't have write permission
-	public function touchUpdateAt(){
+	public function touchUpdateAt($users_tables=array(), $inform=true){
+		$app = self::getApp();
 		if (!$this->timestamps || !isset($this->updated_at) || !isset($this->id)) {
 			return false;
 		}
+
 		$time = $this->freshTimestamp();
-		return $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time]);
+		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time]);
+
+		$users_tables = $this->getUsersTable();
+
+		if($inform){ //We do by default
+			Updates::informUsers($users_tables);
+		}
+
+		return $users_tables;
 	}
 	
 	public function delete(){
@@ -2315,6 +2360,9 @@ abstract class ModelLincko extends Model {
 
 		if(isset($this->_perm)){
 			$model->_perm = json_decode($this->_perm);
+			if(empty($this->_perm)){
+				$model->_perm = new \stdClass;
+			}
 		}
 		
 		return $model;
@@ -2375,6 +2423,7 @@ abstract class ModelLincko extends Model {
 		}
 		$success = true;
 		$touch = false;
+		$users_tables = array();
 		//checkAccess and CheckPermissionAllow are previously used in save()
 		if(is_object($this->pivots_var)){
 			foreach ($this->pivots_var as $type => $type_id_list) {
@@ -2411,6 +2460,10 @@ abstract class ModelLincko extends Model {
 												}
 											}
 											$touch = true;
+											$class = $this::getClass($type);
+											if($model = $class::withTrashed()->find($type_id)){
+												$users_tables = $model->touchUpdateAt($users_tables, false);
+											}
 											if($history_save){
 												$parameters = array();
 												if($type=='users'){
@@ -2441,6 +2494,10 @@ abstract class ModelLincko extends Model {
 										}
 									}
 									$touch = true;
+									$class = $this::getClass($type);
+									if($model = $class::withTrashed()->find($type_id)){
+										$users_tables = $model->touchUpdateAt($users_tables, false);
+									}
 									if($history_save){
 										$parameters = array();
 										if($type=='users'){
@@ -2463,6 +2520,7 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		}
+		Updates::informUsers($users_tables);
 		if($touch){
 			$this->touch();
 		}
