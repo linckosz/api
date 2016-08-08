@@ -833,8 +833,7 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::filterPivotAccessGetDefault();
 		//$tp = json_decode($tp->toJson());
 
-		$tp = Tasks::find(4543);
-		$tp->setPerm();
+		$tp = 49*34/64;
 		
 
 		//$tp = Users::where('email', '=', mb_strtolower('bruno@lincko.cnn'))->first();

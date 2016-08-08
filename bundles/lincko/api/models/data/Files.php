@@ -83,7 +83,7 @@ class Files extends ModelLincko {
 		'users', 'chats', 'projects' are hardly attached
 		'tasks', 'notes' are softly attached, meaning that the file will be attached to the parent project but will be given the dependency to the tasks or note
 	*/
-	protected static $parent_list = array('users', 'chats', 'projects', 'tasks', 'notes');
+	protected static $parent_list = array('users', 'chats', 'projects', 'tasks', 'notes'); //toto => adding 'comments' makes it crash, they disapear
 	protected static $parent_list_hard = array('users', 'chats', 'projects');
 
 	protected $model_integer = array(
@@ -144,12 +144,18 @@ class Files extends ModelLincko {
 
 	//Many(Files) to Many(Comments)
 	public function comments(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
+		//return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments_x_files', 'files_id', 'comments_id')->withPivot('access');
 	}
 
 	//Many(Files) to Many(Projects)
 	public function projects(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'comments', 'id', 'parent_id');
+	}
+
+	//Many(Files) to Many(Projects)
+	public function chats(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'comments', 'id', 'parent_id');
 	}
 
 	//One(Files) to Many(Users)
@@ -231,7 +237,7 @@ class Files extends ModelLincko {
 		$flip_y = false;
 		$angle = false;
 		if(isset($this->tmp_name)){
-			if($exif = exif_read_data($this->tmp_name)){
+			if($exif = @exif_read_data($this->tmp_name)){
 				if(isset($exif['Orientation'])){
 					$orientation = $exif['Orientation'];
 					switch ($exif['Orientation']) {

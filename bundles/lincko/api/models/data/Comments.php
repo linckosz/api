@@ -25,6 +25,7 @@ class Comments extends ModelLincko {
 		'recalled_by',
 		'comment',
 		'_parent',
+		'_files',
 		'_perm',
 	);
 
@@ -72,6 +73,10 @@ class Comments extends ModelLincko {
 	
 ////////////////////////////////////////////
 
+	protected static $dependencies_visible = array(
+		'files' => array('comments_x_files', array('access')),
+	);
+
 	//Many(comments) to One(Users)
 	public function users(){
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'created_by');
@@ -107,13 +112,10 @@ class Comments extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'comments', 'id', 'parent_id');
 	}
 
-	
 	//Many(comments) to Many(Files)
 	public function files(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'comments', 'id', 'parent_id');
 	}
-	
-	
 
 ////////////////////////////////////////////
 

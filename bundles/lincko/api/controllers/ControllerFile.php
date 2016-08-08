@@ -118,18 +118,33 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 			//Soft attach
 			else if(in_array($form->parent_type, Files::getParentList())){
-				if($class = Files::getClass($form->parent_type)){
-					$parent = $class::getModel($form->parent_id);
-					if($parent && method_exists($class, 'projects')){
-						if($project = $parent->projects()->first()){
-							$attached = true;
-							if(!isset($form->{$form->parent_type.'>access'})){
-								$form->{$form->parent_type.'>access'} = new \stdClass;
+				$loop = 1000;
+				$parent_type = $form->parent_type;
+				$parent_id = $form->parent_id;
+				while($loop && !$attached){
+					$loop--;
+					if($class = Files::getClass($parent_type)){
+						if($parent = $class::getModel($parent_id)){
+							$parent->setParentAttributes();
+							if(in_array($parent->parent_type, Files::getParentListHard()) && method_exists($class, $parent->parent_type)){
+								if($model = $parent->{$parent->parent_type}()->first()){
+									$attached = true;
+									$loop = false;
+									if(!isset($form->{$form->parent_type.'>access'})){
+										$form->{$form->parent_type.'>access'} = new \stdClass;
+									}
+									$form->{$form->parent_type.'>access'}->{$form->parent_id} = true;
+									$form->parent_type = $parent->parent_type;
+									$form->parent_id = $model->id;
+								}
 							}
-							$form->{$form->parent_type.'>access'}->{$form->parent_id} = true;
-							$form->parent_type = 'projects';
-							$form->parent_id = $project->id;
+							$parent_type = $parent->parent_type;
+							$parent_id = $parent->parent_id;
+						} else {
+							$loop = false;
 						}
+					} else {
+						$loop = false;
 					}
 				}
 			}
