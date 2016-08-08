@@ -586,7 +586,7 @@ class Data {
 			}
 
 			//Get dependency (all ManyToMany that have other fields than access)
-			$dependencies = Users::getDependencies($list_id, $list_models);
+			$dependencies = ModelLincko::getDependencies($list_id, $list_models);
 			foreach ($dependencies as $table_name => $deps_ids) {
 				foreach ($deps_ids as $id => $attributes) {
 					foreach ($attributes as $attribute => $value) {
@@ -618,7 +618,14 @@ class Data {
 					foreach ($default_list as $users_id => $value) {
 						if(isset($tree_access[$table_name][$users_id][$id])){
 							if(isset($deps[$users_id])){
-								$default_full[$users_id] = (array) $deps[$users_id];
+								$arr = (array) $deps[$users_id];
+								if(isset($arr['access']) && !$arr['access']){
+									if(isset($result_bis->$uid->$table_name->$id->_perm)){
+										unset($result_bis->$uid->$table_name->$id->_perm->$users_id);
+									}
+									continue; //Skip recording non accessed users
+								}
+								$default_full[$users_id] = $arr;
 							} else {
 								$default_full[$users_id] = $default_list[$users_id];
 							}

@@ -817,8 +817,8 @@ class ControllerTest extends Controller {
 		//$tp = $tp->getDefaultValue('users_x_tasks');
 
 		//$id = array('tasks' => array(2806, 2809, 112, 113));
-		//$id = array('tasks' => array(49, 92, 112, 113));
-		//$tp = Tasks::getDependencies($id, array(Tasks::getClass()));
+		//$id = array('tasks' => array(49, 4543, 113), 'files' => array(2371, 2601, 2606));
+		//$tp = Tasks::getDependencies($id, array(Tasks::getClass(), Files::getClass()));
 
 		/*
 		$tp = array('in_charge' => 2, 'approver' => 4);
@@ -833,7 +833,8 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::filterPivotAccessGetDefault();
 		//$tp = json_decode($tp->toJson());
 
-		$tp = Tasks::find(61);
+		$tp = Tasks::find(4543);
+		$tp->setPerm();
 		
 
 		//$tp = Users::where('email', '=', mb_strtolower('bruno@lincko.cnn'))->first();

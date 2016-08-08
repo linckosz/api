@@ -1348,7 +1348,6 @@ abstract class ModelLincko extends Model {
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
 	public static function getDependencies(array $list_id, array $classes){
-		//$dependencies = new \stdClass;
 		$dependencies = array();
 		foreach ($classes as $table => $class) {
 			$model = new $class;
@@ -1381,16 +1380,14 @@ abstract class ModelLincko extends Model {
 							foreach ($dependencies_visible as $dependency => $dependencies_fields) {
 								foreach ($dep->$dependency as $key => $value) {
 									if(isset($value->pivot->access) && isset($dependencies_visible[$dependency])){
-										//if(!isset($dependencies->$table)){ $dependencies->$table = new \stdClass; }
-										//if(!isset($dependencies->$table->{$dep->id})){ $dependencies->$table->{$dep->id} = new \stdClass; }
-										//if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency})){ $dependencies->$table->{$dep->id}->{'_'.$dependency} = new \stdClass; }
-										//if(!isset($dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id})){ $dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id} = new \stdClass; }
 										foreach ($dependencies_fields[1] as $field) {
 											if(isset($value->pivot->$field)){
 												$field_value = $dep->formatAttributes($field, $value->pivot->$field);
-												//$dependencies->$table->{$dep->id}->{'_'.$dependency}->{$value->id}->$field = $field_value;
 												$dependencies[$table][$dep->id]['_'.$dependency][$value->id][$field] = $field_value;
 											}
+										}
+										if(!$value->pivot->access){
+											$dependencies[$table][$dep->id]['_'.$dependency][$value->id]['access'] = false;
 										}
 									}
 								}
