@@ -590,7 +590,19 @@ class Data {
 			foreach ($dependencies as $table_name => $deps_ids) {
 				foreach ($deps_ids as $id => $attributes) {
 					foreach ($attributes as $attribute => $value) {
-						$result_bis->$uid->$table_name->$id->$attribute = (object) $value;
+						if($attribute!='_users'){
+							$temp = (array) $value;
+							foreach ($value as $item_id => $att) {
+								$arr = (array) $att;
+								if(isset($arr['access']) && !$arr['access']){
+									unset($temp[$item_id]);
+									continue; //Skip recording non accessed dependencies
+								}
+							}
+						} else {
+							$temp = $value;
+						}
+						$result_bis->$uid->$table_name->$id->$attribute = (object) $temp;
 					}
 				}
 			}
