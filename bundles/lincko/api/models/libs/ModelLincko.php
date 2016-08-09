@@ -1949,7 +1949,7 @@ abstract class ModelLincko extends Model {
 	public function getUsersTable($users_tables=array()){
 		$app = self::getApp();
 		$users_tables[$app->lincko->data['uid']][$this->getTable()] = true;
-		if(isset($this->_perm)){
+		if(isset($this->_perm) && !empty($this->_perm) ){
 			$temp = json_decode($this->_perm);
 			foreach ($temp as $key => $value) {
 				$users_tables[$key][$this->getTable()] = true;
