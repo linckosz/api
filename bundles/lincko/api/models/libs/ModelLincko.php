@@ -524,6 +524,9 @@ abstract class ModelLincko extends Model {
 
 	public function setPerm(){
 		$app = self::getApp();
+		if(!isset($app->lincko->data['uid'])){
+			return array();
+		}
 		$list_models = Data::getModels();
 		$all = array();
 
@@ -1948,6 +1951,9 @@ abstract class ModelLincko extends Model {
 
 	public function getUsersTable($users_tables=array()){
 		$app = self::getApp();
+		if(!isset($app->lincko->data['uid'])){
+			return $users_tables;
+		}
 		$users_tables[$app->lincko->data['uid']][$this->getTable()] = true;
 		if(isset($this->_perm) && !empty($this->_perm) ){
 			$temp = json_decode($this->_perm);
@@ -2094,6 +2100,12 @@ abstract class ModelLincko extends Model {
 
 		try {
 			$return = parent::save($options);
+			if($new){
+				$this->new_model = true;
+				if($this->getTable()=='users'){
+					$app->lincko->data['uid'] = $this->id;
+				}
+			}
 			//Reapply the fields that were not part of table columns
 			foreach ($attributes as $key => $value) {
 				$this->attributes[$key] = $value;
@@ -2143,9 +2155,7 @@ abstract class ModelLincko extends Model {
 		}
 		Updates::informUsers($users_tables);
 
-		if($new){
-			$this->new_model = true;
-		}
+		
 		//We do not record any setup for new model, but only change for existing model
 		if(!$new){
 			foreach($dirty as $key => $value) {
@@ -2492,7 +2502,7 @@ abstract class ModelLincko extends Model {
 									}
 									$touch = true;
 									$class = $this::getClass($type);
-									if($model = $class::withTrashed()->find($type_id)){
+									if($class && $model = $class::withTrashed()->find($type_id)){
 										$users_tables = $model->touchUpdateAt($users_tables, false);
 									}
 									if($history_save){

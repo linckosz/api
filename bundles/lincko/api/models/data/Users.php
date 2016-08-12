@@ -260,6 +260,13 @@ class Users extends ModelLincko {
 		return $this->contactsVisibility;
 	}
 
+	public static function getClass($class=false){
+		if($class=='usersLinked'){
+			return '\\bundles\\lincko\\api\\models\\data\\Users';
+		}
+		return parent::getClass($class);
+	}
+
 	public function setInvitation(){
 		$app = self::getApp();
 		$this->_invitation = false;
