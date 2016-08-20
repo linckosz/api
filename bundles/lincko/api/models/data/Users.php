@@ -28,6 +28,8 @@ class Users extends ModelLincko {
 		'lastname',
 		'gender',
 		'profile_pic',
+		'timeoffset',
+		'resume',
 		'_parent',
 		'_lock',
 		'_visible',
@@ -58,6 +60,8 @@ class Users extends ModelLincko {
 		'lastname' => 602,//[{un|ucfirst}] modified [{hh}] profile
 		'gender' => 602,//[{un|ucfirst}] modified [{hh}] profile
 		'email' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'timeoffset' => 602,//[{un|ucfirst}] modified [{hh}] profile
+		'resume' => 602,//[{un|ucfirst}] modified [{hh}] profile
 		'pivot_invitation_1' => 695, //[{un|ucfirst}] has invited [{[{cun|ucfirst}]}]
 		'pivot_access_0' => 696, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to [{hh}] profile
 		'pivot_access_1' => 697, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to [{hh}] profile
@@ -154,6 +158,8 @@ class Users extends ModelLincko {
 			|| (isset($form->firstname) && !self::validChar($form->firstname, true))
 			|| (isset($form->lastname) && !self::validChar($form->lastname, true))
 			|| (isset($form->gender) && !self::validBoolean($form->gender, true))
+			|| (isset($form->timeoffset) && !self::validNumeric($form->timeoffset, true))
+			|| (isset($form->resume) && !self::validNumeric($form->resume, true))
 		){
 			return false;
 		}
@@ -392,6 +398,16 @@ class Users extends ModelLincko {
 		if(isset($this->id)){
 			$return = parent::save($options);
 		} else {
+			if(isset($this->timeoffset) && !isset($this->resume)){
+				//By default set personal resume at 6pm
+				$this->resume = 18 - $this->timeoffset;
+				if($this->resume < 0){
+					$this->resume = 24 + $this->resume;
+				}
+				if($this->resume >= 24){
+					$this->resume = fmod($this->resume, 24);
+				}
+			}
 			try {
 				$return = parent::save($options);
 

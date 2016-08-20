@@ -3,6 +3,7 @@
 
 namespace bundles\lincko\api\models\data;
 
+use Carbon\Carbon;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Projects;
 
@@ -277,6 +278,18 @@ class Tasks extends ModelLincko {
 		$return = parent::save($options);
 		
 		return $return;
+	}
+
+	//$deadline (Carbon)
+	public function overdue($deadline){
+		if(!$this->approved && $this->start < $deadline){
+			$duedate = Carbon::createFromFormat('Y-m-d H:i:s', $this->start);
+			$duedate->second = $this->duration;
+			if($duedate < $deadline){
+				return $deadline->diffInSeconds($duedate, true);
+			}
+		}
+		return false;
 	}
 
 }

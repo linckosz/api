@@ -60,4 +60,10 @@ $app->group('/data', function () use ($app) {
 	)
 	->name('data_settings'.$app->lincko->method_suffix);
 
+	$app->get(
+		'/resume/hourly',
+		'\bundles\lincko\api\controllers\ControllerData:resume_hourly_get'
+	)
+	->name('data_resume_hourly_get');
+
 });

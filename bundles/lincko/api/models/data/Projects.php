@@ -5,6 +5,7 @@ namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Workspaces;
+use \bundles\lincko\api\models\data\Users;
 use \libs\Json;
 
 class Projects extends ModelLincko {
@@ -28,6 +29,7 @@ class Projects extends ModelLincko {
 		'title',
 		'description',
 		'personal_private',
+		'resume',
 		'_parent',
 		'_perm',
 	);
@@ -48,6 +50,7 @@ class Projects extends ModelLincko {
 		'_' => 402,//[{un|ucfirst}] modified a project
 		'title' => 403,//[{un|ucfirst}] changed a project name
 		'description' => 404, //[{un|ucfirst}] modified a project description
+		'resume' => 402,//[{un|ucfirst}] modified a project
 		'_tasks_0' => 405,//[{un|ucfirst}] moved the task "[{tt}]" from this project to another one
 		'_tasks_1' => 406,//[{un|ucfirst}] moved the task "[{tt}]" to this project
 		'pivot_access_0' => 496, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a project
@@ -107,6 +110,7 @@ class Projects extends ModelLincko {
 			|| (isset($form->parent_id) && !self::validNumeric($form->parent_id, true))
 			|| (isset($form->title) && !self::validTitle($form->title, true))
 			|| (isset($form->description) && !self::validText($form->description, true))
+			|| (isset($form->resume) && !self::validNumeric($form->resume, true))
 		){
 			return false;
 		}
@@ -134,6 +138,16 @@ class Projects extends ModelLincko {
 		} else if($new){
 			$this->personal_private = null;
 			$this->parent_id = intval($app->lincko->data['workspace_id']);
+			if(!isset($this->resume)){
+				$timeoffset = Users::getUser()->timeoffset;
+				//By default start it at midnigth
+				if($this->resume < 0){
+					$this->resume = 24 + $this->resume;
+				}
+				if($this->resume >= 24){
+					$this->resume = fmod($this->resume, 24);
+				}
+			}
 		} else {
 			$this->personal_private = null;
 		}

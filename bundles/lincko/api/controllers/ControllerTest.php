@@ -833,10 +833,8 @@ class ControllerTest extends Controller {
 		//$tp = Tasks::filterPivotAccessGetDefault();
 		//$tp = json_decode($tp->toJson());
 
-		$tp = 49*34/64;
-		
-
-		//$tp = Users::where('email', '=', mb_strtolower('bruno@lincko.cnn'))->first();
+		//$tp = fmod(-1, 24);
+		$tp = -1 % 24;
 
 
 

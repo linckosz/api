@@ -4,14 +4,18 @@ namespace bundles\lincko\api\models\libs;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
+use Carbon\Carbon;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Tasks;
+use \bundles\lincko\api\models\data\Notes;
+use \bundles\lincko\api\models\data\Files;
+use \bundles\lincko\api\models\data\Comments;
 use \bundles\lincko\api\models\data\Roles;
-use \bundles\lincko\api\models\libs\PivotUsersRoles;
 
 class Data {
 
@@ -725,6 +729,222 @@ class Data {
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 		return $result_bis;
 
+	}
+
+	//$period (string) => 'daily', 'weekly'
+	public static function getResume(){ //Default is 24H (daily is 86,400s), weekly is 604,800s.
+		//Capsule::connection('data')->enableQueryLog();
+		if(function_exists('proc_nice')){proc_nice(20);}
+		$db = Capsule::connection('data');
+
+		sleep(1); //Just insure we are working on the current day
+
+		$timeend = Carbon::today();
+		$now = Carbon::now();
+		$timeoffset = $now->hour;
+		$day = $now->dayOfWeek;
+		$timeend->hour = $timeoffset;
+
+		$comments_update = false;
+		$period_all = array('daily');
+		if($day===1){ //Monday => launch weekly report for projects
+			$period_all[] = 'weekly';
+		}
+		foreach ($period_all as $period) {
+
+			//Default is 'daily'
+			$timeback = 86400;
+			$base = 100;
+			if($period=='weekly'){
+				$timeback = 604800;
+				$base = 700;
+			}
+			$timestart = $timeend->copy();
+			$timestart->second = -$timeback;
+			$timelimit = $timestart->copy();
+			if($period=='weekly'){
+				$timelimit->second = -$timeback; //This help to display at least one message of no activity for weekly report
+			}
+
+			$projects = Projects::Where('updated_at', '>=', $timelimit)->where('resume', $timeoffset)->get(array('id', 'updated_at', '_perm'));
+			//$projects = Projects::Where('updated_at', '>=', $timelimit)->get(array('id', 'updated_at', '_perm'));
+			foreach ($projects as $project) {
+				$users_most = array();
+				$users = new \stdClass;
+				if($temp = json_decode($project->_perm)){
+					foreach ($temp as $users_id => $value) {
+						$users->$users_id = array(0, 0);
+					}
+				}
+
+				$msg = false;
+				if($period=='weekly'){
+					$msg = '';
+				}
+				if($project->updated_at >= $timestart){
+
+					usleep(1000);
+					unset($result);
+					unset($data);
+					$result = array();
+					//Tasks
+					$result[$base+1] = array();
+					$result[$base+2] = array();
+					$result[$base+3] = array();
+					$result[$base+4] = array();
+					$result[$base+5] = array();
+					$result[$base+6] = 0;
+					$result[$base+7] = 0;
+					$result[$base+8] = 0;
+					$result[$base+9] = 0;
+					//Notes
+					$result[$base+11] = 0;
+					//Files
+					$result[$base+21] = 0;
+
+					//Tasks
+					$total = 0;
+					$remain_start = 0;
+					$done = 0;
+					$activity = false; //This represents real activity (task completed, new file, etc.), not statistics calculated
+					$tasks = Tasks::Where('parent_id', $project->id)->get(array('id', 'created_at', 'approved_at', 'approved_by', 'approved', 'start', 'duration'));
+					foreach ($tasks as $task) {
+						$total++;
+						//sum total number of tasks completed in that day
+						if($task->approved_at >= $timestart && $task->approved_at < $timeend){
+							$activity = true;
+							$done++;
+							if(!isset($users_most[$task->approved_by])){ $users_most[$task->approved_by] = 0; }
+							$users_most[$task->approved_by]++;
+							array_push($result[$base+1], $task->id);
+						} else if($task->approved_at < $timestart){ //sum of remaining task when the day started
+							$remain_start++;
+						}
+						//sum the total number of tasks completed in the project since it started
+						if($task->approved){
+							array_push($result[$base+2], $task->id);
+						} else { //sum total number of tasks open (not completed) in the project.
+							array_push($result[$base+3], $task->id);
+						}
+						//sum the total number of new tasks created that day
+						if($task->created_at >= $timestart && $task->created_at < $timeend){
+							$activity = true;
+							array_push($result[$base+4], $task->id);
+						}
+						//calculate the total number of overdue tasks
+						if($task->overdue($timeend) > 0){
+							array_push($result[$base+5], $task->id);
+						}
+					}
+					unset($tasks);
+
+					//calculate % of completed tasks in the project with open tasks remaining that day
+					if($total > 0){
+						$temp = ceil( 100 * ($total-$remain_start+$done) / $total );
+						$temp = min(100, $temp);
+						$result[$base+6] = max(0, $temp);
+						if($temp>0){
+							$activity = true;
+						}
+					}
+
+					//calculate % of all completed tasks in the project with open tasks remaining.
+					if($remain_start > 0){
+						$temp = ceil( 100 * $done / $remain_start );
+						$temp = min(100, $temp);
+						$result[$base+7] = max(0, $temp);
+					}
+
+					//calculate % of all completed tasks in the project.
+					if($total > 0){
+						$done_total = $total-$remain_start;
+						$temp = ceil( 100 * $done_total / $total );
+						$temp = min(100, $temp);
+						$result[$base+9] = max(0, $temp);
+					}
+
+					//users_id of the one who completed the most tasks
+					if(count($users_most)>0){
+						$maxs = array_keys($users_most, max($users_most));
+						if(isset($maxs[1]) && $maxs[0] == $maxs[1]){
+							$result[$base+8] = 0;
+						} else if(isset($maxs[0]) && $maxs[0] > 0){
+							$result[$base+8] = $maxs[0];
+						}
+					}
+
+					//Notes
+					$sql = 'SELECT COUNT(`id`) FROM `notes` WHERE `parent_id` = :projects_id AND `created_at` >= :timestart AND `created_at` < :timeend;';
+					$temp = $db->select( $db->raw($sql), array(
+						'projects_id' => $project->id,
+						'timestart' => $timestart,
+						'timeend' => $timeend,
+					));
+					if(isset($temp[0]->{'COUNT(`id`)'})){
+						$result[$base+11] = (int) $temp[0]->{'COUNT(`id`)'};
+						if($result[$base+11]>0){
+							$activity = true;
+						}
+					}
+
+					//Files
+					$sql = 'SELECT COUNT(`id`) FROM `files` WHERE `parent_type` = \'projects\' AND `parent_id` = :projects_id AND `created_at` >= :timestart AND `created_at` < :timeend;';
+					$temp = $db->select( $db->raw($sql), array(
+						'projects_id' => $project->id,
+						'timestart' => $timestart,
+						'timeend' => $timeend,
+					));
+					if(isset($temp[0]->{'COUNT(`id`)'})){
+						$result[$base+21] = (int) $temp[0]->{'COUNT(`id`)'};
+						if($result[$base+21]>0){
+							$activity = true;
+						}
+					}
+
+					foreach ($result as $key => $value) {
+						if($value==0 || count($value)==0){
+							continue;
+						}
+						if(!isset($data)){ $data = new \stdClass; }
+						if(!isset($data->{'0'})){ $data->{'0'} = array(); }
+						if(!isset($data->{'0'}[$base])){ $data->{'0'}[$base] = 1; }
+						if(is_numeric($value)){
+							$data->{'0'}[$key] = (int) $value;
+						} else {
+							$data->{'0'}[$key] = $value;
+						}
+					}
+
+					if($activity && isset($data) && is_object($data)){
+						$comments_update = true;
+						$msg = json_encode($data);
+						//\libs\Watch::php($data, '$project '.$project->id, __FILE__, false, false, true);
+					}
+				}
+
+				if($msg!==false){
+					$comment = new Comments;
+					$comment->created_by = 0;
+					$comment->updated_by = 0;
+					$comment->parent_type = 'projects';
+					$comment->parent_id = $project->id;
+					$comment->comment = $msg;
+					$comment->_perm = json_encode($users);
+					$comment->saveRobot();
+				}
+
+			}
+
+		}
+
+		//Force all user to update their schema
+		if($comments_update){
+			(new Comments)->setForceSchema(true);
+		}
+
+		if(function_exists('proc_nice')){proc_nice(0);}
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		return true;
 	}
 
 }

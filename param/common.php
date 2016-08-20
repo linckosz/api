@@ -38,7 +38,7 @@ After run
 $app->lincko = new \stdClass;
 
 //Used to track operation time
-$app->lincko->time_record = false;
+$app->lincko->time_record = false; //Turn at true to track and \time_checkpoint('ok');
 $app->lincko->time_start = 0;
 
 //Application title
@@ -56,7 +56,7 @@ if(isset($_SERVER["SERVER_HOST"])){
 	$app->lincko->domain = $_SERVER["HTTP_HOST"];
 }
 
-$app->lincko->domain_restriction = "/^(?:.{1,3}|(?:api|cloud|dc|file|info|lincko|mail|mx|ns|pop|smtp|tp|debug|www)\d*)$/ui";
+$app->lincko->domain_restriction = "/^(?:.{1,3}|(?:api|cloud|cron|dc|file|info|lincko|mail|mx|ns|pop|smtp|tp|debug|www)\d*)$/ui";
 
 //Do not enable debug when we are using json ajax respond
 $app->config(array(

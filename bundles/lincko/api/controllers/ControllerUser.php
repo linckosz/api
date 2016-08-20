@@ -100,6 +100,24 @@ class ControllerUser extends Controller {
 		if(isset($form->profile_pic) && is_numeric($form->profile_pic)){
 			$form->profile_pic = (int) $form->profile_pic;
 		}
+		if(isset($form->timeoffset) && is_numeric($form->timeoffset)){
+			$form->timeoffset = (int) $form->timeoffset;
+			if($form->timeoffset<0){
+				$form->timeoffset = 24 - $form->timeoffset;
+			}
+			if($form->timeoffset>=24){
+				$form->timeoffset = 0;
+			}
+		}
+		if(isset($form->resume) && is_numeric($form->resume)){
+			$form->resume = (int) $form->resume;
+			if($form->resume<0){
+				$form->resume = 24 - $form->resume;
+			}
+			if($form->resume>=24){
+				$form->resume = 0;
+			}
+		}
 		return $this->form = $form;
 	}
 
@@ -153,7 +171,8 @@ class ControllerUser extends Controller {
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
 			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
-
+			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
+			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$app->flashNow('signout', true);
 			$limit = 1;
 			$email = mb_strtolower($model->email);
@@ -348,6 +367,8 @@ class ControllerUser extends Controller {
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
 			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
+			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
+			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){

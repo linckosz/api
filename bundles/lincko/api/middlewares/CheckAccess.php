@@ -232,6 +232,12 @@ class CheckAccess extends \Slim\Middleware {
 		$signout = false;
 		$resignin = false;
 
+		//For cronjob to launch auto daily resume
+		//Use files servers (gluster) to not slow down request on logic servers
+		if($app->lincko->method_suffix == '_get' && preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/data\/resume\/hourly$/ui", $app->request->getResourceUri()) && $this->checkRoute()!==false){
+			return $this->next->call();
+		}
+
 		//For file uploading, make a specific process
 		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
 			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $app->request->getResourceUri()) ){ //Video conversion

@@ -80,6 +80,15 @@ class ControllerProject extends Controller {
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
+		if(isset($form->resume) && is_numeric($form->resume)){
+			$form->resume = (int) $form->resume;
+			if($form->resume<0){
+				$form->resume = 24 - $form->resume;
+			}
+			if($form->resume>=24){
+				$form->resume = 0;
+			}
+		}
 		return $this->form = $form;
 	}
 
@@ -109,6 +118,7 @@ class ControllerProject extends Controller {
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
+			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$model->pivots_format($form, false);
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 2)); //Project created.
@@ -185,6 +195,7 @@ class ControllerProject extends Controller {
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
+			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){

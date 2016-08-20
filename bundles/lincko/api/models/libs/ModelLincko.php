@@ -1304,8 +1304,12 @@ abstract class ModelLincko extends Model {
 	}
 
 	//Only check the structure of the database
-	public function setForceSchema(){
+	public function setForceSchema($all=false){
 		$timestamp = time();
+		if($all){
+			Users::getQuery()->update(['check_schema' => $timestamp]);
+			return true;
+		}
 		if(isset($this->_perm)){
 			$list = json_decode($this->_perm);
 			$users = array();

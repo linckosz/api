@@ -190,4 +190,12 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function resume_hourly_get(){
+		$data = Data::getResume();
+		print_r($data, true);
+		echo "\n<br />\n<br />\nResume<br />\n..........................................................\n\n";
+		exit(0);
+		return true;
+	}
+
 }
