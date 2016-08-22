@@ -3,6 +3,7 @@
 namespace bundles\lincko\api\middlewares;
 
 use \libs\Json;
+use \config\Handler;
 use \libs\Datassl;
 use \bundles\lincko\api\models\Api;
 use \bundles\lincko\api\models\UsersLog;
@@ -17,7 +18,7 @@ class CheckAccess extends \Slim\Middleware {
 	protected $authorization = NULL;
 	protected $authorizeAccess = false;
 	protected $route = NULL;
-	protected $upload = false;
+	protected $nochecksum = false;
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
@@ -155,6 +156,7 @@ class CheckAccess extends \Slim\Middleware {
 			if(empty($data->workspace)){ //Shared workspace
 				$app->lincko->data['workspace'] = '';
 				$app->lincko->data['workspace_id'] = 0;
+				$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 				return true;
 			} else {
 				$workspaces = Workspaces::getLinked()->get();
@@ -163,6 +165,7 @@ class CheckAccess extends \Slim\Middleware {
 					if(!empty($data->workspace) && $value->url == $data->workspace){ //Company workspace
 						$app->lincko->data['workspace'] = $value->url;
 						$app->lincko->data['workspace_id'] = $value->getWorkspaceID();
+						$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 						return true;
 					}
 				}
@@ -174,6 +177,7 @@ class CheckAccess extends \Slim\Middleware {
 		}
 		$app->lincko->data['workspace'] = '';
 		$app->lincko->data['workspace_id'] = (new Workspaces)->getWorkspaceID();
+		$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 		return false;
 	}
 
@@ -210,7 +214,7 @@ class CheckAccess extends \Slim\Middleware {
 	protected function checkSum(){
 		$app = $this->app;
 		$data = $this->data;
-		if($app->lincko->method_suffix == '_get' || $this->upload){ //We do not check checksum for files
+		if($app->lincko->method_suffix == '_get' || $this->nochecksum){ //We do not check checksum for files
 			return true;
 		}
 		$authorization = $this->authorization;
@@ -240,6 +244,7 @@ class CheckAccess extends \Slim\Middleware {
 
 		//For file uploading, make a specific process
 		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
+			Handler::session_initialize(true);
 			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $app->request->getResourceUri()) ){ //Video conversion
 				//Security is not important here since we do not use POSt as variable to be injected somewhere
 				if($this->checkRoute()!==false){
@@ -248,7 +253,7 @@ class CheckAccess extends \Slim\Middleware {
 			} else if($app->lincko->method_suffix == '_post'){ //File uploading
 				$file_error = true;
 				if($this->checkRoute()!==false){
-					$post = $app->request->post();
+					$post = $app->request->post();	
 					if(
 						   isset($post['shangzai_puk'])
 						&& isset($post['parent_type'])
@@ -256,12 +261,11 @@ class CheckAccess extends \Slim\Middleware {
 						&& isset($post['workspace'])
 						&& isset($post['fingerprint'])
 						&& isset($post['temp_id'])
-						&& isset($post['api_upload'])
 					){
 						$data = new \stdClass;
 						$post = $app->request->post();
 						$data->public_key = Datassl::decrypt($post['shangzai_puk'], $app->lincko->security['private_key']);
-						$data->api_key = $post['api_upload'];
+						$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
 						$data->workspace = $post['workspace'];
 						$data->fingerprint = $post['fingerprint'];
 						$data->checksum = 0;
@@ -271,19 +275,38 @@ class CheckAccess extends \Slim\Middleware {
 						$data->data = new \stdClass;
 						$this->data = $data;
 						$file_error = false;
-						$this->upload = true;
+						$this->nochecksum = true;
 					}
 				}
-			//} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/\d+\/\w+\/(?:link|thumbnail|download)\/\d+\/.+\.\w+$/ui", $app->request->getResourceUri())){ //File reading
-			} else if($app->lincko->method_suffix == '_get' && preg_match("/^\/file\/\d+\/\w+\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri())){ //File reading
-				if($this->checkRoute()!==false){
-					//toto => Big security issue, anyone can see files! It should go through front end server later, work with PHP session
+			} else if(
+				   $app->lincko->method_suffix == '_get'
+				&& isset($_SESSION['workspace'])
+				&& isset($_SESSION['users_id'])
+				&& isset($_SESSION['fingerprint'])
+				&& isset($_SESSION['public_key'])
+				&& preg_match("/^\/file\/".$_SESSION['workspace']."\/".$_SESSION['users_id']."\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri())
+				&& $this->checkRoute()!==false
+			){ //File reading
+				$file_error = true;
+				$data = new \stdClass;
+				$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
+				$data->workspace = $_SESSION['workspace'];
+				$data->fingerprint = $_SESSION['fingerprint'];
+				$data->checksum = 0;
+				$data->data = new \stdClass;
+				$this->nochecksum = true;
+				$this->data = $data;
+				$app->lincko->data['uid'] = $_SESSION['users_id'];
+				if($this->checkWorkspace() && $this->checkAPI() && $data->public_key = Authorization::getPublicKey($_SESSION['users_id'], $_SESSION['fingerprint'], $_SESSION['public_key'])){	
+					$file_error = false;
 					return $this->next->call();
 				}
 			} else if($app->lincko->method_suffix == '_options'){ //Check if can upload file
 				if($this->checkRoute()!==false){
-					//toto => Big security issue, anyone can see files! It should go through front end server later, work with PHP session
-					return $this->next->call();
+					$app->lincko->http_code_ok = true;
+					$json = new Json('OK', false, 200, false, false, array(), false);
+					$json->render(200);
+					return true;
 				}
 			}
 		}

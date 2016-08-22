@@ -4,6 +4,7 @@ namespace bundles\lincko\api\models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use \config\Handler;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
 
@@ -85,12 +86,20 @@ class UsersLog extends Model {
 			$private_key = $authorization->private_key;
 			$authorization->users_id = $this->id;
 			$authorization->fingerprint = $fingerprint;
-			if(!empty($this->id) && $authorization->save()){
+			if(
+				   !empty($this->id)
+				&& $authorization->save()
+				&& $uid = Users::where('username_sha1', '=', $this->username_sha1)->first()->id
+			){
+				Handler::session_initialize(true);
+				$_SESSION['fingerprint'] = $fingerprint;
+				$_SESSION['users_id'] = $uid;
+				$_SESSION['public_key'] = $public_key;
 				return array(
 					'public_key' => $public_key,
 					'private_key' => $private_key,
 					'username_sha1' => $this->username_sha1,
-					'uid' => Users::where('username_sha1', '=', $this->username_sha1)->first()->id,
+					'uid' => $uid,
 					'refresh' => $refresh ,
 				);
 			}

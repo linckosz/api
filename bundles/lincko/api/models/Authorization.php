@@ -36,5 +36,8 @@ class Authorization extends Model {
 		return self::where('public_key', $public_key)->where('fingerprint', $fingerprint)->first();
 	}
 
+	public static function getPublicKey($users_id, $fingerprint, $public_key){
+		return self::where('users_id', $users_id)->where('fingerprint', $fingerprint)->where('public_key', $public_key)->first();
+	}
 
 }

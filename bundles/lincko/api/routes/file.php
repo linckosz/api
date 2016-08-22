@@ -50,7 +50,7 @@ $app->group('/file', function () use ($app) {
 	)
 	->conditions(array(
 		'workspace' => '\d+',
-		'uid' => '\w+',
+		'uid' => '\d+',
 		'type' => 'link|thumbnail|download',
 		'id' => '\d+',
 		'name' => '.+',
