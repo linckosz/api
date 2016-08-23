@@ -182,22 +182,25 @@ class Files extends ModelLincko {
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
+		unset($list['users']); //Excluse user profile picture (this record also old useless pictures), but we will have to add them later manually on Data.php
 		$query = $query
 		->where(function ($query) use ($list) {
 			foreach ($list as $table_name => $list_id) {
 				if(in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
-					$this->var['parent_type'] = $table_name;
-					$this->var['parent_id_array'] = $list_id;
-					$query = $query
-					->orWhere(function ($query) {
-						$query
-						->where('files.parent_type', $this->var['parent_type'])
-						->whereIn('files.parent_id', $this->var['parent_id_array']);
-					});
-					if($table_name=='users'){
+					if($table_name=='users'){ //unused
 						$query = $query
-						->orWhereHas('profile', function ($query){
-							//Toto => This is a problem, it get all pictures profile from all users
+						->orWhereHas('profile', function ($query) use ($list){
+							$query = $query
+							->whereIn('users.id', $list['users']);
+						});
+					} else {
+						$this->var['parent_type'] = $table_name;
+						$this->var['parent_id_array'] = $list_id;
+						$query = $query
+						->orWhere(function ($query) {
+							$query
+							->where('files.parent_type', $this->var['parent_type'])
+							->whereIn('files.parent_id', $this->var['parent_id_array']);
 						});
 					}
 				}
@@ -212,6 +215,23 @@ class Files extends ModelLincko {
 		if(self::$with_trash_global){
 			$query = $query->withTrashed();
 		}
+		if($get){
+			$result = $query->get();
+			foreach($result as $key => $value) {
+				$result[$key]->accessibility = true;
+			}
+			return $result;
+		} else {
+			return $query;
+		}
+	}
+
+	public function scopegetProfilePics($query, $users=array(), $get=false){
+		$query = $query
+		->whereHas('profile', function ($query) use ($users){
+			$query = $query
+			->whereIn('users.id', $users);
+		});
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

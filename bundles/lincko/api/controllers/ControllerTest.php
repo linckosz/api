@@ -834,9 +834,27 @@ class ControllerTest extends Controller {
 		//$tp = json_decode($tp->toJson());
 
 		//$tp = fmod(-1, 24);
-		$tp = -1 % 24;
+		
+		$list = array(
+			'users' => array(3=>3, 14=>14),
+			'chats' => array(579=>579, 580=>580),
+			'projects' => array(158=>158),
+		);
+		$files = Files::getItems($list)->get();
 
+		$tp = array();
+		foreach ($files as $file) {
+			$tp[$file->id] = $file->id;
+		}
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
+		$users = array(3=>3, 14=>14);
+		$files = Files::getProfilePics($users)->get();
+
+		$tp = array();
+		foreach ($files as $file) {
+			$tp[$file->id] = $file->id;
+		}
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

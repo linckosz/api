@@ -411,6 +411,7 @@ class Data {
 		foreach ($result as $models) {
 			foreach ($models as $model) {
 				//toto => MEDIUM CPU hunger
+				//\libs\Watch::php($model->setContacts(), $model->getTable().'_'.$model->id, __FILE__, false, false, true);
 				$users = array_merge($users, $model->setContacts());
 			}
 		}
@@ -421,42 +422,29 @@ class Data {
 			$visible = $tree_id['users'];
 			$users = array_merge($tree_id['users'], $users);
 		}
-		
+
 		//---OK---
 		foreach ($users as $users_id) {
 			if(isset($tree_id['users'])){
 				$tree_id['users'][$users_id] = $users_id;
 			}
 		}
-
-		//---OK---
-		$users = array();
-		$users['users'] = $tree_id['users'];
-		$users_access = $this::getAccesses($users); //Check if at least other users have access (since we narrow to users only, the calulation is ligth)
-
+	
 		//---OK---
 		$tree_access = array();
-		foreach ($users_access as $type => $type_list) {
-			foreach ($type_list as $users_id => $models) {
-				foreach ($models as $id => $value) {
-					$tree_access[$type][$users_id][$id] = true;
-				}
-			}
-		}
-
-		//---OK---
 		foreach ($result as $type => $models) {
-			foreach ($models as $model) {
-				if(isset($model->_perm)){
-					if($perm = json_decode($model->_perm)){
-						foreach ($perm as $users_id => $value) {
-							$tree_access[$type][$users_id][$model->id] = true;
+			if($type!='users'){ //We can exclude users, we should not include the contact list, and users oject doesn't have _perm column too
+				foreach ($models as $model) {
+					if(isset($model->_perm)){
+						if($perm = json_decode($model->_perm)){
+							foreach ($perm as $users_id => $value) {
+								$tree_access[$type][$users_id][$model->id] = true;
+							}
 						}
 					}
 				}
 			}
 		}
-
 
 		//---OK---
 		//Get the list of all users that have access
@@ -467,11 +455,34 @@ class Data {
 				}
 			}
 		}
-		$all_users = $tree_id['users'];
-
+		
 		//---OK---
 		$result->users = Users::getUsersContacts($tree_id['users'], $visible);
 
+		//---OK---
+		$users = array();
+		$users['users'] = $tree_id['users'];
+		$users_access = $this::getAccesses($users); //Check if at least other users have access (since we narrow to users only, the calulation is light)
+		foreach ($users_access as $type => $type_list) {
+			foreach ($type_list as $users_id => $models) {
+				foreach ($models as $id => $value) {
+					$tree_access[$type][$users_id][$id] = true;
+				}
+			}
+		}
+
+		//---OK---
+		//Get files of profile pcitures
+		if($profiles = Files::getProfilePics($tree_id['users'])->get()){
+			if(isset($result->files)){
+				foreach ($profiles as $model) {
+					$result->files[] = $model;
+				}
+			} else {
+				$result->files = $profiles;
+			}
+		}
+		
 		//---OK---
 		$result_bis = new \stdClass;
 		$result_bis->$uid = new \stdClass;
@@ -621,7 +632,7 @@ class Data {
 				$default_list = array();
 				if(isset($class::getDependenciesVisible()['users'])){
 					$default = $class::filterPivotAccessGetDefault();
-					foreach ($all_users as $key => $value) {
+					foreach ($tree_id['users'] as $key => $value) {
 						$default_list[$key] = $default;
 					}
 				}

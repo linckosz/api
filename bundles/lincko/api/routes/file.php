@@ -66,5 +66,18 @@ $app->group('/file', function () use ($app) {
 	))
 	->name('file_progress_post');
 
+	$app->map(
+		'/toto',
+		function(){
+			$app = \Slim\Slim::getInstance();
+			$data = json_decode($app->request->getBody());
+			$post = $app->request->post();
+			\libs\Watch::php($data, '$data', __FILE__, false, false, true);
+			\libs\Watch::php($post, '$post', __FILE__, false, false, true);
+		}
+	)
+	->via('POST', 'OPTIONS')
+	->name('file_toto'.$app->lincko->method_suffix);
+
 });
 
