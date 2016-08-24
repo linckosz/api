@@ -372,8 +372,8 @@ class Data {
 		$list_models = self::getModels();
 
 		//---OK---
+		$updates = array();
 		if($this->action == 'latest'){
-			$updates = array();
 			if(!is_null($this->partial) && !isset($this->partial->$uid) && empty((array)$this->partial->$uid)){
 				return null;
 			} else if(isset($this->partial) && isset($this->partial->$uid)){
@@ -411,7 +411,6 @@ class Data {
 		foreach ($result as $models) {
 			foreach ($models as $model) {
 				//toto => MEDIUM CPU hunger
-				//\libs\Watch::php($model->setContacts(), $model->getTable().'_'.$model->id, __FILE__, false, false, true);
 				$users = array_merge($users, $model->setContacts());
 			}
 		}
@@ -758,7 +757,8 @@ class Data {
 
 		$comments_update = false;
 		$period_all = array('daily');
-		if($day===1){ //Monday => launch weekly report for projects
+		if($day===1){ //Monday(1) => launch weekly report for projects
+		//if(true){ //toto
 			$period_all[] = 'weekly';
 		}
 		foreach ($period_all as $period) {
@@ -778,7 +778,7 @@ class Data {
 			}
 
 			$projects = Projects::Where('updated_at', '>=', $timelimit)->where('resume', $timeoffset)->get(array('id', 'updated_at', '_perm'));
-			//$projects = Projects::Where('updated_at', '>=', $timelimit)->get(array('id', 'updated_at', '_perm'));
+			//$projects = Projects::Where('updated_at', '>=', $timelimit)->get(array('id', 'updated_at', '_perm')); //toto
 			foreach ($projects as $project) {
 				$users_most = array();
 				$users = new \stdClass;
@@ -929,7 +929,7 @@ class Data {
 					if($activity && isset($data) && is_object($data)){
 						$comments_update = true;
 						$msg = json_encode($data);
-						//\libs\Watch::php($data, '$project '.$project->id, __FILE__, false, false, true);
+						\libs\Watch::php($data, '$project '.$project->id, __FILE__, false, false, true);
 					}
 				}
 

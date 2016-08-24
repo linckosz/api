@@ -377,7 +377,19 @@ class Files extends ModelLincko {
 				return false;
 			}
 		}
+		$dirty = $this->getDirty();
 		$return = parent::save($options);
+
+		if(
+			   isset($dirty['parent_type'])
+			&& isset($dirty['parent_id'])
+			&& $dirty['parent_type'] == 'users'
+			&& $dirty['parent_id'] == $app->lincko->data['uid']
+		){ //Change profile picture
+			$user = Users::getUser();
+			$user->profile_pic = $this->id;
+			$user->save();
+		}
 
 		if($new && $this->category=='video'){
 			sleep(1); //wait 1s to make sure the conversion is starting

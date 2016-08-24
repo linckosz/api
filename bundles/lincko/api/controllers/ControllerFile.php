@@ -11,6 +11,7 @@ use \libs\File;
 use \libs\STR;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\Data;
@@ -433,7 +434,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$width = 200;
 		$height = 200;
 		$scale = false;
-		$file = Files::find($id);
+		$file = Files::withTrashed()->find($id); //We allow businesses to be able to see deleted files for restoring purpose
 		if($file && $file->checkAccess(false)){
 			$content_type = 'application/force-download';
 			if($file->progress<100 && $file->category=='video'){

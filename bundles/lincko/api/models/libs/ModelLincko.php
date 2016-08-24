@@ -2170,7 +2170,7 @@ abstract class ModelLincko extends Model {
 					if(isset($original[$key])){ $old = $original[$key]; }
 					if(isset($dirty[$key])){ $new = $dirty[$key]; }
 					//We excluse default modification
-					if(isset($this->archive[$key])){
+					if(isset($this->archive[$key]) || isset($this->archive[$key.'_'.$new])){
 						$this->setHistory($key, $new, $old);
 					}
 				}
@@ -2481,7 +2481,7 @@ abstract class ModelLincko extends Model {
 													$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 												}
 												//We excluse default modification
-												if(isset($this->archive['pivot_'.$column])){
+												if(isset($this->archive['pivot_'.$column]) || isset($this->archive['pivot_'.$column.'_'.$value])){
 													$this->setHistory($column, $value, $value_old, $parameters, $type, $type_id);
 												}
 											}
@@ -2515,7 +2515,7 @@ abstract class ModelLincko extends Model {
 											$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 										}
 										//We excluse default modification
-										if(isset($this->archive['pivot_'.$column])){
+										if(isset($this->archive['pivot_'.$column]) || isset($this->archive['pivot_'.$column.'_'.$value])){
 											$this->setHistory($column, $value, null, $parameters, $type, $type_id);
 										}
 									}
