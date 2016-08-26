@@ -278,6 +278,8 @@ class CheckAccess extends \Slim\Middleware {
 						$this->nochecksum = true;
 					}
 				}
+			/*
+			//toto => PHPSESSID is not same on some browser (Chrome on Mac)
 			} else if(
 				   $app->lincko->method_suffix == '_get'
 				&& isset($_SESSION['workspace'])
@@ -301,6 +303,13 @@ class CheckAccess extends \Slim\Middleware {
 					$file_error = false;
 					return $this->next->call();
 				}
+			*/
+			} else if(
+				   $app->lincko->method_suffix == '_get'
+				&& preg_match("/^\/file\/\d+\/\d+\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri())
+				&& $this->checkRoute()!==false
+			){ //File reading
+				return $this->next->call();
 			} else if($app->lincko->method_suffix == '_options'){ //Check if can upload file
 				if($this->checkRoute()!==false){
 					$app->lincko->http_code_ok = true;
