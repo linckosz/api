@@ -68,6 +68,7 @@ class Projects extends ModelLincko {
 	protected static $relations_keys = array(
 		'users',
 		'workspaces',
+		'resume',
 	);
 
 	protected static $parent_list = 'workspaces';

@@ -777,8 +777,8 @@ class Data {
 				$timelimit->second = -$timeback; //This help to display at least one message of no activity for weekly report
 			}
 
-			$projects = Projects::Where('updated_at', '>=', $timelimit)->where('resume', $timeoffset)->get(array('id', 'updated_at', '_perm'));
-			//$projects = Projects::Where('updated_at', '>=', $timelimit)->get(array('id', 'updated_at', '_perm')); //toto
+			$projects = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->where('resume', $timeoffset)->get(array('id', 'updated_at', '_perm'));
+			//$projects = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->get(array('id', 'updated_at', '_perm')); //toto
 			foreach ($projects as $project) {
 				$users_most = array();
 				$users = new \stdClass;
@@ -799,15 +799,16 @@ class Data {
 					unset($data);
 					$result = array();
 					//Tasks
-					$result[$base+1] = array();
-					$result[$base+2] = array();
-					$result[$base+3] = array();
-					$result[$base+4] = array();
-					$result[$base+5] = array();
-					$result[$base+6] = 0;
-					$result[$base+7] = 0;
-					$result[$base+8] = 0;
-					$result[$base+9] = 0;
+					$result[$base] = 0;			//total tasks (not deleted)
+					$result[$base+1] = array();	//Nbr Done in day
+					$result[$base+2] = array();	//Total Done since the beginnning
+					$result[$base+3] = array(); //Total remain at the end (= total - done)
+					$result[$base+4] = array(); //Nbr new task in day
+					$result[$base+5] = array(); //total remain overdue
+					$result[$base+6] = 0;		//% of Done compare to remaining at the begining of teh day
+					$result[$base+7] = 0;		//I don't understand that one Done/Remain
+					$result[$base+8] = 0;		//% of Done compare to total tasks
+					$result[$base+9] = 0;		//Who did the most Done in that day
 					//Notes
 					$result[$base+11] = 0;
 					//Files
@@ -817,18 +818,24 @@ class Data {
 					$total = 0;
 					$remain_start = 0;
 					$done = 0;
+					$done_total = 0;
 					$activity = false; //This represents real activity (task completed, new file, etc.), not statistics calculated
 					$tasks = Tasks::Where('parent_id', $project->id)->get(array('id', 'created_at', 'approved_at', 'approved_by', 'approved', 'start', 'duration'));
 					foreach ($tasks as $task) {
 						$total++;
+						$result[$base]++;
 						//sum total number of tasks completed in that day
 						if($task->approved_at >= $timestart && $task->approved_at < $timeend){
 							$activity = true;
+							$done_total++;
 							$done++;
+							$remain_start++;
 							if(!isset($users_most[$task->approved_by])){ $users_most[$task->approved_by] = 0; }
 							$users_most[$task->approved_by]++;
 							array_push($result[$base+1], $task->id);
-						} else if($task->approved_at < $timestart){ //sum of remaining task when the day started
+						} else if($task->approved_at!==null && $task->approved_at < $timestart){ //sum of remaining task when the day started
+							$done_total++;
+						} else {
 							$remain_start++;
 						}
 						//sum the total number of tasks completed in the project since it started
@@ -850,8 +857,8 @@ class Data {
 					unset($tasks);
 
 					//calculate % of completed tasks in the project with open tasks remaining that day
-					if($total > 0){
-						$temp = ceil( 100 * ($total-$remain_start+$done) / $total );
+					if($remain_start > 0){
+						$temp = ceil( 100 * $done / $remain_start );
 						$temp = min(100, $temp);
 						$result[$base+6] = max(0, $temp);
 						if($temp>0){
@@ -859,16 +866,18 @@ class Data {
 						}
 					}
 
+					/*
 					//calculate % of all completed tasks in the project with open tasks remaining.
-					if($remain_start > 0){
-						$temp = ceil( 100 * $done / $remain_start );
+					//Note: I don't understand the meaning
+					if(($remain_start-$done) > 0){
+						$temp = ceil( 100 * $done / ($remain_start-$done) );
 						$temp = min(100, $temp);
 						$result[$base+7] = max(0, $temp);
 					}
+					*/
 
 					//calculate % of all completed tasks in the project.
 					if($total > 0){
-						$done_total = $total-$remain_start;
 						$temp = ceil( 100 * $done_total / $total );
 						$temp = min(100, $temp);
 						$result[$base+9] = max(0, $temp);
@@ -913,12 +922,14 @@ class Data {
 					}
 
 					foreach ($result as $key => $value) {
+						//Every value on front that are not recorded will be considerate as 0 or empty array
 						if($value==0 || count($value)==0){
-							continue;
+							if($key != $base){ //expect for base (100, 700) which is used to recognized a record
+								continue;
+							}
 						}
 						if(!isset($data)){ $data = new \stdClass; }
 						if(!isset($data->{'0'})){ $data->{'0'} = array(); }
-						if(!isset($data->{'0'}[$base])){ $data->{'0'}[$base] = 1; }
 						if(is_numeric($value)){
 							$data->{'0'}[$key] = (int) $value;
 						} else {
@@ -929,7 +940,7 @@ class Data {
 					if($activity && isset($data) && is_object($data)){
 						$comments_update = true;
 						$msg = json_encode($data);
-						\libs\Watch::php($data, '$project '.$project->id, __FILE__, false, false, true);
+						//\libs\Watch::php($data, '$project '.$project->id, __FILE__, false, false, true);
 					}
 				}
 

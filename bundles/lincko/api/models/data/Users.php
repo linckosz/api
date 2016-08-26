@@ -74,6 +74,8 @@ class Users extends ModelLincko {
 	protected $model_integer = array(
 		'gender',
 		'profile_pic',
+		'timeoffset',
+		'resume',
 	);
 
 	protected $model_boolean = array(
