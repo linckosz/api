@@ -23,6 +23,12 @@ class CheckAccess extends \Slim\Middleware {
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
+		if(!$this->data && $post = (object) $app->request->post()){
+			if(isset($post->data) && is_string($post->data)){
+				$post->data = json_decode($post->data);
+			}
+			$this->data = $post;
+		}
 		return true;
 	}
 

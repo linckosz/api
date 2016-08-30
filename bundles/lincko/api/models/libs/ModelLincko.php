@@ -1313,8 +1313,10 @@ abstract class ModelLincko extends Model {
 		if(isset($this->_perm)){
 			$list = json_decode($this->_perm);
 			$users = array();
-			foreach ($list as $users_id => $perm) {
-				$users[$users_id] = $users_id;
+			if(!empty($list)){
+				foreach ($list as $users_id => $perm) {
+					$users[$users_id] = $users_id;
+				}
 			}
 			if(!empty($users)){
 				Users::getQuery()->whereIn('id', $users)->update(['check_schema' => $timestamp]);
@@ -1802,7 +1804,7 @@ abstract class ModelLincko extends Model {
 			if(isset($this->id)){
 				if(isset($this->_perm)){
 					$perm = json_decode($this->_perm);
-					if(isset($perm->$uid)){
+					if(!empty($perm) && isset($perm->$uid)){
 						$this->accessibility = (bool) true;
 					}
 				}
@@ -1816,7 +1818,7 @@ abstract class ModelLincko extends Model {
 				if($parent){
 					if(isset($parent->_perm)){
 						$perm = json_decode($parent->_perm);
-						if(isset($perm->$uid)){
+						if(!empty($perm) && isset($perm->$uid)){
 							$this->accessibility = (bool) true;
 						}
 					} else {
@@ -1961,8 +1963,10 @@ abstract class ModelLincko extends Model {
 		$users_tables[$app->lincko->data['uid']][$this->getTable()] = true;
 		if(isset($this->_perm) && !empty($this->_perm) ){
 			$temp = json_decode($this->_perm);
-			foreach ($temp as $key => $value) {
-				$users_tables[$key][$this->getTable()] = true;
+			if(!empty($perm)){
+				foreach ($temp as $key => $value) {
+					$users_tables[$key][$this->getTable()] = true;
+				}
 			}
 		} else if($this->getTable()=='users'){
 			$temp = Users::filterPivotAccessList(array($app->lincko->data['uid']), false, true);

@@ -70,6 +70,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				return true;
 			} else {
 				$form = (object) $this->data;
+				if(isset($form->data) && is_string($form->data)){
+					$form = json_decode($form->data);
+				}
 			}
 		} else {
 			$form = $this->data->data;
@@ -166,6 +169,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$app = $this->app;
 		$app->render(200, array('msg' => 'OK'));
 		return true;
+	}
+
+	public function upload_post(){
+		return $this->create_post();
 	}
 
 	public function create_post(){
@@ -427,6 +434,14 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return false;
 	}
 
+	//This is used for third party software, it's more secured
+	public function open_post($type, $id){
+		$app = $this->app;
+		$workspace = $app->lincko->data['workspace_id'];
+		$uid = $app->lincko->data['uid'];
+		return $this->open_get($workspace, $uid, $type, $id);
+	}
+
 	public function open_get($workspace, $uid, $type, $id){
 		$app = $this->app;
 		ob_clean();
@@ -527,9 +542,17 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 	}
 
 	//This is a process to run in background, so we are not expecting an output
-	public function progress_post($id){
+	public function progress_post($id=false){
 		$app = $this->app;
-		if($file = Files::find($id)){
+		if(!$id){
+			$this->setFields();
+			$form = $this->form;
+			if(isset($form->id) ){
+				$id = $form->id;
+			}
+		}
+		if($id && $file = Files::withTrashed()->find($id)){
+			$lastvisit = time();
 			$file->setProgress();
 		}
 		return true;

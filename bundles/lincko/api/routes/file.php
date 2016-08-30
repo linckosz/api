@@ -2,6 +2,8 @@
 
 namespace bundles\lincko\api\routes;
 
+use \libs\Json;
+
 $app = \Slim\Slim::getInstance();
 
 $app->group('/file', function () use ($app) {
@@ -66,18 +68,56 @@ $app->group('/file', function () use ($app) {
 	))
 	->name('file_progress_post');
 
-	$app->map(
-		'/toto',
-		function(){
-			$app = \Slim\Slim::getInstance();
-			$data = json_decode($app->request->getBody());
-			$post = $app->request->post();
-			\libs\Watch::php($data, '$data', __FILE__, false, false, true);
-			\libs\Watch::php($post, '$post', __FILE__, false, false, true);
-		}
-	)
-	->via('POST', 'OPTIONS')
-	->name('file_toto'.$app->lincko->method_suffix);
-
 });
 
+//Third party connection (more secured)
+$app->group('/files', function () use ($app) {
+
+	$app->post(
+		'/read',
+		'\bundles\lincko\api\controllers\ControllerFile:read'.$app->lincko->method_suffix
+	)
+	->name('file_read'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/upload',
+		'\bundles\lincko\api\controllers\ControllerFile:upload'.$app->lincko->method_suffix
+	)
+	->name('files_upload'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/update',
+		'\bundles\lincko\api\controllers\ControllerFile:update'.$app->lincko->method_suffix
+	)
+	->name('files_update'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/delete',
+		'\bundles\lincko\api\controllers\ControllerFile:delete'.$app->lincko->method_suffix
+	)
+	->name('file_delete'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/restore',
+		'\bundles\lincko\api\controllers\ControllerFile:restore'.$app->lincko->method_suffix
+	)
+	->name('files_restore'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/progress',
+		'\bundles\lincko\api\controllers\ControllerFile:progress_post'
+	)
+	->name('files_progress_post');
+
+	$app->post(
+		'/:type/:id/:name',
+		'\bundles\lincko\api\controllers\ControllerFile:open_post'
+	)
+	->conditions(array(
+		'type' => 'link|thumbnail|download',
+		'id' => '\d+',
+		'name' => '.+',
+	))
+	->name('files_open_post');
+
+});

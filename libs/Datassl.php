@@ -17,6 +17,24 @@ class Datassl {
 	}
 
 	/**
+	* Encrypt string using base64
+	* @param string $textToEncrypt
+	* @param string $password User's optional password
+	*/
+	public static function encrypt_unsafe($textToEncrypt, $password = ''){
+		return base64_encode($textToEncrypt);
+	}
+
+	/**
+	* Decrypt string using base64
+	* @param string $textToDecrypt
+	* @param string $password User's optional password
+	*/
+	public static function decrypt_unsafe($textToDecrypt){
+		return base64_decode($textToDecrypt);
+	}
+
+	/**
 	* Encrypt string using openSSL module
 	* @param string $textToEncrypt
 	* @param string $password User's optional password
@@ -31,6 +49,10 @@ class Datassl {
 	* @param string $password User's optional password
 	*/
 	public static function decrypt($textToDecrypt, $password = ''){
-		return openssl_decrypt(base64_decode($textToDecrypt), self::METHOD, self::SALT, OPENSSL_RAW_DATA, self::createIV($password));
+		$data = openssl_decrypt(base64_decode($textToDecrypt), self::METHOD, self::SALT, OPENSSL_RAW_DATA, self::createIV($password));
+		if(!$data){
+			$data = self::decrypt_unsafe($textToDecrypt);
+		}
+		return $data;
 	}
 }
