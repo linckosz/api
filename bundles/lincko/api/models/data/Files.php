@@ -120,7 +120,7 @@ class Files extends ModelLincko {
 	protected static $list_categories = array(
 		'image' => array('image/bmp', 'image/x-windows-bmp', 'image/gif', 'image/jpeg', 'image/pjpeg', 'image/png', 'image/vnd.wap.wbmp'),
 
-		'video' => array('application/asx', 'application/vnd.ms-asf', 'application/vnd.rn-realmedia', 'application/vnd.rn-realmedia-vbr', 'application/x-mplayer2', 'application/x-pn-mpg', 'application/x-troff-msvideo', 'content/unknown', 'image/mov', 'image/mpg', 'video/3gpp', 'video/avi', 'video/dvd', 'video/mp4', 'video/mp4v-es', 'video/mpeg', 'video/mpeg2', 'video/mpg', 'video/msvideo', 'video/quicktime', 'video/xmpg2', 'video/x-flv', 'video/x-m4v', 'video/x-matroska', 'video/x-mpeg', 'video/x-mpeg2a', 'video/x-mpg', 'video/x-msvideo', 'video/x-ms-asf', 'video/x-ms-asf-plugin', 'video/x-ms-wm', 'video/x-ms-wmv', 'video/x-ms-wmx', 'video/x-quicktime', 'video/webm'),
+		'video' => array('application/asx', 'application/vnd.ms-asf', 'application/vnd.rn-realmedia', 'application/vnd.rn-realmedia-vbr', 'application/x-mplayer2', 'application/x-pn-mpg', 'application/x-troff-msvideo', 'content/unknown', 'image/mov', 'image/mpg', 'video/3gpp', 'video/avi', 'video/dvd', 'video/mp4', 'video/mp4v-es', 'video/mpeg', 'video/mpeg2', 'video/mpg', 'video/msvideo', 'video/quicktime', 'video/xmpg2', 'video/x-flv', 'flv-application/octet-stream', 'video/x-m4v', 'video/x-matroska', 'video/x-mpeg', 'video/x-mpeg2a', 'video/x-mpg', 'video/x-msvideo', 'video/x-ms-asf', 'video/x-ms-asf-plugin', 'video/x-ms-wm', 'video/x-ms-wmv', 'video/x-ms-wmx', 'video/x-quicktime', 'video/webm'),
 
 		'audio' => array('audio/3gpp', 'audio/aiff', 'audio/asf', 'audio/avi', 'audio/mp4', 'audio/mpeg', 'audio/vnd.rn-realaudio', 'audio/x-midi', 'audio/x-mpeg', 'audio/x-pm-realaudio-plugin', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/x-wav', 'audio/webm'),
 	);
@@ -331,15 +331,22 @@ class Files extends ModelLincko {
 					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
 					$orientation = $this->setOrientation();
 					try {
-						$this->thu_type = 'image/jpeg';
-						$this->thu_ext = 'jpg';
 						$src = WideImage::load($this->tmp_name);
 						$src = $src->resize(256, 256, 'inside', 'any');
 						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
 						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
-						$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
-						rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
+						if($this->ori_type = 'image/png'){
+							$this->thu_type = 'image/png';
+							$this->thu_ext = 'png';
+							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.png');
+							rename($folder_thu->getPath().$this->link.'.png', $folder_thu->getPath().$this->link);
+						} else {
+							$this->thu_type = 'image/jpeg';
+							$this->thu_ext = 'jpg';
+							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
+							rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
+						}
 					} catch(\Exception $e){
 						\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 						$this->thu_type = 'image/png';

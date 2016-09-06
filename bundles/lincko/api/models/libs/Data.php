@@ -753,14 +753,21 @@ class Data {
 		$now = Carbon::now();
 		$timeoffset = $now->hour;
 		$day = $now->dayOfWeek;
-		$timeend->hour = $timeoffset;
+		$timeend->hour = $timeoffset; //Current time starting at the beginning of current hour
 
 		$comments_update = false;
-		$period_all = array('daily');
-		if($day===1){ //Monday(1) => launch weekly report for projects
-		//if(true){ //toto
-			$period_all[] = 'weekly';
+		$period_all = array('daily', 'weekly');
+		$weekday = date('w');
+
+		$users_resume = array();
+		$temp = Users::Where('resume', $timeoffset)->get(array('id', 'weekly'));
+		//$temp = Users::Where('id', '>', 0)->get(array('id', 'weekly')); //toto (show for test)
+		foreach ($temp as $user) {
+			$users_resume[$user->id] = $user->weekly;
+			//$users_resume[$user->id] = $weekday; //toto (show for test)
 		}
+		//\libs\Watch::php($users_resume, '$users_resume', __FILE__, false, false, true);
+
 		foreach ($period_all as $period) {
 
 			//Default is 'daily'
@@ -770,33 +777,59 @@ class Data {
 				$timeback = 604800;
 				$base = 700;
 			}
+			$timenext = $timeend->copy();
+			$timenext->second = $timeback; //Give one more day/week to indicate a close target
 			$timestart = $timeend->copy();
-			$timestart->second = -$timeback;
+			$timestart->second = -$timeback; //When do we start to compare, fro one day/week before
+			$timeprevious = $timeend->copy();
+			$timeprevious->second = -2*$timeback; //This help to compare to previous day/week
 			$timelimit = $timestart->copy();
 			if($period=='weekly'){
 				$timelimit->second = -$timeback; //This help to display at least one message of no activity for weekly report
 			}
 
-			$projects = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->where('resume', $timeoffset)->get(array('id', 'updated_at', '_perm'));
-			//$projects = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->get(array('id', 'updated_at', '_perm')); //toto
+			
+			$projects = Projects::Where('personal_private', null)
+				->where('updated_at', '>=', $timelimit)
+				->where(function ($query) use ($timeoffset) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+					$query
+					->whereHas('users', function ($query) use ($timeoffset) {
+						$query
+						->where('resume', $timeoffset) //toto (hide for test)
+						->where('access', 1);
+					})
+					->orWhere('resume', $timeoffset) //toto (hide for test)
+					;
+				})
+				->get(array('id', 'updated_at', '_perm', 'resume', 'weekly'));
+
 			foreach ($projects as $project) {
 				$users_most = array();
 				$users = new \stdClass;
 				if($temp = json_decode($project->_perm)){
 					foreach ($temp as $users_id => $value) {
-						$users->$users_id = array(0, 0);
+						if(isset($users_resume[$users_id])){
+							if($period=='daily' || ($period=='weekly' && $users_resume[$users_id]==$weekday) ){
+								$users->$users_id = array(0, 0);
+							}
+						}
+						
 					}
 				}
 
 				$msg = false;
+				$msg_users = false;
 				if($period=='weekly'){
-					$msg = '';
+					$msg = 700; //Just this string will help to display "no activity" record
+					$msg_users = ''; //Make an empty string will force a user that has no record to see a motivation quote
 				}
 				if($project->updated_at >= $timestart){
 
 					usleep(1000);
 					unset($result);
+					unset($result_users);
 					unset($data);
+					unset($data_users);
 					$result = array();
 					//Tasks
 					$result[$base] = 0;			//total tasks (not deleted)
@@ -810,11 +843,23 @@ class Data {
 					$result[$base+8] = 0;		//% of Done compare to total tasks
 					$result[$base+9] = 0;		//Who did the most Done in that day
 					//Notes
-					$result[$base+11] = 0;
+					$result[$base+11] = array();
 					//Files
-					$result[$base+21] = 0;
+					$result[$base+21] = array();
+
+					$result_users = new \stdClass;
+					foreach ($users as $users_id => $value) {
+						$result_users->{$users_id} = array();
+						$result_users->{$users_id}[$base] = 0; //Activity at 1 if any
+						$result_users->{$users_id}[$base+1] = array();	//Nbr Done in day
+						$result_users->{$users_id}[$base+5] = array();	//total remain overdue
+						$result_users->{$users_id}[$base+30] = array();	//Nbr tasks due tomorrow
+						$result_users->{$users_id}[$base+31] = array();	//Nbr Done in previous day/week
+						$result_users->{$users_id}[$base+32] = 0;	//Nbr Done more than previous day/week
+					}
 
 					//Tasks
+					$tasks_list = false;
 					$total = 0;
 					$remain_start = 0;
 					$done = 0;
@@ -822,6 +867,32 @@ class Data {
 					$activity = false; //This represents real activity (task completed, new file, etc.), not statistics calculated
 					$tasks = Tasks::Where('parent_id', $project->id)->get(array('id', 'created_at', 'approved_at', 'approved_by', 'approved', 'start', 'duration'));
 					foreach ($tasks as $task) {
+						if($tasks_list){
+							$tasks_list .= ','.$task->id;
+						} else {
+							$tasks_list = $task->id;
+						}
+					}
+					$tasks_in_charge = array();
+					if($tasks_list){
+						$sql = 'SELECT `users_id`, `tasks_id` FROM `users_x_tasks` WHERE `tasks_id` IN ('.$tasks_list.') AND `access` = 1 AND `in_charge` = 1;';
+						if($temp = $db->select( $db->raw($sql))){
+							foreach ($temp as $key => $value) {
+								if(isset($result_users->{$value->users_id})){
+									if(!isset($tasks_in_charge[$value->tasks_id])){ $tasks_in_charge[$value->tasks_id] = array(); }
+									$tasks_in_charge[$value->tasks_id][$value->users_id] = true;
+								}
+							}
+						}
+					}
+					foreach ($tasks as $task) {
+						if($task->approved_at >= $timeprevious && $task->approved_at < $timestart){
+							//[per user] sum total number of tasks completed in previous day
+							if(isset($result_users->{$task->approved_by})){
+								array_push($result_users->{$task->approved_by}[$base+31], $task->id);
+								$result_users->{$task->approved_by}[$base] = 1;
+							}
+						}
 						$total++;
 						$result[$base]++;
 						//sum total number of tasks completed in that day
@@ -833,6 +904,11 @@ class Data {
 							if(!isset($users_most[$task->approved_by])){ $users_most[$task->approved_by] = 0; }
 							$users_most[$task->approved_by]++;
 							array_push($result[$base+1], $task->id);
+							//[per user] sum total number of tasks completed in that day
+							if(isset($result_users->{$task->approved_by})){
+								array_push($result_users->{$task->approved_by}[$base+1], $task->id);
+								$result_users->{$task->approved_by}[$base] = 1;
+							}
 						} else if($task->approved_at!==null && $task->approved_at < $timestart){ //sum of remaining task when the day started
 							$done_total++;
 						} else {
@@ -843,6 +919,13 @@ class Data {
 							array_push($result[$base+2], $task->id);
 						} else { //sum total number of tasks open (not completed) in the project.
 							array_push($result[$base+3], $task->id);
+							//[per user] Nbr tasks due tomorrow/this week
+							if(isset($tasks_in_charge[$task->id]) && $task->overdue($timenext) > 0){
+								foreach ($tasks_in_charge[$task->id] as $uid => $value) {
+									array_push($result_users->{$uid}[$base+30], $task->id);
+									$result_users->{$uid}[$base] = 1;
+								}
+							}
 						}
 						//sum the total number of new tasks created that day
 						if($task->created_at >= $timestart && $task->created_at < $timeend){
@@ -852,9 +935,20 @@ class Data {
 						//calculate the total number of overdue tasks
 						if($task->overdue($timeend) > 0){
 							array_push($result[$base+5], $task->id);
+							//[per user] calculate the total number of overdue tasks
+							if(isset($tasks_in_charge[$task->id])){
+								foreach ($tasks_in_charge[$task->id] as $uid => $value) {
+									array_push($result_users->{$uid}[$base+5], $task->id);
+									$result_users->{$uid}[$base] = 1;
+								}
+							}
 						}
 					}
 					unset($tasks);
+
+					foreach ($result_users as $uid => $result_uid) {
+						$result_users->{$uid}[$base+32] = max(0, count($result_uid[$base+1]) - count($result_uid[$base+31]) ); //Insure the mini will be 0 because we don't say less than (more than is for motiviation purpose)
+					}
 
 					//calculate % of completed tasks in the project with open tasks remaining that day
 					if($remain_start > 0){
@@ -894,57 +988,87 @@ class Data {
 					}
 
 					//Notes
-					$sql = 'SELECT COUNT(`id`) FROM `notes` WHERE `parent_id` = :projects_id AND `created_at` >= :timestart AND `created_at` < :timeend;';
+					$sql = 'SELECT `id` FROM `notes` WHERE `parent_id` = :projects_id AND `created_at` >= :timestart AND `created_at` < :timeend;';
 					$temp = $db->select( $db->raw($sql), array(
 						'projects_id' => $project->id,
 						'timestart' => $timestart,
 						'timeend' => $timeend,
 					));
-					if(isset($temp[0]->{'COUNT(`id`)'})){
-						$result[$base+11] = (int) $temp[0]->{'COUNT(`id`)'};
-						if($result[$base+11]>0){
-							$activity = true;
+					if(isset($temp[0]) && is_object($temp[0])){
+						foreach ($temp[0] as $key => $value) {
+							array_push($result[$base+11], $value);
 						}
 					}
 
 					//Files
-					$sql = 'SELECT COUNT(`id`) FROM `files` WHERE `parent_type` = \'projects\' AND `parent_id` = :projects_id AND `created_at` >= :timestart AND `created_at` < :timeend;';
+					$sql = 'SELECT `id` FROM `files` WHERE `parent_type` = \'projects\' AND `parent_id` = :projects_id AND `created_at` >= :timestart AND `created_at` < :timeend;';
 					$temp = $db->select( $db->raw($sql), array(
 						'projects_id' => $project->id,
 						'timestart' => $timestart,
 						'timeend' => $timeend,
 					));
-					if(isset($temp[0]->{'COUNT(`id`)'})){
-						$result[$base+21] = (int) $temp[0]->{'COUNT(`id`)'};
-						if($result[$base+21]>0){
-							$activity = true;
+					if(isset($temp[0]) && is_object($temp[0])){
+						foreach ($temp[0] as $key => $value) {
+							array_push($result[$base+21], $value);
 						}
 					}
 
-					foreach ($result as $key => $value) {
-						//Every value on front that are not recorded will be considerate as 0 or empty array
-						if($value==0 || count($value)==0){
-							if($key != $base){ //expect for base (100, 700) which is used to recognized a record
-								continue;
+					if($activity){
+						//Resume for team
+						foreach ($result as $key => $value) {
+							//Every value on front that are not recorded will be considerate as 0 or empty array
+							if($value==0 || count($value)==0){
+								if($key != $base){ //expect for base (100, 700) which is used to recognized a record
+									continue;
+								}
+							}
+							if(!isset($data)){ $data = new \stdClass; }
+							if(!isset($data->{'0'})){ $data->{'0'} = array(); }
+							if(is_numeric($value)){
+								$data->{'0'}[$key] = (int) $value;
+							} else {
+								$data->{'0'}[$key] = $value;
 							}
 						}
-						if(!isset($data)){ $data = new \stdClass; }
-						if(!isset($data->{'0'})){ $data->{'0'} = array(); }
-						if(is_numeric($value)){
-							$data->{'0'}[$key] = (int) $value;
-						} else {
-							$data->{'0'}[$key] = $value;
+						if(isset($data) && is_object($data)){
+							$comments_update = true;
+							$msg = json_encode($data);
+							//\libs\Watch::php($data, '[team] $project '.$project->id, __FILE__, false, false, true);
+						}
+						
+						//Resume for individual
+						foreach ($result_users as $uid => $result_uid) {
+							foreach ($result_uid as $key => $value) {
+								//Every value on front that are not recorded will be considerate as 0 or empty array
+								if($value==0 || count($value)==0){
+									continue;
+								}
+								if(!isset($data_users)){ $data_users = new \stdClass; }
+								if(!isset($data_users->{$uid})){ $data_users->{$uid} = array(); }
+								if(is_numeric($value)){
+									$data_users->{$uid}[$key] = (int) $value;
+								} else {
+									$data_users->{$uid}[$key] = $value;
+								}
+							}
+						}
+						if(isset($data_users) && is_object($data_users)){
+							$comments_update = true;
+							$msg_users = json_encode($data_users);
+							//\libs\Watch::php($data_users, '[individual] $project '.$project->id, __FILE__, false, false, true);
 						}
 					}
 
-					if($activity && isset($data) && is_object($data)){
-						$comments_update = true;
-						$msg = json_encode($data);
-						//\libs\Watch::php($data, '$project '.$project->id, __FILE__, false, false, true);
-					}
 				}
 
-				if($msg!==false){
+				
+
+
+				//For team
+				if($project->resume!=$timeoffset || ($period=='weekly' && $project->weekly!=$weekday) ){
+					$msg = false;
+				} else if($msg!==false){
+				//} if($msg!==false){ //toto (show for test)
 					$comment = new Comments;
 					$comment->created_by = 0;
 					$comment->updated_by = 0;
@@ -953,6 +1077,20 @@ class Data {
 					$comment->comment = $msg;
 					$comment->_perm = json_encode($users);
 					$comment->saveRobot();
+					//\libs\Watch::php(json_decode($msg), $period.': [team] $project '.$project->id, __FILE__, false, false, true);
+				}
+
+				//For Individual
+				if($msg_users!==false){
+					$comment = new Comments;
+					$comment->created_by = 0;
+					$comment->updated_by = 0;
+					$comment->parent_type = 'projects';
+					$comment->parent_id = $project->id;
+					$comment->comment = $msg_users;
+					$comment->_perm = json_encode($users);
+					$comment->saveRobot();
+					//\libs\Watch::php(json_decode($msg_users), $period.':[individual] $project '.$project->id, __FILE__, false, false, true);
 				}
 
 			}

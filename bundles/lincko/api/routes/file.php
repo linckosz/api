@@ -2,8 +2,6 @@
 
 namespace bundles\lincko\api\routes;
 
-use \libs\Json;
-
 $app = \Slim\Slim::getInstance();
 
 $app->group('/file', function () use ($app) {

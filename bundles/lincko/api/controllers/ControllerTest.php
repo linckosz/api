@@ -26,6 +26,7 @@ use \bundles\lincko\api\models\data\Settings;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
+use Carbon\Carbon;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -835,6 +836,7 @@ class ControllerTest extends Controller {
 
 		//$tp = fmod(-1, 24);
 		
+		/*
 		$list = array(
 			'users' => array(3=>3, 14=>14),
 			'chats' => array(579=>579, 580=>580),
@@ -855,6 +857,26 @@ class ControllerTest extends Controller {
 		foreach ($files as $file) {
 			$tp[$file->id] = $file->id;
 		}
+		*/
+
+		$timelimit = Carbon::today();
+		//$timelimit->second = -604800;
+		$timelimit->second = -86400;
+		$resume = 11;
+
+		//$temp = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->get(array('id', 'updated_at', '_perm', 'title'));
+
+		$temp = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->whereHas('users', function ($query) use ($resume) {
+			$query->where('resume', $resume)->where('access', 1);
+		})->get(array('id', 'updated_at', '_perm', 'title'));
+
+		$tp = array();
+		foreach ($temp as $value) {
+			$tp[$value->id] = $value->title;
+		}
+		//\libs\Watch::php( $tp, count($tp), __FILE__, false, false, true);
+
+		$tp = date('w');
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
