@@ -153,6 +153,7 @@ class Data {
 		$tree_scan = array();
 		$tree_desc = new \stdClass;
 		$tree_id = array();
+		$parent_not_trashed = array();
 		$result = new \stdClass;
 
 		if(!empty($list_models)){
@@ -230,11 +231,12 @@ class Data {
 							$class = $list_models[$key];
 							$list = array();
 							foreach ($tree_scan[$key] as $value_bis) {
-								if(isset($tree_id[$value_bis])){
-									$list[$value_bis] = $tree_id[$value_bis];
+								if(isset($parent_not_trashed[$value_bis])){
+									$list[$value_bis] = $parent_not_trashed[$value_bis];
 								}
 							}
 							$tree_id[$key] = array();
+							$parent_not_trashed[$key] = array();
 							$result_bis = false;
 							$nested = true;
 							while($nested){ //$nested is used for element that are linked to each others
@@ -254,6 +256,9 @@ class Data {
 										$list[$key][$value_bis->id] = $value_bis->id;
 									}
 									$tree_id[$key][$value_bis->id] = $value_bis->id;
+									if(true){
+										$parent_not_trashed[$key][$value_bis->id] = $value_bis->id;
+									}
 								}
 								unset($result_bis);
 								if(!empty($list[$key]) && $class::isParent($key)){
@@ -751,22 +756,22 @@ class Data {
 
 		$timeend = Carbon::today();
 		$now = Carbon::now();
-		$timeoffset = $now->hour;
+		$current_hour = $now->hour;
 		$day = $now->dayOfWeek;
-		$timeend->hour = $timeoffset; //Current time starting at the beginning of current hour
+		$timeend->hour = $current_hour; //Current time starting at the beginning of current hour
 
 		$comments_update = false;
 		$period_all = array('daily', 'weekly');
 		$weekday = date('w');
 
 		$users_resume = array();
-		$temp = Users::Where('resume', $timeoffset)->get(array('id', 'weekly'));
+		$temp = Users::Where('resume', $current_hour)->get(array('id', 'weekly'));
 		//$temp = Users::Where('id', '>', 0)->get(array('id', 'weekly')); //toto (show for test)
 		foreach ($temp as $user) {
 			$users_resume[$user->id] = $user->weekly;
 			//$users_resume[$user->id] = $weekday; //toto (show for test)
 		}
-		//\libs\Watch::php($users_resume, '$users_resume: '.$timeoffset, __FILE__, false, false, true);
+		//\libs\Watch::php($users_resume, '$users_resume: '.$current_hour, __FILE__, false, false, true);
 
 		foreach ($period_all as $period) {
 
@@ -791,14 +796,14 @@ class Data {
 			
 			$projects = Projects::Where('personal_private', null)
 				->where('updated_at', '>=', $timelimit)
-				->where(function ($query) use ($timeoffset) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+				->where(function ($query) use ($current_hour) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 					$query
-					->whereHas('users', function ($query) use ($timeoffset) {
+					->whereHas('users', function ($query) use ($current_hour) {
 						$query
-						->where('resume', $timeoffset) //toto (hide for test)
+						->where('resume', $current_hour) //toto (hide for test)
 						->where('access', 1);
 					})
-					->orWhere('resume', $timeoffset) //toto (hide for test)
+					->orWhere('resume', $current_hour) //toto (hide for test)
 					;
 				})
 				->get(array('id', 'updated_at', '_perm', 'resume', 'weekly'));
@@ -1062,11 +1067,8 @@ class Data {
 
 				}
 
-				
-
-
 				//For team
-				if($project->resume!=$timeoffset || ($period=='weekly' && $project->weekly!=$weekday) ){
+				if($project->resume!=$current_hour || ($period=='weekly' && $project->weekly!=$weekday) ){
 					$msg = false;
 				} else if(!empty($msg)){
 				//} if(!empty($msg)){ //toto (show for test)

@@ -402,7 +402,7 @@ class Users extends ModelLincko {
 		} else {
 			if(isset($this->timeoffset) && !isset($this->resume)){
 				//By default set personal resume at 6pm
-				$this->resume = 18 - $this->timeoffset;
+				$this->resume = 18 + $this->timeoffset;
 				if($this->resume < 0){
 					$this->resume = 24 + $this->resume;
 				}

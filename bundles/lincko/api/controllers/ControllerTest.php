@@ -859,24 +859,14 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		$timelimit = Carbon::today();
-		//$timelimit->second = -604800;
-		$timelimit->second = -86400;
-		$resume = 11;
+		$list = array(
+			'projects' => array(505=>505),
+		);
+		$tasks = Files::getItems($list)->get(array('id'));
+		$tp = $tasks->toArray();
 
-		//$temp = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->get(array('id', 'updated_at', '_perm', 'title'));
+		$tp = -(Users::getUser()->timeoffset);
 
-		$temp = Projects::Where('updated_at', '>=', $timelimit)->where('personal_private', null)->whereHas('users', function ($query) use ($resume) {
-			$query->where('resume', $resume)->where('access', 1);
-		})->get(array('id', 'updated_at', '_perm', 'title'));
-
-		$tp = array();
-		foreach ($temp as $value) {
-			$tp[$value->id] = $value->title;
-		}
-		//\libs\Watch::php( $tp, count($tp), __FILE__, false, false, true);
-
-		$tp = date('w');
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
