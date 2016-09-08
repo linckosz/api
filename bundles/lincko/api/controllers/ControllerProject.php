@@ -83,7 +83,7 @@ class ControllerProject extends Controller {
 		if(isset($form->resume) && is_numeric($form->resume)){
 			$form->resume = (int) $form->resume;
 			if($form->resume<0){
-				$form->resume = 24 - $form->resume;
+				$form->resume = 24 + $form->resume;
 			}
 			if($form->resume>=24){
 				$form->resume = 0;

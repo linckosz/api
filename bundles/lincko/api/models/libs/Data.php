@@ -766,7 +766,7 @@ class Data {
 			$users_resume[$user->id] = $user->weekly;
 			//$users_resume[$user->id] = $weekday; //toto (show for test)
 		}
-		//\libs\Watch::php($users_resume, '$users_resume', __FILE__, false, false, true);
+		//\libs\Watch::php($users_resume, '$users_resume: '.$timeoffset, __FILE__, false, false, true);
 
 		foreach ($period_all as $period) {
 
@@ -806,11 +806,13 @@ class Data {
 			foreach ($projects as $project) {
 				$users_most = array();
 				$users = new \stdClass;
+				$users_perm = new \stdClass;
 				if($temp = json_decode($project->_perm)){
 					foreach ($temp as $users_id => $value) {
+						$users_perm->$users_id = array(0, 0); //Only allow reading
 						if(isset($users_resume[$users_id])){
 							if($period=='daily' || ($period=='weekly' && $users_resume[$users_id]==$weekday) ){
-								$users->$users_id = array(0, 0);
+								$users->$users_id = true;
 							}
 						}
 						
@@ -821,7 +823,6 @@ class Data {
 				$msg_users = false;
 				if($period=='weekly'){
 					$msg = 700; //Just this string will help to display "no activity" record
-					$msg_users = ''; //Make an empty string will force a user that has no record to see a motivation quote
 				}
 				if($project->updated_at >= $timestart){
 
@@ -1067,28 +1068,29 @@ class Data {
 				//For team
 				if($project->resume!=$timeoffset || ($period=='weekly' && $project->weekly!=$weekday) ){
 					$msg = false;
-				} else if($msg!==false){
-				//} if($msg!==false){ //toto (show for test)
+				} else if(!empty($msg)){
+				//} if(!empty($msg)){ //toto (show for test)
 					$comment = new Comments;
 					$comment->created_by = 0;
 					$comment->updated_by = 0;
 					$comment->parent_type = 'projects';
 					$comment->parent_id = $project->id;
 					$comment->comment = $msg;
-					$comment->_perm = json_encode($users);
+					$comment->_perm = json_encode($users_perm);
 					$comment->saveRobot();
 					//\libs\Watch::php(json_decode($msg), $period.': [team] $project '.$project->id, __FILE__, false, false, true);
 				}
 
 				//For Individual
-				if($msg_users!==false){
+				//if(!empty($msg_users) || ($msg_users==='' && $period=='weekly' && $project->weekly==$weekday) ){ //[buggy]
+				if(!empty($msg_users)){
 					$comment = new Comments;
 					$comment->created_by = 0;
 					$comment->updated_by = 0;
 					$comment->parent_type = 'projects';
 					$comment->parent_id = $project->id;
 					$comment->comment = $msg_users;
-					$comment->_perm = json_encode($users);
+					$comment->_perm = json_encode($users_perm);
 					$comment->saveRobot();
 					//\libs\Watch::php(json_decode($msg_users), $period.':[individual] $project '.$project->id, __FILE__, false, false, true);
 				}

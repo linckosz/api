@@ -103,7 +103,7 @@ class ControllerUser extends Controller {
 		if(isset($form->timeoffset) && is_numeric($form->timeoffset)){
 			$form->timeoffset = (int) $form->timeoffset;
 			if($form->timeoffset<0){
-				$form->timeoffset = 24 - $form->timeoffset;
+				$form->timeoffset = 24 + $form->timeoffset;
 			}
 			if($form->timeoffset>=24){
 				$form->timeoffset = 0;
@@ -112,7 +112,7 @@ class ControllerUser extends Controller {
 		if(isset($form->resume) && is_numeric($form->resume)){
 			$form->resume = (int) $form->resume;
 			if($form->resume<0){
-				$form->resume = 24 - $form->resume;
+				$form->resume = 24 + $form->resume;
 			}
 			if($form->resume>=24){
 				$form->resume = 0;

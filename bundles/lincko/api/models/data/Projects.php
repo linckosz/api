@@ -140,7 +140,7 @@ class Projects extends ModelLincko {
 			$this->personal_private = null;
 			$this->parent_id = intval($app->lincko->data['workspace_id']);
 			if(!isset($this->resume)){
-				$timeoffset = Users::getUser()->timeoffset;
+				$this->resume = Users::getUser()->timeoffset;
 				//By default start it at midnigth
 				if($this->resume < 0){
 					$this->resume = 24 + $this->resume;
