@@ -1976,7 +1976,7 @@ abstract class ModelLincko extends Model {
 		$users_tables[$app->lincko->data['uid']][$this->getTable()] = true;
 		if(isset($this->_perm) && !empty($this->_perm) ){
 			$temp = json_decode($this->_perm);
-			if(!empty($perm)){
+			if(!empty($temp)){
 				foreach ($temp as $key => $value) {
 					$users_tables[$key][$this->getTable()] = true;
 				}
@@ -2174,8 +2174,8 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		}
-		Updates::informUsers($users_tables);
 
+		Updates::informUsers($users_tables);
 		
 		//We do not record any setup for new model, but only change for existing model
 		if(!$new){
@@ -2207,7 +2207,7 @@ abstract class ModelLincko extends Model {
 		$time = $this->freshTimestamp();
 		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time]);
 
-		$users_tables = $this->getUsersTable();
+		$users_tables = $this->getUsersTable($users_tables);
 
 		if($inform){ //We do by default
 			Updates::informUsers($users_tables);

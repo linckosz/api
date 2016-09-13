@@ -859,14 +859,8 @@ class ControllerTest extends Controller {
 			$tp[$file->id] = $file->id;
 		}
 		*/
-		$tp = array(
-			'mariadb1',
-			'mariadb2',
-			'mariadb3',
-		);
-
-		unset($tp[1]);
-		$tp = array_values($tp);
+		$tp = Tasks::find(6214);
+		$tp = $tp->getUsersTable();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
