@@ -162,6 +162,8 @@ $app->lincko->data['invitation_code'] = ''; //The code grab by the link
 
 $app->lincko->data['lastvisit'] = time()-1; //Less one second to avoid missing timestamp at the same time
 
+$app->lincko->data['database_data'] = 'data'; //data is the local, but it can be changed to third party database for more security
+
 //It will set to true some fields if the API key has access to some part of the application
 $app->lincko->api = array();
 
@@ -171,16 +173,21 @@ $app->lincko->routeFilter = array(
 	'user_create_post',
 	'user_signout_get',
 	'user_signout_post',
+	'user_forgot_post',
+	'user_reset_post',
 );
 
 //The hook ModifyRequest will redirect to the right class method according to the method requested in the body, it's not HTTP request which is always POST expect for file uploading (GET to get form, or POST to upload file)
 $app->lincko->method_suffix = '_invalid';
 //Input stream (readable one time only; not available for multipart/form-data requests)
 $contents = @file_get_contents('php://input');
-if($contents && isset(json_decode($contents)->method) && $method = mb_strtolower(json_decode($contents)->method)){
-	$app->lincko->method_suffix = '_'.$method;
-} else {
-	$app->lincko->method_suffix = '_'.strtolower($app->request->getMethod());
+if($contents){
+	$contents = json_decode($contents);
+	if(isset($contents->method) && $method = mb_strtolower($contents->method)){
+		$app->lincko->method_suffix = '_'.$method;
+	} else {
+		$app->lincko->method_suffix = '_'.strtolower($app->request->getMethod());
+	}
 }
 
 //Fillin the information about public and private key to the client side

@@ -3,6 +3,7 @@
 
 namespace bundles\lincko\api\controllers;
 
+use Carbon\Carbon;
 use \libs\Controller;
 use \libs\Datassl;
 use \libs\STR;
@@ -100,6 +101,9 @@ class ControllerUser extends Controller {
 		if(isset($form->profile_pic) && is_numeric($form->profile_pic)){
 			$form->profile_pic = (int) $form->profile_pic;
 		}
+		if(isset($form->code) && is_numeric($form->code)){
+			$form->code = (int) $form->code;
+		}
 		if(isset($form->timeoffset) && is_numeric($form->timeoffset)){
 			$form->timeoffset = (int) $form->timeoffset;
 			if($form->timeoffset<0){
@@ -178,19 +182,16 @@ class ControllerUser extends Controller {
 			$email = mb_strtolower($model->email);
 			if(isset($model->username)){
 				$username = $model->username;
-				$username_sha1 = sha1(mb_strtolower($username));
-				$internal_email = $username;
 			} else {
-				$username = $username_base = mb_strstr($email,'@',true);
-				$username_sha1 = sha1(mb_strtolower($username));
-				$internal_email = $username;
-				$limit = 1; //Limit while loop to 1000 iterations to avoid infinite loop
-				while( $limit <= 1000 && Users::where('username', '=', $username)->orWhere('internal_email', '=', $username)->orWhere('username_sha1', '=', $username_sha1)->first() ){
-					$username = $username_base.mt_rand(1, 9999);
-					$username_sha1 = sha1(mb_strtolower($username));
-					$internal_email = $username;
-					$limit++;
-				}
+				$username = mb_strstr($email,'@',true);
+			}
+			$username_sha1 = sha1(mb_strtolower($email));
+			$internal_email = $username;
+			$limit = 1; //Limit while loop to 1000 iterations to avoid infinite loop
+			while( $limit <= 1000 && Users::where('internal_email', '=', $username)->orWhere('username_sha1', '=', $username_sha1)->first() ){
+				$internal_email = $username.mt_rand(1, 9999);
+				$username_sha1 = sha1(mb_strtolower($internal_email));
+				$limit++;
 			}
 
 			$invitation = false;
@@ -206,12 +207,8 @@ class ControllerUser extends Controller {
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
 			} else if($invitation_used){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
-			} else if(Users::where('username', '=', $username)->orWhere('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
+			} else if(Users::where('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
 				//If the field username is missing, we keep the standard error message.
-				if(isset($model->username)){
-					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 18); //Username already in use.
-					$errfield = 'username';
-				}
 			} else if(Users::where('email', '=', $email)->first()){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 10); //Email address already in use.
 				$errfield = 'email';
@@ -250,7 +247,7 @@ class ControllerUser extends Controller {
 
 					$mail_subject = $app->trans->getBRUT('api', 1003, 1); //Congratulations on joining Lincko!
 					$mail_body_array = array(
-						'mail_username' => ucfirst($username),
+						'mail_username' => $username,
 						'mail_link' => $link,
 					);
 					$mail_body = $app->trans->getBRUT('api', 1003, 2, $mail_body_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
@@ -372,10 +369,7 @@ class ControllerUser extends Controller {
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
-				if(isset($form->username) && Users::where('username', '=', $form->username)->first()){
-					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 18); //Username already in use.
-					$errfield = 'username';
-				} else if($model->getParentAccess() && $model->save()){
+				if($model->getParentAccess() && $model->save()){
 					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account information updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
@@ -430,7 +424,7 @@ class ControllerUser extends Controller {
 						if(isset($authorize['public_key'])){
 							//\libs\Watch::php($authorize, '$authorize', __FILE__, false, false, false); //toto => why short public_key
 							$app->flashNow('public_key', $authorize['public_key']);
-							$app->lincko->translation['user_username'] = ucfirst($user->username);
+							$app->lincko->translation['user_username'] = $user->username;
 							$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
 						}
 						if(isset($authorize['username_sha1'])){
@@ -565,7 +559,7 @@ class ControllerUser extends Controller {
 
 					$mail_subject = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
 					$mail_body_array = array(
-						'mail_username' => ucfirst($username),
+						'mail_username' => $username,
 						'mail_link' => $link,
 					);
 					$mail_body = $app->trans->getBRUT('api', 1001, 2, $mail_body_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
@@ -604,8 +598,8 @@ class ControllerUser extends Controller {
 
 					$mail_subject = $app->trans->getBRUT('api', 1002, 1); //New Lincko collaboration request
 					$mail_body_array = array(
-						'mail_username_guest' => ucfirst($username_guest),
-						'mail_username' => ucfirst($username),
+						'mail_username_guest' => $username_guest,
+						'mail_username' => $username,
 						'mail_link' => $link,
 					);
 					$mail_body = $app->trans->getBRUT('api', 1002, 2, $mail_body_array); //You have a new collaboration request!<br><br>@@mail_username~~ has invited you to collaborate together using Lincko.
@@ -654,6 +648,148 @@ class ControllerUser extends Controller {
 		}
 
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function forgot_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 24)."\n"; //Account not found
+		$errmsg = $failmsg;
+		$errfield = 'undefined';
+
+		if(!isset($form->email) || !Users::validEmail($form->email)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
+			$errfield = 'email';
+		}
+		else if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
+			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->first()){
+				$user_log->code = substr(str_shuffle("123456789"), 0, 6);
+				$limit = Carbon::now();
+				$limit->second = 130; //We give 2 minutes to enter the code (including 10 more seconds to cover communication latency)
+				$user_log->code_limit = $limit;
+				$user_log->code_try = 3; //We give 3 shots to success
+				if($user_log->save()){
+					$mail = new Email();
+					$mail_subject = $app->trans->getBRUT('api', 1004, 1); //Password reset
+					$mail_body_array = array(
+						'mail_username' => $user->username,
+						'mail_code' => $user_log->code,
+					);
+					$mail_body = $app->trans->getBRUT('api', 1004, 2, $mail_body_array); //You have resquested a password reset. You need to eneter the code below within 2 minutes in the required field to be able to confirm the operation. CODE: <b>@@mail_code~~<b/>
+					$mail_template_array = array(
+						'mail_head' => $mail_subject,
+						'mail_body' => $mail_body,
+						'mail_foot' => '',
+					);
+					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+					$mail->addAddress($user->email);
+					$mail->setSubject($mail_subject);
+					if($mail->sendLater($mail_template)){
+						$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
+						$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg, 'email' => $user->email), 'error' => false));
+						return true;
+					}
+				}
+
+			}	
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function reset_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		if(!isset($form->email) || !Users::validEmail($form->email)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
+			$errfield = 'email';
+		}
+		else if(!isset($form->code) || !Users::validCode($form->code)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 31); //Please enter the correct code
+			$errfield = 'code';
+		}
+		else if(!isset($form->password) || !Users::validPassword($form->password)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters - Alphanumeric
+			$errfield = 'password';
+		}
+		else if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
+			$reset = false;
+			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->Where('code', '!=', null)->first()){
+				if($user_log->code == $form->code){
+					$now = time();
+					$code_limit = (new \DateTime($user_log->code_limit))->getTimestamp();
+					if($code_limit >= $now){
+						$user_log->old_password = $user_log->password; //Just in case, keep the old password in memory
+						$user_log->password = password_hash($form->password, PASSWORD_BCRYPT);
+						//Hide the password to avoid hacking
+						if(isset($form->password)){
+							$form->password = '******';
+						}
+						$user_log->code = null;
+						$user_log->code_limit = null;
+						$user_log->code_try = 0;
+						if($user_log->save()){
+							$mail = new Email();
+							$mail_subject = $app->trans->getBRUT('api', 1005, 1); //Password reset - Confirmation
+							$link = 'https://'.$app->lincko->domain;
+							$mail_body_array = array(
+								'mail_username' => $user->username,
+								'mail_link' => $link,
+							);
+							$mail_body = $app->trans->getBRUT('api', 1005, 2, $mail_body_array); //You have successfully reset your password. You can now signin.
+							$mail_template_array = array(
+								'mail_head' => $mail_subject,
+								'mail_body' => $mail_body,
+								'mail_foot' => '',
+							);
+							$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+							$mail->addAddress($user->email);
+							$mail->setSubject($mail_subject);
+							if($mail->sendLater($mail_template)){
+								$msg = $app->trans->getBRUT('api', 15, 34); //Password successfully reset
+								$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg), 'error' => false));
+								return true;
+							}
+						}
+					} else {
+						$user_log->code = null;
+						$user_log->code_limit = null;
+						$user_log->code_try = 0;
+						$reset = true;
+						$user_log->save();
+					}
+				} else {
+					$code_try = (int)$user_log->code_try;
+					$code_try--;
+					if($code_try<=0){
+						$code_try = 0;
+						$reset = true;
+						$user_log->code = null;
+						$user_log->code_limit = null;
+					}
+					$user_log->code_try = $code_try;
+					$user_log->save();
+				}
+			}	
+		}
+		//Hide the password to avoid hacking
+		if(isset($form->password)){
+			$form->password = '******';
+		}
+
+		if($reset){
+			$errmsg = $app->trans->getBRUT('api', 0, 10); //Operation failed
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield, 'reset' => $reset), 'error' => true));
 		return false;
 	}
 

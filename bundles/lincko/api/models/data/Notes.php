@@ -46,15 +46,15 @@ class Notes extends ModelLincko {
 	protected $name_code = 800;
 
 	protected $archive = array(
-		'created_at' => 801, //[{un|ucfirst}] created a new note
-		'_' => 802,//[{un|ucfirst}] modified a note
-		'title' => 803,//[{un|ucfirst}] changed a note title
-		'comment' => 804, //[{un|ucfirst}] modified a note content
-		'parent_id' => 805, //[{un|ucfirst}] moved a note to the project "[{pj|ucfirst}]"
-		'pivot_access_0' => 896, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a note
-		'pivot_access_1' => 897, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a note
-		'_restore' => 898,//[{un|ucfirst}] restored a note
-		'_delete' => 899,//[{un|ucfirst}] deleted a note
+		'created_at' => 801, //[{un}] created a new note
+		'_' => 802,//[{un}] modified a note
+		'title' => 803,//[{un}] changed a note title
+		'comment' => 804, //[{un}] modified a note content
+		'parent_id' => 805, //[{un}] moved a note to the project "[{pj|ucfirst}]"
+		'pivot_access_0' => 896, //[{un}] blocked [{[{cun}]}]'s access to a note
+		'pivot_access_1' => 897, //[{un}] authorized [{[{cun}]}]'s access to a note
+		'_restore' => 898,//[{un}] restored a note
+		'_delete' => 899,//[{un}] deleted a note
 	);
 
 	protected static $foreign_keys = array(
@@ -121,19 +121,16 @@ class Notes extends ModelLincko {
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
 		$query = $query
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+		->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$query
-			->where(function ($query) {
+			->where(function ($query) use ($list) {
 				if(isset($list['projects']) && count($list['projects'])>0){
 					$query = $query
 					->whereIn('notes.parent_id', $list['projects']);
+				} else {
+					$query = $query
+					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
 				}
-			})
-			->orWhere(function ($query) {
-				$query = $query
-				->whereHas('projects', function ($query) {
-					$query->getItems();
-				});
 			});
 		})
 		->whereHas("users", function($query) {

@@ -33,12 +33,12 @@ class Roles extends ModelLincko {
 	protected $name_code = 700;
 
 	protected $archive = array(
-		'created_at' => 701, //[{un|ucfirst}] created a new role
-		'_' => 702,//[{un|ucfirst}] modified a role
-		//'pivot_access_0' => 796, /* UNSUSED */ //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a role
-		//'pivot_access_1' => 797, /* UNSUSED */ //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a role
-		'_restore' => 798,//[{un|ucfirst}] restored a role
-		'_delete' => 799,//[{un|ucfirst}] deleted a role
+		'created_at' => 701, //[{un}] created a new role
+		'_' => 702,//[{un}] modified a role
+		//'pivot_access_0' => 796, /* UNSUSED */ //[{un}] blocked [{[{cun}]}]'s access to a role
+		//'pivot_access_1' => 797, /* UNSUSED */ //[{un}] authorized [{[{cun}]}]'s access to a role
+		'_restore' => 798,//[{un}] restored a role
+		'_delete' => 799,//[{un}] deleted a role
 	);
 
 	protected static $foreign_keys = array(

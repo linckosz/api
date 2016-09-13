@@ -12,7 +12,7 @@ $app = \Slim\Slim::getInstance();
 //Special functions to manage errors
 function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UNK'){
 	//Hide some warnings of exif_read_data because there is a PHP bug if EXIF are not standard
-	if($errmsg!="" && (mb_strpos($errmsg, "Warning => exif_read_data")===false || mb_strpos($errmsg, "Illegal")===false)){
+	if($errmsg!="" && (mb_strpos($errmsg, "exif_read_data")===false || mb_strpos($errmsg, "Illegal")===false)){
 		$app = \Slim\Slim::getInstance();
 		$logPath = $app->lincko->logPath.'/php';
 		$dt = date("Y-m-d H:i:s (T)");

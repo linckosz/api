@@ -55,6 +55,12 @@ abstract class ModelLincko extends Model {
 	//(used in "toJson()") This is the field to show in the content of history (it will add a prefix "+", which is used for search tool too)
 	protected $show_field = false;
 
+	//At true we download the corresponding amount within the days specifiied (value of 15 means history of last 15 days or not viewed)
+	protected $limit_history = false;
+
+	//At true it will only download a limited number of attrbutes to makes the download much more ligther
+	protected $limited = false;
+
 	//(used in "toJson()") All field to include in search engine, it will add a prefix "-"
 	protected $search_fields = array();
 
@@ -62,12 +68,12 @@ abstract class ModelLincko extends Model {
 	//Key: Column title to record
 	//Value: Title of record
 	protected $archive = array(
-		'created_at' => 1,  //[{un|ucfirst}] created a new item
-		'_' => 2,//[{un|ucfirst}] modified an item
-		'_access_0' => 96, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to an item
-		'_access_1' => 97, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to an item
-		'_restore' => 98,//[{un|ucfirst}] restored an item
-		'_delete' => 99,//[{un|ucfirst}] deleted an item
+		'created_at' => 1,  //[{un}] created a new item
+		'_' => 2,//[{un}] modified an item
+		'_access_0' => 96, //[{un}] blocked [{[{cun}]}]'s access to an item
+		'_access_1' => 97, //[{un}] authorized [{[{cun}]}]'s access to an item
+		'_restore' => 98,//[{un}] restored an item
+		'_delete' => 99,//[{un}] deleted an item
 	);
 
 	//When call toJson, convert fields to timestamp format if the field exists only
@@ -209,6 +215,7 @@ abstract class ModelLincko extends Model {
 
 	public function __construct(array $attributes = array()){
 		$app = self::getApp();
+		$this->connection = $app->lincko->data['database_data'];
 		parent::__construct($attributes);
 		//$db = Capsule::connection($this->connection);
 		//$db->enableQueryLog();
@@ -324,6 +331,12 @@ abstract class ModelLincko extends Model {
 	public static function validPassword($data, $optional=false){
 		//if($optional && empty($data)){ return true; }
 		$return = is_string($data) && preg_match("/^[\w\d]{6,60}$/u", $data);
+		return $return;
+	}
+
+	public static function validCode($data, $optional=false){
+		//if($optional && empty($data)){ return true; }
+		$return = is_numeric($data) && preg_match("/^[\d]{4,6}$/u", $data);
 		return $return;
 	}
 

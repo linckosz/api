@@ -36,14 +36,14 @@ class Workspaces extends ModelLincko {
 	protected $name_code = 300;
 
 	protected $archive = array(
-		'created_at' => 301, //[{un|ucfirst}] created a new workspace
-		'_' => 302,//[{un|ucfirst}] modified the workspace
-		'name' => 303,//[{un|ucfirst}] changed the workspace name
-		'domain' => 304,//[{un|ucfirst}] changed the workspace domain link
-		'pivot_access_0' => 396, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to the workspace
-		'pivot_access_1' => 397, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to the workspace
-		'_restore' => 398,//[{un|ucfirst}] restored the workspace
-		'_delete' => 399,//[{un|ucfirst}] deleted the workspace
+		'created_at' => 301, //[{un}] created a new workspace
+		'_' => 302,//[{un}] modified the workspace
+		'name' => 303,//[{un}] changed the workspace name
+		'domain' => 304,//[{un}] changed the workspace domain link
+		'pivot_access_0' => 396, //[{un}] blocked [{[{cun}]}]'s access to the workspace
+		'pivot_access_1' => 397, //[{un}] authorized [{[{cun}]}]'s access to the workspace
+		'_restore' => 398,//[{un}] restored the workspace
+		'_delete' => 399,//[{un}] deleted the workspace
 	);
 
 	protected static $relations_keys = array(

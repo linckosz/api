@@ -40,13 +40,15 @@ class Comments extends ModelLincko {
 
 	protected $name_code = 200;
 
+	protected $limit_history = 15;
+
 	protected $archive = array(
-		'created_at' => 201, //[{un|ucfirst}] sent a new message
-		'_' => 202,//[{un|ucfirst}] modified a message
-		'comment' => 202,//[{un|ucfirst}] modified a message
-		'recalled_by' => 203,//[{un|ucfirst}] recalled a message
-		'_restore' => 298,//[{un|ucfirst}] restored a message
-		'_delete' => 299,//[{un|ucfirst}] deleted a message
+		'created_at' => 201, //[{un}] sent a new message
+		'_' => 202,//[{un}] modified a message
+		'comment' => 202,//[{un}] modified a message
+		'recalled_by' => 203,//[{un}] recalled a message
+		'_restore' => 298,//[{un}] restored a message
+		'_delete' => 299,//[{un}] deleted a message
 	);
 
 	protected static $foreign_keys = array(
@@ -163,6 +165,7 @@ class Comments extends ModelLincko {
 			})
 			//Get any other comments but exclude users' ones 
 			->orWhere(function ($query) use ($list) {
+				$ask = false;
 				foreach ($list as $table_name => $list_id) {
 					if($table_name != 'users' && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
 						$this->var['parent_type'] = $table_name;
@@ -173,7 +176,12 @@ class Comments extends ModelLincko {
 							->where('comments.parent_type', $this->var['parent_type'])
 							->whereIn('comments.parent_id', $this->var['parent_id_array']);
 						});
+						$ask = true;
 					}
+				}
+				if(!$ask){
+					$query = $query
+					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
 				}
 			});
 		});

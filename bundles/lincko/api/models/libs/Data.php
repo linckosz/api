@@ -153,7 +153,7 @@ class Data {
 		$tree_scan = array();
 		$tree_desc = new \stdClass;
 		$tree_id = array();
-		$parent_not_trashed = array();
+		$not_trashed = array();
 		$result = new \stdClass;
 
 		if(!empty($list_models)){
@@ -231,12 +231,19 @@ class Data {
 							$class = $list_models[$key];
 							$list = array();
 							foreach ($tree_scan[$key] as $value_bis) {
-								if(isset($parent_not_trashed[$value_bis])){
-									$list[$value_bis] = $parent_not_trashed[$value_bis];
+								if(isset($tree_id[$value_bis])){
+									$list[$value_bis] = $tree_id[$value_bis];
+									if(isset($not_trashed[$value_bis])){
+										foreach ($not_trashed[$value_bis] as $key_trashed => $value_trashed) {
+											if(!$value_trashed){
+												unset($list[$value_bis][$key_trashed]); //Helps to not download children of any delete item, but keep deleted items for activity feed purpose
+											}
+										}
+									}
 								}
 							}
 							$tree_id[$key] = array();
-							$parent_not_trashed[$key] = array();
+							$not_trashed[$key] = array();
 							$result_bis = false;
 							$nested = true;
 							while($nested){ //$nested is used for element that are linked to each others
@@ -256,8 +263,9 @@ class Data {
 										$list[$key][$value_bis->id] = $value_bis->id;
 									}
 									$tree_id[$key][$value_bis->id] = $value_bis->id;
-									if(true){
-										$parent_not_trashed[$key][$value_bis->id] = $value_bis->id;
+									$not_trashed[$key][$value_bis->id] = true;
+									if(isset($value_bis->deleted_at) && $value_bis->deleted_at!=null){
+										$not_trashed[$key][$value_bis->id] = false; //It's a deleted item
 									}
 								}
 								unset($result_bis);

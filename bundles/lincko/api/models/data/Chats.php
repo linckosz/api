@@ -39,13 +39,13 @@ class Chats extends ModelLincko {
 	protected $name_code = 100;
 
 	protected $archive = array(
-		'created_at' => 101, //[{un|ucfirst}] created a new chat group
-		'_' => 102,//[{un|ucfirst}] modified a chat group
-		'title' => 103,//[{un|ucfirst}] changed a chat group title
-		'pivot_access_0' => 196, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a chat group
-		'pivot_access_1' => 197, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a chat group
-		'_restore' => 198,//[{un|ucfirst}] restored a chat group
-		'_delete' => 199,//[{un|ucfirst}] deleted a chat group
+		'created_at' => 101, //[{un}] created a new chat group
+		'_' => 102,//[{un}] modified a chat group
+		'title' => 103,//[{un}] changed a chat group title
+		'pivot_access_0' => 196, //[{un}] blocked [{[{cun}]}]'s access to a chat group
+		'pivot_access_1' => 197, //[{un}] authorized [{[{cun}]}]'s access to a chat group
+		'_restore' => 198,//[{un}] restored a chat group
+		'_delete' => 199,//[{un}] deleted a chat group
 	);
 
 	protected static $foreign_keys = array(
@@ -130,6 +130,7 @@ class Chats extends ModelLincko {
 				->orWhere('chats.parent_type', null);
 			})
 			->orWhere(function ($query) use ($list) {
+				$ask = false;
 				foreach ($list as $table_name => $list_id) {
 					if(!empty($table_name) && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
 						$this->var['parent_type'] = $table_name;
@@ -140,7 +141,12 @@ class Chats extends ModelLincko {
 							->where('chats.parent_type', $this->var['parent_type'])
 							->whereIn('chats.parent_id', $this->var['parent_id_array']);
 						});
+						$ask = true;
 					}
+				}
+				if(!$ask){
+					$query = $query
+					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
 				}
 			});
 		})

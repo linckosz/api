@@ -46,17 +46,17 @@ class Projects extends ModelLincko {
 	protected $name_code = 400;
 
 	protected $archive = array(
-		'created_at' => 401, //[{un|ucfirst}] created a new project
-		'_' => 402,//[{un|ucfirst}] modified a project
-		'title' => 403,//[{un|ucfirst}] changed a project name
-		'description' => 404, //[{un|ucfirst}] modified a project description
-		'resume' => 402,//[{un|ucfirst}] modified a project
-		'_tasks_0' => 405,//[{un|ucfirst}] moved the task "[{tt}]" from this project to another one
-		'_tasks_1' => 406,//[{un|ucfirst}] moved the task "[{tt}]" to this project
-		'pivot_access_0' => 496, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a project
-		'pivot_access_1' => 497, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a project
-		'_restore' => 498,//[{un|ucfirst}] restored a project
-		'_delete' => 499,//[{un|ucfirst}] deleted a project
+		'created_at' => 401, //[{un}] created a new project
+		'_' => 402,//[{un}] modified a project
+		'title' => 403,//[{un}] changed a project name
+		'description' => 404, //[{un}] modified a project description
+		'resume' => 402,//[{un}] modified a project
+		'_tasks_0' => 405,//[{un}] moved the task "[{tt}]" from this project to another one
+		'_tasks_1' => 406,//[{un}] moved the task "[{tt}]" to this project
+		'pivot_access_0' => 496, //[{un}] blocked [{[{cun}]}]'s access to a project
+		'pivot_access_1' => 497, //[{un}] authorized [{[{cun}]}]'s access to a project
+		'_restore' => 498,//[{un}] restored a project
+		'_delete' => 499,//[{un}] deleted a project
 	);
 
 	protected static $foreign_keys = array(

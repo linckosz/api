@@ -53,20 +53,20 @@ class Users extends ModelLincko {
 	protected $name_code = 600;
 
 	protected $archive = array(
-		'created_at' => 601,  //[{un|ucfirst}] joined @@title~~
-		'_' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'username' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'firstname' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'lastname' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'gender' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'email' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'timeoffset' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'resume' => 602,//[{un|ucfirst}] modified [{hh}] profile
-		'pivot_invitation_1' => 695, //[{un|ucfirst}] has invited [{[{cun|ucfirst}]}]
-		'pivot_access_0' => 696, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to [{hh}] profile
-		'pivot_access_1' => 697, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to [{hh}] profile
-		'_restore' => 698,//[{un|ucfirst}] restored [{hh}] profile
-		'_delete' => 699,//[{un|ucfirst}] deleted [{hh}] profile
+		'created_at' => 601,  //[{un}] joined @@title~~
+		'_' => 602,//[{un}] modified [{hh}] profile
+		'username' => 602,//[{un}] modified [{hh}] profile
+		'firstname' => 602,//[{un}] modified [{hh}] profile
+		'lastname' => 602,//[{un}] modified [{hh}] profile
+		'gender' => 602,//[{un}] modified [{hh}] profile
+		'email' => 602,//[{un}] modified [{hh}] profile
+		'timeoffset' => 602,//[{un}] modified [{hh}] profile
+		'resume' => 602,//[{un}] modified [{hh}] profile
+		'pivot_invitation_1' => 695, //[{un}] has invited [{[{cun}]}]
+		'pivot_access_0' => 696, //[{un}] blocked [{[{cun}]}]'s access to [{hh}] profile
+		'pivot_access_1' => 697, //[{un}] authorized [{[{cun}]}]'s access to [{hh}] profile
+		'_restore' => 698,//[{un}] restored [{hh}] profile
+		'_delete' => 699,//[{un}] deleted [{hh}] profile
 	);
 
 	protected static $relations_keys = array();

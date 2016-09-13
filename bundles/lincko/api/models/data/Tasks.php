@@ -57,27 +57,27 @@ class Tasks extends ModelLincko {
 	protected $name_code = 500;
 
 	protected $archive = array(
-		'created_at' => 501, //[{un|ucfirst}] created a new task
-		'_' => 502,//[{un|ucfirst}] modified a task
-		'title' => 503,//[{un|ucfirst}] changed a task title
-		'comment' => 504, //[{un|ucfirst}] modified a task content
-		'duration' => 506, //[{un|ucfirst}] modified a task due date
-		'fixed' => 502, //[{un|ucfirst}] modified a task
-		'status' => 502, //[{un|ucfirst}] modified a task
-		'start' => 506, //[{un|ucfirst}] modified a task due date
-		'progress' => 502, //[{un|ucfirst}] modified a task
-		'parent_id' => 505, //[{un|ucfirst}] moved a task to the project "[{pj|ucfirst}]"
-		'pivot_delay' => 550, //[{un|ucfirst}] modified a task delay
-		'pivot_in_charge_0' => 551, //[{cun|ucfirst}] is in charge of a task
-		'pivot_in_charge_1' => 552, //[{cun|ucfirst}] is unassigned from a task
-		'pivot_approver_0' => 553, //[{cun|ucfirst}] becomes an approver to a task
-		'pivot_approver_1' => 554, //[{cun|ucfirst}] is no longer an approver to a task
-		'approved_0' => 555, //[{un|ucfirst}] reopened a task
-		'approved_1' => 556, //[{un|ucfirst}] completed a task
-		'pivot_access_0' => 596, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a task
-		'pivot_access_1' => 597, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a task
-		'_restore' => 598,//[{un|ucfirst}] restored a task
-		'_delete' => 599,//[{un|ucfirst}] deleted a task
+		'created_at' => 501, //[{un}] created a new task
+		'_' => 502,//[{un}] modified a task
+		'title' => 503,//[{un}] changed a task title
+		'comment' => 504, //[{un}] modified a task content
+		'duration' => 506, //[{un}] modified a task due date
+		'fixed' => 502, //[{un}] modified a task
+		'status' => 502, //[{un}] modified a task
+		'start' => 506, //[{un}] modified a task due date
+		'progress' => 502, //[{un}] modified a task
+		'parent_id' => 505, //[{un}] moved a task to the project "[{pj|ucfirst}]"
+		'pivot_delay' => 550, //[{un}] modified a task delay
+		'pivot_in_charge_0' => 551, //[{cun}] is in charge of a task
+		'pivot_in_charge_1' => 552, //[{cun}] is unassigned from a task
+		'pivot_approver_0' => 553, //[{cun}] becomes an approver to a task
+		'pivot_approver_1' => 554, //[{cun}] is no longer an approver to a task
+		'approved_0' => 555, //[{un}] reopened a task
+		'approved_1' => 556, //[{un}] completed a task
+		'pivot_access_0' => 596, //[{un}] blocked [{[{cun}]}]'s access to a task
+		'pivot_access_1' => 597, //[{un}] authorized [{[{cun}]}]'s access to a task
+		'_restore' => 598,//[{un}] restored a task
+		'_delete' => 599,//[{un}] deleted a task
 	);
 
 	protected static $foreign_keys = array(
@@ -187,19 +187,16 @@ class Tasks extends ModelLincko {
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all tasks with access 1, and all tasks which are not in the relation table, but the second has to be in conjonction with projects
 		$query = $query
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+		->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$query
-			->where(function ($query) {
+			->where(function ($query) use ($list) {
 				if(isset($list['projects']) && count($list['projects'])>0){
 					$query = $query
 					->whereIn('tasks.parent_id', $list['projects']);
+				} else {
+					$query = $query
+					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
 				}
-			})
-			->orWhere(function ($query) {
-				$query = $query
-				->whereHas('projects', function ($query) {
-					$query->getItems();
-				});
 			});
 		})
 		->whereHas("users", function($query) {

@@ -7,6 +7,7 @@ use \libs\Email;
 use \libs\Folders;
 use \libs\Json;
 use \libs\STR;
+use \libs\Network;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
@@ -858,15 +859,14 @@ class ControllerTest extends Controller {
 			$tp[$file->id] = $file->id;
 		}
 		*/
-
-		$list = array(
-			'projects' => array(505=>505),
+		$tp = array(
+			'mariadb1',
+			'mariadb2',
+			'mariadb3',
 		);
-		$tasks = Files::getItems($list)->get(array('id'));
-		$tp = $tasks->toArray();
 
-		$tp = -(Users::getUser()->timeoffset);
-
+		unset($tp[1]);
+		$tp = array_values($tp);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

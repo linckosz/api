@@ -63,14 +63,14 @@ class Files extends ModelLincko {
 	protected $name_code = 900;
 
 	protected $archive = array(
-		'created_at' => 901, //[{un|ucfirst}] uploaded a file
-		'_' => 902, //[{un|ucfirst}] modified a file
-		'name' => 903, //[{un|ucfirst}] changed a file name
-		'comment' => 904, //[{un|ucfirst}] modified a file description
-		'pivot_access_0' => 996, //[{un|ucfirst}] blocked [{[{cun|ucfirst}]}]'s access to a file
-		'pivot_access_1' => 997, //[{un|ucfirst}] authorized [{[{cun|ucfirst}]}]'s access to a file
-		'_restore' => 998,//[{un|ucfirst}] restored a file
-		'_delete' => 999,//[{un|ucfirst}] deleted a file
+		'created_at' => 901, //[{un}] uploaded a file
+		'_' => 902, //[{un}] modified a file
+		'name' => 903, //[{un}] changed a file name
+		'comment' => 904, //[{un}] modified a file description
+		'pivot_access_0' => 996, //[{un}] blocked [{[{cun}]}]'s access to a file
+		'pivot_access_1' => 997, //[{un}] authorized [{[{cun}]}]'s access to a file
+		'_restore' => 998,//[{un}] restored a file
+		'_delete' => 999,//[{un}] deleted a file
 	);
 
 	protected static $foreign_keys = array(
@@ -185,6 +185,7 @@ class Files extends ModelLincko {
 		unset($list['users']); //Excluse user profile picture (this record also old useless pictures), but we will have to add them later manually on Data.php
 		$query = $query
 		->where(function ($query) use ($list) {
+			$ask = false;
 			foreach ($list as $table_name => $list_id) {
 				if(in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
 					if($table_name=='users'){ //unused
@@ -202,8 +203,13 @@ class Files extends ModelLincko {
 							->where('files.parent_type', $this->var['parent_type'])
 							->whereIn('files.parent_id', $this->var['parent_id_array']);
 						});
+						$ask = true;
 					}
 				}
+			}
+			if(!$ask){
+				$query = $query
+				->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
 			}
 		})
 		->whereHas("users", function($query) {
@@ -260,7 +266,7 @@ class Files extends ModelLincko {
 			if($exif = @exif_read_data($this->tmp_name)){
 				if(isset($exif['Orientation'])){
 					$orientation = $exif['Orientation'];
-					switch ($exif['Orientation']) {
+					switch ($orientation) {
 						case 1:
 							// 1 => Do nothing
 							break;
@@ -294,6 +300,9 @@ class Files extends ModelLincko {
 							// 8 => Rotate 270 clockwise (270)
 							$angle = 270;
 							break;
+						default:
+							// 1 => Do nothing
+							$orientation = 1; //Force no orientation
 					}
 				}
 			}
@@ -325,18 +334,40 @@ class Files extends ModelLincko {
 				$this->thu_type = null;
 				$this->thu_ext = null;
 				$this->progress = 100;
+				$source = $this->tmp_name;
 				if($this->category=='image'){
-					copy($this->tmp_name, $folder_ori->getPath().$this->link);
+					$orientation = $this->setOrientation();
+					if(($this->ori_type == 'image/jpeg' || $this->ori_type == 'image/png') && $this->orientation!=1){
+						//For a jpeg we check if there is any orientation, if yes we rotate and overwrite
+						$src = WideImage::load($this->tmp_name);
+						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
+						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
+						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
+						$this->orientation = 1;
+						if($this->ori_type == 'image/png'){
+							$src = $src->saveToFile($folder_ori->getPath().$this->link.'.png');
+							rename($folder_ori->getPath().$this->link.'.png', $folder_ori->getPath().$this->link);
+						} else {
+							$compression = 90;
+							exec("identify -format '%Q' \"$source\" 2>&1 ", $tablo, $error);
+							if(!$error && is_numeric($tablo[0]) && $tablo[0]>0){
+								$compression = $tablo[0];
+							}
+							$src = $src->saveToFile($folder_ori->getPath().$this->link.'.jpg', $compression);
+							rename($folder_ori->getPath().$this->link.'.jpg', $folder_ori->getPath().$this->link);
+						}
+					} else {
+						copy($this->tmp_name, $folder_ori->getPath().$this->link);
+					}
 					$folder_thu = new Folders;
 					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
-					$orientation = $this->setOrientation();
 					try {
 						$src = WideImage::load($this->tmp_name);
 						$src = $src->resize(256, 256, 'inside', 'any');
 						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
 						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
-						if($this->ori_type = 'image/png'){
+						if($this->ori_type == 'image/png'){
 							$this->thu_type = 'image/png';
 							$this->thu_ext = 'png';
 							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.png');

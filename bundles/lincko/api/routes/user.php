@@ -72,4 +72,16 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_my_user'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/forgot',
+		'\bundles\lincko\api\controllers\ControllerUser:forgot'.$app->lincko->method_suffix
+	)
+	->name('user_forgot'.$app->lincko->method_suffix);
+
+	$app->post(
+		'/reset',
+		'\bundles\lincko\api\controllers\ControllerUser:reset'.$app->lincko->method_suffix
+	)
+	->name('user_reset'.$app->lincko->method_suffix);
+
 });

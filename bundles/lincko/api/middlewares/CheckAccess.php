@@ -88,6 +88,31 @@ class CheckAccess extends \Slim\Middleware {
 		return false;
 	}
 
+	//In case a client is using their one server to store data, we
+	protected function setWorkspaceConnection($workspace){
+		if($workspace->db_host!=null && $workspace->db_pwd!=null){
+			$app = $this->app;
+			$db_host = Datassl::simple_decrypt($workspace->db_host);
+			$db_pwd = Datassl::simple_decrypt($workspace->db_pwd);
+			$capsule = $app->lincko->data['capsule'];
+			$capsule->addConnection(array(
+				'driver' => 'mysql',
+				'host' => $db_host,
+				'database' => 'cli_lincko_data',
+				'username' => 'cli_lincko_data',
+				'password' => $db_pwd,
+				'charset'   => 'utf8mb4',
+				'collation' => 'utf8mb4_unicode_ci',
+				'prefix' => '',
+			), 'client');
+
+			//$users = Users::on('client')->find(3);
+			//\libs\Watch::php($db_host, '$db_host', __FILE__, false, false, true);
+			//\libs\Watch::php($db_pwd, '$db_pwd', __FILE__, false, false, true);
+
+		}
+	}
+
 	protected function flashKeys(){
 		$app = $this->app;
 		$data = $this->data;
@@ -165,13 +190,12 @@ class CheckAccess extends \Slim\Middleware {
 				$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 				return true;
 			} else {
-				$workspaces = Workspaces::getLinked()->get();
-				//We check that the user has access to the workspace
-				foreach ($workspaces as $key => $value) {
-					if(!empty($data->workspace) && $value->url == $data->workspace){ //Company workspace
-						$app->lincko->data['workspace'] = $value->url;
-						$app->lincko->data['workspace_id'] = $value->getWorkspaceID();
+				if($workspace = Workspaces::where('url', $data->workspace)->first()){
+					if($workspace->checkAccess(false)){
+						$app->lincko->data['workspace'] = $workspace->url;
+						$app->lincko->data['workspace_id'] = $workspace->id;
 						$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+						$this->setWorkspaceConnection($workspace);
 						return true;
 					}
 				}
@@ -284,32 +308,6 @@ class CheckAccess extends \Slim\Middleware {
 						$this->nochecksum = true;
 					}
 				}
-			/*
-			//toto => PHPSESSID is not same on some browser (Chrome on Mac)
-			} else if(
-				   $app->lincko->method_suffix == '_get'
-				&& isset($_SESSION['workspace'])
-				&& isset($_SESSION['users_id'])
-				&& isset($_SESSION['fingerprint'])
-				&& isset($_SESSION['public_key'])
-				&& preg_match("/^\/file\/".$_SESSION['workspace']."\/".$_SESSION['users_id']."\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri())
-				&& $this->checkRoute()!==false
-			){ //File reading
-				$file_error = true;
-				$data = new \stdClass;
-				$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
-				$data->workspace = $_SESSION['workspace'];
-				$data->fingerprint = $_SESSION['fingerprint'];
-				$data->checksum = 0;
-				$data->data = new \stdClass;
-				$this->nochecksum = true;
-				$this->data = $data;
-				$app->lincko->data['uid'] = $_SESSION['users_id'];
-				if($this->checkWorkspace() && $this->checkAPI() && $data->public_key = Authorization::getPublicKey($_SESSION['users_id'], $_SESSION['fingerprint'], $_SESSION['public_key'])){	
-					$file_error = false;
-					return $this->next->call();
-				}
-			*/
 			} else if(
 				   $app->lincko->method_suffix == '_get'
 				&& preg_match("/^\/file\/\d+\/\d+\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri())
