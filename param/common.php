@@ -185,10 +185,12 @@ if($contents){
 	$contents = json_decode($contents);
 	if(isset($contents->method) && $method = mb_strtolower($contents->method)){
 		$app->lincko->method_suffix = '_'.$method;
-	} else {
-		$app->lincko->method_suffix = '_'.strtolower($app->request->getMethod());
 	}
+} else {
+	$app->lincko->method_suffix = '_'.strtolower($app->request->getMethod());
 }
+
+
 
 //Fillin the information about public and private key to the client side
 $app->lincko->securityFlash = array();
