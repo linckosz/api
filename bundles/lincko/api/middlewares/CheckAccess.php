@@ -99,9 +99,10 @@ class CheckAccess extends \Slim\Middleware {
 			
 			/*
 				Instruction
-				For the very firt user, give him manually access, super user, and administrator rigths.
+				For the very first user, give him manually access, super user, and administrator rigths on client database.
+					INSERT INTO `cli_lincko_data`.`users_x_workspaces` (`users_id`, `workspaces_id`, `access`, `super`) VALUES ('3', '4', '1', '1');
+					INSERT INTO `cli_lincko_data`.`users_x_roles_x` (`id`, `deleted_at`, `users_id`, `parent_type`, `parent_id`, `access`, `roles_id`, `single`) VALUES (NULL, NULL, '3', 'workspaces', '4', '1', '1', NULL);
 			*/
-
 
 			$app = $this->app;
 			$home = array(
@@ -517,7 +518,8 @@ class CheckAccess extends \Slim\Middleware {
 		} else if(!$this->checkWorkspace()) {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 			$status = 401;
-			$resignin = true;
+			//$resignin = true;
+			$signout = true; //toto => Signout is not the best way, we should just return to home page (withot workspace subdomain) without signing out
 
 		//Check if the route is available for standard public key (limited to credential operations only)
 		} else if(!$this->checkRouteAccess()) {
