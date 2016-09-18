@@ -14,6 +14,7 @@ use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\libs\Data;
 use WideImage\WideImage;
 
@@ -451,6 +452,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$scale = false;
 		$file = Files::withTrashed()->find($id); //We allow businesses to be able to see deleted files for restoring purpose
 		if($file && $file->checkAccess(false)){
+			Workspaces::getSFTP();
 			$content_type = 'application/force-download';
 			if($file->progress<100 && $file->category=='video'){
 				$file->checkProgress();

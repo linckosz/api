@@ -510,9 +510,10 @@ class Files extends ModelLincko {
 	public function setProgress(){
 		if($this->category == 'video' && $this->progress < 100 && !$this->error){
 			$app = self::getApp();
+			Workspaces::getSFTP();
 			set_time_limit(24*3600); //Set to 1 day workload at the most
 			$path = $app->lincko->filePathLocal.'/'.$this->created_by.'/convert/'.$this->link;
-			$file = $this->server_path.'/'.$this->created_by.'/'.$this->link;
+			$file = $app->lincko->filePathPrefix.$this->server_path.'/'.$this->created_by.'/'.$this->link;
 			$users_tables = array();
 			$users_tables[$this->created_by] = array();
 			$users_tables[$this->created_by]['files'] = true;
