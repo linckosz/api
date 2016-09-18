@@ -3,6 +3,7 @@
 
 namespace bundles\lincko\api\models\data;
 
+use \libs\Datassl;
 use \bundles\lincko\api\models\libs\ModelLincko;
 
 class Workspaces extends ModelLincko {
@@ -61,6 +62,11 @@ class Workspaces extends ModelLincko {
 	);
 
 	protected static $has_perm = true;
+
+	//For remote file access, it will record an array of SFTP encrypted values
+	protected static $remote_sftp = false;
+
+	protected static $server_path = null;
 
 ////////////////////////////////////////////
 
@@ -183,6 +189,71 @@ class Workspaces extends ModelLincko {
 			$i++;
 		}
 		return $temp;
+	}
+
+	public static function getWorkspace($force=false){
+		$app = self::getApp();
+		if($force || !static::$workspace){
+			if($app->lincko->data['workspace_id']>0 && $workspace = Workspaces::where('id', $app->lincko->data['workspace_id'])->first()){
+				static::$workspace = $workspace;
+			}
+		} 
+		return static::$workspace;
+	}
+
+	public static function setServerPath($path=null){
+		self::$server_path = $path;
+	}
+
+	public static function setSFTP($attributes){
+		if(!self::$remote_sftp && isset($attributes['sftp_host']) && isset($attributes['sftp_port']) && isset($attributes['sftp_pwd'])){
+			self::$remote_sftp = array(
+				'host' => $attributes['sftp_host'],
+				'port' => $attributes['sftp_port'],
+				'pwd' => $attributes['sftp_pwd'],
+			);
+		}
+	}
+
+	public static function getSFTP(){
+		$sftp = false;
+		if(self::$server_path!=null && self::$remote_sftp && !isset(self::$remote_sftp['sftp'])){
+			$app = self::getApp();
+			$conn = ssh2_connect(Datassl::decrypt_smp(self::$remote_sftp['host']), Datassl::decrypt_smp(self::$remote_sftp['port']));
+			ssh2_auth_password($conn, 'sftp', Datassl::decrypt_smp(self::$remote_sftp['pwd']));
+			self::$remote_sftp['conn'] = $conn;
+			$sftp = ssh2_sftp($conn);
+			self::$remote_sftp['sftp'] = $sftp;
+			$path = self::$server_path;
+			$app->lincko->filePathPrefix = 'ssh2.sftp://'.$sftp;
+			$app->lincko->filePath = $path;
+		}
+		if(isset(self::$remote_sftp['sftp'])){
+			$sftp = self::$remote_sftp['sftp'];
+		}
+		return $sftp;
+	}
+
+	public static function getCONN(){
+		$conn = false;
+		if(!isset(self::$remote_sftp['conn'])){
+			self::getSFTP();
+		}
+		if(isset(self::$remote_sftp['conn'])){
+			$conn = self::$remote_sftp['conn'];
+		}
+		return $conn;
+	}
+
+	public static function getPrefixSFTP(){
+		$sftp = '';
+		if(isset(self::$remote_sftp['sftp'])){
+			$host = Datassl::decrypt_smp(self::$remote_sftp['host']);
+			$port = Datassl::decrypt_smp(self::$remote_sftp['port']);
+			$pwd = Datassl::decrypt_smp(self::$remote_sftp['pwd']);
+			$sftp = "sftp://sftp:$pwd@$host:$port";
+		}
+		return $sftp;
 	}
 
 }

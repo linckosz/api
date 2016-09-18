@@ -1204,9 +1204,9 @@ abstract class ModelLincko extends Model {
 		$model = new static();		
 		if(!isset(self::$columns[$model->getTable()])){
 			self::$columns[$model->getTable()] = array();
+			$schema = $model->getConnection()->getSchemaBuilder();
+			self::$columns[$model->getTable()] = $schema->getColumnListing($model->getTable());
 		}
-		$schema = $model->getConnection()->getSchemaBuilder();
-		self::$columns[$model->getTable()] = $schema->getColumnListing($model->getTable());
 		return self::$columns[$model->getTable()];
 	}
 
@@ -1584,9 +1584,9 @@ abstract class ModelLincko extends Model {
 		$connectionName = $this->getConnectionName();
 		$titles = new \stdClass;
 		foreach ($this->archive as $key => $value) {
-			$titles->$value = $app->trans->getBRUT($connectionName, 1, $value);
+			$titles->$value = $app->trans->getBRUT('data', 1, $value);
 		}
-		$titles->{'0'} = $app->trans->getBRUT($connectionName, 1, $this->name_code);
+		$titles->{'0'} = $app->trans->getBRUT('data', 1, $this->name_code);
 		return $titles;
 	}
 
@@ -1647,7 +1647,7 @@ abstract class ModelLincko extends Model {
 		if (isset($this->id) && isset($this->viewed_by)) {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
-				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]); //toto => with about 200+ viewed, it crash (1317 Query execution was interrupted)
+				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]); //toto => with about 200+ viewed, it crashes (1317 Query execution was interrupted)
 				$this->touchUpdateAt();
 				usleep(5000); //5ms (trying to avoid crash (1317 Query execution was interrupted) when over +200 viewed to updated)
 				return true;
@@ -1837,46 +1837,6 @@ abstract class ModelLincko extends Model {
 					} else {
 						$this->accessibility = $parent->checkAccess($show_msg);
 					}
-				}
-				//Root directory
-				else if(empty($parent_type) && empty($parent_id)){
-					$this->accessibility = (bool) true;
-				}
-			}
-			
-		}
-		if($this->accessibility){
-			return true;
-		} else if($show_msg){
-			$suffix = $this->getTable();
-			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			$suffix = $this->getTable();
-			\libs\Watch::php($suffix." :\n".parent::toJson(), $msg, __FILE__, true);
-			if(!self::$debugMode){
-				$json = new Json($msg, true, 406);
-				$json->render(406);
-			}
-			return false;
-		}
-	}
-
-	//It checks if the user has access to it
-	public function checkAccess_toto($show_msg=true){
-		$app = self::getApp();
-		$this->checkUser();
-		if(!is_bool($this->accessibility)){
-			$this->accessibility = (bool) false; //By default, for security reason, we do not allow the access
-			//If the element exists, we check if we can find it by getLinked
-			if(isset($this->id)){
-				if($this->getLinked()->whereId($this->id)->take(1)->count() > 0){
-					$this->accessibility = (bool) true;
-				}
-			}
-			//If it's a new element, we check if we can access it's parent (we don't have to care about element linked to Workspaces|NULL since ID will be current workspace, so $parent will exists)
-			else {
-				$parent = $this->getParent();
-				if($parent){
-					$this->accessibility = $parent->checkAccess($show_msg);
 				}
 				//Root directory
 				else if(empty($parent_type) && empty($parent_id)){
@@ -2119,6 +2079,7 @@ abstract class ModelLincko extends Model {
 			$this->change_permission = true;
 		}
 
+		$return = false;
 		try {
 			$return = parent::save($options);
 			if($new){
@@ -2135,24 +2096,6 @@ abstract class ModelLincko extends Model {
 		} catch(\Exception $e){
 			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 		}
-		/*
-		//Using Transaction can lock the table and create some issues
-		$db = Capsule::connection($this->connection);
-		$db->beginTransaction(); //toto: It has to be tested with user creation because it involve 2 transaction together
-		try {
-			$return = parent::save($options);
-			//Reapply the fields that were not part of table columns
-			foreach ($attributes as $key => $value) {
-				$this->attributes[$key] = $value;
-			}
-			$this->pivots_save();
-			$db->commit();
-		} catch(\Exception $e){
-			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
-			$return = null;
-			$db->rollback();
-		}
-		*/
 
 		//Make sure we set here users_tables before setPerm to inform users that migth be removed, Users::informUsers is also called inside setPerm for new Users
 
@@ -2197,6 +2140,11 @@ abstract class ModelLincko extends Model {
 		
 	}
 
+	//Note: this is unsafe because it skip every step of checking
+	public function brutSave(array $options = array()){
+		return Model::save($options);
+	}
+
 	//This will update updated_at, even if the user doesn't have write permission
 	public function touchUpdateAt($users_tables=array(), $inform=true){
 		$app = self::getApp();
@@ -2231,7 +2179,7 @@ abstract class ModelLincko extends Model {
 				$this->setHistory('_delete');
 				$this->save();
 			}
-			parent::delete();
+			parent::withTrashed()->where('id', $this->id)->delete();
 		}
 		return true;
 	}
@@ -2253,7 +2201,7 @@ abstract class ModelLincko extends Model {
 				$this->setHistory('_restore');
 				$this->save();
 			}
-			parent::restore();
+			parent::withTrashed()->where('id', $this->id)->restore();
 		}
 		return true;
 	}
@@ -2443,7 +2391,7 @@ abstract class ModelLincko extends Model {
 		return $save;	
 	}
 
-	protected function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array()){
 		$app = self::getApp();
 		$namespace = (new \ReflectionClass($this))->getNamespaceName();
 		if($namespace!='bundles\lincko\api\models\data'){ //We exclude users_x_roles_x itself to avoid looping
@@ -2550,7 +2498,7 @@ abstract class ModelLincko extends Model {
 		}
 		Updates::informUsers($users_tables);
 		if($touch){
-			$this->touch();
+			$this->touchUpdateAt();
 		}
 		return $success;
 	}
@@ -2655,7 +2603,7 @@ abstract class ModelLincko extends Model {
 						$value_old = $single_old;
 					}
 					$this->setHistory('_', $value, $value_old, array('cun' => Users::find($users_id)->username));
-					$this->touch();
+					$this->touchUpdateAt();
 				}
 				$return = true;
 			}
@@ -2672,7 +2620,7 @@ abstract class ModelLincko extends Model {
 						$value_old = $single_old;
 					}
 				$this->setHistory('_', $value, $value_old, array('cun' => Users::find($users_id)->username));
-				$this->touch();
+				$this->touchUpdateAt();
 			}
 			$return = true;
 		}

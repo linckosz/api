@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Workspaces;
 use \libs\Json;
 use \libs\Folders;
 use \libs\Video;
@@ -126,6 +127,10 @@ class Files extends ModelLincko {
 	);
 
 ////////////////////////////////////////////
+
+	protected static $dependencies_visible = array(
+		'tasks' => array('tasks_x_files', array('access')),
+	);
 
 	//Many(Files) to Many(Users)
 	public function users(){
@@ -326,20 +331,24 @@ class Files extends ModelLincko {
 				return false;
 			}
 			try {
+				Workspaces::getSFTP();
 				$this->server_path = $app->lincko->filePath;
+				$server_path_full = $app->lincko->filePathPrefix.$app->lincko->filePath;
 				$this->setCategory();
 				$this->link = md5(uniqid());
 				$folder_ori = new Folders;
-				$folder_ori->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/');
+				$folder_ori->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/');
 				$this->thu_type = null;
 				$this->thu_ext = null;
 				$this->progress = 100;
 				$source = $this->tmp_name;
 				if($this->category=='image'){
 					$orientation = $this->setOrientation();
+					$src = WideImage::load($this->tmp_name);
+					$this->width = $src->getWidth();
+					$this->height = $src->getHeight();
 					if(($this->ori_type == 'image/jpeg' || $this->ori_type == 'image/png') && $this->orientation!=1){
 						//For a jpeg we check if there is any orientation, if yes we rotate and overwrite
-						$src = WideImage::load($this->tmp_name);
 						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
 						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
@@ -360,7 +369,7 @@ class Files extends ModelLincko {
 						copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					}
 					$folder_thu = new Folders;
-					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
+					$folder_thu->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/thumbnail/');
 					try {
 						$src = WideImage::load($this->tmp_name);
 						$src = $src->resize(256, 256, 'inside', 'any');
@@ -388,9 +397,9 @@ class Files extends ModelLincko {
 					$this->progress = 0; //Only video needs significant time for compression
 					$this->size = 0;
 					$folder_thu = new Folders;
-					$folder_thu->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/thumbnail/');
+					$folder_thu->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/thumbnail/');
 					$folder_txt = new Folders;
-					$folder_txt->createPath($this->server_path.'/'.$app->lincko->data['uid'].'/convert/');
+					$folder_txt->createPath($app->lincko->filePathLocal.'/'.$app->lincko->data['uid'].'/convert/'); //Because of exec limitation (does not work with ssh2.sftp), we use local link
 					$this->thu_type = 'image/jpeg';
 					$this->thu_ext = 'jpg';
 					if($dot = strrpos($this->name, '.')){
@@ -398,13 +407,18 @@ class Files extends ModelLincko {
 					}
 					$this->ori_type = 'video/mp4';
 					$this->ori_ext = 'mp4';
-					$video = new Video($this->tmp_name, $folder_ori->getPath().$this->link, $folder_thu->getPath().$this->link, $folder_txt->getPath().$this->link);
+
+					$video = new Video($this->tmp_name, $this->server_path.'/'.$app->lincko->data['uid'], $this->link, $folder_txt->getPath().$this->link, Workspaces::getPrefixSFTP());
+					
 					if($video->thumbnail()!==0){
 						return false;
 					}
 					if($video->convert(2)!==0){
 						return false;
 					}
+					$info = $video->getInfo();
+					$this->width = $info['width_new'];
+					$this->height = $info['height_new'];
 				} else {
 					copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					//No thumbnail for other kind of files
@@ -460,15 +474,23 @@ class Files extends ModelLincko {
 		if($this->category=='video' && $this->progress<100 && !$this->error && isset($this->id)){
 			$app = self::getApp();
 			
-			$path = $this->server_path.'/'.$this->created_by.'/convert/'.$this->link;
+			$path = $app->lincko->filePathLocal.'/'.$this->created_by.'/convert/'.$this->link;
+			
 			if(is_file($path) && time()-filemtime($path) < 60 && $this->progress>=1){ //If the conversion file is less than 1 minutes, we should be in middle of conversion
 				return true;
 			}
 			$url = $app->environment['slim.url_scheme'].'://'.$app->request->headers->Host.'/file/progress/'.$this->id;
+			$data = json_encode(array(
+				'remote' => $app->lincko->data['remote'],
+				'workspace_id' => $app->lincko->data['workspace_id'],
+				'uid' => $app->lincko->data['uid'],
+				'method' => 'POST',
+			));
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $url);
 			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-			curl_setopt($ch, CURLOPT_POSTFIELDS, null);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 			curl_setopt($ch, CURLOPT_TIMEOUT, 1); //Cannot use MS, it will crash the request
@@ -476,7 +498,7 @@ class Files extends ModelLincko {
 			curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
 			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 					'Content-Type: application/json; charset=UTF-8',
-					'Content-Length: ' . mb_strlen(null),
+					'Content-Length: ' . mb_strlen($data),
 				)
 			);
 			curl_exec($ch);
@@ -487,8 +509,9 @@ class Files extends ModelLincko {
 
 	public function setProgress(){
 		if($this->category == 'video' && $this->progress < 100 && !$this->error){
+			$app = self::getApp();
 			set_time_limit(24*3600); //Set to 1 day workload at the most
-			$path = $this->server_path.'/'.$this->created_by.'/convert/'.$this->link;
+			$path = $app->lincko->filePathLocal.'/'.$this->created_by.'/convert/'.$this->link;
 			$file = $this->server_path.'/'.$this->created_by.'/'.$this->link;
 			$users_tables = array();
 			$users_tables[$this->created_by] = array();

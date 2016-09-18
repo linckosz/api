@@ -81,7 +81,7 @@ class PivotUsersRoles extends ModelLincko {
 	}
 
 	//We do not attach
-	protected function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array()){
 		return true;
 	}
 

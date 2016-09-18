@@ -8,6 +8,7 @@ use \libs\Folders;
 use \libs\Json;
 use \libs\STR;
 use \libs\Network;
+use \libs\Datassl;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
@@ -859,8 +860,21 @@ class ControllerTest extends Controller {
 			$tp[$file->id] = $file->id;
 		}
 		*/
-		$tp = Tasks::find(6214);
-		$tp = $tp->getUsersTable();
+
+		//$tp = Datassl::encrypt_smp('hyuD4pp');
+
+
+		//$sftp = Workspaces::getSFTP();
+		//$conn = Workspaces::getCONN();
+		//$sftp = ssh2_sftp($conn);
+		//ssh2_sftp_mkdir($sftp, '/home/sftp/toto');
+		//$tp = scandir('ssh2.sftp://'.$sftp.'/home/username');
+		//$tp = scandir('ssh2.sftp://'.$sftp);
+		//mkdir('ssh2.sftp://'.$sftp.'/home/sftp/tata');
+		//$tp = scandir('ssh2.sftp://'.$sftp.'/home/sftp');
+
+		$tp = Workspaces::getWorkspace();
+
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

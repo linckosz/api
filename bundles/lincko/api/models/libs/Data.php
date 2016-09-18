@@ -325,15 +325,13 @@ class Data {
 				}
 			}
 			//By default, give access to all users inside shared workspace
-			if($app->lincko->data['workspace_id']==0){
-				if(!isset($tree_access['workspaces'])){ $tree_access['workspaces'] = array(); }
-				foreach ($users as $users_id) {
-					if(!isset($tree_access['workspaces'][$users_id])){ $tree_access['workspaces'][$users_id] = array(); }
-					$tree_access['workspaces'][$users_id][0] = array(
-						'access' => 1, //Give access to all user
-						'super' => 0, //Prohibit super permission to shared workspace
-					);
-				}
+			if(!isset($tree_access['workspaces'])){ $tree_access['workspaces'] = array(); }
+			foreach ($users as $users_id) {
+				if(!isset($tree_access['workspaces'][$users_id])){ $tree_access['workspaces'][$users_id] = array(); }
+				$tree_access['workspaces'][$users_id][0] = array(
+					'access' => 1, //Give access to all user
+					'super' => 0, //Prohibit super permission to shared workspace
+				);
 			}
 		}
 		return $tree_access;

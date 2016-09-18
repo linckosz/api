@@ -14,6 +14,8 @@ class Video {
 
 	protected $thumbnail = null;
 
+	protected $thumbnail_cmd = null;
+
 	protected $cpu = 3;
 
 	protected $tablo = array();
@@ -24,6 +26,8 @@ class Video {
 		'frames' => 0,
 		'width' => 640,
 		'height' => 480,
+		'width_new' => 640,
+		'height_new' => 480,
 	);
 
 	// libx264-fast-bruno.ffpreset
@@ -33,13 +37,20 @@ class Video {
 
 	protected static $FFMPEG = '/usr/bin/ffmpeg';
 
-	public function __construct($source, $destination, $thumbnail, $txt){
+	public function __construct($source, $path_root, $link, $txt, $prefix_remote=''){
+		$app = \Slim\Slim::getInstance();
+
+		$destination = $prefix_remote.$path_root.'/'.$link;
+		$thumbnail = $prefix_remote.$path_root.'/thumbnail/'.$link;
+		$thumbnail_cmd = $app->lincko->filePathPrefix.$path_root.'/thumbnail/'.$link;
+
 		$result = false;
 		$ffprobe = self::$FFPROBE;
 		$this->source = $source;
 		$this->destination = $destination;
 		$this->thumbnail = $thumbnail;
-		$this->txt = $txt;
+		$this->thumbnail_cmd = $thumbnail_cmd;
+		$this->txt = $txt; //Must be local because of exec limitation
 
 		//Get the rotation information if it's available
 		exec("$ffprobe -show_streams \"$source\" 2>&1", $tablo, $result);
@@ -106,6 +117,8 @@ class Video {
 			$this->info['width'] = $height;
 			$this->info['height'] = $width;
 		}
+		$this->info['width_new'] = $this->info['width'];
+		$this->info['height_new'] = $this->info['height'];
 		return $result;
 	}
 
@@ -163,10 +176,11 @@ class Video {
 			$height = $this->info['height_new'];
 			$filter = "-vf \"$rotate thumbnail=$frames, scale=$width:$height\"";
 			exec("$ffmpeg -i \"$source\" -threads $cpu -frames:v 1 -y $filter -qscale:v 15 \"$thumbnail\" 2>&1", $tablo, $result);
+			$thumbnail_cmd = $this->thumbnail_cmd.'.jpg';
 			if($result===0){
-				rename($thumbnail, $this->thumbnail);
+				rename($thumbnail_cmd, $this->thumbnail_cmd);
 			} else {
-				@unlink($thumbnail);
+				@unlink($thumbnail_cmd);
 			}
 		}
 
@@ -190,6 +204,7 @@ class Video {
 				$this->source = $source.'.video';
 				$source = $this->source;
 				//EXEC in running in background
+				$toto = 'no';
 				if($quality==1){//LOW quality (360p)
 					$this->scale(640);
 					$filter = $this->filter;
@@ -198,7 +213,7 @@ class Video {
 				else if($quality==2){ //MEDIUM quality (540p) (use 856 for 480p) (use 960 for 540p)
 					$this->scale(856);
 					$filter = $this->filter;
-					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 30 $filter -acodec aac -ab 64000 -ar 44100 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>$txt; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
+					exec("/bin/bash -c '$ffmpeg -i \"$source\" -threads $cpu -vcodec libx264 -profile:v high $fast -crf 30 $filter -acodec aac -ab 64000 -ar 44100 -async 1 -y -f mp4 -movflags faststart \"$destination\" 2>".$txt."; /bin/rm \"$source\";' > /dev/null 2>/dev/null &", $tablo, $result);
 				}
 				else if($quality==3){//HIGH quality (720p)
 					$this->scale(1280);
@@ -209,6 +224,10 @@ class Video {
 		}
 
 		return $result;
+	}
+
+	public function getInfo(){
+		return $this->info;
 	}
 	
 }

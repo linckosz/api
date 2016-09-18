@@ -462,7 +462,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				$type = 'download';
 			}
 			if($type=='download'){
-				$path = $file->server_path.'/'.$file->created_by.'/'.$file->link;
+				$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$file->created_by.'/'.$file->link;
 				$name = $file->name;
 				if($file->progress<100 && $file->category=='video'){
 					$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/mp4.png';
@@ -482,10 +482,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				}
 			} else if($type=='link' || $type=='thumbnail'){
 				if($type=='thumbnail'){
-					$path = $file->server_path.'/'.$file->created_by.'/thumbnail/'.$file->link;
+					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$file->created_by.'/thumbnail/'.$file->link;
 					$content_type = $file->thu_type;
 				} else {
-					$path = $file->server_path.'/'.$file->created_by.'/'.$file->link;
+					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$file->created_by.'/'.$file->link;
 					$content_type = $file->ori_type;
 				}
 				if(filesize($path)!==false){

@@ -422,7 +422,6 @@ class ControllerUser extends Controller {
 							$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
 						}
 						if(isset($authorize['public_key'])){
-							//\libs\Watch::php($authorize, '$authorize', __FILE__, false, false, false); //toto => why short public_key
 							$app->flashNow('public_key', $authorize['public_key']);
 							$app->lincko->translation['user_username'] = $user->username;
 							$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.

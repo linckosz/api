@@ -244,6 +244,7 @@ class Projects extends ModelLincko {
 			$project->personal_private = $app->lincko->data['uid'];
 			$project->parent_id = 0;
 			if($project->save()){
+				$project->setPerm();
 				return $project;
 			}
 		}

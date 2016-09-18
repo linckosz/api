@@ -90,6 +90,8 @@ class Users extends ModelLincko {
 	);
 
 	protected static $has_perm = false;
+
+	protected static $me = false;
 	
 ////////////////////////////////////////////
 
@@ -339,8 +341,11 @@ class Users extends ModelLincko {
 		return $query->where('users.id', -1); //It will force an error since the user -1 does not exists
 	}
 
-	public static function getUser(){
-		return self::theUser()->first();
+	public static function getUser($force=false){
+		if($force || !static::$me){
+			static::$me = self::theUser()->first();
+		} 
+		return static::$me;
 	}
 
 	protected function get_HisHer(){

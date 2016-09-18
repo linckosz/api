@@ -162,7 +162,10 @@ $app->lincko->data['invitation_code'] = ''; //The code grab by the link
 
 $app->lincko->data['lastvisit'] = time()-1; //Less one second to avoid missing timestamp at the same time
 
+$app->lincko->data['remote'] = false; //At true if we connect to remote server
 $app->lincko->data['database_data'] = 'data'; //data is the local, but it can be changed to third party database for more security
+
+$app->lincko->filePathPrefix = '';
 
 //It will set to true some fields if the API key has access to some part of the application
 $app->lincko->api = array();

@@ -40,6 +40,7 @@ class Tasks extends ModelLincko {
 		'_tasks',
 		'_users',
 		'_files',
+		'_notes',
 		'_perm',
 	);
 
@@ -130,6 +131,7 @@ class Tasks extends ModelLincko {
 		'users' => array('users_x_tasks', array('in_charge', 'approver')),
 		'tasks' => array('tasks_x_tasks', array('delay')),
 		'files' => array('tasks_x_files', array('access')),
+		'notes' => array('tasks_x_notes', array('access')),
 	);
 
 	//Many(Tasks) to One(Projects)
@@ -150,6 +152,11 @@ class Tasks extends ModelLincko {
 	//Many(Tasks) to Many(Files)
 	public function files(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'tasks_x_files', 'tasks_id', 'files_id')->withPivot('access');
+	}
+
+	//Many(Tasks) to Many(Notes)
+	public function notes(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'tasks_x_notes', 'tasks_id', 'notes_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////

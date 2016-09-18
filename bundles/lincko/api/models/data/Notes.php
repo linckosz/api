@@ -29,6 +29,7 @@ class Notes extends ModelLincko {
 		'comment',
 		'_parent',
 		'_files',
+		'_tasks',
 		'_perm',
 	);
 
@@ -85,6 +86,7 @@ class Notes extends ModelLincko {
 
 	protected static $dependencies_visible = array(
 		'files' => array('notes_x_files', array('access')),
+		'tasks' => array('tasks_x_notes', array('access')),
 	);
 
 	//Many(Notes) to One(Projects)
@@ -97,9 +99,14 @@ class Notes extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_notes', 'notes_id', 'users_id')->withPivot('access');
 	}
 
-	//Many(Tasks) to Many(Files)
+	//Many(Notes) to Many(Files)
 	public function files(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'notes_x_files', 'notes_id', 'files_id')->withPivot('access');
+	}
+
+	//Many(Botes) to Many(Tasks)
+	public function tasks(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_notes', 'notes_id', 'tasks_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////

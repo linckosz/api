@@ -57,12 +57,12 @@ class Datassl {
 	}
 
 	//http://blog.justin.kelly.org.au/simple-mcrypt-encrypt-decrypt-functions-for-p/
-	public static function simple_encrypt($text){
+	public static function encrypt_smp($text){
 		$salt = self::SALT;
 		return trim(base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $salt, $text, MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND))));
 	}
 
-	public static function simple_decrypt($text){
+	public static function decrypt_smp($text){
 		$salt = self::SALT;
 		return trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, $salt, base64_decode($text), MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND)));
 	}

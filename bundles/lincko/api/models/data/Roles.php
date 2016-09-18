@@ -3,6 +3,7 @@
 
 namespace bundles\lincko\api\models\data;
 
+use \libs\Json;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Workspaces;
 
@@ -153,7 +154,7 @@ class Roles extends ModelLincko {
 		return parent::delete();
 	}
 
-	protected function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array()){
 		//We don't set roles since it will always be access 1, but we allow deletion
 		return false;
 	}

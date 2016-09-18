@@ -9,7 +9,12 @@ use \bundles\lincko\api\models\Api;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Roles;
 use \bundles\lincko\api\models\data\Workspaces;
+use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\libs\PivotUsers;
+use \bundles\lincko\api\models\libs\PivotUsersRoles;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class CheckAccess extends \Slim\Middleware {
 	
@@ -89,28 +94,154 @@ class CheckAccess extends \Slim\Middleware {
 	}
 
 	//In case a client is using their one server to store data, we
-	protected function setWorkspaceConnection($workspace){
-		if($workspace->db_host!=null && $workspace->db_pwd!=null){
+	protected function setWorkspaceConnection($workspace) {
+		if($workspace->remote){
+			
+			/*
+				Instruction
+				For the very firt user, give him manually access, super user, and administrator rigths.
+			*/
+
+
 			$app = $this->app;
-			$db_host = Datassl::simple_decrypt($workspace->db_host);
-			$db_pwd = Datassl::simple_decrypt($workspace->db_pwd);
+			$home = array(
+				'workspaces' => $workspace,
+				'users' => Users::getUser(),
+			);
+			$client = array(
+				'users' => false,
+				'workspaces' => false,
+				'roles_0' => false,
+				'roles_1' => false,
+				'roles_2' => false,
+			);
+
+			$db_host = Datassl::decrypt_smp($workspace->db_host);
+			$db_port = 3306;
+			if($workspace->db_port){
+				$db_port = Datassl::decrypt_smp($workspace->db_port);
+			}
+			$db_pwd = Datassl::decrypt_smp($workspace->db_pwd);
+
 			$capsule = $app->lincko->data['capsule'];
-			$capsule->addConnection(array(
+			$app->lincko->databases['client'] = array(
 				'driver' => 'mysql',
 				'host' => $db_host,
+				'port' => $db_port,
 				'database' => 'cli_lincko_data',
 				'username' => 'cli_lincko_data',
 				'password' => $db_pwd,
 				'charset'   => 'utf8mb4',
 				'collation' => 'utf8mb4_unicode_ci',
 				'prefix' => '',
-			), 'client');
+			);
+			$capsule->addConnection($app->lincko->databases['client'], 'client');
 
-			//$users = Users::on('client')->find(3);
-			//\libs\Watch::php($db_host, '$db_host', __FILE__, false, false, true);
-			//\libs\Watch::php($db_pwd, '$db_pwd', __FILE__, false, false, true);
+			$app->lincko->databases['client']['driver'] = '******';
+			$app->lincko->databases['client']['host'] = '******';
+			$app->lincko->databases['client']['database'] = '******';
+			$app->lincko->databases['client']['username'] = '******';
+			$app->lincko->databases['client']['password'] = '******';
 
+			//Change the default connection to third party database
+			$app->lincko->data['database_data'] = 'client';
+
+			//Check if the user has access
+			$pivot = (new PivotUsers(array('workspaces')))->where('users_id', $app->lincko->data['uid'])->where('workspaces_id', $home['workspaces']->id)->where('access', 1)->withTrashed()->first();
+			//Reject access to workspace
+			if(!$pivot){
+				$app->lincko->data['database_data'] = 'data';
+				unset($app->lincko->databases['client']);
+				return $home['workspaces'];
+			}
+
+			//Check Workspaces
+			$attributes = $home['workspaces']->getAttributes();
+			$client['workspaces'] = Workspaces::on('client')->find($home['workspaces']->id);
+			if(!$client['workspaces']){
+				$attributes['db_host'] = 'hidden';
+				$attributes['db_port'] = 'hidden';
+				$attributes['db_pwd'] = 'hidden';
+				$attributes['sftp_host'] = 'hidden';
+				$attributes['sftp_port'] = 'hidden';
+				$attributes['sftp_pwd'] = 'hidden';
+				if(!$client['workspaces']){
+					$client['workspaces'] = (new Workspaces)->forceFill($attributes);
+				} else {
+					$client['workspaces']->forceFill($attributes);
+				}
+				$client['workspaces']->brutSave();
+			}
+			Workspaces::setSFTP($attributes);
+
+			//Check Roles
+			$roles_missing = array();
+			if($roles = Roles::on('client')->whereIn('id', array(0, 1, 2))->get()){
+				foreach ($roles as $key => $model) {
+					$client['roles_'.$model->id] = $model;
+				}
+			}
+			if(!$client['roles_0']){ $roles_missing[] = 0; }
+			if(!$client['roles_1']){ $roles_missing[] = 1; }
+			if(!$client['roles_2']){ $roles_missing[] = 2; }
+			if(count($roles_missing)>0){
+				$roles = Roles::on('data')->whereIn('id', array(0, 1, 2))->get();
+				foreach ($roles as $key => $model) {
+					$home['roles_'.$model->id] = $model;
+				}
+				if(!$client['roles_0']){
+					$attributes = $home['roles_0']->getAttributes();
+					$client['roles_0'] = (new Roles)->forceFill($attributes);
+					$client['roles_0']->incrementing  = false; //Because at id=0 Eloquent auto-increment
+					$client['roles_0']->brutSave();
+				}
+				if(!$client['roles_1']){
+					$attributes = $home['roles_1']->getAttributes();
+					$client['roles_1'] = (new Roles)->forceFill($attributes);
+					$client['roles_1']->brutSave();
+				}
+				if(!$client['roles_2']){
+					$attributes = $home['roles_2']->getAttributes();
+					$client['roles_2'] = (new Roles)->forceFill($attributes);
+					$client['roles_2']->brutSave();
+				}
+			}
+
+			//Check if the user has a role defined
+			$role = PivotUsersRoles::where('users_id', $app->lincko->data['uid'])->where('parent_type', 'workspaces')->where('parent_id', $home['workspaces']->id)->where('access', 1)->first();
+			//Reject access to workspace
+			if(!$role){
+				$app->lincko->data['database_data'] = 'data';
+				unset($app->lincko->databases['client']);
+				return $home['workspaces'];
+			}
+
+			//Check Users
+			$client['users'] = Users::on('client')->find($app->lincko->data['uid']);
+			if(!$client['users']){
+				$attributes = $home['users']->getAttributes();
+				if(!$client['users']){
+					$client['users'] = (new Users)->forceFill($attributes);
+				} else {
+					$client['users']->forceFill($attributes);
+				}
+				$client['users']->brutSave();
+				Users::getUser(true); //Force to use the user item from the third party database
+				//Make sure the user has a personal folder
+				Projects::setPersonal();
+
+				$client['workspaces']->setPerm();
+			}
+			
+			Users::getUser(true); //Force to use the user item from the third party database
+
+			$app->flashNow('remote', true);
+
+			Workspaces::setServerPath($home['workspaces']->server_path);
+			$app->lincko->data['remote'] = true;
+			$workspace = $client['workspaces'];
 		}
+		return $workspace;
 	}
 
 	protected function flashKeys(){
@@ -191,11 +322,11 @@ class CheckAccess extends \Slim\Middleware {
 				return true;
 			} else {
 				if($workspace = Workspaces::where('url', $data->workspace)->first()){
+					$app->lincko->data['workspace'] = $workspace->url;
+					$app->lincko->data['workspace_id'] = $workspace->id;
+					$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+					$workspace = $this->setWorkspaceConnection($workspace);
 					if($workspace->checkAccess(false)){
-						$app->lincko->data['workspace'] = $workspace->url;
-						$app->lincko->data['workspace_id'] = $workspace->id;
-						$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
-						$this->setWorkspaceConnection($workspace);
 						return true;
 					}
 				}
@@ -277,13 +408,25 @@ class CheckAccess extends \Slim\Middleware {
 			Handler::session_initialize(true);
 			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $app->request->getResourceUri()) ){ //Video conversion
 				//Security is not important here since we do not use POSt as variable to be injected somewhere
-				if($this->checkRoute()!==false){
+				$post = $this->data;
+				$w_id = $post->workspace_id;
+				$app->lincko->data['uid'] = $post->uid;
+				if($post->remote==false || $w_id==0){ //Shared
 					return $this->next->call();
+				} else if($workspace = Workspaces::where('id', $w_id)->first()){
+					$app->lincko->data['workspace'] = $workspace->url;
+					$app->lincko->data['workspace_id'] = $workspace->id;
+					$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+					$workspace = $this->setWorkspaceConnection($workspace);
+					if($workspace->checkAccess(false)){
+						return $this->next->call();
+					}
 				}
+				$file_error = true;
 			} else if($app->lincko->method_suffix == '_post'){ //File uploading
 				$file_error = true;
 				if($this->checkRoute()!==false){
-					$post = $app->request->post();	
+					$post = $app->request->post();
 					if(
 						   isset($post['shangzai_puk'])
 						&& isset($post['parent_type'])
@@ -310,10 +453,24 @@ class CheckAccess extends \Slim\Middleware {
 				}
 			} else if(
 				   $app->lincko->method_suffix == '_get'
-				&& preg_match("/^\/file\/\d+\/\d+\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri())
+				&& preg_match("/^\/file\/(\d+)\/(\d+)\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri(), $matches)
 				&& $this->checkRoute()!==false
 			){ //File reading
-				return $this->next->call();
+				$w_id = $matches[1];
+				$app->lincko->data['uid'] = $matches[2];
+				if($w_id==0){ //Shared
+					return $this->next->call();
+				} else if($workspace = Workspaces::where('id', $w_id)->first()){
+					$app->lincko->data['workspace'] = $workspace->url;
+					$app->lincko->data['workspace_id'] = $workspace->id;
+					$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+					$workspace = $this->setWorkspaceConnection($workspace);
+					if($workspace->checkAccess(false)){
+						return $this->next->call();
+					}
+				}
+				$file_error = true;
+				
 			} else if($app->lincko->method_suffix == '_options'){ //Check if can upload file
 				if($this->checkRoute()!==false){
 					$app->lincko->http_code_ok = true;

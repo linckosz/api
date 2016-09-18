@@ -28,6 +28,8 @@ class PivotUsers extends ModelLincko {
 	}
 
 	public function __construct(array $attributes = array()){
+		$app = self::getApp();
+		$this->connection = $app->lincko->data['database_data'];
 		$model = new Users;
 		foreach ($attributes as $key => $value) {
 			if($key=='table'){
@@ -53,7 +55,7 @@ class PivotUsers extends ModelLincko {
 	}
 
 	//We do not attach
-	protected function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array()){
 		return true;
 	}
 
