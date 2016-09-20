@@ -111,10 +111,16 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 		}
 
-		if(isset($form->parent_type) && isset($form->parent_id)){
+		//Work with soft and hard linkages
+		$parent_list = Files::getParentList();
+		$parent_list_soft = Files::getParentListSoft();
+		if(!is_null($parent_list_soft) && isset($form->parent_type) && isset($form->parent_id)){
 			$attached = false;
 			//Hard attach
-			if(in_array($form->parent_type, Files::getParentListHard())){
+			if(
+				   ( is_string($parent_list) && $form->parent_type==$parent_list )
+				|| ( is_array($parent_list) && in_array($form->parent_type, $parent_list))
+			){
 				if($class = Files::getClass($form->parent_type)){
 					if($parent = $class::getModel($form->parent_id)){
 						$attached = true;
@@ -122,7 +128,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				}
 			}
 			//Soft attach
-			else if(in_array($form->parent_type, Files::getParentList())){
+			else if(
+				   ( is_string($parent_list_soft) && $form->parent_type==$parent_list_soft )
+				|| ( is_array($parent_list_soft) && in_array($form->parent_type, $parent_list_soft))
+			){
 				$loop = 1000;
 				$parent_type = $form->parent_type;
 				$parent_id = $form->parent_id;
@@ -131,7 +140,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					if($class = Files::getClass($parent_type)){
 						if($parent = $class::getModel($parent_id)){
 							$parent->setParentAttributes();
-							if(in_array($parent->parent_type, Files::getParentListHard()) && method_exists($class, $parent->parent_type)){
+							if(in_array($parent->parent_type, $parent_list) && method_exists($class, $parent->parent_type)){
 								if($model = $parent->{$parent->parent_type}()->first()){
 									$attached = true;
 									$loop = false;
@@ -163,6 +172,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				}
 			}
 		}
+
 		return $this->form = $form;
 	}
 

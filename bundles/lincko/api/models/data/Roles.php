@@ -42,12 +42,6 @@ class Roles extends ModelLincko {
 		'_delete' => 799,//[{un}] deleted a role
 	);
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'parent_id' => '\\bundles\\lincko\\api\\models\\data\\Workspaces',
-	);
-
 	protected static $parent_list = 'workspaces';
 
 	protected $model_integer = array(
@@ -59,6 +53,7 @@ class Roles extends ModelLincko {
 		'perm_files',
 		'perm_chats',
 		'perm_comments',
+		'perm_spaces',
 		'parent_id',
 		'roles_id',
 		'single',

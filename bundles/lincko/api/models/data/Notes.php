@@ -30,6 +30,7 @@ class Notes extends ModelLincko {
 		'_parent',
 		'_files',
 		'_tasks',
+		'_spaces',
 		'_perm',
 	);
 
@@ -58,17 +59,6 @@ class Notes extends ModelLincko {
 		'_delete' => 899,//[{un}] deleted a note
 	);
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'parent_id' => '\\bundles\\lincko\\api\\models\\data\\Projects',
-	);
-
-	protected static $relations_keys = array(
-		'users',
-		'projects',
-	);
-
 	protected static $parent_list = 'projects';
 
 	protected static $allow_single = true;
@@ -87,6 +77,7 @@ class Notes extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'files' => array('notes_x_files', array('access')),
 		'tasks' => array('tasks_x_notes', array('access')),
+		'spaces' => array('spaces_x', array('access')),
 	);
 
 	//Many(Notes) to One(Projects)
@@ -104,9 +95,14 @@ class Notes extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'notes_x_files', 'notes_id', 'files_id')->withPivot('access');
 	}
 
-	//Many(Botes) to Many(Tasks)
+	//Many(Notes) to Many(Tasks)
 	public function tasks(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_notes', 'notes_id', 'tasks_id')->withPivot('access');
+	}
+
+	//Many(Notes) to Many(Spaces)
+	public function spaces(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'notes')->withPivot('access');
 	}
 
 ////////////////////////////////////////////

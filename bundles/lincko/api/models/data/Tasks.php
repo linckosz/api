@@ -41,6 +41,7 @@ class Tasks extends ModelLincko {
 		'_users',
 		'_files',
 		'_notes',
+		'_spaces',
 		'_perm',
 	);
 
@@ -79,17 +80,6 @@ class Tasks extends ModelLincko {
 		'pivot_access_1' => 597, //[{un}] authorized [{[{cun}]}]'s access to a task
 		'_restore' => 598,//[{un}] restored a task
 		'_delete' => 599,//[{un}] deleted a task
-	);
-
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'parent_id' => '\\bundles\\lincko\\api\\models\\data\\Projects',
-	);
-
-	protected static $relations_keys = array(
-		'users',
-		'projects',
 	);
 
 	protected static $parent_list = 'projects';
@@ -132,6 +122,7 @@ class Tasks extends ModelLincko {
 		'tasks' => array('tasks_x_tasks', array('delay')),
 		'files' => array('tasks_x_files', array('access')),
 		'notes' => array('tasks_x_notes', array('access')),
+		'spaces' => array('spaces_x', array('access')),
 	);
 
 	//Many(Tasks) to One(Projects)
@@ -157,6 +148,11 @@ class Tasks extends ModelLincko {
 	//Many(Tasks) to Many(Notes)
 	public function notes(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'tasks_x_notes', 'tasks_id', 'notes_id')->withPivot('access');
+	}
+
+	//Many(Tasks) to Many(Spaces)
+	public function spaces(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'tasks')->withPivot('access');
 	}
 
 ////////////////////////////////////////////
@@ -227,6 +223,7 @@ class Tasks extends ModelLincko {
 	}
 
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
+		$app = self::getApp();
 		if($key == 'parent_id'){
 			$parameters['tt'] = $this->title;
 			$parameters['tid'] = $this->id;
@@ -271,7 +268,8 @@ class Tasks extends ModelLincko {
 				}
 			*/
 		}
-		if(Projects::getModel($this->parent_id)->personal_private == $app->lincko->data['uid']){
+		$projects = Projects::getModel($this->parent_id);
+		if($projects && $projects->personal_private == $app->lincko->data['uid']){
 			$pivots = new \stdClass;
 			$pivots->{'users>in_charge'} = new \stdClass;
 			$pivots->{'users>in_charge'}->{$app->lincko->data['uid']} = true;

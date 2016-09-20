@@ -22,10 +22,6 @@ class History extends ModelLincko {
 
 	protected $accessibility = true; //Always allow History creation
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
-
 	protected static $permission_sheet = array(
 		0, //[R] owner
 		1, //[RC] max allow || super

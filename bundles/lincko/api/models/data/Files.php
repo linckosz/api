@@ -48,6 +48,10 @@ class Files extends ModelLincko {
 		'progress',
 		'error',
 		'_parent',
+		'_tasks',
+		'_notes',
+		'_comments',
+		'_spaces',
 		'_perm',
 	);
 
@@ -74,18 +78,13 @@ class Files extends ModelLincko {
 		'_delete' => 999,//[{un}] deleted a file
 	);
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
-
 	/*
 		IMPORTANT:
 		'users', 'chats', 'projects' are hardly attached
-		'tasks', 'notes' are softly attached, meaning that the file will be attached to the parent project but will be given the dependency to the tasks or note
+		'tasks', 'notes', 'comments' are softly attached, meaning that the file will be attached to the parent project but will be given the dependency to the tasks or note
 	*/
-	protected static $parent_list = array('users', 'chats', 'projects', 'tasks', 'notes'); //toto => adding 'comments' makes it crash, they disapear
-	protected static $parent_list_hard = array('users', 'chats', 'projects');
+	protected static $parent_list = array('users', 'chats', 'projects');
+	protected static $parent_list_soft = array('tasks', 'notes', 'comments'); //toto => adding 'comments' makes it crash, they disapear
 
 	protected $model_integer = array(
 		'version_of',
@@ -130,6 +129,9 @@ class Files extends ModelLincko {
 
 	protected static $dependencies_visible = array(
 		'tasks' => array('tasks_x_files', array('access')),
+		'notes' => array('notes_x_files', array('access')),
+		'spaces' => array('spaces_x', array('access')),
+		'comments' => array('comments_x_files', array('access')),
 	);
 
 	//Many(Files) to Many(Users)
@@ -149,7 +151,11 @@ class Files extends ModelLincko {
 
 	//Many(Files) to Many(Comments)
 	public function comments(){
-		//return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
+	}
+
+	//Many(Files) to Many(Comments)
+	public function Depcomments(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments_x_files', 'files_id', 'comments_id')->withPivot('access');
 	}
 
@@ -166,6 +172,11 @@ class Files extends ModelLincko {
 	//One(Files) to Many(Users)
 	public function profile(){
 		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Users', 'profile_pic');
+	}
+
+	//Many(Files) to Many(Spaces)
+	public function spaces(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'files')->withPivot('access');
 	}
 
 ////////////////////////////////////////////
@@ -449,10 +460,6 @@ class Files extends ModelLincko {
 		}
 		
 		return $return;
-	}
-
-	public static function getParentListHard(){
-		return static::$parent_list_hard;
 	}
 
 	public function setCategory(){

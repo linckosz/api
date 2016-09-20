@@ -25,10 +25,6 @@ class Invitation extends ModelLincko {
 
 	protected $accessibility = true;
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
-
 	protected static $permission_sheet = array(
 		0, //[R] owner
 		1, //[RC] max allow || super

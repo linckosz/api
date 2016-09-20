@@ -14,6 +14,7 @@ use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\Invitation;
+use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\Workspaces;
@@ -25,6 +26,7 @@ use \bundles\lincko\api\models\data\Comments;
 use \bundles\lincko\api\models\data\Notes;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Settings;
+use \bundles\lincko\api\models\data\Spaces;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
@@ -873,8 +875,13 @@ class ControllerTest extends Controller {
 		//mkdir('ssh2.sftp://'.$sftp.'/home/sftp/tata');
 		//$tp = scandir('ssh2.sftp://'.$sftp.'/home/sftp');
 
-		$tp = Workspaces::getWorkspace();
+		//$model = Spaces::find(5);
+		//$tp = $model->tasks()->get();
 
+		//$model = Tasks::find(54);
+		//$tp = $model->spaces()->get();
+
+		$tp = Spaces::blockItems();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

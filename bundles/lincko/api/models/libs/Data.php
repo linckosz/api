@@ -11,6 +11,7 @@ use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Spaces;
 use \bundles\lincko\api\models\data\Tasks;
 use \bundles\lincko\api\models\data\Notes;
 use \bundles\lincko\api\models\data\Files;
@@ -742,6 +743,17 @@ class Data {
 			foreach ($result_bis->$uid as $table_name => $models) {
 				if(!isset($app->lincko->api['x_'.$table_name]) || !$app->lincko->api['x_'.$table_name]){
 					unset($result_bis->$uid->$table_name);
+				}
+			}
+		}
+
+		//Delete the items that are hidden by spaces
+		if($block = Spaces::blockItems()){
+			foreach ($block as $model) {
+				$table_name = $model['parent_type'];
+				$id = $model['parent_id'];
+				if(isset($result_bis->$uid->$table_name) && isset($result_bis->$uid->$table_name->$id)){
+					unset($result_bis->$uid->$table_name->$id);
 				}
 			}
 		}

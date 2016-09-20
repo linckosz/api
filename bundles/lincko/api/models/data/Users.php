@@ -69,8 +69,6 @@ class Users extends ModelLincko {
 		'_delete' => 699,//[{un}] deleted [{hh}] profile
 	);
 
-	protected static $relations_keys = array();
-
 	protected $model_integer = array(
 		'gender',
 		'profile_pic',
@@ -129,6 +127,11 @@ class Users extends ModelLincko {
 	//Many(Users) to Many(Notes)
 	public function notes(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'users_x_notes', 'users_id', 'notes_id')->withPivot('access');
+	}
+
+	//Many(Users) to Many(Spaces)
+	public function spaces(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'users_x_spaces', 'users_id', 'spaces_id')->withPivot('access', 'hidden');
 	}
 
 	//Many(Users) to Many(Users)
@@ -374,34 +377,6 @@ class Users extends ModelLincko {
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$return = null;
-		/*
-		$db = Capsule::connection($this->connection);
-		$db->beginTransaction();
-		try {
-			if(isset($this->id)){
-				$return = parent::save($options);
-			} else {
-				$return = parent::save($options);
-
-				$app->lincko->data['uid'] = $this->id;
-				$app->lincko->data['username'] = $this->username;
-
-				//We first login to shared worksace, which does not need to set a role permission, since everyone is an administrator (but not super)
-				$app->lincko->data['workspace'] = '';
-				$app->lincko->data['workspace_id'] = 0;
-				
-				$project = Projects::setPersonal();
-
-				$app->lincko->data['user_log']->save();
-			}
-			$db->commit();
-		} catch(\Exception $e){
-			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
-			$return = null;
-			$db->rollback();
-		}
-		*/
-		
 		if(isset($this->id)){
 			$return = parent::save($options);
 		} else {

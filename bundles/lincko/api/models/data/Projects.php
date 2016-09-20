@@ -59,17 +59,6 @@ class Projects extends ModelLincko {
 		'_delete' => 499,//[{un}] deleted a project
 	);
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'parent_id' => '\\bundles\\lincko\\api\\models\\data\\Workspaces',
-	);
-
-	protected static $relations_keys = array(
-		'users',
-		'workspaces',
-	);
-
 	protected static $parent_list = 'workspaces';
 
 	protected $model_integer = array(

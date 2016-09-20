@@ -51,11 +51,6 @@ class Comments extends ModelLincko {
 		'_delete' => 299,//[{un}] deleted a message
 	);
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
-
 	protected static $parent_list = array('users', 'comments', 'chats', 'workspaces', 'projects', 'tasks', 'notes', 'files');
 
 	protected $model_integer = array(
@@ -118,6 +113,11 @@ class Comments extends ModelLincko {
 	//Many(comments) to Many(Files)
 	public function files(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'comments', 'id', 'parent_id');
+	}
+
+	//Many(comments) to Many(Files)
+	public function Depfiles(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'comments_x_files', 'comments_id', 'files_id')->withPivot('access');
 	}
 
 ////////////////////////////////////////////

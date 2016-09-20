@@ -25,6 +25,7 @@ class Chats extends ModelLincko {
 		'title',
 		'single',
 		'_parent',
+		'_spaces',
 		'_perm',
 	);
 
@@ -48,15 +49,6 @@ class Chats extends ModelLincko {
 		'_delete' => 199,//[{un}] deleted a chat group
 	);
 
-	protected static $foreign_keys = array(
-		'created_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-		'updated_by' => '\\bundles\\lincko\\api\\models\\data\\Users',
-	);
-
-	protected static $relations_keys = array(
-		'users'
-	);
-
 	protected static $parent_list = array(null, 'workspaces', 'projects');
 
 	protected $model_boolean = array(
@@ -72,6 +64,10 @@ class Chats extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	protected static $dependencies_visible = array(
+		'spaces' => array('spaces_x', array('access')),
+	);
+
 	//Many(Chats) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access');
@@ -85,6 +81,11 @@ class Chats extends ModelLincko {
 	//Many(Chats) to Many(Projects)
 	public function projects(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'chats', 'id', 'parent_id');
+	}
+
+	//Many(Chats) to Many(Spaces)
+	public function spaces(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'chats')->withPivot('access');
 	}
 
 ////////////////////////////////////////////

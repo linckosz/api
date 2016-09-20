@@ -104,20 +104,13 @@ abstract class ModelLincko extends Model {
 	protected $contactsLock = false; //If true, do not allow to delete the user from the contact list
 	protected $contactsVisibility = false; //If true, it will appear in user contact list
 
-	//NOTE: All variables in this array must exist in the database, otherwise an error will be generated during SLQ request.
-	protected static $foreign_keys = array(); //Define a list of foreign keys, it helps to give a warning (missing arguments) to the user instead of an error message. Keys are columns name, Values are Models' link. It's also used to build relationships.
-
-	protected static $relations_keys_checked = false; //(not used anymore) At false it will help to construct the list only once
-
-	//NOTE: Must exist in child "data"
-	protected static $relations_keys = array(); //(not used anymore) This is a list of parent Models, it helps the front server to know which elements to update without the need of updating all elements and overkilling the CPU usage. This should be accurate using Models' name.
-
 	//It should be a array of [key1:val1, key2:val2, etc]
 	//It helps to recover some iformation on client side
 	protected $historyParameters = array();
 
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
 	protected static $parent_list = null;
+	protected static $parent_list_soft = null;
 
 	//Keep a record of children tree structure
 	protected static $children_tree = null;
@@ -1117,14 +1110,6 @@ abstract class ModelLincko extends Model {
 		}
 	}
 
-	//This function does the same as getItems, but the calculation is heavier since it's requesting every parent, getItems is using a list to simulate dependencies (previously got in Data.php)
-	public function scopegetLinked_newtotest($query, $trash=false){
-		if($trash || $this->with_trash){
-			$query = $query->withTrashed();
-		}
-		return $query->getItems();
-	}
-
 	public function scopegetLinked($query, $with=false, $trash=false){
 		//Why did I use getTree with parents to get ID? It seems useless since getItems() should return the same list
 		//If no issue over the time, just delete the code below
@@ -1275,6 +1260,10 @@ abstract class ModelLincko extends Model {
 		return static::$parent_list;
 	}
 
+	public static function getParentListSoft(){
+		return static::$parent_list_soft;
+	}
+
 	public function getParent(){
 		if(!is_null($this->parent_item)){
 			return $this->parent_item;
@@ -1290,13 +1279,18 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getParentAccess(){
+		$app = self::getApp();
 		$parent = $this->getParent();
-		if(!$parent){
+		if(!$parent && (empty($this->parent_type) || ($this->_parent[0]=='workspaces' && $this->_parent[1]==0)) ){ //We allow shared workspace
 			return true; //Accept any model attached to root
 		}
-		if($parent->checkAccess(false)){
+		if($parent && $parent->checkAccess(false)){
 			return $parent;
 		}
+		$msg = $app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
+		\libs\Watch::php($this, $msg, __FILE__, true);
+		$json = new Json($msg, true, 406);
+		$json->render(406);
 		return false;
 	}
 
@@ -1375,9 +1369,13 @@ abstract class ModelLincko extends Model {
 			$model = new $class;
 			$data = null;
 			$dependencies_visible = $model::getDependenciesVisible();
+			//NOTE: Give a priority for Deptasks() overs tasks()
 			if(count($dependencies_visible)>0){
 				foreach ($dependencies_visible as $dependency => $dependencies_fields) {
-					if(count($dependencies_fields)>0 && isset($list_id[$table]) && method_exists($class, $dependency)) {
+					if(count($dependencies_fields)>0 && isset($list_id[$table]) && (method_exists($class, 'Dep'.$dependency) || method_exists($class, $dependency)) ) {
+						if(method_exists($class, 'Dep'.$dependency)){
+							$dependency = 'Dep'.$dependency;
+						}
 						if(is_null($data)){
 							$data = $model::whereIn($model::getTableStatic().'.id', $list_id[$table]);
 						}
@@ -1387,7 +1385,10 @@ abstract class ModelLincko extends Model {
 				if(!is_null($data)){
 					$data = $data->where(function ($query) use ($class, $list_id, $table, $dependencies_visible) {
 						foreach ($dependencies_visible as $dependency => $dependencies_fields) {
-							if(isset($list_id[$table]) && method_exists($class, $dependency)) {
+							if(isset($list_id[$table]) && (method_exists($class, 'Dep'.$dependency) || method_exists($class, $dependency)) ) {
+								if(method_exists($class, 'Dep'.$dependency)){
+									$dependency = 'Dep'.$dependency;
+								}
 								$query->orWhereHas($dependency, function ($query){
 									$query->where('access', 1);
 								});
@@ -1400,16 +1401,22 @@ abstract class ModelLincko extends Model {
 						$data = $data->get(['id']);
 						foreach ($data as $dep) {
 							foreach ($dependencies_visible as $dependency => $dependencies_fields) {
-								foreach ($dep->$dependency as $key => $value) {
-									if(isset($value->pivot->access) && isset($dependencies_visible[$dependency])){
-										foreach ($dependencies_fields[1] as $field) {
-											if(isset($value->pivot->$field)){
-												$field_value = $dep->formatAttributes($field, $value->pivot->$field);
-												$dependencies[$table][$dep->id]['_'.$dependency][$value->id][$field] = $field_value;
+								$depatt = $dependency;
+								if(isset($dep->{'Dep'.$dependency})){
+									$depatt = 'Dep'.$dependency;
+								}
+								if(isset($dep->$depatt)){
+									foreach ($dep->$depatt as $key => $value) {
+										if(isset($value->pivot->access) && isset($dependencies_visible[$dependency])){
+											foreach ($dependencies_fields[1] as $field) {
+												if(isset($value->pivot->$field)){
+													$field_value = $dep->formatAttributes($field, $value->pivot->$field);
+													$dependencies[$table][$dep->id]['_'.$dependency][$value->id][$field] = $field_value;
+												}
 											}
-										}
-										if(!$value->pivot->access){
-											$dependencies[$table][$dep->id]['_'.$dependency][$value->id]['access'] = false;
+											if(!$value->pivot->access){
+												$dependencies[$table][$dep->id]['_'.$dependency][$value->id]['access'] = false;
+											}
 										}
 									}
 								}
@@ -1417,7 +1424,6 @@ abstract class ModelLincko extends Model {
 						}
 					} catch (Exception $obj_exception) {
 						//Do nothing to continue
-						continue;
 					}
 				}
 			}
@@ -1821,7 +1827,7 @@ abstract class ModelLincko extends Model {
 						$this->accessibility = (bool) true;
 					}
 				}
-				else if($this->getLinked()->whereId($this->id)->take(1)->count() > 0){
+				else if($this->getLinked(true)->whereId($this->id)->take(1)->count() > 0){
 					$this->accessibility = (bool) true;
 				}
 			}
@@ -2011,20 +2017,6 @@ abstract class ModelLincko extends Model {
 				$this->updated_by = $app->lincko->data['uid'];
 			}
 			$this->change_permission = true;
-			$missing_arguments = array();
-			foreach($this::$foreign_keys as $key => $value) {
-				if(!isset($this->$key)){
-					$missing_arguments[] = $key;
-				}
-			}
-			if(!empty($missing_arguments)){
-				$app->lincko->translation['missing_arguments'] = implode(", ", $missing_arguments);
-				$msg = $app->trans->getBRUT('api', 4, 1); //Unable to create the item, your request lacks arguments: @@missing_arguments~~
-				\libs\Watch::php($msg, 'Missing arguments', __FILE__, true);
-				$json = new Json($msg, true, 406);
-				$json->render(406);
-				return false;
-			}
 		} else {
 			if(in_array('updated_by', $columns)){
 				$this->updated_by = $app->lincko->data['uid'];
