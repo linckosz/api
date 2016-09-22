@@ -1409,7 +1409,7 @@ abstract class ModelLincko extends Model {
 									foreach ($dep->$depatt as $key => $value) {
 										if(isset($value->pivot->access) && isset($dependencies_visible[$dependency])){
 											foreach ($dependencies_fields[1] as $field) {
-												if(isset($value->pivot->$field)){
+												if(isset($value->pivot->$field) || is_null($value->pivot->$field)){
 													$field_value = $dep->formatAttributes($field, $value->pivot->$field);
 													$dependencies[$table][$dep->id]['_'.$dependency][$value->id][$field] = $field_value;
 												}

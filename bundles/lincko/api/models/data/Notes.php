@@ -77,7 +77,7 @@ class Notes extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'files' => array('notes_x_files', array('access')),
 		'tasks' => array('tasks_x_notes', array('access')),
-		'spaces' => array('spaces_x', array('created_at', 'exit_at')),
+		'spaces' => array('spaces_x', array('created_at')),
 	);
 
 	//Many(Notes) to One(Projects)

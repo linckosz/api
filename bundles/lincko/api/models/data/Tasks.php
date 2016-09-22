@@ -24,6 +24,7 @@ class Tasks extends ModelLincko {
 		'created_at',
 		'updated_at',
 		'deleted_at',
+		'exit_at',
 		'approved_at',
 		'created_by',
 		'updated_by',

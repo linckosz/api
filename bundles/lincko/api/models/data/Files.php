@@ -130,7 +130,7 @@ class Files extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'tasks' => array('tasks_x_files', array('access')),
 		'notes' => array('notes_x_files', array('access')),
-		'spaces' => array('spaces_x', array('created_at', 'exit_at')),
+		'spaces' => array('spaces_x', array('created_at')),
 		'comments' => array('comments_x_files', array('access')),
 	);
 

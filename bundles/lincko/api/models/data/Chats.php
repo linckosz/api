@@ -65,7 +65,7 @@ class Chats extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'spaces' => array('spaces_x', array('created_at', 'exit_at')),
+		'spaces' => array('spaces_x', array('created_at')),
 	);
 
 	//Many(Chats) to Many(Users)

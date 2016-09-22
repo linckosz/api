@@ -23,6 +23,7 @@ class Spaces extends ModelLincko {
 		'temp_id',
 		'created_at',
 		'deleted_at',
+		'exit_at',
 		'name',
 		'color',
 		'icon',
@@ -30,6 +31,7 @@ class Spaces extends ModelLincko {
 		'notes',
 		'files',
 		'chats',
+		'spacetime',
 		'_users',
 		'_tasks',
 		'_notes',
@@ -88,9 +90,9 @@ class Spaces extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'users' => array('users_x_spaces', array('hide')),
 		'tasks' => array('spaces_x', array('created_at', 'exit_at')),
-		'notes' => array('spaces_x', array('created_at', 'exit_at')),
-		'files' => array('spaces_x', array('created_at', 'exit_at')),
-		'chats' => array('spaces_x', array('created_at', 'exit_at')),
+		'notes' => array('spaces_x', array('created_at')),
+		'files' => array('spaces_x', array('created_at')),
+		'chats' => array('spaces_x', array('created_at')),
 	);
 
 	//Many(Spaces) to One(Projects)
