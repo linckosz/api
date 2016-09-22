@@ -131,7 +131,7 @@ class Users extends ModelLincko {
 
 	//Many(Users) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'users_x_spaces', 'users_id', 'spaces_id')->withPivot('access', 'hidden');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'users_x_spaces', 'users_id', 'spaces_id')->withPivot('access', 'hide');
 	}
 
 	//Many(Users) to Many(Users)

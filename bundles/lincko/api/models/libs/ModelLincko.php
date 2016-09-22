@@ -2380,7 +2380,14 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		}
-		return $save;	
+		return $save;
+	}
+
+	protected function setPivotExtra($type, $column, $value){
+		$pivot_array = array(
+			$column => $value,
+		);
+		return $pivot_array;
 	}
 
 	public function pivots_save(array $parameters = array()){
@@ -2410,17 +2417,27 @@ abstract class ModelLincko extends Model {
 						if(is_bool($value)){
 							$value = (int) $value;
 						}
-						$value = (string) $value;
+						//Do not convert into string a NULL value (ifnot it will return a 0 timestamp or empty string instead of NULL value)
+						if(!is_null($value)){
+							$value = (string) $value;
+						}
 						if(!$success){ break; }
 						$pivot = false;
+						$pivot_array = $this->setPivotExtra($type, $column, $value);
 						if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
 							$pivot_relation = $this->$type();
 							if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
 								if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
+									//We delete created_at since it already exists
+									unset($pivot_array['created_at']);
 									//Update an existing pivot
-									$value_old = (string) $pivot->pivot->$column;
+									if(is_null($pivot->pivot->$column)){ //Do not convert a NULL into a string
+										$value_old = $pivot->pivot->$column;
+									} else {
+										$value_old = (string) $pivot->pivot->$column;
+									}
 									if($value_old != $value){
-										if($pivot_relation->updateExistingPivot($type_id, array($column => $value))){
+										if($pivot_relation->updateExistingPivot($type_id, $pivot_array)){
 											if($column=='access'){
 												$this->change_permission = true;
 												if(!(bool)$value){
@@ -2449,12 +2466,12 @@ abstract class ModelLincko extends Model {
 									continue;
 								} else {
 									//Create a new pivot line
-									if($column=='access' || !isset($this->pivots_var->$type->type_id->access)){
+									if($column!='access' && !isset($this->pivots_var->$type->$type_id->access)){
 										//By default, if we affect a new pivot, we always authorized access if it's not specified (for instance a user assigned to a task will automaticaly have access to it)
-										$pivot_relation->attach($type_id, array('access' => true, $column => $value)); //attach() return nothing
-									} else {
-										$pivot_relation->attach($type_id, array($column => $value)); //attach() return nothing
+										$pivot_array['access'] = true;
 									}
+									$pivot_relation->attach($type_id, $pivot_array); //attach() return nothing
+									$this->pivot_extra_array = false;
 									if($column=='access'){
 										$this->change_permission = true;
 										if(!(bool)$value){

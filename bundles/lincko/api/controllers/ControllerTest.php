@@ -875,16 +875,15 @@ class ControllerTest extends Controller {
 		//mkdir('ssh2.sftp://'.$sftp.'/home/sftp/tata');
 		//$tp = scandir('ssh2.sftp://'.$sftp.'/home/sftp');
 
-		//$model = Spaces::find(5);
-		//$tp = $model->tasks()->get();
+		//$tp = Spaces::filterPivotAccessGetDefault();
 
-		//$model = Tasks::find(54);
-		//$tp = $model->spaces()->get();
+		$model = Tasks::find(54);
+		$tp = $model->users()->get();
 
-		$tp = Spaces::blockItems();
+		//$tp = Spaces::blockItems();
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
 

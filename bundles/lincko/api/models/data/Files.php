@@ -130,7 +130,7 @@ class Files extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'tasks' => array('tasks_x_files', array('access')),
 		'notes' => array('notes_x_files', array('access')),
-		'spaces' => array('spaces_x', array('access')),
+		'spaces' => array('spaces_x', array('created_at', 'exit_at')),
 		'comments' => array('comments_x_files', array('access')),
 	);
 
@@ -176,7 +176,7 @@ class Files extends ModelLincko {
 
 	//Many(Files) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'files')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'files')->withPivot('access', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////
@@ -195,6 +195,24 @@ class Files extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
+
+	protected function setPivotExtra($type, $column, $value){
+		$pivot_array = array(
+			$column => $value,
+		);
+		if($type=='spaces'){
+			$pivot_array['parent_type'] = 'files';
+			$pivot_array['created_at'] = $this->freshTimestamp();
+			if($column=='access'){
+				if($value){
+					$pivot_array['exit_at'] = null;
+				} else {
+					$pivot_array['exit_at'] = $pivot_array['created_at'];
+				}
+			}
+		}
+		return $pivot_array;
+	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects

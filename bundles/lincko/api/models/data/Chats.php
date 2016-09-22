@@ -65,7 +65,7 @@ class Chats extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'spaces' => array('spaces_x', array('access')),
+		'spaces' => array('spaces_x', array('created_at', 'exit_at')),
 	);
 
 	//Many(Chats) to Many(Users)
@@ -85,7 +85,7 @@ class Chats extends ModelLincko {
 
 	//Many(Chats) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'chats')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'chats')->withPivot('access', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////
@@ -103,6 +103,24 @@ class Chats extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
+
+	protected function setPivotExtra($type, $column, $value){
+		$pivot_array = array(
+			$column => $value,
+		);
+		if($type=='spaces'){
+			$pivot_array['parent_type'] = 'chats';
+			$pivot_array['created_at'] = $this->freshTimestamp();
+			if($column=='access'){
+				if($value){
+					$pivot_array['exit_at'] = null;
+				} else {
+					$pivot_array['exit_at'] = $pivot_array['created_at'];
+				}
+			}
+		}
+		return $pivot_array;
+	}
 
 	public function delete(){
 		//We cannot delete a chat out of the scope of a workspace

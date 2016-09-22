@@ -37,7 +37,8 @@ class Tasks extends ModelLincko {
 		'start',
 		'progress',
 		'_parent',
-		'_tasks',
+		'_tasksup',
+		'_tasksdown',
 		'_users',
 		'_files',
 		'_notes',
@@ -95,6 +96,7 @@ class Tasks extends ModelLincko {
 		'progress',
 		'status',
 		'delay',
+		'position',
 	);
 
 	protected $model_boolean = array(
@@ -119,10 +121,11 @@ class Tasks extends ModelLincko {
 
 	protected static $dependencies_visible = array(
 		'users' => array('users_x_tasks', array('in_charge', 'approver')),
-		'tasks' => array('tasks_x_tasks', array('delay')),
+		'tasksup' => array('tasks_x_tasks', array('access')),
+		'tasksdown' => array('tasks_x_tasks', array('delay', 'position')),
 		'files' => array('tasks_x_files', array('access')),
 		'notes' => array('tasks_x_notes', array('access')),
-		'spaces' => array('spaces_x', array('access')),
+		'spaces' => array('spaces_x', array('created_at', 'exit_at')),
 	);
 
 	//Many(Tasks) to One(Projects)
@@ -131,8 +134,13 @@ class Tasks extends ModelLincko {
 	}
 
 	//Many(Tasks) to Many(Tasks)
-	public function tasks(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_tasks', 'tasks_id', 'tasks_id_link')->withPivot('access', 'delay');
+	public function tasksup(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_tasks', 'tasks_id_sub', 'tasks_id')->withPivot('access');
+	}
+
+	//Many(Tasks) to Many(Tasks)
+	public function tasksdown(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_tasks', 'tasks_id', 'tasks_id_sub')->withPivot('access', 'delay', 'position');
 	}
 
 	//Many(Tasks) to Many(Users)
@@ -152,7 +160,7 @@ class Tasks extends ModelLincko {
 
 	//Many(Tasks) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'tasks')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'tasks')->withPivot('access', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////
@@ -185,6 +193,24 @@ class Tasks extends ModelLincko {
 			'approver' => 0,
 		);
 		return parent::filterPivotAccessListDefault($list, $uid_list, $result, $default);
+	}
+
+	protected function setPivotExtra($type, $column, $value){
+		$pivot_array = array(
+			$column => $value,
+		);
+		if($type=='spaces'){
+			$pivot_array['parent_type'] = 'tasks';
+			$pivot_array['created_at'] = $this->freshTimestamp();
+			if($column=='access'){
+				if($value){
+					$pivot_array['exit_at'] = null;
+				} else {
+					$pivot_array['exit_at'] = $pivot_array['created_at'];
+				}
+			}
+		}
+		return $pivot_array;
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){

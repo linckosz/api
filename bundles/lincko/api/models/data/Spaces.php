@@ -63,6 +63,14 @@ class Spaces extends ModelLincko {
 
 	protected static $parent_list = 'projects';
 
+	protected $model_boolean = array(
+		'tasks',
+		'notes',
+		'files',
+		'chats',
+		'hide',
+	);
+
 	protected static $allow_single = false;
 	protected static $allow_role = false;
 
@@ -78,11 +86,11 @@ class Spaces extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'users' => array('users_x_spaces', array('hidden')),
-		'tasks' => array('spaces_x', array('access')),
-		'notes' => array('spaces_x', array('access')),
-		'files' => array('spaces_x', array('access')),
-		'chats' => array('spaces_x', array('access')),
+		'users' => array('users_x_spaces', array('hide')),
+		'tasks' => array('spaces_x', array('created_at', 'exit_at')),
+		'notes' => array('spaces_x', array('created_at', 'exit_at')),
+		'files' => array('spaces_x', array('created_at', 'exit_at')),
+		'chats' => array('spaces_x', array('created_at', 'exit_at')),
 	);
 
 	//Many(Spaces) to One(Projects)
@@ -92,27 +100,27 @@ class Spaces extends ModelLincko {
 
 	//Many(Spaces) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_spaces', 'spaces_id', 'users_id')->withPivot('access', 'hidden');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_spaces', 'spaces_id', 'users_id')->withPivot('access', 'hide');
 	}
 
 	//Many(Spaces) to Many(Tasks)
 	public function tasks(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'tasks')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'tasks')->withPivot('access', 'created_at', 'exit_at');
 	}
 
 	//Many(Spaces) to Many(Notes)
 	public function notes(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'notes')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'notes')->withPivot('access', 'created_at', 'exit_at');
 	}
 
 	//Many(Spaces) to Many(Files)
 	public function files(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'files')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'files')->withPivot('access', 'created_at', 'exit_at');
 	}
 
 	//Many(Spaces) to Many(Chats)
 	public function chats(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'chats')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'spaces_x', 'spaces_id', 'parent_id')->where('spaces_x.parent_type', 'chats')->withPivot('access', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////
@@ -133,6 +141,33 @@ class Spaces extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
+
+	protected function setPivotExtra($type, $column, $value){
+		$pivot_array = array(
+			$column => $value,
+		);
+		if($type=='tasks' || $type=='notes' || $type=='files' || $type=='chats'){
+			$pivot_array['parent_type'] = $type;
+			$pivot_array['created_at'] = $this->freshTimestamp();
+			if($column=='access'){
+				if($value){
+					$pivot_array['exit_at'] = null;
+				} else {
+					$pivot_array['exit_at'] = $pivot_array['created_at'];
+				}
+			}
+		}
+		return $pivot_array;
+	}
+
+	//This is used because by default not all IDs are stored in pivot table
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array(), $default = array('access' => 1)){
+		$default = array(
+			'access' => 1,
+			'hide' => 0,
+		);
+		return parent::filterPivotAccessListDefault($list, $uid_list, $result, $default);
+	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
@@ -172,7 +207,7 @@ class Spaces extends ModelLincko {
 	public static function blockItems(){
 		$pivot = array();
 		if($user = Users::getUser()){
-			$spaces = $user->spaces()->where('access', 1)->where('hidden', 1)->get(['id']);
+			$spaces = $user->spaces()->where('access', 1)->where('hide', 1)->get(['id']);
 			$list_id = array();
 			foreach ($spaces as $model) {
 				$list_id[$model->id] = $model->id;
