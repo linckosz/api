@@ -196,4 +196,11 @@ class Messages extends ModelLincko {
 		return null;
 	}
 
+	//toto, delete save, it was for test only
+	public function save(array $options = array()){
+		$this->accessibility = true;
+		$return = parent::save($options);
+		return $return;
+	}
+
 }

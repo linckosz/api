@@ -17,6 +17,7 @@ use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\Tree;
 use \bundles\lincko\api\models\libs\Models;
 use \bundles\lincko\api\models\data\Users;
@@ -343,6 +344,10 @@ abstract class ModelLincko extends Model {
 	}
 
 ////////////////////////////////////////////
+
+	public static function getHasPerm(){
+		return self::$has_perm;
+	}
 
 	public function getChildrenTree($item=true){
 		if(is_null(self::$children_tree)){
@@ -2182,8 +2187,9 @@ abstract class ModelLincko extends Model {
 			$class = $this::getClass();
 			$table = $this->getTable();
 			$suffix = $class::getPivotUsersSuffix();
+			$pivot = new PivotUsers(array($table));
 			try {
-				if($pivot = (new PivotUsers(array($table)))->withTrashed()->where($table.$suffix, $this->id)->get(['users_id', $table.$suffix, 'access'])){
+				if($pivot->tableExists($pivot->getTable()) && $pivot->withTrashed()->where($table.$suffix, $this->id)->get(['users_id', $table.$suffix, 'access'])){
 					foreach ($pivot as $model) {
 						$users_id = $model->users_id;
 						$fields = array(

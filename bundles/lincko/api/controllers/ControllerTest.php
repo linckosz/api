@@ -58,7 +58,8 @@ class ControllerTest extends Controller {
 			return true;
 		}
 		$msg = $app->trans->getBRUT('api', 8888, 0); //The application is reading.
-		Capsule::connection('data')->enableQueryLog();
+		$db = Capsule::connection('data');
+		$db->enableQueryLog();
 		$tp = null;
 
 		//\libs\Watch::php(Users::getUser()->toJson(),'$user',__FILE__);
@@ -895,21 +896,43 @@ class ControllerTest extends Controller {
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
-
-		/*
+		
+		
 		//----------------------------------------
 		//The permission purge
 		if(function_exists('proc_nice')){proc_nice(30);}
 		set_time_limit(24*3600); //Set to 1 day workload at the most
-		\time_checkpoint('start');
-		$count = array();
+		\time_checkpoint('start Comments to Messages');
+		//First copy/paste Comments_Chats to Messages_Chats
+		$sql = 'SELECT
+		temp_id, created_at, updated_at, created_by, recalled_by, noticed_by, viewed_by, parent_id, comment
+		FROM `comments` WHERE `parent_type` LIKE "chats" ORDER BY `comments`.`id` ASC;';
+		if($data = $db->select( $db->raw($sql) )){
+			foreach ($data as $item) {
+				$model = new Messages;
+				foreach ($item as $key => $value) {
+					$model->$key = $value;
+				}
+				$model->save();
+			}
+		}
+		\time_checkpoint('start clean _perm');
+		//Reinitialize all permissions
 		$models = Data::getModels();
+		$time = (new Users)->freshTimestamp();
+		foreach ($models as $table => $class) {
+			if((is_bool($class::getHasPerm()) && $class::getHasPerm()) || in_array('_perm', $class::getColumns())){
+				$class::getQuery()->update(['updated_at' => $time, '_perm' => '']); //Dangerous
+			}
+		}
+		\time_checkpoint('start permission');
+		$count = array();
 		foreach ($models as $table => $class) {
 			$count[$table] = 0;
 			$all = $class::withTrashed()->get();
 			foreach ($all as $model) {
-				//if(isset($model->_perm) && empty($model->_perm)){
-				if(isset($model->_perm)){
+				if(isset($model->_perm) && empty($model->_perm)){ //To run this, make sure that all _perm are empty first
+				//if(isset($model->_perm)){ //Force each row, but very slow
 					$model->setPerm();
 					$count[$table]++;
 				}
@@ -919,7 +942,8 @@ class ControllerTest extends Controller {
 		\time_checkpoint('end');
 		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
 		if(function_exists('proc_nice')){proc_nice(0);}
-		*/
+		
+		
 		
 		/*
 		//The permission purge
