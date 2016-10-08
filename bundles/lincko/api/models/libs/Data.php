@@ -122,8 +122,9 @@ class Data {
 
 	public static function getModels(){
 		if(is_null(self::$models)){
+			$app = \Slim\Slim::getInstance();
 			$sql = 'SHOW TABLES;';
-			$db = Capsule::connection('data');
+			$db = Capsule::connection($app->lincko->data['database_data']);
 			$data = $db->select( $db->raw($sql) );
 			$classes = array();
 			foreach ($data as $key => $value) {
@@ -310,7 +311,7 @@ class Data {
 			foreach ($tree_id as $table => $list) {
 				if(isset($list_models[$table])){
 					$class = $list_models[$table];
-					$tree_access[$table] = $class::filterPivotAccessList($list, false, true); //Getting real Pivot value
+					$tree_access[$table] = $class::filterPivotAccessList($list, true); //Getting real Pivot value
 				}
 			}
 			$users = array();
@@ -378,7 +379,7 @@ class Data {
 
 	protected function getList(){
 		$app = $this->app;
-		//Capsule::connection('data')->enableQueryLog();
+		//Capsule::connection($app->lincko->data['database_data'])->enableQueryLog();
 		$uid = $app->lincko->data['uid'];
 		$workid = $app->lincko->data['workspace_id'];
 		$list_models = self::getModels();
@@ -546,7 +547,7 @@ class Data {
 					$temp = $model->toVisible();
 					unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
 					//Get only creation history to avoid mysql overload
-					$temp->history = $model->getHistoryCreation();
+					$temp->history = $model->getHistoryCreation(false, array(), $result_bis->$uid);
 				} else {
 					//need delete information for schema
 					$temp->deleted_at = $model->deleted_at;
@@ -759,16 +760,17 @@ class Data {
 		}
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, false, false, true);
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection($app->lincko->data['database_data'])->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 		return $result_bis;
 
 	}
 
 	//$period (string) => 'daily', 'weekly'
 	public static function getResume(){ //Default is 24H (daily is 86,400s), weekly is 604,800s.
-		//Capsule::connection('data')->enableQueryLog();
+		$app = \Slim\Slim::getInstance();
+		//Capsule::connection($app->lincko->data['database_data'])->enableQueryLog();
 		if(function_exists('proc_nice')){proc_nice(20);}
-		$db = Capsule::connection('data');
+		$db = Capsule::connection($app->lincko->data['database_data']);
 
 		sleep(1); //Just insure we are working on the current day
 
@@ -1125,7 +1127,7 @@ class Data {
 		}
 
 		if(function_exists('proc_nice')){proc_nice(0);}
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection($app->lincko->data['database_data'])->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 		return true;
 	}
 

@@ -45,7 +45,7 @@ class Projects extends ModelLincko {
 
 	protected $name_code = 400;
 
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 401, //[{un}] created a new project
 		'_' => 402,//[{un}] modified a project
 		'title' => 403,//[{un}] changed a project name
@@ -53,6 +53,7 @@ class Projects extends ModelLincko {
 		'resume' => 402,//[{un}] modified a project
 		'_tasks_0' => 405,//[{un}] moved the task "[{tt}]" from this project to another one
 		'_tasks_1' => 406,//[{un}] moved the task "[{tt}]" to this project
+		
 		'pivot_access_0' => 496, //[{un}] blocked [{[{cun}]}]'s access to a project
 		'pivot_access_1' => 497, //[{un}] authorized [{[{cun}]}]'s access to a project
 		'_restore' => 498,//[{un}] restored a project
@@ -215,7 +216,7 @@ class Projects extends ModelLincko {
 		return parent::checkPermissionAllow($level);
 	}
 
-	public function getHistoryCreation($history_detail=false, array $parameters = array()){
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
 		$app = self::getApp();
 		if($this->personal_private==$app->lincko->data['uid']){
 			//Do not record the private project creation since it's created by the framework while user signing

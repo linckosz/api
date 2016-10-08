@@ -67,7 +67,7 @@ class Files extends ModelLincko {
 
 	protected $name_code = 900;
 
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 901, //[{un}] uploaded a file
 		'_' => 902, //[{un}] modified a file
 		'name' => 903, //[{un}] changed a file name

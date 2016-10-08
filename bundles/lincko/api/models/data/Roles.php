@@ -33,7 +33,7 @@ class Roles extends ModelLincko {
 
 	protected $name_code = 700;
 
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 701, //[{un}] created a new role
 		'_' => 702,//[{un}] modified a role
 		//'pivot_access_0' => 796, /* UNSUSED */ //[{un}] blocked [{[{cun}]}]'s access to a role
@@ -108,7 +108,7 @@ class Roles extends ModelLincko {
 ////////////////////////////////////////////
 
 	//Give access to all, will be delete later by hierarchy
-	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
+	public static function filterPivotAccessList(array $list, $all=false){
 		return array();
 	}
 

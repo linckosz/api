@@ -40,18 +40,27 @@ class Comments extends ModelLincko {
 
 	protected $name_code = 200;
 
-	protected $limit_history = 15;
-
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 201, //[{un}] sent a new message
 		'_' => 202,//[{un}] modified a message
 		'comment' => 202,//[{un}] modified a message
 		'recalled_by' => 203,//[{un}] recalled a message
+		//'_commented_on_item' => 210,//[{un}] commented on an item
+		//'_commented_on_chats' => 211,//[{un}]  commented on a chat group
+		'_commented_on_comments' => 212,//[{un}]  commented on a message
+		//'_commented_on_workspaces' => 213,//[{un}] commented on a workspace
+		//'_commented_on_projects' => 214,//[{un}] commented on a project
+		'_commented_on_tasks' => 215,//[{un}] commented on a task
+		//'_commented_on_users' => 216,//[{un}] commented on a user profile
+		//'_commented_on_roles' => 217,//[{un}] commented on a role
+		'_commented_on_files' => 218,//[{un}] commented on a file
+		'_commented_on_notes' => 219,//[{un}] commented on a note
+		//'_commented_on_spaces' => 220,//[{un}] commented on a space
 		'_restore' => 298,//[{un}] restored a message
 		'_delete' => 299,//[{un}] deleted a message
 	);
 
-	protected static $parent_list = array('users', 'comments', 'chats', 'workspaces', 'projects', 'tasks', 'notes', 'files');
+	protected static $parent_list = array('users', 'comments', 'workspaces', 'projects', 'tasks', 'notes', 'files');
 
 	protected $model_integer = array(
 		'recalled_by',
@@ -83,11 +92,6 @@ class Comments extends ModelLincko {
 	//Many(comments) to Many(Comments)
 	public function comments(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
-	}
-
-	//Many(comments) to Many(Chats)
-	public function chats(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'comments', 'id', 'parent_id');
 	}
 
 	//Many(comments) to Many(Workspaces)
@@ -137,7 +141,7 @@ class Comments extends ModelLincko {
 ////////////////////////////////////////////
 
 	//Give access to all, will be delete later by hierarchy
-	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
+	public static function filterPivotAccessList(array $list, $all=false){
 		return array();
 	}
 
@@ -246,5 +250,49 @@ class Comments extends ModelLincko {
 	public function saveRobot(array $options = array()){
 		return Model::save($options);
 	}
-	
+
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
+		$app = self::getApp();
+		$history = parent::getHistoryCreation($history_detail, $parameters);
+
+		//This helps to avoid to have "Bob commented on a message", but instead "Bob commented on a Tasks"
+		$parent_type = $this->parent_type;
+		$parent_id = $this->parent_id;
+		$model = $this;
+		if($parent_type=='comments'){
+			$loop = true;
+			while($loop){
+				if($items && isset($items->$parent_type) && isset($items->$parent_type->$parent_id) && isset($items->$parent_type->$parent_id->_parent) && !is_null($items->$parent_type->$parent_id->_parent[0])){
+					$parent = $items->$parent_type->$parent_id->_parent;
+					$parent_type = $parent[0];
+					$parent_id = $parent[1];
+					if($parent_type!='comments'){	
+						break;
+					}
+					continue;
+				} else if($model = $model->getParent()){
+					$parent_type = $model->getTable();
+					$parent_id = $model->id;
+					if($parent_type!='comments'){	
+						break;
+					}
+					continue;
+				}
+				$loop = false;
+			}
+		}
+
+		if(isset(self::$archive['_commented_on_'.$parent_type])){
+			foreach ($history as $created_at) {
+				foreach ($created_at as $zero) {
+					$zero->cod = (int) self::$archive['_commented_on_'.$parent_type];
+					$zero->par_type = $parent_type;
+					$zero->par_id = $parent_id;
+				}
+			}
+		}
+
+		return $history;
+	}
+
 }

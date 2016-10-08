@@ -36,7 +36,7 @@ class Workspaces extends ModelLincko {
 
 	protected $name_code = 300;
 
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 301, //[{un}] created a new workspace
 		'_' => 302,//[{un}] modified the workspace
 		'name' => 303,//[{un}] changed the workspace name
@@ -166,7 +166,7 @@ class Workspaces extends ModelLincko {
 	}
 
 	//Do not show creation event
-	public function getHistoryCreation($history_detail=false, array $parameters = array()){
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
 		return new \stdClass;
 	}
 

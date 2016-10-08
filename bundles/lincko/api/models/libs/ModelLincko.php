@@ -17,6 +17,8 @@ use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
+use \bundles\lincko\api\models\libs\Tree;
+use \bundles\lincko\api\models\libs\Models;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Roles;
@@ -67,7 +69,7 @@ abstract class ModelLincko extends Model {
 	protected $name_code = 0;
 	//Key: Column title to record
 	//Value: Title of record
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 1,  //[{un}] created a new item
 		'_' => 2,//[{un}] modified an item
 		'_access_0' => 96, //[{un}] blocked [{[{cun}]}]'s access to an item
@@ -180,6 +182,13 @@ abstract class ModelLincko extends Model {
 
 	//Pivot to update
 	protected $pivots_var = null;
+
+	//This suffix is used for users_x_ , for users, it's specific because it's users_id and users_id_link
+	protected static $pivot_users_suffix = '_id';
+
+	public static function getPivotUsersSuffix(){
+		return static::$pivot_users_suffix;
+	}
 
 	//No need to abstract it, but need to redefined for the Models that use it
 	public function users(){
@@ -393,18 +402,19 @@ abstract class ModelLincko extends Model {
 	public function getChildren(){
 		$list_tables[$this->getTable()] = $this->getTable();
 		$loop = true;
-		$tree_tp = $this->getChildrenTree();
-		while(count($tree_tp)>0 && $loop){
-			$loop = false;
-			foreach ($tree_tp as $key => $value) {
-				$list_tables[$key] = $key;
-				if(count($value)<=0){
-					$loop = true;
-					unset($tree_tp[$key]);
-					foreach ($tree_tp as $key_bis => $value_bis) {
-						$key_tp = array_search($key, $value_bis);
-						if($key_tp!==false){
-							unset($tree_tp[$key_bis][$key_tp]);
+		if($tree_tp = $this->getChildrenTree()){
+			while(count($tree_tp)>0 && $loop){
+				$loop = false;
+				foreach ($tree_tp as $key => $value) {
+					$list_tables[$key] = $key;
+					if(count($value)<=0){
+						$loop = true;
+						unset($tree_tp[$key]);
+						foreach ($tree_tp as $key_bis => $value_bis) {
+							$key_tp = array_search($key, $value_bis);
+							if($key_tp!==false){
+								unset($tree_tp[$key_bis][$key_tp]);
+							}
 						}
 					}
 				}
@@ -566,7 +576,7 @@ abstract class ModelLincko extends Model {
 		$users_id = array();
 		$users_id['users'] = array();
 		$class = $root::getClass();
-		$list = $class::filterPivotAccessList([$root->id], false, true);
+		$list = $class::filterPivotAccessList([$root->id], true);
 		foreach ($list as $uid => $value) {
 			//Normaly the root level must have $access_accept at true (workspaces, chats, users, projects)
 			if($root::$access_accept && reset($value)['access']){
@@ -887,8 +897,9 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		}
-
+//\libs\Watch::php($children, '$children', __FILE__, false, false, true);
 		$all_perm = array();
+		$tree_models = array();
 		foreach ($children as $table_name => $models) {
 			foreach ($children[$table_name] as $id => $temp) {
 				$perm_new = '';
@@ -930,14 +941,39 @@ abstract class ModelLincko extends Model {
 				}
 				$perm_new = (string) json_encode($perm_new);
 				if($perm_new != $perm_old){
+					if(empty($perm_new)){ //Because a key cannot be empty
+						$perm_new = '_';
+					}
 					$all_perm[$perm_new][$table_name][$id] = $id;
+
+					$old = json_decode($perm_old, true);
+					if(!is_array($old)){
+						$old = array();
+					}
+					$new = json_decode($perm_new, true);
+					if(!is_array($new)){
+						$new = array();
+					}
+					$plus = array_keys(array_diff_key($new, $old));
+					$less = array_keys(array_diff_key($old, $new));
+					if(count($plus)>0){
+						Models::plus($table_name, $id, $plus);
+					}
+					if(count($less)>0){
+						Models::less($table_name, $id, $less);
+					}
 				}
 			}
 		}
 
+		//\libs\Watch::php($all_perm, '$all_perm', __FILE__, false, false, true);
+
 		$users_tables = array();
 		$time = $this->freshTimestamp();
 		foreach ($all_perm as $json => $list) {
+			if($json=='_'){ //Underscore means empty string
+				$json = '';
+			}
 			foreach ($list as $table_name => $ids) {
 				if(isset($list_models[$table_name])){
 					$class = $list_models[$table_name];
@@ -963,10 +999,8 @@ abstract class ModelLincko extends Model {
 
 	//Scan the list and tell if the user has an access to it by filtering it (mainly used for Data.php)
 	//The unaccesible one will be deleted in Data.php by hierarchy
-	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
-		if($suffix===false){
-			$suffix = '_id';
-		}
+	public static function filterPivotAccessList(array $list, $all=false){
+		$suffix = static::getPivotUsersSuffix();
 		$result = array();
 		$table = (new static)->getTable();
 		$attributes = array( 'table' => $table, );
@@ -1228,6 +1262,9 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function setParentAttributes(){
+		if(!is_null($this->parent_item)){
+			return $this->_parent;
+		}
 		$app = self::getApp();
 		if(is_array($this::$parent_list) && isset($this->parent_type) && in_array($this->parent_type, $this::$parent_list)){
 			$this->_parent[0] = (string) $this->parent_type;
@@ -1437,7 +1474,7 @@ abstract class ModelLincko extends Model {
 		$data = null;
 		foreach ($classes as $table => $class) {
 			$model = new $class;
-			if(isset($list_id[$table]) && count($model->archive)>0){
+			if(isset($list_id[$table]) && count($model::$archive)>0){
 				if(is_null($data)){
 					$data = History::orWhere(function ($query) use ($list_id, $table) {
 						$query
@@ -1499,7 +1536,7 @@ abstract class ModelLincko extends Model {
 		$app = self::getApp();
 		$history = new \stdClass;
 		$parameters = array();
-		if(count($this->archive)>0 && isset($this->id)){
+		if(count($this::$archive)>0 && isset($this->id)){
 			$records = History::whereParentType($this->getTable())->whereParentId($this->id)->get();
 			foreach ($records as $key => $value) {
 				$created_at = (new \DateTime($value->created_at))->getTimestamp();
@@ -1527,7 +1564,7 @@ abstract class ModelLincko extends Model {
 		return $history;
 	}
 
-	public function getHistoryCreation($history_detail=false, array $parameters = array()){
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
 		$app = self::getApp();
 		$history = new \stdClass;
 		$created_at = (new \DateTime($this->created_at))->getTimestamp();
@@ -1538,8 +1575,8 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		$code = 1; //Default created_at comment
-		if(array_key_exists('created_at', $this->archive)){
-			$code = $this->archive['created_at'];
+		if(array_key_exists('created_at', $this::$archive)){
+			$code = $this::$archive['created_at'];
 		}
 		$history->$created_at = new \stdClass;
 		$history->$created_at->{'0'} = new \stdClass;
@@ -1567,7 +1604,7 @@ abstract class ModelLincko extends Model {
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		$app = self::getApp();
 		$namespace = (new \ReflectionClass($this))->getNamespaceName();
-		if(count($this->archive)==0 || $this->getTable()=='history' || $namespace!='bundles\lincko\api\models\data'){ //We exclude history itself to avoid looping
+		if(count($this::$archive)==0 || $this->getTable()=='history' || $namespace!='bundles\lincko\api\models\data'){ //We exclude history itself to avoid looping
 			return true;
 		}
 		$history = new History;
@@ -1589,7 +1626,7 @@ abstract class ModelLincko extends Model {
 		$app = self::getApp();
 		$connectionName = $this->getConnectionName();
 		$titles = new \stdClass;
-		foreach ($this->archive as $key => $value) {
+		foreach ($this::$archive as $key => $value) {
 			$titles->$value = $app->trans->getBRUT('data', 1, $value);
 		}
 		$titles->{'0'} = $app->trans->getBRUT('data', 1, $this->name_code);
@@ -1601,12 +1638,12 @@ abstract class ModelLincko extends Model {
 			$value = (int) $value;
 		}
 		$value = (string) $value;
-		if(array_key_exists($column.'_'.$value, $this->archive)){
-			return $this->archive[$column.'_'.$value];
-		} else if(array_key_exists($column, $this->archive)){
-			return $this->archive[$column];
+		if(array_key_exists($column.'_'.$value, $this::$archive)){
+			return $this::$archive[$column.'_'.$value];
+		} else if(array_key_exists($column, $this::$archive)){
+			return $this::$archive[$column];
 		}
-		return $this->archive['_']; //Neutral comment
+		return $this::$archive['_']; //Neutral comment
 	}
 
 	public function getContactsLock(){
@@ -1682,6 +1719,10 @@ abstract class ModelLincko extends Model {
 			return $this->record_user = $app->lincko->data['uid'];
 		}
 		return $app->lincko->data['uid'];
+	}
+
+	public function getPerm(){
+		return $this->_perm;
 	}
 
 	public function getPermissionMax($users_id = false){
@@ -1948,7 +1989,7 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		} else if($this->getTable()=='users'){
-			$temp = Users::filterPivotAccessList(array($app->lincko->data['uid']), false, true);
+			$temp = Users::filterPivotAccessList(array($app->lincko->data['uid']), true);
 			if($temp){
 				foreach ($temp as $key => $value) {
 					$users_tables[$key]['users'] = true;
@@ -2111,7 +2152,7 @@ abstract class ModelLincko extends Model {
 		}
 
 		Updates::informUsers($users_tables);
-		
+
 		//We do not record any setup for new model, but only change for existing model
 		if(!$new){
 			foreach($dirty as $key => $value) {
@@ -2122,12 +2163,41 @@ abstract class ModelLincko extends Model {
 					if(isset($original[$key])){ $old = $original[$key]; }
 					if(isset($dirty[$key])){ $new = $dirty[$key]; }
 					//We excluse default modification
-					if(isset($this->archive[$key]) || isset($this->archive[$key.'_'.$new])){
+					if(isset($this::$archive[$key]) || isset($this::$archive[$key.'_'.$new])){
 						$this->setHistory($key, $new, $old);
 					}
 				}
 			}
 		}
+
+		//toto
+		//We record Tree for faster query
+		$users_list = array();
+		$users_list[$app->lincko->data['uid']] = $app->lincko->data['uid'];
+		foreach ($users_tables as $users_id => $value) {
+			$users_list[$users_id] = $users_id;
+		}
+		//Tree::TreeUpdateOrCreate($this, $users_list, true);
+		if($this->change_schema || $this->change_permission){
+			$class = $this::getClass();
+			$table = $this->getTable();
+			$suffix = $class::getPivotUsersSuffix();
+			try {
+				if($pivot = (new PivotUsers(array($table)))->withTrashed()->where($table.$suffix, $this->id)->get(['users_id', $table.$suffix, 'access'])){
+					foreach ($pivot as $model) {
+						$users_id = $model->users_id;
+						$fields = array(
+							'access' => $model->access,
+						);
+						//Tree::TreeUpdateOrCreate($this, array($users_id), false, $fields);
+						//\libs\Watch::php( $item->id, $table, __FILE__, false, false, true);
+					}
+				}
+			} catch (\Exception $e) {
+				\libs\Watch::php( $e->getFile()."\n".$e->getLine()."\n".$e->getMessage(), $table, __FILE__, false, false, true);
+			}
+		}
+
 		return $return;
 		
 	}
@@ -2306,24 +2376,24 @@ abstract class ModelLincko extends Model {
 		}
 
 		foreach(self::$class_timestamp as $value) {
-			if(isset($model->$value)){  $model->$value = (int) (new \DateTime($model->$value))->getTimestamp(); }
+			if(isset($model->$value)){ $model->$value = (int) (new \DateTime($model->$value))->getTimestamp(); }
 		}
 		foreach($this->model_timestamp as $value) {
-			if(isset($model->$value)){  $model->$value = (int) (new \DateTime($model->$value))->getTimestamp(); }
+			if(isset($model->$value)){ $model->$value = (int) (new \DateTime($model->$value))->getTimestamp(); }
 		}
 		//Convert number to integer. NULL will stay NULL thanks to isset()
 		foreach(self::$class_integer as $value) {
-			if(isset($model->$value)){  $model->$value = (int) $model->$value; }
+			if(isset($model->$value)){ $model->$value = (int) $model->$value; }
 		}
 		foreach($this->model_integer as $value) {
-			if(isset($model->$value)){  $model->$value = (int) $model->$value; }
+			if(isset($model->$value)){ $model->$value = (int) $model->$value; }
 		}
 		//Convert boolean.
 		foreach(self::$class_boolean as $value) {
-			if(isset($model->$value)){  $model->$value = (boolean) $model->$value; }
+			if(isset($model->$value)){ $model->$value = (boolean) $model->$value; }
 		}
 		foreach($this->model_boolean as $value) {
-			if(isset($model->$value)){  $model->$value = (boolean) $model->$value; }
+			if(isset($model->$value)){ $model->$value = (boolean) $model->$value; }
 		}
 
 		if(isset($this->_perm)){
@@ -2332,7 +2402,7 @@ abstract class ModelLincko extends Model {
 				$model->_perm = new \stdClass;
 			}
 		}
-		
+
 		return $model;
 	}
 
@@ -2455,7 +2525,7 @@ abstract class ModelLincko extends Model {
 													$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 												}
 												//We excluse default modification
-												if(isset($this->archive['pivot_'.$column]) || isset($this->archive['pivot_'.$column.'_'.$value])){
+												if(isset($this::$archive['pivot_'.$column]) || isset($this::$archive['pivot_'.$column.'_'.$value])){
 													$this->setHistory($column, $value, $value_old, $parameters, $type, $type_id);
 												}
 											}
@@ -2489,7 +2559,7 @@ abstract class ModelLincko extends Model {
 											$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 										}
 										//We excluse default modification
-										if(isset($this->archive['pivot_'.$column]) || isset($this->archive['pivot_'.$column.'_'.$value])){
+										if(isset($this::$archive['pivot_'.$column]) || isset($this::$archive['pivot_'.$column.'_'.$value])){
 											$this->setHistory($column, $value, null, $parameters, $type, $type_id);
 										}
 									}

@@ -52,7 +52,7 @@ class Users extends ModelLincko {
 
 	protected $name_code = 600;
 
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 601,  //[{un}] joined @@title~~
 		'_' => 602,//[{un}] modified [{hh}] profile
 		'username' => 602,//[{un}] modified [{hh}] profile
@@ -92,6 +92,8 @@ class Users extends ModelLincko {
 	protected static $me = false;
 	
 ////////////////////////////////////////////
+
+	protected static $pivot_users_suffix = '_id_link';
 
 	//One(Users) to One(UsersLog)
 	//Warning: This does not work because the 2 tables are in 2 different databases
@@ -174,11 +176,6 @@ class Users extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
-
-	//Only add access at true
-	public static function filterPivotAccessList(array $list, $suffix=false, $all=false){
-		return parent::filterPivotAccessList($list, '_id_link', $all);
-	}
 
 	//Add these functions to insure that nobody can make them disappear
 	public function delete(){ return false; }
@@ -366,7 +363,7 @@ class Users extends ModelLincko {
 	}
 
 	//Do not show creation event
-	public function getHistoryCreation($history_detail=false, array $parameters = array()){
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
 		return new \stdClass;
 	}
 

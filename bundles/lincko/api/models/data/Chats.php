@@ -39,7 +39,7 @@ class Chats extends ModelLincko {
 
 	protected $name_code = 100;
 
-	protected $archive = array(
+	protected static $archive = array(
 		'created_at' => 101, //[{un}] created a new chat group
 		'_' => 102,//[{un}] modified a chat group
 		'title' => 103,//[{un}] changed a chat group title

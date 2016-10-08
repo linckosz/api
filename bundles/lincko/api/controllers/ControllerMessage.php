@@ -5,37 +5,35 @@ namespace bundles\lincko\api\controllers;
 
 use \libs\Controller;
 use \libs\STR;
-use \bundles\lincko\api\models\data\Comments;
-use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Messages;
 use \bundles\lincko\api\models\libs\Data;
 
 /*
 
-COMMENTS
+MESSAGES
 
-	comment/read => post
+	message/read => post
 		+id [integer] (the ID of the element)
 
-	comment/create => post
-		+parent_type [string] (the type of the parent object, or null)
+	message/create => post
 		+parent_id [integer] (the ID of the parent object, or -1)
 		+comment [string]
 
-	comment/update => post
-	!rejected!
-	
-	comment/delete => post
+	message/update => post
 	!rejected!
 
-	comment/restore => post
+	message/delete => post
 	!rejected!
 
-	comment/recall => post
+	message/restore => post
+	!rejected!
+
+	message/recall => post
 		+id [integer] (the ID of the element)
 
 */
 
-class ControllerComment extends Controller {
+class ControllerMessage extends Controller {
 
 	protected $app = NULL;
 	protected $data = NULL;
@@ -70,9 +68,6 @@ class ControllerComment extends Controller {
 		if(isset($form->temp_id) && is_string($form->temp_id)){
 			$form->temp_id = trim($form->temp_id);
 		}
-		if(isset($form->parent_type) && is_string($form->parent_type)){
-			$form->parent_type = strtolower(trim($form->parent_type));
-		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
@@ -91,39 +86,18 @@ class ControllerComment extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		//We do not allow the user to comment on himself, we switch to his MyPlacehoder by default
-		if(isset($form->parent_type) && $form->parent_type == 'users' && isset($form->parent_id) && $form->parent_id == $app->lincko->data['uid'] ){
-			$form->parent_type = 'projects';
-			$project = Projects::
-				  orderBy('created_by', 'asc') //By security, always take the ealiest created private project
-				->where('personal_private', $app->lincko->data['uid'])
-				->where('projects.parent_id', null) //Insure to get only the workspace information
-				->first();
-			$form->parent_id = $project->id;
-		}
-
-		if(!isset($form->parent_type) || !Comments::validType($form->parent_type)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
-			$errfield = 'parent_type';
-		}
-		else if(!isset($form->parent_id) || !Comments::validNumeric($form->parent_id)){ //Required
+		if(!isset($form->parent_id) || !Messages::validNumeric($form->parent_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
-		else if(!isset($form->comment) || !Comments::validTextNotEmpty($form->comment)){ //Required
+		else if(!isset($form->comment) || !Messages::validTextNotEmpty($form->comment)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
-		else if($model = new Comments()){
+		else if($model = new Messages()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
-			$model->parent_type = $form->parent_type;
 			$model->parent_id = $form->parent_id;
 			$model->comment = $form->comment;
-			if(empty($model->parent_type)){
-				$model->parent_type = null;
-				$model->parent_id = 0;
-			}
-			$model->pivots_format($form, false);
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 2)); //Message created.
 				$data = new Data();
@@ -144,11 +118,11 @@ class ControllerComment extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Comments::validNumeric($form->id)){ //Required
+		if(!isset($form->id) || !Messages::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 1); //We could not validate the message ID.
 			$errfield = 'id';
 		}
-		else if($model = Comments::find($form->id)){
+		else if($model = Messages::find($form->id)){
 			if($model->checkAccess(false)){
 				$uid = $app->lincko->data['uid'];
 				$key = $model->getTable();
@@ -200,11 +174,11 @@ class ControllerComment extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 11, 25); //You can only recall a message within 2 minutes.
 		$errfield = 'undefined';
 
-		if(!isset($form->id) || !Comments::validNumeric($form->id)){ //Required
+		if(!isset($form->id) || !Messages::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 1); //We could not validate the message ID.
 			$errfield = 'id';
 		}
-		else if($model = Comments::find($form->id)){
+		else if($model = Messages::find($form->id)){
 			$model->recalled_by = (int)$app->lincko->data['uid'];
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 24)); //Message recalled.

@@ -14,6 +14,8 @@ use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\Invitation;
+use \bundles\lincko\api\models\libs\Tree;
+use \bundles\lincko\api\models\libs\Models;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Chats;
@@ -27,6 +29,7 @@ use \bundles\lincko\api\models\data\Notes;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Settings;
 use \bundles\lincko\api\models\data\Spaces;
+use \bundles\lincko\api\models\data\Messages;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
@@ -863,7 +866,7 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		//$tp = Datassl::encrypt_smp('hyuD4pp');
+		//$tp = Datassl::encrypt_smp('eI782Ph0sp');
 
 
 		//$sftp = Workspaces::getSFTP();
@@ -877,19 +880,28 @@ class ControllerTest extends Controller {
 
 		//$tp = Spaces::filterPivotAccessGetDefault();
 
-		$model = Tasks::find(54);
-		$tp = $model->users()->get();
 
-		//$tp = Spaces::blockItems();
+		//$item = Tasks::find(6400);
+		//$tp = Tree::TreeUpdateOrCreate($item, array(), true);
+
+		//$tp = Tree::withTrashed()->where('item_type', 'tasks')->where('item_id', 6356)->get(['users_id']);
+
+		//$item = Tasks::find(6368);
+		//$tp = $item->users()->get()->toArray();
+
+		//$tp = Messages::toto([404]);
+
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
-
+		/*
 		//----------------------------------------
 		//The permission purge
-		/*
+		if(function_exists('proc_nice')){proc_nice(30);}
+		set_time_limit(24*3600); //Set to 1 day workload at the most
+		\time_checkpoint('start');
 		$count = array();
 		$models = Data::getModels();
 		foreach ($models as $table => $class) {
@@ -902,7 +914,47 @@ class ControllerTest extends Controller {
 					$count[$table]++;
 				}
 			}
+			\time_checkpoint($table.' => '.$count[$table]);
 		}
+		\time_checkpoint('end');
+		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
+		if(function_exists('proc_nice')){proc_nice(0);}
+		*/
+		
+		/*
+		//The permission purge
+		\time_checkpoint('start');
+		Tree::unlock(true, 'eI782Ph0sp');
+		$count = array();
+		$models = Data::getModels();
+		foreach ($models as $table => $class) {
+			$count[$table] = 0;
+			$suffix = $class::getPivotUsersSuffix();
+			$all = $class::withTrashed()->get();
+			foreach ($all as $model) {
+				Tree::TreeUpdateOrCreate($model, array(), true);
+				$count[$table]++;
+			}
+			try {
+				if($pivot = (new PivotUsers(array($table)))->withTrashed()->where('access', 0)->get(['users_id', $table.$suffix, 'access'])){
+					foreach ($pivot as $model) {
+						if($item = $class::find($model->{$table.$suffix})){
+							$users_id = $model->users_id;
+							$fields = array(
+								'access' => 0,
+							);
+							Tree::TreeUpdateOrCreate($item, array($users_id), false, $fields);
+						}
+					}
+				}
+			} catch (\Exception $e) {
+				\libs\Watch::php( $e->getFile()."\n".$e->getLine()."\n".$e->getMessage(), $table, __FILE__, false, false, true);
+			}
+			
+
+			\time_checkpoint($table.' => '.$count[$table]);
+		}
+		\time_checkpoint('end');
 		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
 		*/
 		
