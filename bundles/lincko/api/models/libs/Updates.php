@@ -32,6 +32,11 @@ class Updates extends ModelLincko {
 	public function delete(){ return false; }
 	public function restore(){ return false; }
 
+	//Because deleted_at does not exist
+	public static function find($id, $columns = ['*']){
+		return parent::withTrashed()->find($id, $columns);
+	}
+
 	//We do not record history
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		return true;

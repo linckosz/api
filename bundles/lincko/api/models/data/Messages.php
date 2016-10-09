@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 class Messages extends ModelLincko {
 
@@ -13,6 +14,8 @@ class Messages extends ModelLincko {
 
 	protected $table = 'messages';
 	protected $morphClass = 'messages';
+
+	protected $dates = array();
 
 	protected $primaryKey = 'id';
 
@@ -59,6 +62,12 @@ class Messages extends ModelLincko {
 	protected static $access_accept = false;
 
 	protected static $has_perm = false;
+
+	protected static $db = false;
+
+	protected static $row_number = 30; //Default number of messages per chats
+
+	protected static $id_max = false; //Default number of messages per chats
 	
 ////////////////////////////////////////////
 
@@ -91,6 +100,14 @@ class Messages extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	protected static function getDB(){
+		if(!self::$db){
+			$app = self::getApp();
+			self::$db = Capsule::connection($app->lincko->data['database_data']);
+		}
+		return self::$db;
+	}
+
 	//Give access to all, will be delete later by hierarchy
 	public static function filterPivotAccessList(array $list, $all=false){
 		return array();
@@ -100,52 +117,98 @@ class Messages extends ModelLincko {
 	public function delete(){ return false; }
 	public function restore(){ return false; }
 
+	//Because deleted_at does not exist
+	public static function find($id, $columns = ['*']){
+		return parent::withTrashed()->find($id, $columns);
+	}
+
 	public function scopegetItems($query, $list=array(), $get=false){
-		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
-		$query = $query
-		->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-			$query
-			->where(function ($query) use ($list) {
-				if(isset($list['chats']) && count($list['chats'])>0){
-					$query = $query
-					->whereIn('messages.parent_id', $list['chats']);
-				} else {
-					$query = $query
-					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
-				}
-			});
-		});
-		//Also include trashed because we don't have deleted_at
-		$query = $query->withTrashed();
 		if($get){
-			$result = $query->get();
-			foreach($result as $key => $value) {
-				$result[$key]->accessibility = true;
+			$result = array();
+			if(isset($list['chats']) && count($list['chats'])>0){
+				$result = self::getCollection($list['chats'], true);
+				foreach($result as $key => $value) {
+					$result[$key]->accessibility = true;
+				}
 			}
 			return $result;
 		} else {
+			//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
+			$query = $query
+			->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+				$query
+				->where(function ($query) use ($list) {
+					if(isset($list['chats']) && count($list['chats'])>0){
+						$query = $query
+						->whereIn('messages.parent_id', $list['chats']);
+					} else {
+						$query = $query
+						->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
+					}
+				});
+			});
+			//Also include trashed because we don't have deleted_at
+			$query = $query->withTrashed();
 			return $query;
 		}
 	}
 
-	public static function toto($chats, $row_number=30){
+	public static function setRowNumber($row_number=true){
+		self::$row_number = 30; //Default
+		if(is_integer($row_number)){
+			self::$row_number = intval($row_number);
+		}
+	}
+
+	public static function setIdMax($id_max=true){
+		self::$id_max = false; //Default
+		if(is_integer($id_max)){
+			self::$id_max = intval($id_max);
+		}
+	}
+
+	public static function getCollection($chats=array(), $hydrate=true, $fields_arr=false){
+		$db = static::getDB();
+		if(count($chats)<=0){
+			$chats=array(-1);
+		}
+		$limit_id = '';
+		//id_max is not included, and it's better to work with ID than created_at for performance and because we can have multiple same timestamp
+		if(is_integer(self::$id_max)){
+			$limit_id = 'AND `id` < '.intval(self::$id_max);
+		}
+		$fields = '';
+		if(is_array($fields_arr) && count($fields_arr)>0){
+			foreach ($fields_arr as $value) {
+				$fields .= '`messages`.`'.addslashes($value).'`, ';
+			}
+		} else {
+			$fields = '`messages`.*, ';
+		}
+		//http://stackoverflow.com/questions/12113699/get-top-n-records-for-each-group-of-grouped-results
 		$sql = '
-			set @num := 0, @parent_id := 0;
-			select
-			   `id`, `temp_id`, `created_at`, `updated_at`, `updated_by`, `recalled_by`, `noticed_by`, `viewed_by`, `comment`,
-			   @num := if(@parent_id = `parent_id`, @num + 1, 1) as `row_number`,
-			   @parent_id := `parent_id` as `parent_id`
-			from `messages` force index(`parent_id`)
-			where `parent_id` IN (4,5,7)
-			having `row_number` <= :row_number
-			ORDER BY `parent_id` ASC, `id` DESC
+			SELECT
+			 *
+			FROM (
+				SELECT
+				 '.$fields.'
+				 @num := IF(@parent_id = `parent_id`, @num + 1, 1) AS `row_number`,
+				 @parent_id := `parent_id` AS `dummy`
+				FROM (SELECT @num:=0, @parent_id:=0) as vars, `messages`
+				WHERE `parent_id` IN ('.implode(",", $chats).') '.$limit_id.'
+				ORDER BY `parent_id` DESC, `id` DESC
+			) as `result`
+			WHERE `result`.`row_number` <= '.intval(self::$row_number).'
 			;
 		';
-		$result = $db->select( $db->raw($sql), array(
-			'projects_id' => $project->id,
-			'chats' => $chats,
-		));
-		return $result;
+		//Note: Do not add variable in select, it make wrong the result of @var
+		$bindings = $db->select( $db->raw($sql) );
+		if($hydrate){
+			return self::hydrate($bindings);
+		} else {
+			return $bindings;
+		}
+		
 	}
 
 	public function checkPermissionAllow($level, $msg=false){

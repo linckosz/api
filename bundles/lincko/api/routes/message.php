@@ -42,4 +42,10 @@ $app->group('/message', function () use ($app) {
 	)
 	->name('message_recall'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/collect',
+		'\bundles\lincko\api\controllers\ControllerMessage:collect'.$app->lincko->method_suffix
+	)
+	->name('message_collect'.$app->lincko->method_suffix);
+
 });

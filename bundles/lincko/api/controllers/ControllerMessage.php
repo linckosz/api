@@ -16,7 +16,7 @@ MESSAGES
 		+id [integer] (the ID of the element)
 
 	message/create => post
-		+parent_id [integer] (the ID of the parent object, or -1)
+		+parent_id [integer] (the ID of the parent object)
 		+comment [string]
 
 	message/update => post
@@ -29,7 +29,12 @@ MESSAGES
 	!rejected!
 
 	message/recall => post
-		+id [integer] (the ID of the element)
+		+id [integer]
+
+	message/collect => post
+		+parent_id [integer]
+		-row_number [integer] (Get a certain number of items, default is 30)
+		-id_max [integer] (We try to get all ID below that one, id_max is not included)
 
 */
 
@@ -73,6 +78,12 @@ class ControllerMessage extends Controller {
 		}
 		if(isset($form->comment) && is_string($form->comment)){
 			$form->comment = STR::br2ln(trim($form->comment));
+		}
+		if(isset($form->id_max) && is_numeric($form->id_max)){
+			$form->id_max = (int) $form->id_max;
+		}
+		if(isset($form->row_number) && is_numeric($form->row_number)){
+			$form->row_number = (int) $form->row_number;
 		}
 		return $this->form = $form;
 	}
@@ -186,6 +197,64 @@ class ControllerMessage extends Controller {
 				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 				return true;
 			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function collect_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		$failmsg = $app->trans->getBRUT('api', 11, 3)."\n"; //Message access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		if(!isset($form->parent_id) || !Messages::validNumeric($form->parent_id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
+			$errfield = 'parent_id';
+		}
+		else if(isset($form->id_max) && !Messages::validNumeric($form->id_max, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 1); //We could not validate the message ID.
+			$errfield = 'id_max';
+		}
+		else if(isset($form->id_max) && !Messages::validNumeric($form->id_max, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: -Integer
+			$errfield = 'id_max';
+		}
+		else {
+			$parent_id = $form->parent_id;
+			if(isset($form->row_number)){
+				Messages::setRowNumber($form->row_number);
+			} else {
+				Messages::setRowNumber(); //Default
+			}
+			if(isset($form->id_max)){
+				Messages::setIdMax($form->id_max);
+			} else {
+				Messages::setIdMax(); //Default
+			}
+			$uid = $app->lincko->data['uid'];
+			$key = (new Messages)->getTable();
+			$msg = $app->trans->getBRUT('api', 11, 4); //Message accessed.
+			$data = new Data();
+			$force_partial = new \stdClass;
+			$force_partial->$uid = new \stdClass;
+			$force_partial->$uid->$key = new \stdClass;
+
+			$collect = Messages::getCollection([$parent_id], false, ['id']);
+			foreach ($collect as $value) {
+				$force_partial->$uid->$key->{$value->id} = true;
+			}
+			
+			$partial = $data->getMissing($force_partial);
+			if(isset($partial) && isset($partial->$uid) && !empty($partial->$uid)){
+				$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial, 'info' => 'reading')));
+				return true;
+			}
+			
+
 		}
 
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));

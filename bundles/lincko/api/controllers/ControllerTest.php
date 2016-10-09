@@ -890,14 +890,17 @@ class ControllerTest extends Controller {
 		//$item = Tasks::find(6368);
 		//$tp = $item->users()->get()->toArray();
 
-		//$tp = Messages::toto([404]);
+		//$tp = Messages::toto([4, 7, 404], 3);
+		//$tp = (new Messages)->tata();
+
+		$tp = Data::getTrees();
 
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
-		
+		/*
 		//----------------------------------------
 		//The permission purge
 		if(function_exists('proc_nice')){proc_nice(30);}
@@ -942,7 +945,7 @@ class ControllerTest extends Controller {
 		\time_checkpoint('end');
 		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
 		if(function_exists('proc_nice')){proc_nice(0);}
-		
+		*/
 		
 		
 		/*
