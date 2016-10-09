@@ -222,6 +222,13 @@ class Data {
 				return $tree_desc;
 			}
 
+			$models = array();
+			if($temp = Models::getItems(array_flip($list_models), true)){
+				foreach ($temp as $value) {
+					$models[$value->type] = array_filter( explode(';', $value->list), 'strlen' );
+				}
+			}
+//\libs\Watch::php( $models, '$models', __FILE__, false, false, true);
 			// Get all ID with parent dependencies
 			$loop = true;
 			$tree_tp = $tree_scan;
@@ -253,7 +260,11 @@ class Data {
 							while($nested){ //$nested is used for element that are linked to each others
 								$nested = false;
 								$class::enableTrashGlobal(true);
-								$result_bis = $class::getItems($list, true); //toto => try (new function, to work with stored database instead of always calculating it)
+								if(isset($models[$key]) && count($models[$key])>0){
+									$result_bis = $class::withTrashed()->whereIn('id', $models[$key])->get(); //toto => It seems that it's slower that the jointure, need to be confirmed with heavy database
+								} else {
+									$result_bis = $class::getItems($list, true); //toto => try (new function, to work with stored database instead of always calculating it)
+								}
 								$class::enableTrashGlobal(false);
 								if(isset($result->$key)){
 									$result->$key = $result->$key->merge($result_bis);

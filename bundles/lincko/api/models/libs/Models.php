@@ -125,6 +125,9 @@ class Models extends ModelLincko {
 	public function scopegetItems($query, $list=array(), $get=false){
 		$app = self::getApp();
 		//Exclude all unused data
+		if(!is_array($list)){
+			$list = array();
+		}
 		foreach (self::$type_exclude as $value) {
 			if($key = array_search($value, $list)){
 				unset($list[$key]);

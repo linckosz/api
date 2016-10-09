@@ -1481,7 +1481,7 @@ abstract class ModelLincko extends Model {
 			$model = new $class;
 			if(isset($list_id[$table]) && count($model::$archive)>0){
 				if(is_null($data)){
-					$data = History::orWhere(function ($query) use ($list_id, $table) {
+					$data = History::withTrashed()->orWhere(function ($query) use ($list_id, $table) {
 						$query
 						->whereParentType($table)
 						->whereIn('history.parent_id', $list_id[$table]);

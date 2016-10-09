@@ -893,9 +893,13 @@ class ControllerTest extends Controller {
 		//$tp = Messages::toto([4, 7, 404], 3);
 		//$tp = (new Messages)->tata();
 
-		$ttp = Data::getTrees();
+		//$ttp = Data::getTrees();
 
-		$tp = Models::getItems(array(), true);
+		//$list_models = Data::getModels();
+
+		//$tp = Models::getItems(array_flip($list_models), true);
+
+		$tp = Users::getHistories(['notes'=> [176]], ['notes' => '\bundles\lincko\api\models\data\Notes'], true);
 
 
 		//Display mysql requests
