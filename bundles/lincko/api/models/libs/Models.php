@@ -27,6 +27,10 @@ class Models extends ModelLincko {
 	);
 
 	protected static $db = false;
+
+	protected static $type_exclude = array(
+		'messages',
+	);
 	
 ////////////////////////////////////////////
 
@@ -78,7 +82,7 @@ class Models extends ModelLincko {
 
 	public static function plus($type, $id, $users_id = array()){
 		$app = self::getApp();
-		if(count($users_id)>0 && array_key_exists($type, Data::getModels())){
+		if(!in_array($type, self::$type_exclude) && count($users_id)>0 && array_key_exists($type, Data::getModels())){
 			$id = intval($id); //make sure $id is an integer
 			$type = self::quote($type);
 			$values = '';
@@ -99,7 +103,7 @@ class Models extends ModelLincko {
 
 	public static function less($type, $id, $users_id = array()){
 		$app = self::getApp();
-		if(count($users_id)>0 && array_key_exists($type, Data::getModels())){
+		if(!in_array($type, self::$type_exclude) && count($users_id)>0 && array_key_exists($type, Data::getModels())){
 			$id = intval($id); //make sure $id is an integer
 			$type = self::quote($type);
 			$values = '';
@@ -116,6 +120,32 @@ class Models extends ModelLincko {
 			return $result;
 		}
 		return false;
+	}
+
+	public function scopegetItems($query, $list=array(), $get=false){
+		$app = self::getApp();
+		//Exclude all unused data
+		foreach (self::$type_exclude as $value) {
+			if($key = array_search($value, $list)){
+				unset($list[$key]);
+			}
+		}
+		if(count($list)>0){
+			$query = $query->whereIn('type', $list);
+		}
+		$query = $query
+			->withTrashed()
+			->whereNotIn('type', self::$type_exclude)
+			->where('users_id', $app->lincko->data['uid']);
+		if($get){
+			$result = $query->get();
+			foreach($result as $key => $value) {
+				$result[$key]->accessibility = true;
+			}
+			return $result;
+		} else {
+			return $query;
+		}
 	}
 
 }

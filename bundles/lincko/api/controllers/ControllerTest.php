@@ -893,11 +893,13 @@ class ControllerTest extends Controller {
 		//$tp = Messages::toto([4, 7, 404], 3);
 		//$tp = (new Messages)->tata();
 
-		$tp = Data::getTrees();
+		$ttp = Data::getTrees();
+
+		$tp = Models::getItems(array(), true);
 
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*
