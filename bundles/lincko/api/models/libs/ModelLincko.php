@@ -2188,8 +2188,8 @@ abstract class ModelLincko extends Model {
 			$suffix = $class::getPivotUsersSuffix();
 			$pivot = new PivotUsers(array($table));
 			try {
-				if($pivot->tableExists($pivot->getTable()) && $pivot->withTrashed()->where($table.$suffix, $this->id)->get(['users_id', $table.$suffix, 'access'])){
-					foreach ($pivot as $model) {
+				if($pivot->tableExists($pivot->getTable()) && $pivots = $pivot->withTrashed()->where($table.$suffix, $this->id)->get(['users_id', $table.$suffix, 'access'])){
+					foreach ($pivots as $model) {
 						$users_id = $model->users_id;
 						$fields = array(
 							'access' => $model->access,
@@ -2404,7 +2404,7 @@ abstract class ModelLincko extends Model {
 		foreach($this->model_integer as $value) {
 			if(isset($model->$value)){ $model->$value = (int) $model->$value; }
 		}
-		//Convert boolean.
+		//Convert boolean
 		foreach(self::$class_boolean as $value) {
 			if(isset($model->$value)){ $model->$value = (boolean) $model->$value; }
 		}
@@ -2445,17 +2445,20 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function extraEncode($bindings){
-		if(isset($this->extra) || in_array('extra', self::getColumns())){
-			unset($bindings->extra); //Do not reencode own field
-			foreach (static::$hide_extra as $field) {
-				unset($bindings->$field);
-				if(isset(static::$prefix_fields[$field])){
-					unset($bindings->{static::$prefix_fields[$field]});
+		$bindings = json_decode(json_encode($bindings)); //Clone (if not will delete proporties on object itself)
+		if(is_object($bindings) && !empty($bindings)){
+			if(isset($this->extra) || in_array('extra', self::getColumns())){
+				unset($bindings->extra); //Do not reencode own field
+				foreach (static::$hide_extra as $field) {
+					unset($bindings->$field);
+					if(isset(static::$prefix_fields[$field])){
+						unset($bindings->{static::$prefix_fields[$field]});
+					}
 				}
-			}
-			if($extra = json_encode($bindings)){
-				$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
-				return true;
+				if($extra = json_encode($bindings)){
+					$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
+					return true;
+				}
 			}
 		}
 		return false;

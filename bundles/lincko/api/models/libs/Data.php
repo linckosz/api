@@ -673,7 +673,7 @@ class Data {
 					}
 				}
 			}
-
+			
 			//---OK---
 			//For _users to fulfill with default for all users (it's slightly different than $dependencies which only get existing links, it does not default)
 			//toto => need to follow closely over time to make sure that replacing "$result_bis->$uid" by "result_no_extra" does not affect anything (_users)
@@ -761,9 +761,7 @@ class Data {
 				}
 			}
 			
-		}
-
-			
+		}	
 
 		//Get the relations list
 		if($this->full_schema){
