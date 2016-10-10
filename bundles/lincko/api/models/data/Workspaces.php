@@ -30,6 +30,12 @@ class Workspaces extends ModelLincko {
 
 	// CUSTOMIZATION //
 
+	protected static $hide_extra = array(
+		'temp_id',
+		'name',
+		'url',
+	);
+
 	protected $contactsLock = true; //Do not allow to delete users from contact list
 
 	protected $contactsVisibility = true; //Make all user linked to the workspace visible by the user into the contact list

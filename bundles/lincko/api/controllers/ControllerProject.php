@@ -123,7 +123,7 @@ class ControllerProject extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 2)); //Project created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit, false);
 				return true;
 			}
 		}

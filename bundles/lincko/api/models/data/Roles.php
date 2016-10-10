@@ -21,13 +21,20 @@ class Roles extends ModelLincko {
 	protected $hidden = array(
 		'updated_by',
 		'deleted_by',
+		'parent_id',
+		'parent_type',
+		'extra',
+		'accessibility',
 	);
 
 	// CUSTOMIZATION //
 
-	protected $show_field = 'name';
+	protected static $prefix_fields = array(
+		'name' => '+name',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'name',
 	);
 

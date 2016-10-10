@@ -23,6 +23,11 @@ class Settings extends ModelLincko {
 
 	// CUSTOMIZATION //
 
+	protected static $hide_extra = array(
+		'temp_id',
+		'setup',
+	);
+
 	protected static $save_user_access = false;
 
 	protected static $permission_sheet = array(

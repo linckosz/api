@@ -38,11 +38,16 @@ class Notes extends ModelLincko {
 
 	protected static $save_user_access = false;
 
-	protected $show_field = 'title';
+	protected static $prefix_fields = array(
+		'title' => '+title',
+		'comment' => '-comment',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'title',
 		'comment',
+		'viewed_by',
 	);
 
 	protected $name_code = 800;

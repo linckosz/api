@@ -55,17 +55,11 @@ abstract class ModelLincko extends Model {
 	//It forces to check the schema for all users concerned
 	protected $change_schema = false;
 
-	//(used in "toJson()") This is the field to show in the content of history (it will add a prefix "+", which is used for search tool too)
-	protected $show_field = false;
+	//Help to add prefix +/- for front end search engine
+	protected static $prefix_fields = array();
 
-	//At true we download the corresponding amount within the days specifiied (value of 15 means history of last 15 days or not viewed)
-	protected $limit_history = false;
-
-	//At true it will only download a limited number of attrbutes to makes the download much more ligther
-	protected $limited = false;
-
-	//(used in "toJson()") All field to include in search engine, it will add a prefix "-"
-	protected $search_fields = array();
+	//Fields that should not be recorded into extra because we can grab them from model directly (makes databse lighter)
+	protected static $hide_extra = array();
 
 	protected $name_code = 0;
 	//Key: Column title to record
@@ -344,6 +338,11 @@ abstract class ModelLincko extends Model {
 	}
 
 ////////////////////////////////////////////
+
+	public function scopeextraUpdate($query, array $bindings=array()){
+		$bindings['extra'] = null;
+		return $query->withTrashed()->update($bindings);
+	}
 
 	public static function getHasPerm(){
 		return self::$has_perm;
@@ -983,7 +982,7 @@ abstract class ModelLincko extends Model {
 				if(isset($list_models[$table_name])){
 					$class = $list_models[$table_name];
 					if((is_bool($class::$has_perm) && $class::$has_perm) || in_array('_perm', $class::getColumns())){ //has_perm is a shortcut to limit some SQL calls
-						$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json]);
+						$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json, 'extra' => null]);
 						$users = json_decode($json);
 						if(is_object($users)){
 							foreach ($users as $users_id => $value) {
@@ -1503,17 +1502,17 @@ abstract class ModelLincko extends Model {
 						if(isset($classes[$value->parent_type])){
 							$model = new $classes[$value->parent_type];
 							$created_at = (new \DateTime($value->created_at))->getTimestamp();
-							$not = false;
-							if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
-								$not = true; //True if need notification
-							}
 							if(!isset($history->{$value->parent_type})){ $history->{$value->parent_type} = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id})){ $history->{$value->parent_type}->{$value->parent_id} = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id})){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = new \stdClass; }
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (integer)$value->createdBy();
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->not = (boolean)$not;
+							if(isset($value->noticed_by)){
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->notid = (string)$value->noticed_by;
+							} else {
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->not = false; //by default it's noticed already
+							}
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->cod = (integer)$value->code;
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$value->attribute;
 							if(!empty($value->parameters)){
@@ -1545,15 +1544,15 @@ abstract class ModelLincko extends Model {
 			$records = History::whereParentType($this->getTable())->whereParentId($this->id)->get();
 			foreach ($records as $key => $value) {
 				$created_at = (new \DateTime($value->created_at))->getTimestamp();
-				$not = false;
-				if(strpos($value->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
-					$not = true; //True if need notification
-				}
 				if(!isset($history->$created_at)){ $history->$created_at = new \stdClass; }
 				if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
 				$history->$created_at->{$value->id}->att = (string)$value->attribute;
 				$history->$created_at->{$value->id}->by = (integer)$value->createdBy();
-				$history->$created_at->{$value->id}->not = (boolean)$not;
+				if(isset($value->noticed_by)){
+					$history->$created_at->{$value->id}->notid = (string)$value->noticed_by;
+				} else {
+					$history->$created_at->{$value->id}->not = false; //by default it's noticed already
+				}
 				$history->$created_at->{$value->id}->cod = (integer)$value->code;
 				if(!empty($value->parameters)){
 					$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
@@ -1573,32 +1572,32 @@ abstract class ModelLincko extends Model {
 		$app = self::getApp();
 		$history = new \stdClass;
 		$created_at = (new \DateTime($this->created_at))->getTimestamp();
-		$not = false;
-		if(isset($this->noticed_by)){
-			if(strpos($this->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
-				$not = true; //True if need notification
-			}
-		}
 		$code = 1; //Default created_at comment
 		if(array_key_exists('created_at', $this::$archive)){
 			$code = $this::$archive['created_at'];
 		}
+		$key = array_search($this->getTable(), array_keys(Data::getModels())).'_'.$this->id;
 		$history->$created_at = new \stdClass;
-		$history->$created_at->{'0'} = new \stdClass;
+		$history->$created_at->$key = new \stdClass;
 		//Because some models doesn't have creacted_by column (like the workspaces)
 		$created_by = null;
 		if(isset($this->created_by)){
 			$created_by = $this->created_by;
 		}
-		$history->$created_at->{'0'}->att = 'created_at';
-		$history->$created_at->{'0'}->by = (integer) $created_by;
-		$history->$created_at->{'0'}->not = (boolean) $not;
-		$history->$created_at->{'0'}->cod = (integer) $code;
+		$history->$created_at->$key->att = 'created_at';
+		$history->$created_at->$key->by = (integer)$created_by;
+		if(isset($this->noticed_by)){
+			$history->$created_at->$key->notid = (string)$this->noticed_by;
+		} else {
+			$history->$created_at->$key->not = false; //by default it's noticed already
+		}
+		
+		$history->$created_at->$key->cod = (integer)$code;
 		if(!empty($parameters)){
-			$history->$created_at->{'0'}->par = (object) $parameters;
+			$history->$created_at->$key->par = (object)$parameters;
 		}
 		if($history_detail){
-			$history->$created_at->{'0'}->old = null;
+			$history->$created_at->$key->old = null;
 		}
 		return $history;
 	}
@@ -2221,7 +2220,7 @@ abstract class ModelLincko extends Model {
 		}
 
 		$time = $this->freshTimestamp();
-		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time]);
+		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time, 'extra' => null]);
 
 		$users_tables = $this->getUsersTable($users_tables);
 
@@ -2299,14 +2298,31 @@ abstract class ModelLincko extends Model {
 		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
 		$app = self::getApp();
 		$this->setParentAttributes();
+
+		$temp = json_decode(parent::toJson($options));
+		if($detail){ //It's used for word search on Front side (+/- prefix)
+			foreach ($temp as $key => $value) {
+				if(isset(static::$prefix_fields[$key])){
+					$temp->{static::$prefix_fields[$key]} = $value;
+					unset($temp->$key);
+				} else {
+					$temp->$key = $value;
+				}
+			}
+			if(isset($this->deleted_at) && !is_null($this->deleted_at) && $this->deleted_at instanceof Carbon){
+				$temp->deleted_at = $this->deleted_at->format('Y-m-d H:i:s');
+			}
+		}
+
+		/*
 		if($detail){ //It's used for word search on Front side (+/- prefix)
 			$temp = json_decode(parent::toJson($options));
 			foreach ($temp as $key => $value) {
-				$prefix = $this->getPrefix($key);
-				if(!empty($prefix)){
-					$temp_field = $temp->$key;
+				if(isset(static::$prefix_fields[$key])){
+					$temp->{static::$prefix_fields[$key]} = $value;
 					unset($temp->$key);
-					$temp->{$prefix.$key} = (string)$temp_field;
+				} else {
+					$temp->$key = $value;
 				}
 			}
 			if(isset($this->deleted_at) && !is_null($this->deleted_at) && $this->deleted_at instanceof Carbon){
@@ -2318,13 +2334,8 @@ abstract class ModelLincko extends Model {
 		}
 		//Convert DateTime to Timestamp for JS use, it avoid location hour issue. NULL will stay NULL thanks to isset()
 		$temp = json_decode($temp);
-		//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
-		$temp->new = 0;
-		if(isset($this->viewed_by)){
-			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
-				$temp->new = 1;
-			}
-		}
+		*/
+
 
 		foreach(self::$class_timestamp as $value) {
 			if(isset($temp->$value)){  $temp->$value = (int)(new \DateTime($temp->$value))->getTimestamp(); }
@@ -2356,28 +2367,27 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function toVisible(){
-		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
+		//$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
 		$app = self::getApp();
 		$this->setParentAttributes();
 		$model = new \stdClass;
+
 		if(!empty($this->visible)){
 			foreach ($this->visible as $key) {
-				$prefix = $this->getPrefix($key); //It's used for word search on Front side (+/- prefix)
-				$model->{$prefix.$key} = $this->$key;
+				if(isset(static::$prefix_fields[$key])){
+					$model->{static::$prefix_fields[$key]} = $this->$key;
+				} else {
+					$model->$key = $this->$key;
+				}
 			}
 		} else {
 			$model = json_decode(parent::toJson());
 			foreach ($model as $key => $value) {
-				$prefix = $this->getPrefix($key);
-				$model->{$prefix.$key} = $value;
-			}
-		}
-
-		//If the table need to be shown as viewed, if it doesn't exist we consider it's already viewed
-		$model->new = false;
-		if(isset($this->viewed_by)){
-			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
-				$model->new = true;
+				if(isset(static::$prefix_fields[$key])){
+					$model->{static::$prefix_fields[$key]} = $value;
+				} else {
+					$model->$key = $value;
+				}
 			}
 		}
 
@@ -2409,7 +2419,46 @@ abstract class ModelLincko extends Model {
 			}
 		}
 
+		if(isset($this->viewed_by)){
+			$model->viewed_by = $this->viewed_by;
+		}
+
 		return $model;
+	}
+
+	public function extraDecode(){
+		if(isset($this->extra) && !is_null($this->extra) && $model = json_decode($this->extra)){
+			if(!is_bool($model) && !is_null($model) && !empty($model)){
+				foreach (static::$hide_extra as $field) {
+					if(isset($this->$field)){
+						$new_field = $field;
+						if(isset(static::$prefix_fields[$field])){
+							$new_field = static::$prefix_fields[$field];
+						}
+						$model->$new_field = $this->$field;
+					}
+				}
+				return $model;
+			}
+		}
+		return false;
+	}
+
+	public function extraEncode($bindings){
+		if(isset($this->extra) || in_array('extra', self::getColumns())){
+			unset($bindings->extra); //Do not reencode own field
+			foreach (static::$hide_extra as $field) {
+				unset($bindings->$field);
+				if(isset(static::$prefix_fields[$field])){
+					unset($bindings->{static::$prefix_fields[$field]});
+				}
+			}
+			if($extra = json_encode($bindings)){
+				$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	protected function formatAttributes($attribute, $value){
@@ -2421,16 +2470,6 @@ abstract class ModelLincko extends Model {
 			$value = (boolean)$value;
 		}
 		return $value;
-	}
-
-	protected function getPrefix($value){
-		$prefix = '';
-		if($value === $this->show_field){
-			$prefix = '+';
-		} else if(in_array($value, $this->search_fields)){
-			$prefix = '-';
-		}
-		return $prefix;
 	}
 
 	public function pivots_format($form, $history_save=true){

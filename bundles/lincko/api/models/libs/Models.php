@@ -30,6 +30,7 @@ class Models extends ModelLincko {
 
 	protected static $type_exclude = array(
 		'messages',
+		'roles',
 	);
 	
 ////////////////////////////////////////////

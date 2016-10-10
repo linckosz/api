@@ -36,11 +36,16 @@ class Projects extends ModelLincko {
 
 	// CUSTOMIZATION //
 
-	protected $show_field = 'title';
+	protected static $prefix_fields = array(
+		'title' => '+title',
+		'description' => '-description',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'title',
 		'description',
+		'viewed_by',
 	);
 
 	protected $name_code = 400;

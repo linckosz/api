@@ -32,15 +32,17 @@ class Messages extends ModelLincko {
 
 	// CUSTOMIZATION // 
 
-	protected $show_field = 'comment';
+	protected static $prefix_fields = array(
+		'comment' => '+comment',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'comment',
+		'viewed_by',
 	);
 
 	protected $name_code = 200;
-
-	protected $limit_history = 40;
 
 	//We don't record any history for chats messages
 	protected static $archive = array();
@@ -168,6 +170,7 @@ class Messages extends ModelLincko {
 	}
 
 	public static function getCollection($chats=array(), $hydrate=true, $fields_arr=false){
+		$app = self::getApp();
 		$db = static::getDB();
 		if(count($chats)<=0){
 			$chats=array(-1);
@@ -204,7 +207,7 @@ class Messages extends ModelLincko {
 		//Note: Do not add variable in select, it make wrong the result of @var
 		$bindings = $db->select( $db->raw($sql) );
 		if($hydrate){
-			return self::hydrate($bindings);
+			return self::hydrate($bindings, $app->lincko->data['database_data']);
 		} else {
 			return $bindings;
 		}
@@ -234,24 +237,17 @@ class Messages extends ModelLincko {
 	public function toJson($detail=true, $options = 0){
 		if(!empty($this->recalled_by)){
 			$this->comment = '...';
-			$temp = parent::toJson($detail, $options);
-			$temp = json_decode($temp);
-			$temp->new = 0;
-			$temp = json_encode($temp, $options);
-		} else {
-			$temp = parent::toJson($detail, $options);
 		}
+		$temp = parent::toJson($detail, $options);
+
 		return $temp;
 	}
 
 	public function toVisible(){
 		if(!empty($this->recalled_by)){
 			$this->comment = '...';
-			$model = parent::toVisible();
-			$model->new = false;
-		} else {
-			$model = parent::toVisible();
 		}
+		$model = parent::toVisible();
 		return $model;
 	}
 

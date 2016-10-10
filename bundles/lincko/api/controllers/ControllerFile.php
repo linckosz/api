@@ -268,7 +268,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if($success){
 			$msg = array('msg' => $app->trans->getBRUT('api', 14, 2)); //File uploaded.
 			$data = new Data();
-			$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
+			$data->dataUpdateConfirmation($msg, 201, false, $lastvisit, false);
 			return true;
 		} else {
 			if(isset($_FILES)){

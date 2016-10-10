@@ -34,6 +34,7 @@ class Data {
 	protected $item_detail = true;
 	protected $history_detail = false;
 	protected $action = NULL;
+	protected static $delete_temp_id = true;
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
@@ -48,8 +49,13 @@ class Data {
 		$this->history_detail = false;
 	}
 
-	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0){
+	protected static function setDeleteTempId($bool=true){
+		self::$delete_temp_id = (bool) $bool;
+	}
+
+	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0, $delete_temp_id=true){
 		$app = $this->app;
+		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
 		if($this->setLastVisit() && $lastvisit>0){
 			$lastvisit = time();
 			$msg = array_merge(
@@ -159,7 +165,7 @@ class Data {
 		$tree_id = array();
 		$not_trashed = array();
 		$result = new \stdClass;
-\time_checkpoint('111');
+
 		if(!empty($list_models)){
 			foreach($list_models as $value) {
 				$model = new $value;
@@ -215,7 +221,7 @@ class Data {
 				}
 				unset($parentList);
 			}
-\time_checkpoint('222');
+
 			if(is_numeric($field) && $field===0){
 				return $tree_scan;
 			} else if(is_numeric($field) && $field===1){
@@ -228,7 +234,7 @@ class Data {
 					$models[$value->type] = array_filter( explode(';', $value->list), 'strlen' );
 				}
 			}
-//\libs\Watch::php( $models, '$models', __FILE__, false, false, true);
+
 			// Get all ID with parent dependencies
 			$loop = true;
 			$tree_tp = $tree_scan;
@@ -259,13 +265,15 @@ class Data {
 							$nested = true;
 							while($nested){ //$nested is used for element that are linked to each others
 								$nested = false;
-								$class::enableTrashGlobal(true);
+								$break = false;
 								if(isset($models[$key]) && count($models[$key])>0){
 									$result_bis = $class::withTrashed()->whereIn('id', $models[$key])->get(); //toto => It seems that it's slower that the jointure, need to be confirmed with heavy database
+									$break = true; //We force to exit because the list of IDs already contain all IDs
 								} else {
-									$result_bis = $class::getItems($list, true); //toto => try (new function, to work with stored database instead of always calculating it)
+									$class::enableTrashGlobal(true);
+									$result_bis = $class::getItems($list, true);
+									$class::enableTrashGlobal(false);
 								}
-								$class::enableTrashGlobal(false);
 								if(isset($result->$key)){
 									$result->$key = $result->$key->merge($result_bis);
 								} else {
@@ -273,6 +281,7 @@ class Data {
 								}
 								$list = array();
 								$list[$key] = array();
+								//toto => this loop use 200-400ms
 								foreach ($result_bis as $value_bis) {
 									if(!isset($tree_id[$key][$value_bis->id])){ //Insure to not record twice the same ID to not enter inside an infinite loop
 										$list[$key][$value_bis->id] = $value_bis->id;
@@ -284,6 +293,9 @@ class Data {
 									}
 								}
 								unset($result_bis);
+								if($break){
+									break;
+								}
 								if(!empty($list[$key]) && $class::isParent($key)){
 									$nested = true;
 								}
@@ -300,7 +312,7 @@ class Data {
 				}
 			}
 		}
-\time_checkpoint('333');
+
 		if(is_numeric($field) && $field>=0 && $field<=3){
 			if($field===0){
 				return $tree_scan;
@@ -393,7 +405,8 @@ class Data {
 
 	protected function getList(){
 		$app = $this->app;
-		//Capsule::connection($app->lincko->data['database_data'])->enableQueryLog();
+		//$db = Capsule::connection($app->lincko->data['database_data']);
+		//$db->enableQueryLog();
 		$uid = $app->lincko->data['uid'];
 		$workid = $app->lincko->data['workspace_id'];
 		$list_models = self::getModels();
@@ -541,32 +554,43 @@ class Data {
 			foreach ($result as $key => $models) {
 				$result_bis->$uid->$key = new \stdClass;
 				foreach ($models as $key_bis => $model) {
-						$result_bis->$uid->$key->{$model->id} = $model;
+					$result_bis->$uid->$key->{$model->id} = $model;
 				}
 			}
 		}
 		unset($result);
 
-		//toto => HIGH CPU hunger, but cannot be optimized more
+		//---OK---
 		$list_id = array();
+		$list_id_extra = array();
+		$list_id_no_extra = array();
+		$result_no_extra = array();
 		foreach ($result_bis->$uid as $table_name => $models) {
 			$list_id[$table_name] = array();
 			foreach ($models as $id => $model) {
+				$model->accessibility = true;
 				$list_id[$table_name][$id] = $id;
 				unset($temp);
-				$temp = new \stdClass;
-				if($this->item_detail){
-					$model->accessibility = true;
-					//$temp = json_decode($model->toJson());
-					$temp = $model->toVisible();
-					unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
-					//Get only creation history to avoid mysql overload
-					$temp->history = $model->getHistoryCreation(false, array(), $result_bis->$uid);
+				if($temp = $model->extraDecode()){
+					$list_id_extra[$table_name][$id] = $id;
 				} else {
-					//need delete information for schema
-					$temp->deleted_at = $model->deleted_at;
+					$result_no_extra[$table_name][$id] = $model;
+					$list_id_no_extra[$table_name][$id] = $id;
+					$temp = new \stdClass;
+					if($this->item_detail){
+						$temp = $model->toVisible();
+						//Get only creation history to avoid mysql overload
+						$temp->history = $model->getHistoryCreation(false, array(), $result_bis->$uid);
+						if(empty($temp->history)){
+							unset($temp->history);
+						}
+					} else {
+						//need delete information for schema
+						$temp->deleted_at = $model->deleted_at;
+					}
+					$temp->_parent = $model->setParentAttributes();
 				}
-				$temp->_parent = $model->setParentAttributes();
+				unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
 				$result_bis->$uid->$table_name->$id = $temp;
 			}
 		}
@@ -615,19 +639,21 @@ class Data {
 		} else {
 
 			//Delete temp_id if the user is not concerned
-			foreach ($result_bis->$uid as $table_name => $models) {
+			foreach ($result_no_extra as $table_name => $models) {
 				foreach ($result_bis->$uid->$table_name as $id => $temp) {
-					if(isset($temp->created_by) && $temp->created_by!=$uid){
+					if(self::$delete_temp_id){
 						unset($result_bis->$uid->$table_name->$id->temp_id);
-					}
-					if(isset($temp->temp_id) && $temp->temp_id==''){
+					} else if(isset($temp->created_by) && $temp->created_by!=$uid){
+						unset($result_bis->$uid->$table_name->$id->temp_id);
+					} else if(isset($temp->temp_id) && $temp->temp_id==''){
 						unset($result_bis->$uid->$table_name->$id->temp_id);
 					}
 				}
 			}
 
+			//---OK---
 			//Get dependency (all ManyToMany that have other fields than access)
-			$dependencies = ModelLincko::getDependencies($list_id, $list_models);
+			$dependencies = ModelLincko::getDependencies($list_id_no_extra, $list_models);
 			foreach ($dependencies as $table_name => $deps_ids) {
 				foreach ($deps_ids as $id => $attributes) {
 					foreach ($attributes as $attribute => $value) {
@@ -648,8 +674,10 @@ class Data {
 				}
 			}
 
+			//---OK---
 			//For _users to fulfill with default for all users (it's slightly different than $dependencies which only get existing links, it does not default)
-			foreach ($result_bis->$uid as $table_name => $models) {
+			//toto => need to follow closely over time to make sure that replacing "$result_bis->$uid" by "result_no_extra" does not affect anything (_users)
+			foreach ($result_no_extra as $table_name => $models) {
 				if(!isset($dependencies[$table_name])){
 					continue;
 				}
@@ -688,8 +716,12 @@ class Data {
 				}
 			}
 
-			//toto => HIGH CPU hunger
-			$histories = Users::getHistories($list_id, $list_models, $this->history_detail);
+			//---OK---
+			if($this->history_detail){
+				$histories = Users::getHistories($list_id, $list_models, true);
+			} else {
+				$histories = Users::getHistories($list_id_no_extra, $list_models, false);
+			}
 			foreach ($histories as $table_name => $models) {
 				foreach ($models as $id => $temp) {
 					if(isset($result_bis->$uid->$table_name->$id)){
@@ -701,6 +733,16 @@ class Data {
 					}
 				}
 			}
+
+			//Save extra
+			//\time_checkpoint('before extra');
+			foreach ($result_no_extra as $table_name => $models) {
+				foreach ($models as $id => $model) {
+					$model->extraEncode($result_bis->$uid->$table_name->$id);
+				}
+			}
+			//\time_checkpoint('after extra');
+
 			//For history, we only keep the items that are filled in
 			if($this->history_detail){
 				foreach ($result_bis->$uid as $table_name => $models) {
@@ -718,7 +760,10 @@ class Data {
 					}
 				}
 			}
+			
 		}
+
+			
 
 		//Get the relations list
 		if($this->full_schema){
@@ -774,7 +819,7 @@ class Data {
 		}
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, false, false, true);
-		//\libs\Watch::php( Capsule::connection($app->lincko->data['database_data'])->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( $db->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
 		return $result_bis;
 
 	}

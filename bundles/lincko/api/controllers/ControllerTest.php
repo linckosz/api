@@ -893,17 +893,24 @@ class ControllerTest extends Controller {
 		//$tp = Messages::toto([4, 7, 404], 3);
 		//$tp = (new Messages)->tata();
 
+		/*
+		$list_models = Data::getModels();
+		\time_checkpoint('start');
+		$tp = Messages::getItems()->get();
+		//$tp = Comments::getItems(array_flip($list_models), false)->get()->toArray();
+		//$tp = Comments::hydrate($tp);
+		\time_checkpoint('end');
+		*/
+
 		//$ttp = Data::getTrees();
 
-		//$list_models = Data::getModels();
+		//Settings::extraUpdate();
 
-		//$tp = Models::getItems(array_flip($list_models), true);
-
-		$tp = Users::getHistories(['notes'=> [176]], ['notes' => '\bundles\lincko\api\models\data\Notes'], true);
-
+		//$tp = Data::getModels();
+		
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*
@@ -930,8 +937,19 @@ class ControllerTest extends Controller {
 		$models = Data::getModels();
 		$time = (new Users)->freshTimestamp();
 		foreach ($models as $table => $class) {
+			$bindings = false;
 			if((is_bool($class::getHasPerm()) && $class::getHasPerm()) || in_array('_perm', $class::getColumns())){
-				$class::getQuery()->update(['updated_at' => $time, '_perm' => '']); //Dangerous
+				$bindings = array(
+					'updated_at' => $time,
+					'_perm' => ''
+				);
+			}
+			//Force to recalculate all extra
+			if(in_array('extra', $class::getColumns())){
+				$bindings['extra'] = null;
+			}
+			if($bindings){
+				$class::getQuery()->update($bindings); //Dangerous
 			}
 		}
 		\time_checkpoint('start permission');
@@ -955,6 +973,7 @@ class ControllerTest extends Controller {
 		
 		
 		/*
+		//NOT USED
 		//The permission purge
 		\time_checkpoint('start');
 		Tree::unlock(true, 'eI782Ph0sp');

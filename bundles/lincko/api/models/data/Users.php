@@ -44,6 +44,23 @@ class Users extends ModelLincko {
 		'lastname',
 	);
 
+	protected static $prefix_fields = array(
+		'username' => '-username',
+		'firstname' => '-firstname',
+		'lastname' => '-lastname',
+	);
+
+	protected static $hide_extra = array(
+		'temp_id',
+		'_lock',
+		'_visible',
+		'_invitation',
+		'username',
+		'firstname',
+		'lastname',
+		'email',
+	);
+
 	protected $contactsLock = false; //By default do not lock the user
 
 	protected $contactsVisibility = false; //By default do not make the user visible
@@ -303,7 +320,7 @@ class Users extends ModelLincko {
 		return $this->_invitation;
 	}
 
-	protected function updateContactAttributes(){
+	public function updateContactAttributes(){
 		if(isset(self::$contacts_list[$this->id])){
 			$this->_lock = self::$contacts_list[$this->id][0];
 			$this->_visible = self::$contacts_list[$this->id][1];
@@ -359,7 +376,7 @@ class Users extends ModelLincko {
 
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		$parameters['hh'] = $this->get_HisHer();
-		parent::setHistory($key, $new, $old, $parameters);
+		parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
 	}
 
 	//Do not show creation event
@@ -429,15 +446,12 @@ class Users extends ModelLincko {
 
 	public function toJson($detail=true, $options = 0){
 		$app = self::getApp();
-
 		$this->updateContactAttributes();
-
 		//the play with accessibility allow Data.php to gather information about some other users that are not in the user contact list
 		$accessibility = $this->accessibility;
 		$this->accessibility = true;
 		$temp = parent::toJson($detail, $options);
 		$this->accessibility = $accessibility;
-		
 		$temp = json_decode($temp);
 		//Do not show email for all other users
 		if($this->id == $app->lincko->data['uid']){
@@ -445,7 +459,6 @@ class Users extends ModelLincko {
 		} else {
 			$temp->email = "";
 		}
-		$temp->new = 0;
 		$temp = json_encode($temp, $options);
 		return $temp;
 	}
@@ -464,8 +477,17 @@ class Users extends ModelLincko {
 		} else {
 			$model->email = "";
 		}
-		$model->new = false;
 		return $model;
+	}
+
+	public function extraDecode(){
+		$app = self::getApp();
+		$this->updateContactAttributes();
+		//Do not show email for all other users
+		if($this->id != $app->lincko->data['uid']){
+			$this->email = "";
+		}
+		return parent::extraDecode();
 	}
 
 	public function getUsername(){

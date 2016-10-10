@@ -150,7 +150,7 @@ class ControllerChat extends Controller {
 			if($save && $model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 13, 2)); //Discussion group created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit, false);
 				return true;
 			}
 		}

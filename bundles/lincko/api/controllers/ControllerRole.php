@@ -194,7 +194,7 @@ class ControllerRole extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 17, 2)); //Role created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit, false);
 				return true;
 			}
 		}

@@ -154,7 +154,7 @@ class ControllerSpace extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 18, 2)); //Space created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, true, $lastvisit);
+				$data->dataUpdateConfirmation($msg, 201, true, $lastvisit, false);
 				return true;
 			}
 		}

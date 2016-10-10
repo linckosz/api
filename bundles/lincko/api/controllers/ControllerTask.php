@@ -175,7 +175,7 @@ class ControllerTask extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 2)); //Task created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, true, $lastvisit);
+				$data->dataUpdateConfirmation($msg, 201, true, $lastvisit, false);
 				return true;
 			}
 		}

@@ -51,11 +51,16 @@ class Tasks extends ModelLincko {
 
 	protected static $save_user_access = false;
 
-	protected $show_field = 'title';
+	protected static $prefix_fields = array(
+		'title' => '+title',
+		'comment' => '-comment',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'title',
 		'comment',
+		'viewed_by',
 	);
 
 	protected $name_code = 500;
@@ -267,7 +272,7 @@ class Tasks extends ModelLincko {
 				$parameters['pj'] = $app->trans->getBRUT('api', 0, 2); //unknown
 			}
 		}
-		parent::setHistory($key, $new, $old, $parameters);
+		parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
 	}
 
 	public function save(array $options = array()){

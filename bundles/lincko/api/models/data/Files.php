@@ -59,10 +59,20 @@ class Files extends ModelLincko {
 
 	protected static $save_user_access = false;
 
-	protected $show_field = 'name';
+	protected static $prefix_fields = array(
+		'name' => '+name',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'name',
+		'category',
+		'comment',
+		'ori_type',
+		'ori_ext',
+		'thu_type',
+		'thu_ext',
+		'viewed_by',
 	);
 
 	protected $name_code = 900;
@@ -545,7 +555,8 @@ class Files extends ModelLincko {
 			$loop = true;
 			$progress = 100;
 			$try = 10; //5s of try
-			$this::where('id', $this->id)->getQuery()->update(['progress' => 1]);
+			$time = $this->freshTimestamp();
+			$this::where('id', $this->id)->getQuery()->update(['progress' => 1, 'updated_at' => $time, 'extra' => null]);
 			Updates::informUsers($users_tables);
 			usleep(500000); //500ms
 			while($loop){
@@ -604,13 +615,13 @@ class Files extends ModelLincko {
 				}
 
 				$time = $this->freshTimestamp();
-				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => $size, 'updated_at' => $time]);
+				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => $size, 'updated_at' => $time, 'extra' => null]);
 				Updates::informUsers($users_tables);
 				usleep(500000); //500ms
 			}
 			if($try<=0){
 				$time = $this->freshTimestamp();
-				$this::where('id', $this->id)->getQuery()->update(['progress' => 100, 'size' => $size, 'error' => 1, 'updated_at' => $time]);
+				$this::where('id', $this->id)->getQuery()->update(['progress' => 100, 'size' => $size, 'error' => 1, 'updated_at' => $time, 'extra' => null]);
 				Updates::informUsers($users_tables);
 			}
 

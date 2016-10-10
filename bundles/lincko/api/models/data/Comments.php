@@ -32,10 +32,14 @@ class Comments extends ModelLincko {
 
 	// CUSTOMIZATION // 
 
-	protected $show_field = 'comment';
+	protected static $prefix_fields = array(
+		'comment' => '+comment',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'comment',
+		'viewed_by',
 	);
 
 	protected $name_code = 200;
@@ -226,24 +230,16 @@ class Comments extends ModelLincko {
 	public function toJson($detail=true, $options = 0){
 		if(!empty($this->recalled_by)){
 			$this->comment = '...';
-			$temp = parent::toJson($detail, $options);
-			$temp = json_decode($temp);
-			$temp->new = 0;
-			$temp = json_encode($temp, $options);
-		} else {
-			$temp = parent::toJson($detail, $options);
 		}
+		$temp = parent::toJson($detail, $options);
 		return $temp;
 	}
 
 	public function toVisible(){
 		if(!empty($this->recalled_by)){
 			$this->comment = '...';
-			$model = parent::toVisible();
-			$model->new = false;
-		} else {
-			$model = parent::toVisible();
 		}
+		$model = parent::toVisible();
 		return $model;
 	}
 

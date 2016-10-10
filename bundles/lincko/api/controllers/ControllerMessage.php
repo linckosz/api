@@ -112,7 +112,7 @@ class ControllerMessage extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 2)); //Message created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit, false);
 				return true;
 			}
 		}

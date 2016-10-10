@@ -31,10 +31,14 @@ class Chats extends ModelLincko {
 
 	// CUSTOMIZATION //
 
-	protected $show_field = 'title';
+	protected static $prefix_fields = array(
+		'title' => '+title',
+	);
 
-	protected $search_fields = array(
+	protected static $hide_extra = array(
+		'temp_id',
 		'title',
+		'viewed_by',
 	);
 
 	protected $name_code = 100;

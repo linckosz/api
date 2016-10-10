@@ -101,12 +101,12 @@ class History extends ModelLincko {
 		return false;
 	}
 
-	public static function historyNoticed($list){
+	public static function historyNoticed($list){\libs\Watch::php( $list, '$list', __FILE__, false, false, true);
 		$app = self::getApp();
 		$partial = false;
 		$uid = $app->lincko->data['uid'];
 		if(count($list)>0){
-			$histories = History::where('noticed_by', 'NOT LIKE', '%;'.$app->lincko->data['uid'].';%')
+			$histories = History::withTrashed()->where('noticed_by', 'NOT LIKE', '%;'.$app->lincko->data['uid'].';%')
 			->where(function ($query) use ($list) {
 				foreach ($list as $type => $list_id) {
 					foreach ($list_id as $id => $timestamp) {
@@ -135,7 +135,7 @@ class History extends ModelLincko {
 				if($class){
 					foreach ($list_id as $id => $timestamp) {
 						if($model = $class::withTrashed()->find($id)){
-							if(strpos($model->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
+							if(isset($model->noticed_by) && strpos($model->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
 								$noticed_by = $model->noticed_by.';'.$app->lincko->data['uid'].';';
 								$class::where('id', $id)->getQuery()->update(['noticed_by' => $noticed_by]); //toto => with about 200+ viewed, it crashes (1317 Query execution was interrupted)
 								$model->touchUpdateAt();

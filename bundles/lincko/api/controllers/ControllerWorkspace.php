@@ -113,7 +113,7 @@ class ControllerWorkspace extends Controller {
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 16, 2)); //Workspace created.
 				$data = new Data();
-				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit);
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit, false);
 				return true;
 			}
 		}
