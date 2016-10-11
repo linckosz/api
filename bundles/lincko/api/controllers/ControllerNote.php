@@ -221,11 +221,9 @@ class ControllerNote extends Controller {
 
 		if($model = Notes::find($form->id)){
 			if($model->delete()){
-				//$msg = $app->trans->getBRUT('api', 10, 8); //Note deleted.
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 8)); //Note deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
-				//$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
 				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
 				return true;
 			}
@@ -259,11 +257,9 @@ class ControllerNote extends Controller {
 
 		if($model = Notes::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				//$msg = $app->trans->getBRUT('api', 10, 21); //Note restored.
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 21)); //Note restored.
 				$data = new Data();
 				$schema = $data->getSchema();
-				//$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
 				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
 				return true;
 			}

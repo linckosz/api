@@ -232,10 +232,11 @@ class ControllerProject extends Controller {
 
 		if($model = Projects::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 12, 8); //Project deleted.
+				$msg = array('msg' => $app->trans->getBRUT('api', 12, 8)); //Project deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Projects::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
@@ -267,10 +268,11 @@ class ControllerProject extends Controller {
 
 		if($model = Projects::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 12, 21); //Project restored.
+				$msg = array('msg' => $app->trans->getBRUT('api', 12, 21)); //Project restored.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Projects::find($form->id)){
 			$model->enableTrash(true);

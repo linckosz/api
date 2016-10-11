@@ -263,10 +263,11 @@ class ControllerChat extends Controller {
 
 		if($model = Chats::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 13, 8); //Discussion group deleted.
+				$msg = array('msg' => $app->trans->getBRUT('api', 13, 8)); //Discussion group deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Chats::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
@@ -298,10 +299,11 @@ class ControllerChat extends Controller {
 
 		if($model = Chats::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 13, 21); //Discussion group restored.
+				$msg = array('msg' => $app->trans->getBRUT('api', 13, 21)); //Discussion group restored.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Chats::find($form->id)){
 			$model->enableTrash(true);

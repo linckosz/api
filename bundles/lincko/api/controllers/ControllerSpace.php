@@ -287,10 +287,11 @@ class ControllerSpace extends Controller {
 
 		if($model = Spaces::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 18, 8); //Space deleted.
+				$msg = array('msg' => $app->trans->getBRUT('api', 18, 8)); //Space deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Spaces::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
@@ -322,10 +323,11 @@ class ControllerSpace extends Controller {
 
 		if($model = Spaces::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 18, 21); //Space restored.
+				$msg = array('msg' => $app->trans->getBRUT('api', 18, 21)); //Space restored.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Spaces::find($form->id)){
 			$model->enableTrash(true);

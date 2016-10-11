@@ -392,10 +392,11 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		if($model = Files::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 14, 8); //File deleted.
+				$msg = array('msg' => $app->trans->getBRUT('api', 14, 8)); //File deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Files::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
@@ -428,10 +429,11 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		if($model = Files::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 14, 21); //File restored.
+				$msg = array('msg' => $app->trans->getBRUT('api', 14, 21)); //File restored.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Files::find($form->id)){
 			$model->enableTrash(true);

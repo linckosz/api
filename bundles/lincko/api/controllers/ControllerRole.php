@@ -342,10 +342,11 @@ class ControllerRole extends Controller {
 
 		if($model = Roles::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 17, 8); //Role deleted.
+				$msg = array('msg' => $app->trans->getBRUT('api', 17, 8)); //Role deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Roles::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
@@ -377,10 +378,11 @@ class ControllerRole extends Controller {
 
 		if($model = Roles::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 17, 21); //Role restored.
+				$msg = array('msg' => $app->trans->getBRUT('api', 17, 21)); //Role restored.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Roles::find($form->id)){
 			$model->enableTrash(true);
