@@ -208,6 +208,7 @@ class ControllerNote extends Controller {
 	public function delete_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 10, 7)."\n"; //Note deletion failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -220,10 +221,13 @@ class ControllerNote extends Controller {
 
 		if($model = Notes::find($form->id)){
 			if($model->delete()){
-				$msg = $app->trans->getBRUT('api', 10, 8); //Note deleted.
+				//$msg = $app->trans->getBRUT('api', 10, 8); //Note deleted.
+				$msg = array('msg' => $app->trans->getBRUT('api', 10, 8)); //Note deleted.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				//$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Notes::withTrashed()->find($form->id)){
 			$model->enableTrash(true);
@@ -242,6 +246,7 @@ class ControllerNote extends Controller {
 	public function restore_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 10, 20)."\n"; //Note restoration failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -254,10 +259,13 @@ class ControllerNote extends Controller {
 
 		if($model = Notes::onlyTrashed()->find($form->id)){
 			if($model->restore()){
-				$msg = $app->trans->getBRUT('api', 10, 21); //Note restored.
+				//$msg = $app->trans->getBRUT('api', 10, 21); //Note restored.
+				$msg = array('msg' => $app->trans->getBRUT('api', 10, 21)); //Note restored.
 				$data = new Data();
 				$schema = $data->getSchema();
-				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				//$app->render(200, array('show' => true, 'msg' => array('msg' => $msg, 'schema' => $schema)));
+				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
+				return true;
 			}
 		} else if($model = Notes::find($form->id)){
 			$model->enableTrash(true);

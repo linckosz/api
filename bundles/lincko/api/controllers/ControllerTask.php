@@ -300,6 +300,7 @@ class ControllerTask extends Controller {
 	public function delete_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 9, 7)."\n"; //Task deletion failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -334,6 +335,7 @@ class ControllerTask extends Controller {
 	public function restore_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 9, 20)."\n"; //Task restoration failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.

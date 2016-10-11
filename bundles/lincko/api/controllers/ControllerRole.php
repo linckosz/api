@@ -329,6 +329,7 @@ class ControllerRole extends Controller {
 	public function delete_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 17, 7)."\n"; //Role deletion failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -363,15 +364,16 @@ class ControllerRole extends Controller {
 	public function restore_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 17, 20)."\n"; //Role restoration failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
 		if(!isset($form->id) || !Roles::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 15); //We could not validate the role ID.
 			$errfield = 'id';
 		}
-
-		$failmsg = $app->trans->getBRUT('api', 17, 20)."\n"; //Role restoration failed.
-		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 
 		if($model = Roles::onlyTrashed()->find($form->id)){
 			if($model->restore()){

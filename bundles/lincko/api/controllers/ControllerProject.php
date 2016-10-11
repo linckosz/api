@@ -219,6 +219,7 @@ class ControllerProject extends Controller {
 	public function delete_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 12, 7)."\n"; //Project deletion failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -253,6 +254,7 @@ class ControllerProject extends Controller {
 	public function restore_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 12, 20)."\n"; //Project restoration failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.

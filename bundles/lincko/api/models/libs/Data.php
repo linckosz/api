@@ -53,7 +53,7 @@ class Data {
 		self::$delete_temp_id = (bool) $bool;
 	}
 
-	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0, $delete_temp_id=true){
+	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0, $delete_temp_id=true, $schema=null){
 		$app = $this->app;
 		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
 		if($this->setLastVisit() && $lastvisit>0){
@@ -62,6 +62,7 @@ class Data {
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
 					'partial' => $this->getLatest(),
+					'schema' => $schema,
 					'lastvisit' => $lastvisit,
 				),
 				$msg
@@ -71,6 +72,7 @@ class Data {
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
 					'partial' => $this->getLatest($lastvisit),
+					'schema' => $schema,
 				),
 				$msg
 			);
@@ -369,6 +371,7 @@ class Data {
 		$this->action = 'latest';
 		$this->reinit();
 		$this->setLastVisit($timestamp);
+		$this->full_schema = false;
 		if($this->lastvisit_timestamp<=0){
 			$this->full_schema = true;
 		}
@@ -638,19 +641,6 @@ class Data {
 
 		} else {
 
-			//Delete temp_id if the user is not concerned
-			foreach ($result_no_extra as $table_name => $models) {
-				foreach ($result_bis->$uid->$table_name as $id => $temp) {
-					if(self::$delete_temp_id){
-						unset($result_bis->$uid->$table_name->$id->temp_id);
-					} else if(isset($temp->created_by) && $temp->created_by!=$uid){
-						unset($result_bis->$uid->$table_name->$id->temp_id);
-					} else if(isset($temp->temp_id) && $temp->temp_id==''){
-						unset($result_bis->$uid->$table_name->$id->temp_id);
-					}
-				}
-			}
-
 			//---OK---
 			//Get dependency (all ManyToMany that have other fields than access)
 			$dependencies = ModelLincko::getDependencies($list_id_no_extra, $list_models);
@@ -812,6 +802,21 @@ class Data {
 				$id = $model['parent_id'];
 				if(isset($result_bis->$uid->$table_name) && isset($result_bis->$uid->$table_name->$id)){
 					unset($result_bis->$uid->$table_name->$id);
+				}
+			}
+		}
+
+		//Delete temp_id if the user is not concerned
+		if($this->item_detail){
+			foreach ($result_bis->$uid as $table_name => $models) {
+				foreach ($result_bis->$uid->$table_name as $id => $temp) {
+					if(self::$delete_temp_id){
+						unset($result_bis->$uid->$table_name->$id->temp_id);
+					} else if(isset($temp->created_by) && $temp->created_by!=$uid){
+						unset($result_bis->$uid->$table_name->$id->temp_id);
+					} else if(isset($temp->temp_id) && $temp->temp_id==''){
+						unset($result_bis->$uid->$table_name->$id->temp_id);
+					}
 				}
 			}
 		}
