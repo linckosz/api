@@ -2247,6 +2247,7 @@ abstract class ModelLincko extends Model {
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->delete();
+			$this->touchUpdateAt();
 		}
 		return true;
 	}
@@ -2269,6 +2270,7 @@ abstract class ModelLincko extends Model {
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->restore();
+			$this->touchUpdateAt();
 		}
 		return true;
 	}

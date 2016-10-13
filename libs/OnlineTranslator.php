@@ -185,6 +185,7 @@ class AzureMarketplaceAuthenticator {
 		curl_setopt($obj_connection, CURLOPT_POSTFIELDS, $str_query);
 		curl_setopt($obj_connection, CURLOPT_POST, TRUE);
 		curl_setopt($obj_connection, CURLOPT_TIMEOUT, 12);
+		curl_setopt($obj_connection, CURLOPT_ENCODING, 'gzip');
 		
 		$str_response = curl_exec($obj_connection);
 		$obj_response = json_decode($str_response);

@@ -531,6 +531,7 @@ class Files extends ModelLincko {
 			curl_setopt($ch, CURLOPT_TIMEOUT, 1); //Cannot use MS, it will crash the request
 			curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
 			curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+			curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
 			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 					'Content-Type: application/json; charset=UTF-8',
 					'Content-Length: ' . mb_strlen($data),
