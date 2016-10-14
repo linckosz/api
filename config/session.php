@@ -44,12 +44,18 @@ function _write($id, $data){
 
 function _destroy($id){
 	$id = get_session_id();
-	return Session::find($id)->delete();
+	if(Session::find($id)->delete()){
+		return true;
+	}
+	return false;
 }
 
 function _clean($max){
 	$old = time() - $max;
-	return Session::where('access', '<', $old)->delete();
+	if(Session::where('access', '<', $old)->delete()){
+		return true;
+	}
+	return false;
 }
 
 function _donothing(){
