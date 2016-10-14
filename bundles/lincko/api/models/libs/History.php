@@ -101,7 +101,7 @@ class History extends ModelLincko {
 		return false;
 	}
 
-	public static function historyNoticed($list){\libs\Watch::php( $list, '$list', __FILE__, false, false, true);
+	public static function historyNoticed($list){
 		$app = self::getApp();
 		$partial = false;
 		$uid = $app->lincko->data['uid'];

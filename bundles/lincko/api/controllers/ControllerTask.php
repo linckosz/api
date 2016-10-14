@@ -112,6 +112,9 @@ class ControllerTask extends Controller {
 		if(isset($form->progress) && is_numeric($form->progress)){
 			$form->progress = (int) $form->progress;
 		}
+		if(isset($form->milestone)){
+			$form->milestone = (int) boolval($form->milestone);
+		}
 		return $this->form = $form;
 	}
 
@@ -160,6 +163,10 @@ class ControllerTask extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 26); //We could not validate the format: - Pourcentage
 			$errfield = 'progress';
 		}
+		else if(isset($form->milestone) && !Tasks::validBoolean($form->milestone, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'milestone';
+		}
 		else if($model = new Tasks()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
@@ -171,6 +178,7 @@ class ControllerTask extends Controller {
 			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional
 			if(isset($form->status)){ $model->status = $form->status; } //Optional
 			if(isset($form->progress)){ $model->progress = $form->progress; } //Optional
+			if(isset($form->milestone)){ $model->milestone = $form->milestone; } //Optional
 			$model->pivots_format($form, false);
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 2)); //Task created.
@@ -267,6 +275,10 @@ class ControllerTask extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 26); //We could not validate the format: - Pourcentage
 			$errfield = 'progress';
 		}
+		else if(isset($form->milestone) && !Tasks::validBoolean($form->milestone, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'milestone';
+		}
 		else if($model = Tasks::find($form->id)){
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
@@ -277,6 +289,7 @@ class ControllerTask extends Controller {
 			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional
 			if(isset($form->status)){ $model->status = $form->status; } //Optional
 			if(isset($form->progress)){ $model->progress = $form->progress; } //Optional
+			if(isset($form->milestone)){ $model->milestone = $form->milestone; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){

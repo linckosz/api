@@ -1342,7 +1342,7 @@ abstract class ModelLincko extends Model {
 
 	public static function getClass($class=false){
 		if(!$class){
-			$class = self::getTableStatic();
+			$class = static::getTableStatic();
 		}
 		$fullClass = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC($class);
 		if(class_exists($fullClass)){
@@ -1390,6 +1390,16 @@ abstract class ModelLincko extends Model {
 		} else {
 			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
 			Users::getQuery()->update(['force_schema' => $timestamp]);
+		}
+		//Force to rebuild all extra
+		//Reinitialize all permissions
+		$models = Data::getModels();
+		$time = (new Users)->freshTimestamp();
+		foreach ($models as $table => $class) {
+			//Force to recalculate all extra
+			if(in_array('extra', $class::getColumns())){
+				$class::getQuery()->update(['extra' => null]);
+			}
 		}
 		return true;
 	}
@@ -2115,6 +2125,9 @@ abstract class ModelLincko extends Model {
 			}
 			$this->change_permission = true;
 		}
+
+		//Force to recalculate the extra field if it exists
+		$this->extra = null;
 
 		$return = false;
 		try {

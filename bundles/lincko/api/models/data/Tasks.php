@@ -37,6 +37,7 @@ class Tasks extends ModelLincko {
 		'status',
 		'start',
 		'progress',
+		'milestone',
 		'_parent',
 		'_tasksup',
 		'_tasksdown',
@@ -72,6 +73,7 @@ class Tasks extends ModelLincko {
 		'comment' => 504, //[{un}] modified a task content
 		'duration' => 506, //[{un}] modified a task due date
 		'fixed' => 502, //[{un}] modified a task
+		'milestone' => 502, //[{un}] modified a task
 		'status' => 502, //[{un}] modified a task
 		'start' => 506, //[{un}] modified a task due date
 		'progress' => 502, //[{un}] modified a task
@@ -107,6 +109,7 @@ class Tasks extends ModelLincko {
 
 	protected $model_boolean = array(
 		'fixed',
+		'milestone',
 		'approved',
 		'in_charge',
 		'approver',
@@ -183,6 +186,7 @@ class Tasks extends ModelLincko {
 			|| (isset($form->approved) && !self::validBoolean($form->approved, true))
 			|| (isset($form->status) && !self::validNumeric($form->status, true))
 			|| (isset($form->progress) && !self::validProgress($form->progress, true))
+			|| (isset($form->milestone) && !self::validBoolean($form->milestone, true))
 		){
 			return false;
 		}
@@ -324,6 +328,14 @@ class Tasks extends ModelLincko {
 			}
 		}
 		return false;
+	}
+
+	//For pivot tasksup and tasksdown, make sure we return the class Tasks
+	public static function getClass($class=false){
+		if($class=='tasksup' || $class=='tasksdown'){
+			$class = 'tasks';
+		}
+		return parent::getClass($class);
 	}
 
 }

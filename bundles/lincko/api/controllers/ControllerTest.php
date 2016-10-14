@@ -910,39 +910,7 @@ class ControllerTest extends Controller {
 
 
 
-
-
-
-		$tp = 'hello';
-
-		\libs\Watch::php( strlen($tp), 'no_compressed', __FILE__, false, false, true);
-		\time_checkpoint('ok');
-		$tp = gzencode($tp);
-		\time_checkpoint('ok');
-
-		\libs\Watch::php( $tp, 'no_compressed', __FILE__, false, false, true);
-
-
-		//$app->render(200, array('msg' => $msg,));
-		//return true;
-
-		$json = new Json($tp, false);
-		$json->render(200);
-		return true;
-
-
-
-
-
-
-
-
-
-
-
-
-
-		
+		$tp = Tasks::getTableStatic();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
