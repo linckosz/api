@@ -136,7 +136,7 @@ class ControllerUser extends Controller {
 		if(!$app->lincko->data['allow_create_user']){
 			$errmsg = $app->trans->getBRUT('api', 15, 2); //Because of server maintenance, we temporarily do not allow the creation of new user account, please try later.
 		}
-		else if(isset($form->invitation_beta) && ($form->invitation_beta=='' || Invitation::where('code', '=', $form->invitation_beta)->first())){ //optional
+		else if(isset($form->invitation_beta) && ($form->invitation_beta=='' || Invitation::withTrashed()->where('code', '=', $form->invitation_beta)->first())){ //optional
 			$errmsg = $app->trans->getBRUT('api', 15, 27); //You need an invitation link unused to be able to join us.
 		}
 		else if(!$app->lincko->data['create_user']){
@@ -198,7 +198,7 @@ class ControllerUser extends Controller {
 			$invitation_used = false;
 			if(isset($form->invitation_code)){
 				$invitation_code = $form->invitation_code;
-				if($invitation = Invitation::where('code', '=', $invitation_code)->first()){
+				if($invitation = Invitation::withTrashed()->where('code', '=', $invitation_code)->first()){
 					$invitation_used = $invitation->used;
 				}
 			}
