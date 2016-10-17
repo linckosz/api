@@ -908,13 +908,36 @@ class ControllerTest extends Controller {
 
 		//$tp = Data::getModels();
 
+		/*
+		$obj = new \stdClass;
+		$obj->aa = 11;
+		$obj->bb = 22;
+		$obj->cc = 33;
 
+		$diy = [
+			['field 1', 123],
+			['field 2', 'abc def'],
+			['field 3', true],
+			['field 4', ['a'=>1, 'b'=>2, 'c'=>3]],
+			['field 5', $obj],
+		];
+		*/
+		//$tp = json_encode($diy);
+		//$tp = json_decode($tp);
 
-		$tp = Tasks::getTableStatic();
+		//$tp = json_decode('');
+
+		//$tp = Projects::validDIY($tp);
+
+		$tp = Projects::find(61);
+		//\libs\Watch::php( $tp, '$111', __FILE__, false, false, true);
+		$tp->diy = json_encode($diy);
+		//\libs\Watch::php( $tp->getDirty(), '$222', __FILE__, false, false, true);
+		$tp->save();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$333', __FILE__, false, false, true);
 		
 		/*
 		//----------------------------------------

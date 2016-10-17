@@ -28,6 +28,7 @@ class Projects extends ModelLincko {
 		'created_by',
 		'title',
 		'description',
+		'diy',
 		'personal_private',
 		'resume',
 		'_parent',
@@ -58,7 +59,7 @@ class Projects extends ModelLincko {
 		'resume' => 402,//[{un}] modified a project
 		'_tasks_0' => 405,//[{un}] moved the task "[{tt}]" from this project to another one
 		'_tasks_1' => 406,//[{un}] moved the task "[{tt}]" to this project
-		
+		'diy' => 402,//[{un}] modified a project
 		'pivot_access_0' => 496, //[{un}] blocked [{[{cun}]}]'s access to a project
 		'pivot_access_1' => 497, //[{un}] authorized [{[{cun}]}]'s access to a project
 		'_restore' => 498,//[{un}] restored a project
@@ -106,6 +107,7 @@ class Projects extends ModelLincko {
 			|| (isset($form->parent_id) && !self::validNumeric($form->parent_id, true))
 			|| (isset($form->title) && !self::validTitle($form->title, true))
 			|| (isset($form->description) && !self::validText($form->description, true))
+			|| (isset($form->diy) && !self::validDIY($form->diy, true))
 			|| (isset($form->resume) && !self::validNumeric($form->resume, true))
 		){
 			return false;

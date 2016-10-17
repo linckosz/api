@@ -113,11 +113,16 @@ class ControllerProject extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'description';
 		}
+		else if(isset($form->diy) && !Projects::validDIY($form->diy, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 33); //We could not validate the format: - JSON
+			$errfield = 'diy';
+		}
 		else if($model = new Projects()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
+			if(isset($form->diy)){ $model->diy = $form->diy; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$model->pivots_format($form, false);
 			if($model->getParentAccess() && $model->save()){
@@ -191,11 +196,16 @@ class ControllerProject extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'description';
 		}
+		else if(isset($form->diy) && !Projects::validDIY($form->diy, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 33); //We could not validate the format: - JSON
+			$errfield = 'diy';
+		}
 		else if($model = Projects::find($form->id)){
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
+			if(isset($form->diy)){ $model->diy = $form->diy; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
