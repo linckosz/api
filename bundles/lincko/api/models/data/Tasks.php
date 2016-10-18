@@ -89,6 +89,18 @@ class Tasks extends ModelLincko {
 		'pivot_access_1' => 597, //[{un}] authorized [{[{cun}]}]'s access to a task
 		'_restore' => 598,//[{un}] restored a task
 		'_delete' => 599,//[{un}] deleted a task
+
+		/*
+		//toto => Need to be refactor because of later Team/Entreprise accounts
+		'created_at' => 501, //[{un}] created a new task
+		'_' => 502,//[{un}] modified a task
+		'title' => 503,//[{un}] changed a task title
+		'comment' => 504, //[{un}] modified a task content
+		'approved_0' => 555, //[{un}] reopened a task
+		'approved_1' => 556, //[{un}] completed a task
+		'_restore' => 598,//[{un}] restored a task
+		'_delete' => 599,//[{un}] deleted a task
+		*/
 	);
 
 	protected static $parent_list = 'projects';

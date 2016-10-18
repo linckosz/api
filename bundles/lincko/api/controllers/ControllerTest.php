@@ -929,11 +929,9 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::validDIY($tp);
 
-		$tp = Projects::find(61);
-		//\libs\Watch::php( $tp, '$111', __FILE__, false, false, true);
-		$tp->diy = json_encode($diy);
-		//\libs\Watch::php( $tp->getDirty(), '$222', __FILE__, false, false, true);
-		$tp->save();
+		$tp = Users::find(6);
+		$tp = $tp->extraDecode();
+		
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

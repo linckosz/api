@@ -268,7 +268,7 @@ class Data {
 							while($nested){ //$nested is used for element that are linked to each others
 								$nested = false;
 								$break = false;
-								if(isset($models[$key]) && count($models[$key])>0){
+								if(false && isset($models[$key]) && count($models[$key])>0){ //toto => Models has an issue when plus a single ID and the row doesn't exists yet, it will ignore previous IDs
 									$result_bis = $class::withTrashed()->whereIn('id', $models[$key])->get(); //toto => It seems that it's slower that the jointure, need to be confirmed with heavy database
 									$break = true; //We force to exit because the list of IDs already contain all IDs
 								} else {

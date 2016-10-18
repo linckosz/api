@@ -968,6 +968,8 @@ abstract class ModelLincko extends Model {
 					$plus = array_keys(array_diff_key($new, $old));
 					$less = array_keys(array_diff_key($old, $new));
 					if(count($plus)>0){
+						//\libs\Watch::php($old, '$old', __FILE__, false, false, true);
+						//\libs\Watch::php($new, '$new', __FILE__, false, false, true);
 						Models::plus($table_name, $id, $plus);
 					}
 					if(count($less)>0){
