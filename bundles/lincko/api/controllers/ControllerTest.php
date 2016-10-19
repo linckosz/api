@@ -932,11 +932,11 @@ class ControllerTest extends Controller {
 
 		//$sql = "INSERT INTO `models` (`users_id`, `type`, `list`) VALUES $values ON DUPLICATE KEY UPDATE `list`=IF(`list` NOT LIKE '%;$id;%', CONCAT(`list`, ';$id;'), `list`);";
 
-		$sql = "UPDATE `models` SET `list` = ';3;;4;' WHERE `models`.`users_id` = '1000' AND `models`.`type` = 'toto';";
+		//$sql = "UPDATE `models` SET `list` = ';3;;4;' WHERE `models`.`users_id` = '1000' AND `models`.`type` = 'toto';";
 
 
 
-		$tp = $db->update( $db->raw($sql));
+		//$tp = $db->update( $db->raw($sql));
 		
 
 		//Display mysql requests
