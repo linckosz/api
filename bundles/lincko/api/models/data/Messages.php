@@ -45,7 +45,11 @@ class Messages extends ModelLincko {
 	protected $name_code = 200;
 
 	//We don't record any history for chats messages
-	protected static $archive = array();
+	//protected static $archive = array();
+	//toto => temporary until tabList list message of Chats not from hist
+	protected static $archive = array(
+		'created_at' => 201, //[{un}] sent a new message
+	);
 
 	protected static $parent_list = 'chats';
 
@@ -251,9 +255,12 @@ class Messages extends ModelLincko {
 		return $model;
 	}
 
+	/*
+	//toto => temporary DISABLE until tabList list message of Chats not from hist
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
 		return null;
 	}
+	*/
 
 	//toto, delete save, it was for test only
 	public function save(array $options = array()){
