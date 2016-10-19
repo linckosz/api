@@ -90,17 +90,17 @@ class Tasks extends ModelLincko {
 		'_restore' => 598,//[{un}] restored a task
 		'_delete' => 599,//[{un}] deleted a task
 
-		/*
+		
 		//toto => Need to be refactor because of later Team/Entreprise accounts
-		'created_at' => 501, //[{un}] created a new task
-		'_' => 502,//[{un}] modified a task
-		'title' => 503,//[{un}] changed a task title
-		'comment' => 504, //[{un}] modified a task content
-		'approved_0' => 555, //[{un}] reopened a task
-		'approved_1' => 556, //[{un}] completed a task
-		'_restore' => 598,//[{un}] restored a task
-		'_delete' => 599,//[{un}] deleted a task
-		*/
+		'tasksdown_created_at' => 10501, //[{un}] created a new task
+		'tasksdown_' => 10502,//[{un}] modified a task
+		'tasksdown_title' => 10503,//[{un}] changed a task title
+		'tasksdown_comment' => 10504, //[{un}] modified a task content
+		'tasksdown_approved_0' => 10555, //[{un}] reopened a task
+		'tasksdown_approved_1' => 10556, //[{un}] completed a task
+		'tasksdown__restore' => 10598,//[{un}] restored a task
+		'tasksdown__delete' => 10599,//[{un}] deleted a task
+		
 	);
 
 	protected static $parent_list = 'projects';
@@ -288,7 +288,37 @@ class Tasks extends ModelLincko {
 				$parameters['pj'] = $app->trans->getBRUT('api', 0, 2); //unknown
 			}
 		}
+
+		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
+		$dependency = $this->getDependency();
+		if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){
+			$tasksup_id = array_keys((array) $dependency[$this->getTable()][$this->id]['_tasksup'])[0]; //Get the first parent
+			if($tasksup = $this->getModel($tasksup_id)){
+				$tasksup->setHistory('tasksdown_'.$key, $new, $old, $parameters);
+				$tasksup->touchUpdateAt();
+				return true; //Do not record element itself, only the parent one
+			}
+		}
+
 		parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
+	}
+
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
+		$app = self::getApp();
+		$history = new \stdClass;
+
+		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
+		$dependency = $this->getDependency();
+		if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){
+			$tasksup_id = array_keys((array) $dependency[$this->getTable()][$this->id]['_tasksup'])[0]; //Get the first parent
+			if($tasksup = $this->getModel($tasksup_id)){
+				return $history; //Return an empty creation for subtasks
+			}
+		}
+
+		$history = parent::getHistoryCreation($history_detail, $parameters, $items);
+
+		return $history;
 	}
 
 	public function save(array $options = array()){
@@ -326,6 +356,16 @@ class Tasks extends ModelLincko {
 			$this->pivots_format($pivots, false);
 		}
 		$return = parent::save($options);
+
+		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
+		$dependency = $this->getDependency();
+		if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){
+			$tasksup_id = array_keys((array) $dependency[$this->getTable()][$this->id]['_tasksup'])[0]; //Get the first parent
+			if($tasksup = $this->getModel($tasksup_id)){
+				$tasksup->setHistory('tasksdown_created_at');
+				$tasksup->touchUpdateAt();
+			}
+		}
 		
 		return $return;
 	}

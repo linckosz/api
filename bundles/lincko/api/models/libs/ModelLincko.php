@@ -1419,6 +1419,17 @@ abstract class ModelLincko extends Model {
 		return static::$dependencies_visible;
 	}
 
+	public function getDependency(){
+		$table_name = static::getTable();
+		$list_id = array(
+			$table_name => array($this->id),
+		);
+		$classes = array(
+			$table_name => static::getClass(),
+		);
+		return self::getDependencies($list_id, $classes);
+	}
+
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
 	public static function getDependencies(array $list_id, array $classes){

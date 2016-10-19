@@ -107,7 +107,7 @@ function shutdownHandler(){
 	userErrorHandler($lasterror['type'], $lasterror['message'], $lasterror['file'], $lasterror['line'], $dbt, 'SDH');
 }
 
-function exceptionHandler(\Exception $exception) {
+function exceptionHandler(\Throwable $exception) {
 	$dbt = getTraceAsString($exception, 10);
 	userErrorHandler(E_ERROR, 'Exception: '.$exception->getMessage(), $exception->getFile(), $exception->getLine(), $dbt, 'EXH');
 }
@@ -144,6 +144,6 @@ set_error_handler("error\userErrorHandler");
 register_shutdown_function("error\shutdownHandler");
 set_exception_handler('error\exceptionHandler');
 
-$app->error(function (\Exception $exception) use ($app) {
+$app->error(function (\Throwable $exception) use ($app) {
 	exceptionHandler($exception);
 });

@@ -937,6 +937,8 @@ class ControllerTest extends Controller {
 
 
 		//$tp = $db->update( $db->raw($sql));
+
+		$tp = Tasks::find(7398)->getDependency();
 		
 
 		//Display mysql requests
