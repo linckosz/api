@@ -93,6 +93,10 @@ class Models extends ModelLincko {
 				}
 				$values .= "($uid, $type, ';$id;')";
 			}
+
+			//toto => in case of insertion, the user is not getting the whole list of items, it needs a getItems first
+			//So we should check if the user row is missing and doing a getItems before any update
+
 			$sql = "INSERT INTO `models` (`users_id`, `type`, `list`) VALUES $values ON DUPLICATE KEY UPDATE `list`=IF(`list` NOT LIKE '%;$id;%', CONCAT(`list`, ';$id;'), `list`);";
 			//\libs\Watch::php( $sql, '$plus', __FILE__, false, false, true);
 			$db = static::getDB();
@@ -114,6 +118,10 @@ class Models extends ModelLincko {
 				}
 				$values .= "($uid, $type, ';$id;')";
 			}
+
+			//toto => in case of insertion, the user is not getting the whole list of items, it needs a getItems first
+			//So we should check if the user row is missing and doing a getItems before any update
+			
 			$sql = "INSERT INTO `models` (`users_id`, `type`, `list`) VALUES $values ON DUPLICATE KEY UPDATE `list`=IF(`list` LIKE '%;$id;%', REPLACE(`list`, ';$id;', ''), `list`);";
 			//\libs\Watch::php( $sql, '$less', __FILE__, false, false, true);
 			$db = static::getDB();

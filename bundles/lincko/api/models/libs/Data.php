@@ -806,6 +806,9 @@ class Data {
 			}
 		}
 
+		//toto => on front it generates more complication than expecting, so don't force to delete temp_id at this moment
+		self::setDeleteTempId(false);
+
 		//Delete temp_id if the user is not concerned
 		if($this->item_detail){
 			foreach ($result_bis->$uid as $table_name => $models) {

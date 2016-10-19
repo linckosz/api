@@ -929,13 +929,19 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::validDIY($tp);
 
-		$tp = Users::find(6);
-		$tp = $tp->extraDecode();
+
+		//$sql = "INSERT INTO `models` (`users_id`, `type`, `list`) VALUES $values ON DUPLICATE KEY UPDATE `list`=IF(`list` NOT LIKE '%;$id;%', CONCAT(`list`, ';$id;'), `list`);";
+
+		$sql = "UPDATE `models` SET `list` = ';3;;4;' WHERE `models`.`users_id` = '1000' AND `models`.`type` = 'toto';";
+
+
+
+		$tp = $db->update( $db->raw($sql));
 		
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		\libs\Watch::php( $tp, '$333', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*
 		//----------------------------------------
