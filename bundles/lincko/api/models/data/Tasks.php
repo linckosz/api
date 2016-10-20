@@ -355,10 +355,16 @@ class Tasks extends ModelLincko {
 			$pivots->{'users>approver'}->{$app->lincko->data['uid']} = true;
 			$this->pivots_format($pivots, false);
 		}
+
+		$new = false;
+		if(!isset($this->id)){
+			$new = true;
+		}
+
 		$return = parent::save($options);
 
 		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
-		if(!isset($this->id)){
+		if($new){
 			$dependency = $this->getDependency();
 			if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){
 				$tasksup_id = array_keys((array) $dependency[$this->getTable()][$this->id]['_tasksup'])[0]; //Get the first parent
