@@ -938,8 +938,24 @@ class ControllerTest extends Controller {
 
 		//$tp = $db->update( $db->raw($sql));
 
-		$tp = Tasks::find(7398)->getDependency();
-		
+		/*
+		$i = 1;		
+		$sql = 'SELECT
+		temp_id, created_at, updated_at, created_by, recalled_by, noticed_by, viewed_by, parent_id, comment
+		FROM `comments_old` WHERE `parent_type` LIKE "chats" ORDER BY `comments_old`.`id` ASC;';
+		if($data = $db->select( $db->raw($sql) )){
+			foreach ($data as $item) {
+				$model = new Messages;
+				foreach ($item as $key => $value) {
+					$model->$key = $value;
+				}
+				$model->id = $i++;
+				$model->brutSave();
+			}
+		}
+
+		$tp = $i;
+		*/
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
@@ -961,7 +977,7 @@ class ControllerTest extends Controller {
 				foreach ($item as $key => $value) {
 					$model->$key = $value;
 				}
-				$model->save();
+				$model->brutSave();
 			}
 		}
 		\time_checkpoint('start clean _perm');

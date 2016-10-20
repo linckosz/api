@@ -358,12 +358,14 @@ class Tasks extends ModelLincko {
 		$return = parent::save($options);
 
 		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
-		$dependency = $this->getDependency();
-		if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){
-			$tasksup_id = array_keys((array) $dependency[$this->getTable()][$this->id]['_tasksup'])[0]; //Get the first parent
-			if($tasksup = $this->getModel($tasksup_id)){
-				$tasksup->setHistory('tasksdown_created_at');
-				$tasksup->touchUpdateAt();
+		if(!isset($this->id)){
+			$dependency = $this->getDependency();
+			if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){
+				$tasksup_id = array_keys((array) $dependency[$this->getTable()][$this->id]['_tasksup'])[0]; //Get the first parent
+				if($tasksup = $this->getModel($tasksup_id)){
+					$tasksup->setHistory('tasksdown_created_at');
+					$tasksup->touchUpdateAt();
+				}
 			}
 		}
 		
