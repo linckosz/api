@@ -61,6 +61,7 @@ class Files extends ModelLincko {
 
 	protected static $prefix_fields = array(
 		'name' => '+name',
+		'comment' => '-comment',
 	);
 
 	protected static $hide_extra = array(
