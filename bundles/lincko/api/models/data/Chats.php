@@ -73,6 +73,7 @@ class Chats extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
+		'users' => array('users_x_chats', array('fav')),
 		'spaces' => array('spaces_x', array('created_at')),
 	);
 

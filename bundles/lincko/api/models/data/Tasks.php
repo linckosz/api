@@ -142,7 +142,7 @@ class Tasks extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'users' => array('users_x_tasks', array('in_charge', 'approver')),
+		'users' => array('users_x_tasks', array('fav', 'in_charge', 'approver')),
 		'tasksup' => array('tasks_x_tasks', array('access')),
 		'tasksdown' => array('tasks_x_tasks', array('fav', 'delay', 'position')),
 		'files' => array('tasks_x_files', array('fav')),

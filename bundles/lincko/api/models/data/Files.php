@@ -141,6 +141,7 @@ class Files extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
+		'users' => array('users_x_files', array('fav')),
 		'tasks' => array('tasks_x_files', array('fav')),
 		'notes' => array('notes_x_files', array('fav')),
 		'spaces' => array('spaces_x', array('created_at')),
