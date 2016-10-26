@@ -90,6 +90,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if(isset($form->temp_id) && is_string($form->temp_id)){
 			$form->temp_id = trim($form->temp_id);
 		}
+		if(isset($form->fav) && is_numeric($form->fav)){
+			$form->fav = (int) $form->fav;
+		}
 		if(isset($form->parent_type) && is_string($form->parent_type)){
 			$form->parent_type = strtolower(trim($form->parent_type));
 		}
@@ -198,7 +201,11 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		$success = false;
 
-		if(!isset($form->parent_type) || !Files::validType($form->parent_type)){ //Required
+		if(isset($form->fav) && !Tasks::validNumeric($form->fav, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'fav';
+		}
+		else if(!isset($form->parent_type) || !Files::validType($form->parent_type)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
 			$errfield = 'parent_type';
 		}
@@ -219,6 +226,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				if(is_array($fileArray['tmp_name'])){
 					foreach ($fileArray['tmp_name'] as $j => $value) {
 						if($model = new Files()){
+							if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 							$model->name = $fileArray['name'][$j];
 							if(isset($form->name)){ $model->name = $form->name; } //Optional
 							$model->ori_type = mb_strtolower($fileArray['type'][$j]);
@@ -241,6 +249,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					}
 				} else {
 					if($model = new Files()){
+						if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 						$model->name = $fileArray['name'];
 						if(isset($form->name)){ $model->name = $form->name; } //Optional
 						$model->ori_type = mb_strtolower($fileArray['type']);
@@ -334,6 +343,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 30); //We could not validate the file ID.
 			$errfield = 'id';
 		}
+		else if(isset($form->fav) && !Tasks::validNumeric($form->fav, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'fav';
+		}
 		else if(isset($form->parent_id) && !Files::validNumeric($form->parent_id, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
@@ -351,6 +364,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$errfield = 'comment';
 		}
 		else if($model = Files::find($form->id)){
+			if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->parent_type)){ $model->parent_type = $form->parent_type; } //Optional
 			if(isset($form->name)){ $model->name = $form->name; } //Optional

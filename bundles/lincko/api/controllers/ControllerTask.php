@@ -82,6 +82,9 @@ class ControllerTask extends Controller {
 		if(isset($form->temp_id) && is_string($form->temp_id)){
 			$form->temp_id = trim($form->temp_id);
 		}
+		if(isset($form->fav) && is_numeric($form->fav)){
+			$form->fav = (int) $form->fav;
+		}
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
@@ -127,7 +130,11 @@ class ControllerTask extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->parent_id) || !Tasks::validNumeric($form->parent_id)){ //Required
+		if(isset($form->fav) && !Tasks::validNumeric($form->fav, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'fav';
+		}
+		else if(!isset($form->parent_id) || !Tasks::validNumeric($form->parent_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
@@ -169,6 +176,7 @@ class ControllerTask extends Controller {
 		}
 		else if($model = new Tasks()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
+			if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
@@ -239,6 +247,10 @@ class ControllerTask extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
 			$errfield = 'id';
 		}
+		else if(isset($form->fav) && !Tasks::validNumeric($form->fav, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'fav';
+		}
 		else if(isset($form->parent_id) && !Tasks::validNumeric($form->parent_id, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
@@ -280,6 +292,7 @@ class ControllerTask extends Controller {
 			$errfield = 'milestone';
 		}
 		else if($model = Tasks::find($form->id)){
+			if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
