@@ -87,6 +87,7 @@ class Users extends ModelLincko {
 	);
 
 	protected $model_integer = array(
+		'fav',
 		'gender',
 		'profile_pic',
 		'timeoffset',
@@ -120,7 +121,7 @@ class Users extends ModelLincko {
 
 	//Many(Users) to Many(Chats)
 	public function chats(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'users_x_chats', 'users_id', 'chats_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'users_x_chats', 'users_id', 'chats_id')->withPivot('access', 'fav');
 	}
 
 	//One(Users) to Many(comments)
@@ -135,22 +136,22 @@ class Users extends ModelLincko {
 
 	//Many(Users) to Many(Projects)
 	public function projects(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'users_x_projects', 'users_id', 'projects_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'users_x_projects', 'users_id', 'projects_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Users) to Many(Tasks)
 	public function tasks(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'users_x_tasks', 'users_id', 'tasks_id')->withPivot('access', 'in_charge', 'approver');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'users_x_tasks', 'users_id', 'tasks_id')->withPivot('access', 'fav', 'in_charge', 'approver');
 	}
 
 	//Many(Users) to Many(Notes)
 	public function notes(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'users_x_notes', 'users_id', 'notes_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'users_x_notes', 'users_id', 'notes_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Users) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'users_x_spaces', 'users_id', 'spaces_id')->withPivot('access', 'hide');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'users_x_spaces', 'users_id', 'spaces_id')->withPivot('access', 'fav', 'hide');
 	}
 
 	//Many(Users) to Many(Users)

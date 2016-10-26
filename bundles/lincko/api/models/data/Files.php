@@ -33,6 +33,7 @@ class Files extends ModelLincko {
 		'deleted_at',
 		'created_by',
 		'updated_by',
+		'fav',
 		'version_of',
 		'name',
 		'category',
@@ -98,6 +99,7 @@ class Files extends ModelLincko {
 	protected static $parent_list_soft = array('tasks', 'notes', 'comments'); //toto => adding 'comments' makes it crash, they disapear
 
 	protected $model_integer = array(
+		'fav',
 		'version_of',
 		'size',
 		'width',
@@ -133,31 +135,31 @@ class Files extends ModelLincko {
 
 		'video' => array('application/asx', 'application/vnd.ms-asf', 'application/vnd.rn-realmedia', 'application/vnd.rn-realmedia-vbr', 'application/x-mplayer2', 'application/x-pn-mpg', 'application/x-troff-msvideo', 'content/unknown', 'image/mov', 'image/mpg', 'video/3gpp', 'video/avi', 'video/dvd', 'video/mp4', 'video/mp4v-es', 'video/mpeg', 'video/mpeg2', 'video/mpg', 'video/msvideo', 'video/quicktime', 'video/xmpg2', 'video/x-flv', 'flv-application/octet-stream', 'video/x-m4v', 'video/x-matroska', 'video/x-mpeg', 'video/x-mpeg2a', 'video/x-mpg', 'video/x-msvideo', 'video/x-ms-asf', 'video/x-ms-asf-plugin', 'video/x-ms-wm', 'video/x-ms-wmv', 'video/x-ms-wmx', 'video/x-quicktime', 'video/webm'),
 
-		'audio' => array('audio/3gpp', 'audio/aiff', 'audio/asf', 'audio/avi', 'audio/mp4', 'audio/mpeg', 'audio/vnd.rn-realaudio', 'audio/x-midi', 'audio/x-mpeg', 'audio/x-pm-realaudio-plugin', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/x-wav', 'audio/webm'),
+		'audio' => array('audio/3gpp', 'audio/aiff', 'audio/x-aiff', 'audio/asf', 'audio/avi', 'audio/mp3', 'audio/mp4', 'audio/mpeg', 'audio/vnd.rn-realaudio', 'audio/midi', 'audio/x-midi', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpeg', 'audio/x-mpeg', 'audio/x-pm-realaudio-plugin', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/wav', 'audio/x-wav', 'audio/webm'),
 	);
 
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'tasks' => array('tasks_x_files', array('access')),
-		'notes' => array('notes_x_files', array('access')),
+		'tasks' => array('tasks_x_files', array('fav')),
+		'notes' => array('notes_x_files', array('fav')),
 		'spaces' => array('spaces_x', array('created_at')),
 		'comments' => array('comments_x_files', array('access')),
 	);
 
 	//Many(Files) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_files', 'files_id', 'users_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_files', 'files_id', 'users_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Files) to Many(Tasks)
 	public function tasks(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_files', 'files_id', 'tasks_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_files', 'files_id', 'tasks_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Files) to Many(Notes)
 	public function notes(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'notes_x_files', 'files_id', 'notes_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'notes_x_files', 'files_id', 'notes_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Files) to Many(Comments)
@@ -187,7 +189,7 @@ class Files extends ModelLincko {
 
 	//Many(Files) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'files')->withPivot('access', 'created_at', 'exit_at');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'files')->withPivot('access', 'fav', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////

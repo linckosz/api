@@ -28,6 +28,7 @@ class Tasks extends ModelLincko {
 		'approved_at',
 		'created_by',
 		'updated_by',
+		'fav',
 		'approved_by',
 		'title',
 		'comment',
@@ -89,7 +90,6 @@ class Tasks extends ModelLincko {
 		'pivot_access_1' => 597, //[{un}] authorized [{[{cun}]}]'s access to a task
 		'_restore' => 598,//[{un}] restored a task
 		'_delete' => 599,//[{un}] deleted a task
-
 		
 		//toto => Need to be refactor because of later Team/Entreprise accounts
 		'tasksdown_created_at' => 10501, //[{un}] created a new task
@@ -111,6 +111,7 @@ class Tasks extends ModelLincko {
 	);
 
 	protected $model_integer = array(
+		'fav',
 		'approved_by',
 		'duration',
 		'progress',
@@ -143,9 +144,9 @@ class Tasks extends ModelLincko {
 	protected static $dependencies_visible = array(
 		'users' => array('users_x_tasks', array('in_charge', 'approver')),
 		'tasksup' => array('tasks_x_tasks', array('access')),
-		'tasksdown' => array('tasks_x_tasks', array('delay', 'position')),
-		'files' => array('tasks_x_files', array('access')),
-		'notes' => array('tasks_x_notes', array('access')),
+		'tasksdown' => array('tasks_x_tasks', array('fav', 'delay', 'position')),
+		'files' => array('tasks_x_files', array('fav')),
+		'notes' => array('tasks_x_notes', array('fav')),
 		'spaces' => array('spaces_x', array('created_at', 'exit_at')),
 	);
 
@@ -161,7 +162,7 @@ class Tasks extends ModelLincko {
 
 	//Many(Tasks) to Many(Tasks)
 	public function tasksdown(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_tasks', 'tasks_id', 'tasks_id_sub')->withPivot('access', 'delay', 'position');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_tasks', 'tasks_id', 'tasks_id_sub')->withPivot('access', 'fav', 'delay', 'position');
 	}
 
 	//Many(Tasks) to Many(Users)
@@ -181,7 +182,7 @@ class Tasks extends ModelLincko {
 
 	//Many(Tasks) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'tasks')->withPivot('access', 'created_at', 'exit_at');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'tasks')->withPivot('access', 'fav', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////
@@ -208,9 +209,10 @@ class Tasks extends ModelLincko {
 ////////////////////////////////////////////
 
 	//This is used because by default not all IDs are stored in pivot table
-	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array(), $default = array('access' => 1)){
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array(), $default = array('access' => 1, 'fav' => 0)){
 		$default = array(
 			'access' => 1,
+			'fav' => 0,
 			'in_charge' => 0,
 			'approver' => 0,
 		);

@@ -59,6 +59,10 @@ class Chats extends ModelLincko {
 		'single',
 	);
 
+	protected $model_integer = array(
+		'fav',
+	);
+
 	protected static $permission_sheet = array(
 		2, //[RCU] owner
 		3, //[RCUD] max allow || super
@@ -74,7 +78,7 @@ class Chats extends ModelLincko {
 
 	//Many(Chats) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Chats) to Many(Workspaces)
@@ -89,7 +93,7 @@ class Chats extends ModelLincko {
 
 	//Many(Chats) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'chats')->withPivot('access', 'created_at', 'exit_at');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'chats')->withPivot('access', 'fav', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////

@@ -1031,7 +1031,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	//By default just return the list as it is
-	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array(), $default = array('access' => 1)){
+	public static function filterPivotAccessListDefault(array $list, array $uid_list, array $result=array(), $default = array('access' => 1, 'fav' => 0)){
 		if(!static::$access_accept){
 			foreach ($uid_list as $uid) {
 				foreach ($list as $value) {

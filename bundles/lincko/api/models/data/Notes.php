@@ -25,6 +25,7 @@ class Notes extends ModelLincko {
 		'deleted_at',
 		'created_by',
 		'updated_by',
+		'fav',
 		'title',
 		'comment',
 		'_parent',
@@ -66,6 +67,10 @@ class Notes extends ModelLincko {
 
 	protected static $parent_list = 'projects';
 
+	protected $model_integer = array(
+		'fav',
+	);
+
 	protected static $allow_single = true;
 
 	protected static $permission_sheet = array(
@@ -80,8 +85,8 @@ class Notes extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'files' => array('notes_x_files', array('access')),
-		'tasks' => array('tasks_x_notes', array('access')),
+		'files' => array('notes_x_files', array('fav')),
+		'tasks' => array('tasks_x_notes', array('fav')),
 		'spaces' => array('spaces_x', array('created_at')),
 	);
 
@@ -92,22 +97,22 @@ class Notes extends ModelLincko {
 
 	//Many(Notes) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_notes', 'notes_id', 'users_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_notes', 'notes_id', 'users_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Notes) to Many(Files)
 	public function files(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'notes_x_files', 'notes_id', 'files_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'notes_x_files', 'notes_id', 'files_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Notes) to Many(Tasks)
 	public function tasks(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_notes', 'notes_id', 'tasks_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'tasks_x_notes', 'notes_id', 'tasks_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Notes) to Many(Spaces)
 	public function spaces(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'notes')->withPivot('access', 'created_at', 'exit_at');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'spaces_x', 'parent_id', 'spaces_id')->where('spaces_x.parent_type', 'notes')->withPivot('access', 'fav', 'created_at', 'exit_at');
 	}
 
 ////////////////////////////////////////////

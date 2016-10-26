@@ -69,6 +69,7 @@ class Projects extends ModelLincko {
 	protected static $parent_list = 'workspaces';
 
 	protected $model_integer = array(
+		'fav',
 		'personal_private',
 		'resume',
 	);
@@ -86,7 +87,7 @@ class Projects extends ModelLincko {
 
 	//Many(Projects) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access', 'fav');
 	}
 
 	//Many(Projects) to One(Workspaces)
