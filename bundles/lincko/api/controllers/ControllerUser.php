@@ -702,6 +702,7 @@ class ControllerUser extends Controller {
 	public function reset_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$reset = false;
 
 		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -720,7 +721,6 @@ class ControllerUser extends Controller {
 			$errfield = 'password';
 		}
 		else if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
-			$reset = false;
 			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->Where('code', '!=', null)->first()){
 				if($user_log->code == $form->code){
 					$now = time();
