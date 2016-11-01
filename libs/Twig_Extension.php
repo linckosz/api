@@ -19,6 +19,11 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 		return NULL;
 	}
 
+	public function get_Require($path){
+		require_once($path);
+		return NULL;
+	}
+
 	public function get_Filelatest($file){
 		return File::getLatest($file);
 	}
@@ -104,6 +109,7 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 			parent::getFunctions(),
 			array(
 				new \Twig_SimpleFunction('_debug', array($this, 'get_Debug'), array('is_safe' => array('html'))),
+				new \Twig_SimpleFunction('_require', array($this, 'get_Require'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_trans', array($this, 'get_Trans'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_filelatest', array($this, 'get_Filelatest'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_languages', array($this, 'get_Languages'), array('is_safe' => array('html'))),

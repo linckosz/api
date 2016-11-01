@@ -18,6 +18,7 @@ use \bundles\lincko\api\models\libs\Tree;
 use \bundles\lincko\api\models\libs\Models;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\UsersLog;
+use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
@@ -956,6 +957,19 @@ class ControllerTest extends Controller {
 
 		$tp = $i;
 		*/
+
+		$onboarding = new Onboarding;
+		$onboarding->answered(25085);
+
+		//$item = Projects::find(548);
+		//$tp = PivotUsersRoles::setMyRole($item, 2);
+
+		//$tp = Tasks::find(9921);
+		//$tp->setPerm();
+
+		//$tp = Projects::find(598);
+		//$tp->setPerm();
+		
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

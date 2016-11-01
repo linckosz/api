@@ -15,6 +15,8 @@ class PivotUsersRoles extends ModelLincko {
 
 	protected $primaryKey = 'id';
 
+	public $timestamps = false;
+
 	protected $visible = array();
 
 	protected static $permission_sheet = array(
@@ -111,6 +113,32 @@ class PivotUsersRoles extends ModelLincko {
 			return self::whereIn('users_x_roles_x.users_id', $users_list)->get();
 		}
 		return null;
+	}
+
+	//Be careful, a user can lock himself y this command, and noone else can unlock him if none previously with higher role
+	public static function setMyRole($item, $roles_id=null, $single=null, $access=1){
+		$app = self::getApp();
+		$role = self::Where('users_id', $app->lincko->data['uid'])->where('parent_type', $item->getTable())->where('parent_id', $item->id)->first();
+		if(!$role){
+			$role = new self;
+			$role->users_id = $app->lincko->data['uid'];
+			$role->parent_type = $item->getTable();
+			$role->parent_id = $item->id;
+		}
+
+		if($access!=1){
+			$access = 0;
+		}
+		if(!is_numeric($roles_id) || $roles_id<1){
+			$roles_id = null;
+		}
+		if(!is_numeric($single) || $single<0 || $single>3){
+			$single = null;
+		}
+		$role->access = $access;
+		$role->roles_id = $roles_id;
+		$role->single = $single;
+		return $role->brutSave();
 	}
 
 }

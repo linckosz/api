@@ -26,6 +26,7 @@ class Settings extends ModelLincko {
 	protected static $hide_extra = array(
 		'temp_id',
 		'setup',
+		'onboarding',
 	);
 
 	protected static $save_user_access = false;
@@ -49,6 +50,7 @@ class Settings extends ModelLincko {
 	public static function isValid($form){
 		if(
 			   (isset($form->setup) && !self::validText($form->setup, true))
+			|| (isset($form->onboarding) && !self::validText($form->onboarding, true))
 		){
 			return false;
 		}
@@ -110,6 +112,17 @@ class Settings extends ModelLincko {
 			return true;
 		}
 		return true;
+	}
+
+	public static function getMySettings(){
+		$app = self::getApp();
+		$uid = $app->lincko->data['uid'];
+		$settings = Settings::find($uid);
+		if(!$settings){
+			$settings = new Settings;
+			$settings->id = $uid;
+		}
+		return $settings;
 	}
 
 }

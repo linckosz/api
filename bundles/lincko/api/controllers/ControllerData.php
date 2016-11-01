@@ -168,13 +168,8 @@ class ControllerData extends Controller {
 		$app = $this->app;
 		$data = $this->data;
 		$lastvisit = time();
-		$uid = $app->lincko->data['uid'];
 		if(isset($data->data) && isset($data->data->settings)){
-			$settings = Settings::find($uid);
-			if(!$settings){
-				$settings = new Settings;
-				$settings->id = $uid;
-			}
+			$settings = Settings::getMySettings();
 			$settings->setup = $data->data->settings;
 			$dirty = $settings->getDirty();
 			if(count($dirty)>0){
