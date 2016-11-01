@@ -956,7 +956,13 @@ class Data {
 					$done = 0;
 					$done_total = 0;
 					$activity = false; //This represents real activity (task completed, new file, etc.), not statistics calculated
-					$tasks = Tasks::Where('parent_id', $project->id)->get(array('id', 'created_at', 'approved_at', 'approved_by', 'approved', 'start', 'duration'));
+					$tasks = Tasks::
+						Where('parent_id', $project->id)
+						->whereHas("tasksup", function($query) {
+							$query->withTrashed(); //this exclude all subtasks
+						}, '<', 1)
+						->get(array('id', 'created_at', 'approved_at', 'approved_by', 'approved', 'start', 'duration'));
+
 					foreach ($tasks as $task) {
 						if($tasks_list){
 							$tasks_list .= ','.$task->id;
@@ -1085,10 +1091,8 @@ class Data {
 						'timestart' => $timestart,
 						'timeend' => $timeend,
 					));
-					if(isset($temp[0]) && is_object($temp[0])){
-						foreach ($temp[0] as $key => $value) {
-							array_push($result[$base+11], $value);
-						}
+					foreach ($temp as $key => $value) {
+						array_push($result[$base+11], $value->id);
 					}
 
 					//Files
@@ -1098,10 +1102,8 @@ class Data {
 						'timestart' => $timestart,
 						'timeend' => $timeend,
 					));
-					if(isset($temp[0]) && is_object($temp[0])){
-						foreach ($temp[0] as $key => $value) {
-							array_push($result[$base+21], $value);
-						}
+					foreach ($temp as $key => $value) {
+						array_push($result[$base+21], $value->id);
 					}
 
 					if($activity){

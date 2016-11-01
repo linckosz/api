@@ -239,24 +239,26 @@ class Tasks extends ModelLincko {
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		//It will get all tasks with access 1, and all tasks which are not in the relation table, but the second has to be in conjonction with projects
+		if(isset($list['projects']) && count($list['projects'])>0){
+			$query = $query
+			->whereIn('tasks.parent_id', $list['projects']);
+		} else {
+			$query = $query
+			->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
+		}
 		$query = $query
-		->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-			$query
-			->where(function ($query) use ($list) {
-				if(isset($list['projects']) && count($list['projects'])>0){
-					$query = $query
-					->whereIn('tasks.parent_id', $list['projects']);
-				} else {
-					$query = $query
-					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
-				}
-			});
-		})
 		->whereHas("users", function($query) {
 			$app = self::getApp();
 			$query
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 0);
+		}, '<', 1)
+		//This exclude subtask from tasks deleted
+		->whereHas("tasksup", function($query) {
+			$table_alias = $query->getModel()->getTable();
+			$query
+			->withTrashed()
+			->whereNotNull($table_alias.'.deleted_at');
 		}, '<', 1);
 		if(self::$with_trash_global){
 			$query = $query->withTrashed();

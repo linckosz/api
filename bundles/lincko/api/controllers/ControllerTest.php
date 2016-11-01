@@ -958,8 +958,8 @@ class ControllerTest extends Controller {
 		$tp = $i;
 		*/
 
-		$onboarding = new Onboarding;
-		$onboarding->answered(25085);
+		//$onboarding = new Onboarding;
+		//$onboarding->answered(25085);
 
 		//$item = Projects::find(548);
 		//$tp = PivotUsersRoles::setMyRole($item, 2);
@@ -969,11 +969,12 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::find(598);
 		//$tp->setPerm();
-		
+
+		$tp = Data::getResume();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*
 		//----------------------------------------

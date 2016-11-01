@@ -101,95 +101,88 @@ class Onboarding {
 		}
 	}
 
-	//Initialiaze the first onboarding
-	public function sampleProject(){
-		$app = self::getApp();
-
-		//Create a project
-		$item = new Projects();
-		$item->title = $app->trans->getBRUT('api', 2000, 1); //Onboarding project
-		$item->description = $app->trans->getBRUT('api', 2000, 2); //This project helps you to learn how to use Lincko. Be free to modify it as you want.
-		$item->parent_id = 0; //Shared folder only
-		$item->save();
-		//Set the user as Manager "id:2" (cannot delete items then)
-		PivotUsersRoles::setMyRole($item, 2);
-		//Force to use LinckoBot as creator
-		$item->created_by = 0;
-		$item->updated_by = 0;
-		$item->noticed_by = '';
-		$item->viewed_by = '';
-		$item->brutSave();
-		$item->setPerm();
-		$this->setOnboarding($item, 1);
-		$project = $item;
-		unset($item);
-
-		//initialze task pivot
-		$task_pivot = new \stdClass;
-		$task_pivot->{'users>in_charge'} = new \stdClass;
-		$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
-		$task_pivot->{'users>approver'} = new \stdClass;
-		$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
-
-		//Add it a task
-		$item = new Tasks();
-		$item->title = $app->trans->getBRUT('api', 2000, 3); //A sample task
-		$item->comment = $app->trans->getBRUT('api', 2000, 4); //Do some operations here.
-		$item->parent_id = $project->id;
-		$item->pivots_format($task_pivot, false);
-		$item->save();
-		//Lock the deletion
-		PivotUsersRoles::setMyRole($item, null, 2);
-		//Force to use LinckoBot as creator
-		$item->created_by = 0;
-		$item->updated_by = 0;
-		$item->noticed_by = '';
-		$item->viewed_by = '';
-		$item->brutSave();
-		$item->setPerm();
-		$this->setOnboarding($item, 2);
-		$tasks_late = $item;
-		unset($item);
-
-		//Add it a task
-		$item = new Tasks();
-		$item->title = $app->trans->getBRUT('api', 2000, 5); //A task in late
-		$item->comment = $app->trans->getBRUT('api', 2000, 6); //Hurry up, Boss is coming!
-		$item->parent_id = $project->id;
-		$item->pivots_format($task_pivot, false);
-		$item->duration = 86400; //1 day
-		$start = Carbon::today();
-		$start->second = -2 * $item->duration; //Make it in late
-		$item->start = $start->format('Y-m-d H:i:s');
-		$item->save();
-		//Lock the deletion
-		PivotUsersRoles::setMyRole($item, null, 2);
-		//Force to use LinckoBot as creator
-		$item->created_by = 0;
-		$item->updated_by = 0;
-		$item->noticed_by = '';
-		$item->viewed_by = '';
-		$item->brutSave();
-		$item->setPerm();
-		$this->setOnboarding($item, 3);
-		unset($item);
-
-		//LinckoBot add the first comment on project
-		$this->next(10001);
-
-		$this->saveOnboarding(); //Save if we have any new item to keep track
-
-	}
-
 	//Launch the next onboarding
 	public function next($next){
+		$app = self::getApp();
+
 		if(!is_numeric($next)){
 			return false;
 		}
 
 		$next = ''.$next; //Convert it to string for object key
 
+		//This is the entry where to start onboarding system (Initialiaze the first onboarding)
 		if($next==10001){
+
+			//Create a project
+			$item = new Projects();
+			$item->title = $app->trans->getBRUT('api', 2000, 1); //Onboarding project
+			$item->description = $app->trans->getBRUT('api', 2000, 2); //This project helps you to learn how to use Lincko. Be free to modify it as you want.
+			$item->parent_id = 0; //Shared folder only
+			$item->save();
+			//Set the user as Manager "id:2" (cannot delete items then)
+			PivotUsersRoles::setMyRole($item, 2);
+			//Force to use LinckoBot as creator
+			$item->created_by = 0;
+			$item->updated_by = 0;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			$item->setPerm();
+			$this->setOnboarding($item, 1);
+			$project = $item;
+			unset($item);
+
+			//initialze task pivot
+			$task_pivot = new \stdClass;
+			$task_pivot->{'users>in_charge'} = new \stdClass;
+			$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
+			$task_pivot->{'users>approver'} = new \stdClass;
+			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
+
+			//Add it a task
+			$item = new Tasks();
+			$item->title = $app->trans->getBRUT('api', 2000, 3); //A sample task
+			$item->comment = $app->trans->getBRUT('api', 2000, 4); //Do some operations here.
+			$item->parent_id = $project->id;
+			$item->pivots_format($task_pivot, false);
+			$item->save();
+			//Lock the deletion
+			PivotUsersRoles::setMyRole($item, null, 2);
+			//Force to use LinckoBot as creator
+			$item->created_by = 0;
+			$item->updated_by = 0;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			$item->setPerm();
+			$this->setOnboarding($item, 2);
+			$tasks_late = $item;
+			unset($item);
+
+			//Add it a task
+			$item = new Tasks();
+			$item->title = $app->trans->getBRUT('api', 2000, 5); //A task in late
+			$item->comment = $app->trans->getBRUT('api', 2000, 6); //Hurry up, Boss is coming!
+			$item->parent_id = $project->id;
+			$item->pivots_format($task_pivot, false);
+			$item->duration = 86400; //1 day
+			$start = Carbon::today();
+			$start->second = -2 * $item->duration; //Make it in late
+			$item->start = $start->format('Y-m-d H:i:s');
+			$item->save();
+			//Lock the deletion
+			PivotUsersRoles::setMyRole($item, null, 2);
+			//Force to use LinckoBot as creator
+			$item->created_by = 0;
+			$item->updated_by = 0;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			$item->setPerm();
+			$this->setOnboarding($item, 3);
+			unset($item);
+
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -294,5 +287,8 @@ class Onboarding {
 		}
 
 	}
+
+	//It save something only if there is a change
+	$this->saveOnboarding(); //Save if we have any new item to keep track
 
 }
