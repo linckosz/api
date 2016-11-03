@@ -19,6 +19,7 @@ use \bundles\lincko\api\models\libs\Models;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Onboarding;
+use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\data\Chats;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
@@ -35,6 +36,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
 use Carbon\Carbon;
+use JPush\Client as JPush;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
@@ -964,17 +966,26 @@ class ControllerTest extends Controller {
 		//$item = Projects::find(548);
 		//$tp = PivotUsersRoles::setMyRole($item, 2);
 
-		//$tp = Tasks::find(9921);
-		//$tp->setPerm();
+		$users = array();
+		$item = Tasks::find(6400);
+		$perm = $item->getPerm();
+		if(!empty($perm)){
+			if($list = json_decode($perm)){
+				foreach ($list as $uid => $value) {
+					$users[] = $uid;
+				}
+			}
+		}
+		$tp = $users;
 
-		//$tp = Projects::find(598);
-		//$tp->setPerm();
+		//$tp = $users::find(598);
 
-		$tp = Data::getResume();
+		//$tp = new Notif;
+		//$tp->sample();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*
 		//----------------------------------------

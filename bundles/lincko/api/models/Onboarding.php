@@ -286,9 +286,11 @@ class Onboarding {
 			unset($item);
 		}
 
+		//It save something only if there is a change
+		$this->saveOnboarding(); //Save if we have any new item to keep track
+
 	}
 
-	//It save something only if there is a change
-	$this->saveOnboarding(); //Save if we have any new item to keep track
+	
 
 }
