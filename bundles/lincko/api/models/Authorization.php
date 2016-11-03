@@ -11,6 +11,7 @@ class Authorization extends Model {
 	protected $table = 'authorization';
 
 	protected $primaryKey = 'public_key';
+	public $incrementing = false; //This helps to get primary key as a string instead of an integer
 
 	public $timestamps = true;
 

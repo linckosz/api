@@ -966,6 +966,7 @@ class ControllerTest extends Controller {
 		//$item = Projects::find(548);
 		//$tp = PivotUsersRoles::setMyRole($item, 2);
 
+		/*
 		$users = array();
 		$item = Tasks::find(6400);
 		$perm = $item->getPerm();
@@ -977,6 +978,7 @@ class ControllerTest extends Controller {
 			}
 		}
 		$tp = $users;
+		*/
 
 		//$tp = $users::find(598);
 

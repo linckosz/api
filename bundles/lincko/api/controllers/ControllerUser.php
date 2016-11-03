@@ -463,6 +463,10 @@ class ControllerUser extends Controller {
 	}
 
 	public function resign_get(){
+		return $this->resign_post();
+	}
+
+	public function resign_post(){
 		$app = $this->app;
 		//Do nothing, the middleware CheckAccess will handle automatically the resigning action
 		$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 15, 14)),)); //Your session has been extended.

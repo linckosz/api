@@ -69,7 +69,7 @@ class CheckAccess extends \Slim\Middleware {
 			if($user_log = UsersLog::find($authorization->users_id)){
 				if($authorize = $user_log->authorize($data)){
 					if(isset($authorize['public_key']) && isset($authorize['private_key'])){
-						$this->app->lincko->securityFlash = $authorize;
+						$app->lincko->securityFlash = $authorize;
 						return true;
 					}
 				}
