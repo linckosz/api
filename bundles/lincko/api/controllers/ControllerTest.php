@@ -985,6 +985,10 @@ class ControllerTest extends Controller {
 		//$tp = new Notif;
 		//$tp->sample();
 
+		//$onboarding = new Onboarding;
+		//$onboarding->next(10001);
+		
+
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);

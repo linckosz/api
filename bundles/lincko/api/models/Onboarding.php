@@ -102,8 +102,18 @@ class Onboarding {
 	}
 
 	//Launch the next onboarding
-	public function next($next){
+	public function next($next, $answer=false){
 		$app = self::getApp();
+
+		//the user answered the question
+		if($answer){
+			$item = new Comments();
+			$item->parent_type = 'projects';
+			$item->parent_id = $this->getOnboarding('projects', 1);
+			$item->comment = $answer;
+			$item->save();
+			unset($item);
+		}
 
 		if(!is_numeric($next)){
 			return false;
