@@ -231,7 +231,7 @@ class Onboarding {
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
 			//[image]/lincko/app/images/generic/onboarding/LinckoMeditate.gif[/image]
-			$comment->ob->{'11005'} = new \stdClass;
+			$comment->ob->{'10005'} = new \stdClass;
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
