@@ -19,6 +19,7 @@ class Settings extends ModelLincko {
 	protected $visible = array(
 		'id',
 		'setup',
+		'onboarding',
 	);
 
 	// CUSTOMIZATION //
