@@ -91,11 +91,11 @@ class Onboarding {
 				if($onboarding = json_decode($item->comment)){
 					if(isset($onboarding->ob)){
 						foreach ($onboarding->ob as $key => $value) {
-							foreach ($value => $value2) {
+							foreach ($value as $value2) {
 								$is_answered = false;
 								break;
 							}
-							if($is_answered){
+							if(!$is_answered){
 								break;
 							}
 						}
@@ -330,7 +330,7 @@ class Onboarding {
 			$comment->ob->{'10004'}->{'11005'} = array(
 				'action',
 				10006, //Good work… but it looks like my friend the MonkeyKing doesn’t like you delegating work to him…but don’t worry you can add some coworkers or friends to collaborate with on Lincko. We help teams accomplish great things.
-				'Chat closes and Project opened - shows task lists',
+				'[2] Chat closes and Project opened - shows task lists',
 				2, //[2] Chat closes and Project opened - shows task lists
 				'tasks',
 				$this->getOnboarding('tasks', 1),
