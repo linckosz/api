@@ -987,6 +987,9 @@ class ControllerTest extends Controller {
 
 		//$onboarding = new Onboarding;
 		//$onboarding->next(10001);
+
+		//$tp = new \stdClass;
+		//$tp = empty($tp);
 		
 
 		//Display mysql requests

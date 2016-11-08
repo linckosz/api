@@ -84,6 +84,28 @@ class Onboarding {
 		return false;
 	}
 
+	public function isAnswered($id){
+		$is_answered = true;
+		if(is_numeric($id) && $item = Comments::getModel($id)){
+			if($item->created_by==0){
+				if($onboarding = json_decode($item->comment)){
+					if(isset($onboarding->ob)){
+						foreach ($onboarding->ob as $key => $value) {
+							foreach ($value => $value2) {
+								$is_answered = false;
+								break;
+							}
+							if($is_answered){
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		return $is_answered;
+	}
+
 	public function answered($id){
 		if(is_numeric($id) && $item = Comments::getModel($id)){
 			if($item->created_by==0){
@@ -497,6 +519,8 @@ class Onboarding {
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
+			$comment = new \stdClass;
+			$comment->ob = new \stdClass;
 			//Remember to invite others to use Lincko and have the chance to win a free stuff.
 			$comment->ob->{'10014'} = new \stdClass;
 			$item->comment = json_encode($comment);

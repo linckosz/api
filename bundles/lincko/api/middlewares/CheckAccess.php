@@ -34,8 +34,6 @@ class CheckAccess extends \Slim\Middleware {
 			}
 			$this->data = $post;
 		}
-		//\libs\Watch::php($this->data, '$data', __FILE__, false, false, true);
-		//\libs\Watch::php($_FILES, '$_FILES', __FILE__, false, false, true);
 		return true;
 	}
 

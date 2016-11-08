@@ -29,8 +29,14 @@ class ControllerOnboarding extends Controller {
 
 		$onboarding = new Onboarding;
 
+		//Check if it has been answered previously
+		$is_answered = false;
+		if(isset($data->current)){
+			$is_answered = $onboarding->isAnswered($data->current);
+		}
+
 		//Next is the Translation ID of the next question
-		if(isset($data->next)){
+		if(!$is_answered && isset($data->next)){
 			$answer = false;
 			if(isset($data->answer) && !empty($data->answer)){
 				$answer = $data->answer;
@@ -38,12 +44,12 @@ class ControllerOnboarding extends Controller {
 			$onboarding->next($data->next, $answer);
 		}
 
-		//Current is the COmments_ID of the previous question (not the translation ID)
-		if(isset($data->current)){
+		//Current is the Comments_ID of the previous question (not the translation ID)
+		if(!$is_answered && isset($data->current)){
 			$onboarding->answered($data->current);
 		}
 
-		$msg = array('msg' => $app->trans->getBRUT('api', 8888, 18)); //ou launched the next tutorial.
+		$msg = array('msg' => $app->trans->getBRUT('api', 8888, 18)); //You launched the next tutorial.
 		$data = new Data();
 		$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
 

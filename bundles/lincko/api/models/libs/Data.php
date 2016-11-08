@@ -56,8 +56,7 @@ class Data {
 	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0, $delete_temp_id=true, $schema=null){
 		$app = $this->app;
 		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
-		if($this->setLastVisit() && $lastvisit>0){
-			$lastvisit = time();
+		if($lastvisit = $this->setLastVisit()){
 			$msg = array_merge(
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
