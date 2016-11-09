@@ -102,6 +102,7 @@ class CheckAccess extends \Slim\Middleware {
 				For the very first user, give him manually access, super user, and administrator rigths on client database.
 					INSERT INTO `cli_lincko_data`.`users_x_workspaces` (`users_id`, `workspaces_id`, `access`, `super`) VALUES ('3', '4', '1', '1');
 					INSERT INTO `cli_lincko_data`.`users_x_roles_x` (`id`, `deleted_at`, `users_id`, `parent_type`, `parent_id`, `access`, `roles_id`, `single`) VALUES (NULL, NULL, '3', 'workspaces', '4', '1', '1', NULL);
+					=> make sure that "workspaces" has at least {"3":[2,1]} 
 			*/
 
 			$app = $this->app;
@@ -166,14 +167,25 @@ class CheckAccess extends \Slim\Middleware {
 				$attributes['sftp_host'] = 'hidden';
 				$attributes['sftp_port'] = 'hidden';
 				$attributes['sftp_pwd'] = 'hidden';
-				if(!$client['workspaces']){
-					$client['workspaces'] = (new Workspaces)->forceFill($attributes);
-				} else {
-					$client['workspaces']->forceFill($attributes);
-				}
+				$client['workspaces'] = (new Workspaces)->forceFill($attributes);
 				$client['workspaces']->brutSave();
 			}
 			Workspaces::setSFTP($attributes);
+
+			$perm = $client['workspaces']->getPerm();
+			if(!empty($perm) && $perm = json_decode($perm)){
+				$need_perm = false;
+				$users = $client['workspaces']->users;
+				foreach ($users as $value) {
+					if(!isset($perm->{$value->id})){
+						$need_perm = true;
+						break;
+					}
+				}
+				if($need_perm){
+					$client['workspaces']->setPerm();
+				}
+			}
 
 			//Check Roles
 			$roles_missing = array();
@@ -210,6 +222,7 @@ class CheckAccess extends \Slim\Middleware {
 
 			//Check if the user has a role defined
 			$role = PivotUsersRoles::where('users_id', $app->lincko->data['uid'])->where('parent_type', 'workspaces')->where('parent_id', $home['workspaces']->id)->where('access', 1)->first();
+
 			//Reject access to workspace
 			if(!$role){
 				$app->lincko->data['database_data'] = 'data';

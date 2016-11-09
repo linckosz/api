@@ -70,6 +70,8 @@ class Workspaces extends ModelLincko {
 
 	protected static $server_path = null;
 
+	protected static $workspace = false;
+
 ////////////////////////////////////////////
 
 	//Many(Workspaces) to Many(Users)

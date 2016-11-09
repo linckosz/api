@@ -461,6 +461,14 @@ class Data {
 		$visible = array();
 		if(isset($tree_id['users'])){
 			$visible = $tree_id['users'];
+			//If inside a workspace, automatically add users as visible
+			if($app->lincko->data['workspace_id']>0 && !empty($app->lincko->data['workspace'])){
+				$workspace = Workspaces::getWorkspace();
+				$workspace_users = $workspace->users;
+				foreach ($workspace_users as $value) {
+					$visible[$value->id] = $value->id;
+				}
+			}
 			$users = array_merge($tree_id['users'], $users);
 		}
 
@@ -631,7 +639,7 @@ class Data {
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($models as $id => $model) {
 					if(isset($model->deleted_at) && !is_null($model->deleted_at)){
-							$result_bis->$uid->$table_name->$id = false;
+						$result_bis->$uid->$table_name->$id = false;
 					} else {
 						$result_bis->$uid->$table_name->$id = true;
 					}

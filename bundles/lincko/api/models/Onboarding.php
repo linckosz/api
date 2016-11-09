@@ -152,25 +152,26 @@ class Onboarding {
 			$project_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey Key
 
 			//Create a project
-			$item = new Projects();
-			$item->title = $app->trans->getBRUT('api', 2000, 1); //Welcome to Lincko!
-			$item->description = $app->trans->getBRUT('api', 2000, 2); //This project helps you to learn how to use Lincko. Be free to modify it as you want.
-			$item->parent_id = 0; //Shared folder only
-			$item->pivots_format($project_pivot, false);
-			$item->save();
-			//Set the user as Manager "id:2" (cannot delete items then)
-			PivotUsersRoles::setMyRole($item, 2);
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
-			$item->setPerm();
-			$this->setOnboarding($item, 1);
-			$project = $item;
-			unset($item);
-
+			if(!$this->getOnboarding('projects', 1)){
+				$item = new Projects();
+				$item->title = $app->trans->getBRUT('api', 2000, 1); //Welcome to Lincko!
+				$item->description = $app->trans->getBRUT('api', 2000, 2); //This project helps you to learn how to use Lincko. Be free to modify it as you want.
+				$item->parent_id = 0; //Shared folder only
+				$item->pivots_format($project_pivot, false);
+				$item->save();
+				//Set the user as Manager "id:2" (cannot delete items then)
+				PivotUsersRoles::setMyRole($item, 2);
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 1);
+				unset($item);
+			}
+			
 			//initialze task pivot
 			$task_pivot = new \stdClass;
 			$task_pivot->{'users>in_charge'} = new \stdClass;
@@ -178,45 +179,48 @@ class Onboarding {
 			$task_pivot->{'users>approver'} = new \stdClass;
 			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
 
-			//Add it a task
-			$item = new Tasks();
-			$item->title = $app->trans->getBRUT('api', 2000, 3); //Get started using Lincko
-			$item->comment = $app->trans->getBRUT('api', 2000, 4); //
-			$item->parent_id = $project->id;
-			$item->pivots_format($task_pivot, false);
-			$item->approved = true; //Marked as approved
-			$item->save();
-			//Lock the deletion
-			PivotUsersRoles::setMyRole($item, null, 2);
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
-			$item->setPerm();
-			$this->setOnboarding($item, 2);
-			$tasks_late = $item;
-			unset($item);
+			//Add a task
+			if(!$this->getOnboarding('tasks', 2)){
+				$item = new Tasks();
+				$item->title = $app->trans->getBRUT('api', 2000, 3); //Get started using Lincko
+				$item->comment = $app->trans->getBRUT('api', 2000, 4); //
+				$item->parent_id = $this->getOnboarding('projects', 1)
+				$item->pivots_format($task_pivot, false);
+				$item->approved = true; //Marked as approved
+				$item->save();
+				//Lock the deletion
+				PivotUsersRoles::setMyRole($item, null, 2);
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 2);
+				unset($item);
+			}
 
-			//Add it a task
-			$item = new Tasks();
-			$item->title = $app->trans->getBRUT('api', 2000, 5); //Mark this task complete
-			$item->comment = $app->trans->getBRUT('api', 2000, 6); //
-			$item->parent_id = $project->id;
-			$item->pivots_format($task_pivot, false);
-			$item->save();
-			//Lock the deletion
-			PivotUsersRoles::setMyRole($item, null, 2);
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
-			$item->setPerm();
-			$this->setOnboarding($item, 3);
-			unset($item);
+			//Add a task
+			if(!$this->getOnboarding('tasks', 3)){
+				$item = new Tasks();
+				$item->title = $app->trans->getBRUT('api', 2000, 5); //Mark this task complete
+				$item->comment = $app->trans->getBRUT('api', 2000, 6); //
+				$item->parent_id = $this->getOnboarding('projects', 1)
+				$item->pivots_format($task_pivot, false);
+				$item->save();
+				//Lock the deletion
+				PivotUsersRoles::setMyRole($item, null, 2);
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 3);
+				unset($item);
+			}
 
 			$item = new Comments();
 			$item->parent_type = 'projects';
@@ -455,9 +459,9 @@ class Onboarding {
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
 			//[image]/lincko/app/images/generic/onboarding/NavigationRepeat.gif[/image]
-			$comment->ob->{'10010'} = new \stdClass;
+			$comment->ob->{'10011'} = new \stdClass;
 			//What else ?
-			$comment->ob->{'10010'}->{'11008'} = array(
+			$comment->ob->{'10011'}->{'11008'} = array(
 				'next',
 				10012, //​​​​​​​No project goes according to plan - quickly turn any line item in a note (including the action items in your meeting notes) into a task, or convert any chat message into a task by long pressing or clicking on the chat message. This let’s you turn communication into action.
 			);
@@ -614,7 +618,7 @@ class Onboarding {
 			);
 			//Help me create my own project
 			$comment->ob->{'10017'}->{'11011'} = array(
-				'next',
+				'action',
 				10019, //​​​​​​​
 				'Open project creation submenu, focus on title then create button',
 				5,
