@@ -43,6 +43,12 @@ $app->group('/data', function () use ($app) {
 	->name('data_force_reset'.$app->lincko->method_suffix);
 
 	$app->post(
+		'/force_perm',
+		'\bundles\lincko\api\controllers\ControllerData:force_perm'.$app->lincko->method_suffix
+	)
+	->name('data_force_perm'.$app->lincko->method_suffix);
+
+	$app->post(
 		'/noticed',
 		'\bundles\lincko\api\controllers\ControllerData:noticed'.$app->lincko->method_suffix
 	)

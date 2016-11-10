@@ -1753,6 +1753,7 @@ abstract class ModelLincko extends Model {
 		return $app->lincko->data['uid'];
 	}
 
+	//Per user => array(RCUD, Role)
 	public function getPerm(){
 		return $this->_perm;
 	}
@@ -1766,8 +1767,23 @@ abstract class ModelLincko extends Model {
 		if(  isset(self::$permission_users[$users_id][$this->getTable()][$this->id]) ){
 			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
+		
+		//If _perm is not available we launch setPerm
+		if( isset($this->_perm) && !empty($this->_perm) ){
+			$this->setPerm();
+		}
+		//Check the temp value
+		if( isset($this->_perm) && !empty($this->_perm) && $perm_obj = json_decode($this->_perm)){
+			if( isset($perm_obj->$users_id[0]) ){
+				$perm = intval($perm_obj->$users_id[0]);
+				self::$permission_users[$users_id][$this->getTable()][$this->id] = $perm;
+				return $perm;
+			}
+		}
+
 		//Check in order or speed code priority
 		$perm = 0;
+
 		//Check ownership (faster to check)
 		if(static::$permission_sheet[0] > $perm){
 			$perm = $this->getPermissionOwner($users_id);
@@ -1778,7 +1794,7 @@ abstract class ModelLincko extends Model {
 			if(self::getWorkspaceSuper($users_id)){ //Check if super user (highest priority)
 				$perm = static::$permission_sheet[1];
 			} else {
-				$role_perm = $this->getRole($users_id);
+				$role_perm = $this->getPermissionRole($users_id);
 				if($role_perm > static::$permission_sheet[1]){ //There is a limitation allowed per model that can be different than the database setup.
 					$role_perm = static::$permission_sheet[1];
 				}
@@ -1794,41 +1810,8 @@ abstract class ModelLincko extends Model {
 		return $perm;
 	}
 
-	public static function getWorkspaceSuper($users_id=false){
-		$app = self::getApp();
-		if(!$users_id){
-			$users_id = $app->lincko->data['uid'];
-		}
-		$super = 0;
-		if(isset(static::$permission_super[$users_id])){
-			return static::$permission_super[$users_id];
-		} else if($workspace = Workspaces::find($app->lincko->data['workspace_id'])){ //This insure to return 0 at shared workspace
-			$pivot = $workspace->getUserPivotValue('super', $users_id);
-			if($pivot[0]){
-				$super = (int) $pivot[1];
-			}
-		}
-		static::$permission_super[$users_id] = $super;
-		return $super;
-	}
-
-	public static function getPermissionSheet(){
-		return static::$permission_sheet;
-	}
-
-	public function getPermissionOwner($users_id = false, $perm = 0){
-		$app = self::getApp();
-		if(!$users_id){
-			$users_id = $app->lincko->data['uid'];
-		}
-		if(static::$permission_sheet[0] > $perm && $this->createdBy() == $users_id){
-			$perm = static::$permission_sheet[0];
-		}
-		return $perm;
-	}
-
 	//It checks if the user has access to edit it
-	public function getRole($users_id=false, $suffix=false){
+	public function getPermissionRole($users_id=false, $suffix=false){
 		$app = self::getApp();
 		$this->checkUser();
 		if(!$users_id){
@@ -1837,6 +1820,7 @@ abstract class ModelLincko extends Model {
 		if(isset(self::$permission_users[$users_id][$this->getTable()][$this->id])){
 			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
+
 		$check_single = true; //We only check single of the model itself, not its parents
 		$suffix = $this->getTable();
 		$role = false;
@@ -1882,6 +1866,39 @@ abstract class ModelLincko extends Model {
 
 		self::$permission_users[$users_id][$this->getTable()][$this->id] = $perm;
 
+		return $perm;
+	}
+
+	public static function getWorkspaceSuper($users_id=false){
+		$app = self::getApp();
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
+		$super = 0;
+		if(isset(static::$permission_super[$users_id])){
+			return static::$permission_super[$users_id];
+		} else if($workspace = Workspaces::find($app->lincko->data['workspace_id'])){ //This insure to return 0 at shared workspace
+			$pivot = $workspace->getUserPivotValue('super', $users_id);
+			if($pivot[0]){
+				$super = (int) $pivot[1];
+			}
+		}
+		static::$permission_super[$users_id] = $super;
+		return $super;
+	}
+
+	public static function getPermissionSheet(){
+		return static::$permission_sheet;
+	}
+
+	public function getPermissionOwner($users_id = false, $perm = 0){
+		$app = self::getApp();
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
+		if(static::$permission_sheet[0] > $perm && $this->createdBy() == $users_id){
+			$perm = static::$permission_sheet[0];
+		}
 		return $perm;
 	}
 
@@ -2346,29 +2363,6 @@ abstract class ModelLincko extends Model {
 				$temp->deleted_at = $this->deleted_at->format('Y-m-d H:i:s');
 			}
 		}
-
-		/*
-		if($detail){ //It's used for word search on Front side (+/- prefix)
-			$temp = json_decode(parent::toJson($options));
-			foreach ($temp as $key => $value) {
-				if(isset(static::$prefix_fields[$key])){
-					$temp->{static::$prefix_fields[$key]} = $value;
-					unset($temp->$key);
-				} else {
-					$temp->$key = $value;
-				}
-			}
-			if(isset($this->deleted_at) && !is_null($this->deleted_at) && $this->deleted_at instanceof Carbon){
-				$temp->deleted_at = $this->deleted_at->format('Y-m-d H:i:s');
-			}
-			$temp = json_encode($temp, $options);
-		} else {
-			$temp = parent::toJson($options);
-		}
-		//Convert DateTime to Timestamp for JS use, it avoid location hour issue. NULL will stay NULL thanks to isset()
-		$temp = json_decode($temp);
-		*/
-
 
 		foreach(self::$class_timestamp as $value) {
 			if(isset($temp->$value)){  $temp->$value = (int)(new \DateTime($temp->$value))->getTimestamp(); }

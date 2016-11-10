@@ -349,6 +349,15 @@ class Users extends ModelLincko {
 		return 0;
 	}
 
+	public static function amIadmin(){
+		$user = self::getUser();
+		if($user->admin){
+			return true;
+		}
+		self::errorMsg('You are not an Lincko developper');
+		return false;
+	}
+
 ////////////////////////////////////////////
 
 	public function scopetheUser($query){

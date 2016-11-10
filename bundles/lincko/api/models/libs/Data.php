@@ -113,6 +113,37 @@ class Data {
 		}
 	}
 
+	//Rebuild all _perm (can be a very long operation)
+	public static function setForcePerm(){
+		$app = \Slim\Slim::getInstance();
+		$time_record = $app->lincko->time_record;
+		$app->lincko->time_record = true;
+		//The permission purge
+		if(function_exists('proc_nice')){proc_nice(30);}
+		set_time_limit(24*3600); //Set to 1 day workload at the most
+		//Reinitialize all permissions
+		$models = Data::getModels();
+		$count = array();
+		\time_checkpoint('start permission');
+		//First reset all root objects (help to save time becaue if reset dependencies at the same time)
+		foreach ($models as $table => $class) {
+			$count[$table] = 0;
+			$all = $class::withTrashed()->get();
+			foreach ($all as $model) {
+				$model->setParentAttributes();
+				if(!$model->parent_id){ //To run this, make sure that all _perm are empty first
+					$model->setPerm();
+					$count[$table]++;
+				}
+			}
+			\time_checkpoint($table.' => '.$count[$table]);
+		}
+		\time_checkpoint('end');
+		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
+		if(function_exists('proc_nice')){proc_nice(0);}
+		$app->lincko->time_record = $time_record;
+	}
+
 	protected function setPartial($force_partial=false){
 		$app = $this->app;
 		if($force_partial){

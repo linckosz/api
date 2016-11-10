@@ -64,6 +64,19 @@ class Onboarding {
 		$onboarding->$type->$rank = $id;
 	}
 
+	//Settings helps to keep track of onboarding elements
+	protected function runOnboarding($sequence, $run=true){
+		$this->loadOnboarding();
+		$onboarding = self::$onboarding;
+
+		$sequence = intval($sequence);
+		$run = (bool) $run;
+		if(!isset($onboarding->sequence)){
+			$onboarding->sequence = new \stdClass;
+		}
+		$onboarding->sequence->$sequence = $run;
+	}
+
 	protected function saveOnboarding(){
 		$this->loadOnboarding();
 		$settings = self::$settings;
@@ -248,6 +261,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10002){
@@ -289,6 +305,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10003){
@@ -320,6 +339,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10004){
@@ -350,6 +372,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10006){
@@ -381,6 +406,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10007){
@@ -474,6 +502,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10012){
@@ -515,7 +546,11 @@ class Onboarding {
 			$item->noticed_by = '';
 			$item->viewed_by = '';
 			$item->brutSave();
+			$this->setOnboarding($item, 4);
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10014){
@@ -549,6 +584,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10015){
@@ -578,6 +616,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10016){
@@ -600,6 +641,9 @@ class Onboarding {
 			unset($item);
 
 			$this->next(10017); //Okay, we’re almost done - everyone has their own personal space - this is a special project that only you have access to. Everything you store will not be shared. We have also given you access to a sample project, so you can see how one team sets their tasks and goals in the project, and uses Notes, Chat groups and Files.
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10017){
@@ -632,6 +676,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10018){
@@ -654,6 +701,9 @@ class Onboarding {
 			unset($item);
 
 			$this->next(10019);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10019){
@@ -674,6 +724,9 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Stop the sequence
+			$this->runOnboarding(1, false);
 		}
 
 		//It save something only if there is a change

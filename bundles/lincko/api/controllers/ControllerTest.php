@@ -990,6 +990,14 @@ class ControllerTest extends Controller {
 
 		//$tp = new \stdClass;
 		//$tp = empty($tp);
+
+		$tp = Chats::find(771);
+		//$tp = Tasks::getRoleAllow();
+		//$tp = $tp->getRole($app->lincko->data['uid']);
+		//$tp = $tp->getRolePivotValue($app->lincko->data['uid']);
+		//$tp->setParentAttributes();
+		$tp->setPerm();
+		
 		
 
 		//Display mysql requests

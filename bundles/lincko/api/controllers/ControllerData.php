@@ -88,7 +88,9 @@ class ControllerData extends Controller {
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 12); //The synchronization will be done for all contacts.
 
-		Users::getUser()->setForceSchema();
+		if(Users::amIadmin()){
+			Users::getUser()->setForceSchema();
+		}
 
 		$app->render(200, array('msg' => array('msg' => $msg,)));
 		return true;
@@ -98,7 +100,23 @@ class ControllerData extends Controller {
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 14); //The database reset will be done for all contacts.
 
-		Users::getUser()->setForceReset();
+		if(Users::amIadmin()){
+			Users::getUser()->setForceReset();
+		}
+
+		$app->render(200, array('msg' => array('msg' => $msg,)));
+		return true;
+	}
+
+	public function force_perm_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 14); //The database reset will be done for all contacts.
+
+		if(Users::amIadmin()){
+			//Rebuild all _perm (can be a very long operation)
+			Data::setForcePerm();
+			Users::getUser()->setForceReset();
+		}
 
 		$app->render(200, array('msg' => array('msg' => $msg,)));
 		return true;
