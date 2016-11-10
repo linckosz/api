@@ -184,7 +184,7 @@ class Onboarding {
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 3); //Get started using Lincko
 				$item->comment = $app->trans->getBRUT('api', 2000, 4); //
-				$item->parent_id = $this->getOnboarding('projects', 1)
+				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
 				$item->approved = true; //Marked as approved
 				$item->save();
@@ -206,7 +206,7 @@ class Onboarding {
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 5); //Mark this task complete
 				$item->comment = $app->trans->getBRUT('api', 2000, 6); //
-				$item->parent_id = $this->getOnboarding('projects', 1)
+				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
 				$item->save();
 				//Lock the deletion
