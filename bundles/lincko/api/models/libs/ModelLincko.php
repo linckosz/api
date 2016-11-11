@@ -702,6 +702,10 @@ abstract class ModelLincko extends Model {
 				if(isset($all_id['users'] )){
 					foreach ($all_id['users'] as $users_id) {
 						$tree_owner[$table_name][$users_id][$model->id] = $model->getPermissionOwner($users_id);
+						//setup viewer role for root object by default
+						if(!isset($tree_roles_id[$table_name][$users_id][$model->id]) && !$model->_parent[0]){
+							$tree_roles_id[$table_name][$users_id][$id] = 0;
+						}
 					}
 				}
 			}
@@ -837,7 +841,7 @@ abstract class ModelLincko extends Model {
 						if(isset($list_models[$table_name])){
 							$class = $list_models[$table_name];
 							$allow_role = $class::getRoleAllow()[1];
-							if($role > 0){
+							if($role >= 0){
 								$max_perm = $class::getPermissionSheet()[1];
 							}
 						}
@@ -861,14 +865,14 @@ abstract class ModelLincko extends Model {
 							}
 							$role_perm_elem = $role_perm;
 							$role_tp = $role;
-							if($allow_role && isset($tree_roles_id[$table_name][$users_id][$id])){
+							if(isset($tree_roles_id[$table_name][$users_id][$id])){
 								$role_tp = $tree_roles_id[$table_name][$users_id][$id];
 							} else {
 								$tree_roles_id[$table_name][$users_id][$id] = $role_tp;
 							}
 							if($role_tp != $role){
 								$max_perm_elem = 0; //[R]
-								if($role_tp > 0 && $class){
+								if($role_tp >= 0 && $class){
 									$max_perm_elem = $class::getPermissionSheet()[1];
 								}
 								if($max_perm_elem > 0 && isset($roles[$role_tp])){
