@@ -20,6 +20,7 @@ class Chats extends ModelLincko {
 		'id',
 		'temp_id',
 		'created_at',
+		'created_by',
 		'updated_at',
 		'deleted_at',
 		'title',

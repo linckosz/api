@@ -80,7 +80,7 @@ class Onboarding {
 	protected function saveOnboarding(){
 		$this->loadOnboarding();
 		$settings = self::$settings;
-
+		
 		//save Onboarding settings
 		if(is_object(self::$onboarding)){
 			$settings->onboarding = json_encode(self::$onboarding);
@@ -140,6 +140,8 @@ class Onboarding {
 	public function next($next, $answer=false){
 		$app = self::getApp();
 
+		$force_new = false; //Turn manually at true to create a new onboarding project
+
 		//the user answered the question
 		if($answer){
 			$item = new Comments();
@@ -165,7 +167,7 @@ class Onboarding {
 			$project_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey Key
 
 			//Create a project
-			if(!$this->getOnboarding('projects', 1)){
+			if($force_new || !$this->getOnboarding('projects', 1)){
 				$item = new Projects();
 				$item->title = $app->trans->getBRUT('api', 2000, 1); //Welcome to Lincko!
 				$item->description = $app->trans->getBRUT('api', 2000, 2); //This project helps you to learn how to use Lincko. Be free to modify it as you want.
@@ -193,7 +195,7 @@ class Onboarding {
 			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
 
 			//Add a task
-			if(!$this->getOnboarding('tasks', 2)){
+			if($force_new || !$this->getOnboarding('tasks', 2)){
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 3); //Get started using Lincko
 				$item->comment = $app->trans->getBRUT('api', 2000, 4); //
@@ -215,7 +217,7 @@ class Onboarding {
 			}
 
 			//Add a task
-			if(!$this->getOnboarding('tasks', 3)){
+			if($force_new || !$this->getOnboarding('tasks', 3)){
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 5); //Mark this task complete
 				$item->comment = $app->trans->getBRUT('api', 2000, 6); //
@@ -546,7 +548,6 @@ class Onboarding {
 			$item->noticed_by = '';
 			$item->viewed_by = '';
 			$item->brutSave();
-			$this->setOnboarding($item, 4);
 			unset($item);
 
 			//Insure the sequence is running
@@ -583,6 +584,7 @@ class Onboarding {
 			$item->noticed_by = '';
 			$item->viewed_by = '';
 			$item->brutSave();
+			$this->setOnboarding($item, 4);
 			unset($item);
 
 			//Insure the sequence is running
@@ -641,9 +643,6 @@ class Onboarding {
 			unset($item);
 
 			$this->next(10017); //Okay, we’re almost done - everyone has their own personal space - this is a special project that only you have access to. Everything you store will not be shared. We have also given you access to a sample project, so you can see how one team sets their tasks and goals in the project, and uses Notes, Chat groups and Files.
-
-			//Insure the sequence is running
-			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10017){
@@ -701,9 +700,6 @@ class Onboarding {
 			unset($item);
 
 			$this->next(10019);
-
-			//Insure the sequence is running
-			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10019){
@@ -713,7 +709,7 @@ class Onboarding {
 			$item->parent_id = $this->getOnboarding('projects', 1);
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
-			//You're on you're way to being a Lincko master now! I'll be back to send you regular updates on your progess, but for now, thanks for trying out Lincko. 
+			//You're on your way to being a Lincko master now! I'll be back to send you regular updates on your progess, but for now, thanks for trying out Lincko. 
 			$comment->ob->{'10019'} = new \stdClass;
 			$item->comment = json_encode($comment);
 			$item->save();
