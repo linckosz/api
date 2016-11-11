@@ -394,7 +394,7 @@ class CheckAccess extends \Slim\Middleware {
 		}
 		$authorization = $this->authorization;
 		if($authorization){
-			$checksum = md5($authorization->private_key.json_encode($data->data));
+			$checksum = md5($authorization->private_key.json_encode($data->data, JSON_UNESCAPED_UNICODE));
 			return $checksum === $data->checksum;
 		}
 		return false;

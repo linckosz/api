@@ -991,14 +991,22 @@ class ControllerTest extends Controller {
 		//$tp = new \stdClass;
 		//$tp = empty($tp);
 
-		$tp = Chats::find(771);
+		//$tp = Chats::find(771);
+		//$tp = Tasks::find(10828);
 		//$tp = Tasks::getRoleAllow();
 		//$tp = $tp->getRole($app->lincko->data['uid']);
 		//$tp = $tp->getRolePivotValue($app->lincko->data['uid']);
 		//$tp->setParentAttributes();
-		$tp->setPerm();
+		//$tp->setPerm();
+
+		$tp = '   ZH   个人 call\ned Léonardo &       Брюс l\'a "ù« <script>alert(\'ok\');</script><?php
+ZH-CHS
+';
 		
+
+		\libs\Watch::php( json_encode($tp), '$tp', __FILE__, false, false, true);
 		
+		$tp = json_encode($tp, JSON_UNESCAPED_UNICODE);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
