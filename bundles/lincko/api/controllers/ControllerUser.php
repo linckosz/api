@@ -203,11 +203,15 @@ class ControllerUser extends Controller {
 				}
 			}
 
+			/*
+			Those lines were used for closed beta
 			if(!$invitation){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
 			} else if($invitation_used){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
-			} else if(Users::where('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
+			}
+			*/
+			if(Users::where('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
 				//If the field username is missing, we keep the standard error message.
 			} else if(Users::where('email', '=', $email)->first()){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 10); //Email address already in use.

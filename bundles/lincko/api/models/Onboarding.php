@@ -100,17 +100,15 @@ class Onboarding {
 	public function isAnswered($id){
 		$is_answered = true;
 		if(is_numeric($id) && $item = Comments::getModel($id)){
-			if($item->created_by==0){
-				if($onboarding = json_decode($item->comment)){
-					if(isset($onboarding->ob)){
-						foreach ($onboarding->ob as $key => $value) {
-							foreach ($value as $value2) {
-								$is_answered = false;
-								break;
-							}
-							if(!$is_answered){
-								break;
-							}
+			if($onboarding = json_decode($item->comment)){
+				if(isset($onboarding->ob)){
+					foreach ($onboarding->ob as $key => $value) {
+						foreach ($value as $value2) {
+							$is_answered = false;
+							break;
+						}
+						if(!$is_answered){
+							break;
 						}
 					}
 				}
@@ -120,17 +118,15 @@ class Onboarding {
 	}
 
 	public function answered($id){
-		if(is_numeric($id) && $item = Comments::getModel($id)){
-			if($item->created_by==0){
-				if($onboarding = json_decode($item->comment)){
-					if(isset($onboarding->ob)){
-						foreach ($onboarding->ob as $key => $value) {
-							$onboarding->ob->$key = new \stdClass; //Clear all answer to only display the question
-						}
-						$item->comment = json_encode($onboarding);
-						$item->brutSave();
-						$item->touchUpdateAt();
+		if(is_numeric($id) && $id>0 && $item = Comments::getModel($id)){
+			if($onboarding = json_decode($item->comment)){
+				if(isset($onboarding->ob)){
+					foreach ($onboarding->ob as $key => $value) {
+						$onboarding->ob->$key = new \stdClass; //Clear all answer to only display the question
 					}
+					$item->comment = json_encode($onboarding);
+					$item->brutSave();
+					$item->touchUpdateAt();
 				}
 			}
 		}
@@ -186,56 +182,6 @@ class Onboarding {
 				$this->setOnboarding($item, 1);
 				unset($item);
 			}
-			
-			//initialze task pivot
-			$task_pivot = new \stdClass;
-			$task_pivot->{'users>in_charge'} = new \stdClass;
-			$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
-			$task_pivot->{'users>approver'} = new \stdClass;
-			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
-
-			//Add a task
-			if($force_new || !$this->getOnboarding('tasks', 2)){
-				$item = new Tasks();
-				$item->title = $app->trans->getBRUT('api', 2000, 3); //Get started using Lincko
-				$item->comment = $app->trans->getBRUT('api', 2000, 4); //
-				$item->parent_id = $this->getOnboarding('projects', 1);
-				$item->pivots_format($task_pivot, false);
-				$item->approved = true; //Marked as approved
-				$item->save();
-				//Lock the deletion
-				PivotUsersRoles::setMyRole($item, null, 2);
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
-				$item->setPerm();
-				$this->setOnboarding($item, 2);
-				unset($item);
-			}
-
-			//Add a task
-			if($force_new || !$this->getOnboarding('tasks', 3)){
-				$item = new Tasks();
-				$item->title = $app->trans->getBRUT('api', 2000, 5); //Mark this task complete
-				$item->comment = $app->trans->getBRUT('api', 2000, 6); //
-				$item->parent_id = $this->getOnboarding('projects', 1);
-				$item->pivots_format($task_pivot, false);
-				$item->save();
-				//Lock the deletion
-				PivotUsersRoles::setMyRole($item, null, 2);
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
-				$item->setPerm();
-				$this->setOnboarding($item, 3);
-				unset($item);
-			}
 
 			$item = new Comments();
 			$item->parent_type = 'projects';
@@ -247,7 +193,7 @@ class Onboarding {
 			//Wait a second, who are you?
 			$comment->ob->{'10001'}->{'11001'} = array(
 				'next',
-				10002, //I'm a humble master in the way of projects and I'm here to be your guide. I'll get you started using Lincko, and I’ll give you updates on the activity in your projects as you complete tasks, add files and notes, and generally accomplish great things!
+				10005, //I'm a humble master in the way of projects and I'm here to be your guide. I'll get you started using Lincko, and I’ll give you updates on the activity in your projects as you complete tasks, add files and notes, and generally accomplish great things!
 			);
 			//Let’s accomplish some stuff.
 			$comment->ob->{'10001'}->{'11002'} = array(
@@ -269,23 +215,6 @@ class Onboarding {
 		}
 
 		else if($next==10002){
-			$item = new Comments();
-			$item->parent_type = 'projects';
-			$item->parent_id = $this->getOnboarding('projects', 1);
-			$comment = new \stdClass;
-			$comment->ob = new \stdClass;
-			//[image]/lincko/app/images/generic/onboarding/LinckoMeditate.gif[/image]
-			$comment->ob->{'10005'} = new \stdClass;
-			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
-			unset($item);
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -347,6 +276,122 @@ class Onboarding {
 		}
 
 		else if($next==10004){
+
+			//initialze task pivot
+			$task_pivot = new \stdClass;
+			$task_pivot->{'users>in_charge'} = new \stdClass;
+			$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
+			$task_pivot->{'users>approver'} = new \stdClass;
+			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
+
+			//Add a task
+			if($force_new || !$this->getOnboarding('tasks', 1)){
+				$item = new Tasks();
+				$item->title = $app->trans->getBRUT('api', 2000, 3); //Get started using Lincko
+				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->pivots_format($task_pivot, false);
+				$item->approved = true; //Marked as approved
+				$item->save();
+				//Lock the deletion
+				PivotUsersRoles::setMyRole($item, null, 2);
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 1);
+				unset($item);
+			}
+
+			//Add a task
+			if($force_new || !$this->getOnboarding('tasks', 2)){
+				$item = new Tasks();
+				$item->title = $app->trans->getBRUT('api', 2000, 4); //Mark this task complete
+				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->pivots_format($task_pivot, false);
+				$item->save();
+				//Lock the deletion
+				PivotUsersRoles::setMyRole($item, null, 2);
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 2);
+				unset($item);
+			} else { //Reset status
+				$item = Tasks::getModel($this->getOnboarding('tasks', 2));
+				$item->approved = false; //Marked as approved
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->touchUpdateAt();
+			}
+
+			//Add a task
+			if($force_new || !$this->getOnboarding('tasks', 3)){
+				$item = new Tasks();
+				$item->title = $app->trans->getBRUT('api', 2000, 5); //Open this task or the task above by clicking or tapping on it. Each task can be assigned an owner, a due date, have subtasks, comments from the team, and link to files or notes.
+				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->save();
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 3);
+				unset($item);
+			}
+
+			//Add a task
+			if($force_new || !$this->getOnboarding('tasks', 4)){
+				$item = new Tasks();
+				$item->title = $app->trans->getBRUT('api', 2000, 6); //Create a new task and assign it to the Monkey King by typing a task below. Use @ to assign to the Monkey King. Use ++ to assign today as the due date.
+				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->save();
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 4);
+				unset($item);
+			} else { //Reset status
+				$item = Tasks::getModel($this->getOnboarding('tasks', 2));
+				$item->approved = false; //Marked as approved
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->touchUpdateAt();
+			}
+
+			//Add a task
+			if($force_new || !$this->getOnboarding('tasks', 5)){
+				$item = new Tasks();
+				$item->title = $app->trans->getBRUT('api', 2000, 7); //Once all the above has been completed - the LinckoBot will reapear and take you the rest of the way
+				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->save();
+				//Force to use LinckoBot as creator
+				$item->created_by = 0;
+				$item->updated_by = 0;
+				$item->noticed_by = '';
+				$item->viewed_by = '';
+				$item->brutSave();
+				$item->setPerm();
+				$this->setOnboarding($item, 5);
+				unset($item);
+			}
+
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -357,13 +402,45 @@ class Onboarding {
 			//Take me there, LinckoBot, I'm ready!
 			$comment->ob->{'10004'}->{'11005'} = array(
 				'action',
-				10006, //Good work… but it looks like my friend the MonkeyKing doesn’t like you delegating work to him…but don’t worry you can add some coworkers or friends to collaborate with on Lincko. We help teams accomplish great things.
+				10020, //Oh, no no no!
 				'[2] Chat closes and Project opened - shows task lists',
 				2, //[2] Chat closes and Project opened - shows task lists
 				'tasks',
 				$this->getOnboarding('tasks', 1),
 				'tasks',
 				$this->getOnboarding('tasks', 2),
+				'tasks',
+				$this->getOnboarding('tasks', 3),
+				'tasks',
+				$this->getOnboarding('tasks', 4),
+				'tasks',
+				$this->getOnboarding('tasks', 5),
+			);
+			$item->comment = json_encode($comment);
+			$item->save();
+			//Force to use LinckoBot as creator
+			$item->created_by = 0;
+			$item->updated_by = 0;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10005){
+			$item = new Comments();
+			$item->parent_type = 'projects';
+			$item->parent_id = $this->getOnboarding('projects', 1);
+			$comment = new \stdClass;
+			$comment->ob = new \stdClass;
+			//[image]/lincko/app/images/generic/onboarding/LinckoMeditate.gif[/image]
+			$comment->ob->{'10005'} = new \stdClass;
+			$comment->ob->{'10005'}->{'0'} = array(
+				'now',
+				10002, //I'm a humble master in the way of projects and I'm here to be your guide. I'll get you started using Lincko, and I’ll give you updates on the activity in your projects as you complete tasks, add files and notes, and generally accomplish great things!
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -422,6 +499,10 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//Okay, you can add contacts at anytime by clicking on this button: [image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
 			$comment->ob->{'10007'} = new \stdClass;
+			$comment->ob->{'10007'}->{'0'} = array(
+				'now',
+				10008, //Each project has Tasks, Notes, Chats, and Files - use tasks to set the goals of your project, use notes to store important information for the team - like meeting notes, processes, policies, designs and requirements, or other longer information.
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -431,6 +512,12 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10008){
 
 			$item = new Comments();
 			$item->parent_type = 'projects';
@@ -439,6 +526,10 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//Each project has Tasks, Notes, Chats, and Files - use tasks to set the goals of your project, use notes to store important information for the team - like meeting notes, processes, policies, designs and requirements, or other longer information.
 			$comment->ob->{'10008'} = new \stdClass;
+			$comment->ob->{'10008'}->{'0'} = array(
+				'now',
+				10009, //Use Chats for quick communication, and use Files for all your important documents and images. Every project has these four areas to keep you organised.
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -448,6 +539,12 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10009){
 
 			$item = new Comments();
 			$item->parent_type = 'projects';
@@ -456,6 +553,10 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//Use Chats for quick communication, and use Files for all your important documents and images. Every project has these four areas to keep you organised.
 			$comment->ob->{'10009'} = new \stdClass;
+			$comment->ob->{'10009'}->{'0'} = array(
+				'now',
+				10010, //Anytime you upload a file to your project Chat, or attach it to a task or note - it will automatically be stored in the Files section of your project. You can link existing notes and files to tasks as well.
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -466,13 +567,23 @@ class Onboarding {
 			$item->brutSave();
 			unset($item);
 
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10010){
+
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
-			//Anytime you upload a file to your project Chat, or attach it to a task or note - it will automatically be stored in the Files section of your project. You can link existing notes and files to tasks as well.  
+			//Anytime you upload a file to your project Chat, or attach it to a task or note - it will automatically be stored in the Files section of your project. You can link existing notes and files to tasks as well.
 			$comment->ob->{'10010'} = new \stdClass;
+			$comment->ob->{'10010'}->{'0'} = array(
+				'now',
+				10011, //​​​​​​​[image]/lincko/app/images/generic/onboarding/NavigationRepeat.gif[/image]
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -482,6 +593,12 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10011){
 
 			$item = new Comments();
 			$item->parent_type = 'projects';
@@ -516,8 +633,12 @@ class Onboarding {
 			$item->parent_id = $this->getOnboarding('projects', 1);
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
-			//No project goes according to plan - quickly turn any line item in a note (including the action items in your meeting notes) into a task, or convert any chat message into a task by long pressing or clicking on the chat message. This let’s you turn communication into action.
+			//Let's try it. I'm going to send you a message, click or long press on the message to turn it into a task.
 			$comment->ob->{'10012'} = new \stdClass;
+			$comment->ob->{'10012'}->{'0'} = array(
+				'now',
+				10013, //​​​​​​​[image]/lincko/app/images/generic/onboarding/NavigationRepeat.gif[/image]
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -527,6 +648,12 @@ class Onboarding {
 			$item->viewed_by = '';
 			$item->brutSave();
 			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10013){
 
 			$item = new Comments();
 			$item->parent_type = 'projects';
@@ -569,7 +696,7 @@ class Onboarding {
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
 			$comment->ob->{'10014'} = new \stdClass;
-			$comment->ob->{'10014'}->{'11009'} = array(
+			$comment->ob->{'10014'}->{'0'} = array(
 				'now',
 				10015, //As you progress on your project - I will give a daily and weekly  update about the progress in your project activity feed. This is a special Chat group automatically created when you create a project. You can add other discussion groups in the project with different themes.
 				'[4] once the user clicks - and the task is created - chat continues',
@@ -584,7 +711,7 @@ class Onboarding {
 			$item->noticed_by = '';
 			$item->viewed_by = '';
 			$item->brutSave();
-			$this->setOnboarding($item, 4);
+			$this->setOnboarding($item, 1);
 			unset($item);
 
 			//Insure the sequence is running
@@ -723,6 +850,32 @@ class Onboarding {
 
 			//Stop the sequence
 			$this->runOnboarding(1, false);
+		}
+
+		else if($next==10020){
+			$item = new Comments();
+			$item->parent_type = 'projects';
+			$item->parent_id = $this->getOnboarding('projects', 1);
+			$comment = new \stdClass;
+			$comment->ob = new \stdClass;
+			//Oh, no no no !
+			$comment->ob->{'10020'} = new \stdClass;
+			$comment->ob->{'10020'}->{'0'} = array(
+				'now',
+				10006, //Good work… but it looks like my friend the MonkeyKing doesn’t like you delegating work to him…but don’t worry you can add some coworkers or friends to collaborate with on Lincko. We help teams accomplish great things.
+			);
+			$item->comment = json_encode($comment);
+			$item->save();
+			//Force to use Monkey King as creator
+			$item->created_by = 1;
+			$item->updated_by = 1;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		//It save something only if there is a change

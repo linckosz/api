@@ -268,7 +268,10 @@ class CheckAccess extends \Slim\Middleware {
 
 	protected function checkFields(){
 		$data = $this->data;
-		return isset($data->api_key) && isset($data->public_key) && isset($data->checksum) && isset($data->data) && isset($data->fingerprint) && isset($data->workspace);
+		if(!isset($data->checksum)){
+			$this->nochecksum = true;
+		}
+		return isset($data->api_key) && isset($data->public_key) && isset($data->data) && isset($data->fingerprint) && isset($data->workspace);
 	}
 
 	protected function checkAPI(){
