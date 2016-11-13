@@ -1436,6 +1436,7 @@ abstract class ModelLincko extends Model {
 
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
+	//NOTE: It keeps track of deleted items
 	public static function getDependencies(array $list_id, array $classes){
 		$dependencies = array();
 		foreach ($classes as $table => $class) {
@@ -1452,7 +1453,9 @@ abstract class ModelLincko extends Model {
 						if(is_null($data)){
 							$data = $model::whereIn($model::getTableStatic().'.id', $list_id[$table]);
 						}
-						$data = $data->with($dependency);
+						$data = $data->with(array($dependency => function($query) {
+							$query->withTrashed();
+						}));
 					}
 				}
 				if(!is_null($data)){
@@ -1463,7 +1466,7 @@ abstract class ModelLincko extends Model {
 									$dependency = 'Dep'.$dependency;
 								}
 								$query->orWhereHas($dependency, function ($query){
-									$query->where('access', 1);
+									$query->withTrashed()->where('access', 1);
 								});
 							}
 						}
@@ -1471,7 +1474,7 @@ abstract class ModelLincko extends Model {
 				}
 				if(!is_null($data)){
 					try { //In case access in not available for the model
-						$data = $data->get(['id']);
+						$data = $data->withTrashed()->get(['id']);
 						foreach ($data as $dep) {
 							foreach ($dependencies_visible as $dependency => $dependencies_fields) {
 								$depatt = $dependency;

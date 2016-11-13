@@ -1001,18 +1001,14 @@ class ControllerTest extends Controller {
 
 		//$tp = Chats::getRoleAllow();
 
-		$tp = new \stdClass;
-		$tp->a = 'abc';
-		$tp->b = 'a<b>c</b>d';
-		$tp->c = 'Léo & Luka';
-		$tp->d = '你好';
 
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
-		$tp = serialize($tp);
+		//$tp = Tasks::getDependencies(['tasks'=>[11443, 11449]], array(Tasks::getClass()));
+
+		$tp = Tasks::find(11443)->getDependency();
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*
