@@ -79,9 +79,11 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$form = $this->data->data;
 		}
 		//Convert NULL to empty string to help isset returning true
-		foreach ($form as $key => $value) {
-			if(!is_numeric($value) && empty($value)){ //Exclude 0 to become an empty string
-				$form->$key = '';
+		if(is_array($form) || is_object($form)){
+			foreach ($form as $key => $value) {
+				if(!is_numeric($value) && empty($value)){ //Exclude 0 to become an empty string
+					$form->$key = '';
+				}
 			}
 		}
 		if(isset($form->id) && is_numeric($form->id)){

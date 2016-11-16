@@ -1434,6 +1434,27 @@ abstract class ModelLincko extends Model {
 		return self::getDependencies($list_id, $classes);
 	}
 
+	/*
+	public function moveProject(){
+		$items = new \stdClass;
+		$remain = new \stdClass;
+		$current = $this;
+		$loop = true;
+		while($loop){
+			$loop = false;
+			$dep = $current->getDependency();
+			if(isset($dep[$current->getTable()][$current->id])){
+				foreach ($dep[$current->getTable()][$current->id] as $table => $ids) {
+					$table = $current::getClass(str_replace('_', '', $table));
+					foreach ($ids as $id => $value) {
+						//$remain->{$table.'_'.$id} = true;
+					}
+				}
+			}
+		}
+	}
+	*/
+
 	//For any Many to Many that we want to make dependencies visible
 	//Add an underscore "_"  as prefix to avoid any conflict ($this->_tasks vs $this->tasks)
 	//NOTE: It keeps track of deleted items
@@ -2161,9 +2182,11 @@ abstract class ModelLincko extends Model {
 		if(!$this->force_save && count($dirty)<=0){
 			return true;
 		}
+		$change_parent = false;
 		if(isset($dirty['parent_type']) || isset($dirty['parent_id'])){
 			if(isset($this->id)){
 				$this->change_schema = true;
+				$change_parent = true;
 			}
 			$this->change_permission = true;
 		}
@@ -2197,6 +2220,9 @@ abstract class ModelLincko extends Model {
 		if($parent){
 			$users_tables = $parent->touchUpdateAt($users_tables, false);
 		}
+
+		//In case it change the parent (project), we move all dependencies (only if admin of the project)
+
 
 		if($this->change_schema){
 			$this->setForceSchema();

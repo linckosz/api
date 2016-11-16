@@ -1005,10 +1005,10 @@ class ControllerTest extends Controller {
 
 		//$tp = Tasks::getDependencies(['tasks'=>[11443, 11449]], array(Tasks::getClass()));
 
-		$tp = Tasks::find(11443)->getDependency();
+		$tp = Tasks::find(11498)->getDependency();
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*
