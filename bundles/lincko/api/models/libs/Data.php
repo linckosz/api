@@ -470,8 +470,8 @@ class Data {
 			}
 		}
 
-		//toto => we can try to store in database (Updates) list of IDs with timetamp
-		//toto => MEDIUM CPU hunger
+		//---OK---
+		//MEDIUM CPU hunger
 		$tp = $this::getTrees();
 		$tree_scan = $tp[0];
 		$tree_desc = $tp[1];

@@ -1363,14 +1363,16 @@ abstract class ModelLincko extends Model {
 	}
 
 	//Only check the structure of the database
-	public function setForceSchema($all=false){
+	public function setForceSchema($all=false, $list=false){
 		$timestamp = time();
 		if($all){
 			Users::getQuery()->update(['check_schema' => $timestamp]);
 			return true;
 		}
 		if(isset($this->_perm)){
-			$list = json_decode($this->_perm);
+			if(empty($list)){
+				$list = json_decode($this->_perm);
+			}
 			$users = array();
 			if(!empty($list)){
 				foreach ($list as $users_id => $perm) {
@@ -1435,6 +1437,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	/*
+	//toto => function to finish
 	public function moveProject(){
 		$items = new \stdClass;
 		$remain = new \stdClass;
@@ -2223,10 +2226,6 @@ abstract class ModelLincko extends Model {
 
 		//In case it change the parent (project), we move all dependencies (only if admin of the project)
 
-
-		if($this->change_schema){
-			$this->setForceSchema();
-		}
 		if($this->change_permission){
 			$users_tables_updated = $this->setPerm();
 			foreach ($users_tables_updated as $key => $value) {
@@ -2234,6 +2233,10 @@ abstract class ModelLincko extends Model {
 					unset($users_tables[$key][$table_name]); //No need to informed twice users already informed, it reduces SQL calls
 				}
 			}
+		}
+
+		if($this->change_schema){
+			$this->setForceSchema();
 		}
 
 		Updates::informUsers($users_tables);
@@ -2255,6 +2258,7 @@ abstract class ModelLincko extends Model {
 			}
 		}
 
+		/*
 		//toto
 		//We record Tree for faster query
 		$users_list = array();
@@ -2283,6 +2287,7 @@ abstract class ModelLincko extends Model {
 				\libs\Watch::php( $e->getFile()."\n".$e->getLine()."\n".$e->getMessage(), $table, __FILE__, false, false, true);
 			}
 		}
+		*/
 
 		return $return;
 		
@@ -2577,6 +2582,7 @@ abstract class ModelLincko extends Model {
 		$success = true;
 		$touch = false;
 		$users_tables = array();
+		$users_schema = array();
 		//checkAccess and CheckPermissionAllow are previously used in save()
 		if(is_object($this->pivots_var)){
 			foreach ($this->pivots_var as $type => $type_id_list) {
@@ -2618,8 +2624,13 @@ abstract class ModelLincko extends Model {
 										if($pivot_relation->updateExistingPivot($type_id, $pivot_array)){
 											if($column=='access'){
 												$this->change_permission = true;
+												if($type=="users"){
+													$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
+												}
+												//New => no need to scann the schema since it's only adding a item
+												//Remove => recheck the database to delete the "too much" data
 												if(!(bool)$value){
-													$this->change_schema = true;
+													//$this->change_schema = true;
 												}
 											}
 											$touch = true;
@@ -2651,9 +2662,15 @@ abstract class ModelLincko extends Model {
 									$pivot_relation->attach($type_id, $pivot_array); //attach() return nothing
 									$this->pivot_extra_array = false;
 									if($column=='access'){
+										\libs\Watch::php($type_id, $type, __FILE__, false, false, true);
 										$this->change_permission = true;
+										if($type=="users"){
+											$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
+										}
+										//New => no need to scann the schema since it's only adding a item
+										//Remove => recheck the database to delete the "too much" data
 										if(!(bool)$value){
-											$this->change_schema = true;
+											//$this->change_schema = true;
 										}
 									}
 									$touch = true;
@@ -2686,6 +2703,10 @@ abstract class ModelLincko extends Model {
 		Updates::informUsers($users_tables);
 		if($touch){
 			$this->touchUpdateAt();
+		}
+		//Force some users to recheck the schema
+		if(!empty($users_schema)){
+			$this->setForceSchema(false, $users_schema);
 		}
 		return $success;
 	}
