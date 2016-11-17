@@ -52,9 +52,13 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 		
 		$errid = "unknown"; //User ID
 		$erruser = "unknown"; //User Login
-		if( isset($app->lincko) && isset($app->lincko->data) && isset($app->lincko->data['uid']) && isset($app->lincko->data['yonghu']) ){
-			$errid = $app->lincko->data['uid'];
-			$erruser = $app->lincko->data['yonghu'];
+		if( isset($app->lincko) && isset($app->lincko->data) ){
+			if(isset($app->lincko->data['uid'])){
+				$errid = $app->lincko->data['uid'];
+			}
+			if(isset($app->lincko->data['yonghu'])){
+				$erruser = $app->lincko->data['yonghu'];
+			}
 		}
 		
 		$errip = $app->request->getIp();

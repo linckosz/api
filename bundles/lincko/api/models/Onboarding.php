@@ -65,6 +65,16 @@ class Onboarding {
 	}
 
 	//Settings helps to keep track of onboarding elements
+	protected function resetOnboarding(){
+		$this->loadOnboarding();
+		$settings = self::$settings;
+		self::$onboarding = new \stdClass;
+		$settings->onboarding = new \stdClass;
+		//\libs\Watch::php($settings, '$settings', __FILE__, false, false, true);
+		$settings->save();
+	}
+
+	//Settings helps to keep track of onboarding elements
 	protected function runOnboarding($sequence, $run=true){
 		$this->loadOnboarding();
 		$onboarding = self::$onboarding;
@@ -156,6 +166,9 @@ class Onboarding {
 
 		//This is the entry where to start onboarding system (Initialiaze the first onboarding)
 		if($next==10001){
+
+			//Reset onboarding
+			//$this->resetOnboarding();
 
 			//initialze project pivot
 			$project_pivot = new \stdClass;
