@@ -2627,11 +2627,6 @@ abstract class ModelLincko extends Model {
 												if($type=="users"){
 													$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
 												}
-												//New => no need to scann the schema since it's only adding a item
-												//Remove => recheck the database to delete the "too much" data
-												if(!(bool)$value){
-													//$this->change_schema = true;
-												}
 											}
 											$touch = true;
 											$class = $this::getClass($type);
@@ -2662,15 +2657,9 @@ abstract class ModelLincko extends Model {
 									$pivot_relation->attach($type_id, $pivot_array); //attach() return nothing
 									$this->pivot_extra_array = false;
 									if($column=='access'){
-										\libs\Watch::php($type_id, $type, __FILE__, false, false, true);
 										$this->change_permission = true;
 										if($type=="users"){
 											$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
-										}
-										//New => no need to scann the schema since it's only adding a item
-										//Remove => recheck the database to delete the "too much" data
-										if(!(bool)$value){
-											//$this->change_schema = true;
 										}
 									}
 									$touch = true;
