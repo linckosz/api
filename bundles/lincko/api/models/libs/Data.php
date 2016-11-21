@@ -284,7 +284,7 @@ class Data {
 									$list[$value_bis] = $tree_id[$value_bis];
 									if(isset($not_trashed[$value_bis])){
 										foreach ($not_trashed[$value_bis] as $key_trashed => $value_trashed) {
-											if(!$value_trashed){
+											if(!$value_trashed && $value_bis=='projects'){ //It only concerns projects deletion
 												unset($list[$value_bis][$key_trashed]); //Helps to not download children of any delete item, but keep deleted items for activity feed purpose
 											}
 										}
@@ -362,6 +362,7 @@ class Data {
 	}
 
 	public static function getAccesses($tree_id){
+		//\libs\Watch::php($tree_id, '$tree_id', __FILE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
 		$tree_access = array();
 		if(isset($tree_id['users'])){
@@ -372,6 +373,7 @@ class Data {
 					$tree_access[$table] = $class::filterPivotAccessList($list, true); //Getting real Pivot value
 				}
 			}
+			//\libs\Watch::php($tree_access, '$tree_access', __FILE__, false, false, true);
 			$users = array();
 			foreach ($tree_access as $type => $type_list) {
 				foreach ($type_list as $users_id => $value) {

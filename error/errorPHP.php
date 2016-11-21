@@ -61,10 +61,11 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 			}
 		}
 		
-		$errip = $app->request->getIp();
-		
-		$plusdinfos = "";
-		$errip .= $plusdinfos;
+		if(isset($_SERVER) && isset($_SERVER['REMOTE_ADDR'])){
+			$errip = $_SERVER['REMOTE_ADDR'];
+		} else {
+			$errip = $app->request->getIp();
+		}
 
 		if(is_array($vars) || is_object($vars)){
 			$var = (string)print_r($vars,true);

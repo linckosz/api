@@ -624,7 +624,6 @@ abstract class ModelLincko extends Model {
 			$all = array_replace_recursive($all, $workspace);
 		}
 		
-
 		//Make sure that the _perm string will be always in the same order
 		foreach ($all as $table => $models) {
 			ksort($all[$table]);
@@ -638,7 +637,7 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		$tree_access = Data::getAccesses($all_id);
-
+		
 		$tree_super = array(); //Permission allowed for the super user (Priority 1 / fixed), defined at workspace workspace only => Need to scan the tree to assigned children
 		$tree_owner = array(); //Permission allowed for the owner (Priority 2 / fixed)
 		$tree_single = array(); //Permission allowed for the user at single element level (Priority 3 / cutomized)

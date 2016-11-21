@@ -91,12 +91,21 @@ $msg
 		$errmsg = json_decode($app->request->getBody());
 
 		$errid = "unknown"; //User ID
-		$erruser = "unknown"; //User login
+		$erruser = "unknown"; //User Login
+		if( isset($app->lincko) && isset($app->lincko->data) ){
+			if(isset($app->lincko->data['uid'])){
+				$errid = $app->lincko->data['uid'];
+			}
+			if(isset($app->lincko->data['yonghu'])){
+				$erruser = $app->lincko->data['yonghu'];
+			}
+		}
 		
-		$errip = $app->request->getIp();
-		
-		$plusdinfos = "";
-		$errip .= $plusdinfos;
+		if(isset($_SERVER) && isset($_SERVER['REMOTE_ADDR'])){
+			$errip = $_SERVER['REMOTE_ADDR'];
+		} else {
+			$errip = $app->request->getIp();
+		}
 		
 		$err  = "DATE: $dt\n";
 		$err .= "USER: $errid / $erruser / $errip\n";

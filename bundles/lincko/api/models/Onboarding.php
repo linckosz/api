@@ -69,8 +69,7 @@ class Onboarding {
 		$this->loadOnboarding();
 		$settings = self::$settings;
 		self::$onboarding = new \stdClass;
-		$settings->onboarding = new \stdClass;
-		//\libs\Watch::php($settings, '$settings', __FILE__, false, false, true);
+		$settings->onboarding = json_encode(new \stdClass);
 		$settings->save();
 	}
 
@@ -146,8 +145,6 @@ class Onboarding {
 	public function next($next, $answer=false){
 		$app = self::getApp();
 
-		$force_new = false; //Turn manually at true to create a new onboarding project
-
 		//the user answered the question
 		if($answer){
 			$item = new Comments();
@@ -167,8 +164,20 @@ class Onboarding {
 		//This is the entry where to start onboarding system (Initialiaze the first onboarding)
 		if($next==10001){
 
+			$project_id = $this->getOnboarding('projects', 1);
+			if($project_id && $item = Projects::find($project_id)){
+				//Increment new roject "Lincko [1]" => "Lincko [2]"
+				$title = $item->title;
+				if(preg_match("/^.+\[(\d+)\]$/ui", $title, $matches)){
+					$i = intval($matches[1])+1;
+					$title = preg_replace("/^(.*)(\[\d+\])$/ui", '${1}['.$i.']', $title);
+				} else {
+					$title = $title.' [1]';
+				}
+			}
+
 			//Reset onboarding
-			//$this->resetOnboarding();
+			$this->resetOnboarding();
 
 			//initialze project pivot
 			$project_pivot = new \stdClass;
@@ -176,7 +185,7 @@ class Onboarding {
 			$project_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey Key
 
 			//Create a project
-			if($force_new || !$this->getOnboarding('projects', 1)){
+			if(!$this->getOnboarding('projects', 1)){
 				$item = new Projects();
 				$item->title = $app->trans->getBRUT('api', 2000, 1); //Welcome to Lincko!
 				$item->description = $app->trans->getBRUT('api', 2000, 2); //This project helps you to learn how to use Lincko. Be free to modify it as you want.
@@ -206,7 +215,7 @@ class Onboarding {
 			//Wait a second, who are you?
 			$comment->ob->{'10001'}->{'11001'} = array(
 				'next',
-				10005, //I'm a humble master in the way of projects and I'm here to be your guide. I'll get you started using Lincko, and I’ll give you updates on the activity in your projects as you complete tasks, add files and notes, and generally accomplish great things!
+				10002, //I'm a humble master in the way of projects and I'm here to be your guide. I'll get you started using Lincko, and I’ll give you updates on the activity in your projects as you complete tasks, add files and notes, and generally accomplish great things!
 			);
 			//Let’s accomplish some stuff.
 			$comment->ob->{'10001'}->{'11002'} = array(
@@ -235,10 +244,9 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//I'm a humble master in the way of projects and I'm here to be your guide. I'll get you started using Lincko, and I’ll give you updates on the activity in your projects as you complete tasks, add files and notes, and generally accomplish great things!
 			$comment->ob->{'10002'} = new \stdClass;
-			//Let’s accomplish some stuff.
-			$comment->ob->{'10002'}->{'11002'} = array(
-				'next',
-				10003, //OK - let's start by making sure your settings are correct:
+			$comment->ob->{'10002'}->{'0'} = array(
+				'now',
+				10005, //[image]/lincko/app/images/generic/onboarding/LinckoMeditate.gif[/image]
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -298,12 +306,13 @@ class Onboarding {
 			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
 
 			//Add a task
-			if($force_new || !$this->getOnboarding('tasks', 1)){
+			if(!$this->getOnboarding('tasks', 1)){
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 3); //Get started using Lincko
 				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
 				$item->approved = true; //Marked as approved
+				$item->duration = 1; //Today
 				$item->save();
 				//Lock the deletion
 				PivotUsersRoles::setMyRole($item, null, 2);
@@ -319,11 +328,12 @@ class Onboarding {
 			}
 
 			//Add a task
-			if($force_new || !$this->getOnboarding('tasks', 2)){
+			if(!$this->getOnboarding('tasks', 2)){
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 4); //Mark this task complete
 				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
+				$item->duration = 1; //Today
 				$item->save();
 				//Lock the deletion
 				PivotUsersRoles::setMyRole($item, null, 2);
@@ -336,21 +346,15 @@ class Onboarding {
 				$item->setPerm();
 				$this->setOnboarding($item, 2);
 				unset($item);
-			} else { //Reset status
-				$item = Tasks::getModel($this->getOnboarding('tasks', 2));
-				$item->approved = false; //Marked as approved
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
-				$item->touchUpdateAt();
 			}
 
 			//Add a task
-			if($force_new || !$this->getOnboarding('tasks', 3)){
+			if(!$this->getOnboarding('tasks', 3)){
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 5); //Open this task or the task above by clicking or tapping on it. Each task can be assigned an owner, a due date, have subtasks, comments from the team, and link to files or notes.
 				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->pivots_format($task_pivot, false);
+				$item->duration = 1; //Today
 				$item->save();
 				//Force to use LinckoBot as creator
 				$item->created_by = 0;
@@ -364,10 +368,12 @@ class Onboarding {
 			}
 
 			//Add a task
-			if($force_new || !$this->getOnboarding('tasks', 4)){
+			if(!$this->getOnboarding('tasks', 4)){
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 6); //Create a new task and assign it to the Monkey King by typing a task below. Use @ to assign to the Monkey King. Use ++ to assign today as the due date.
 				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->pivots_format($task_pivot, false);
+				$item->duration = 1; //Today
 				$item->save();
 				//Force to use LinckoBot as creator
 				$item->created_by = 0;
@@ -378,21 +384,15 @@ class Onboarding {
 				$item->setPerm();
 				$this->setOnboarding($item, 4);
 				unset($item);
-			} else { //Reset status
-				$item = Tasks::getModel($this->getOnboarding('tasks', 2));
-				$item->approved = false; //Marked as approved
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
-				$item->touchUpdateAt();
 			}
 
 			//Add a task
-			if($force_new || !$this->getOnboarding('tasks', 5)){
+			if(!$this->getOnboarding('tasks', 5)){
 				$item = new Tasks();
 				$item->title = $app->trans->getBRUT('api', 2000, 7); //Once all the above has been completed - the LinckoBot will reapear and take you the rest of the way
 				$item->parent_id = $this->getOnboarding('projects', 1);
+				$item->pivots_format($task_pivot, false);
+				$item->duration = 1; //Today
 				$item->save();
 				//Force to use LinckoBot as creator
 				$item->created_by = 0;
@@ -451,9 +451,10 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//[image]/lincko/app/images/generic/onboarding/LinckoMeditate.gif[/image]
 			$comment->ob->{'10005'} = new \stdClass;
-			$comment->ob->{'10005'}->{'0'} = array(
-				'now',
-				10002, //I'm a humble master in the way of projects and I'm here to be your guide. I'll get you started using Lincko, and I’ll give you updates on the activity in your projects as you complete tasks, add files and notes, and generally accomplish great things!
+			//Let’s accomplish some stuff.
+			$comment->ob->{'10005'}->{'11002'} = array(
+				'next',
+				10003, //OK - let's start by making sure your settings are correct:
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -480,14 +481,14 @@ class Onboarding {
 			//Invite colleagues now - it’s free
 			$comment->ob->{'10006'}->{'11006'} = array(
 				'action',
-				10007, //​​​​​​​Okay, you can add contacts at anytime by clicking on this button: [image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
+				10007, //​​​​​​​Okay, you can add contacts at anytime by clicking on this button: [image]/lincko/app/images/generic/onboarding/MainMenu.png[/image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
 				'[3] Take them to a special invite screen - where the user can add people',
 				3,
 			);
 			//I’m a maverick, I want to work alone for now.
 			$comment->ob->{'10006'}->{'11007'} = array(
 				'next',
-				10007, //​​​​​​​Okay, you can add contacts at anytime by clicking on this button: [image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
+				10007, //​​​​​​​Okay, you can add contacts at anytime by clicking on this button: [image]/lincko/app/images/generic/onboarding/MainMenu.png[/image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -510,11 +511,11 @@ class Onboarding {
 			$item->parent_id = $this->getOnboarding('projects', 1);
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
-			//Okay, you can add contacts at anytime by clicking on this button: [image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
+			//Okay, you can add contacts at anytime by clicking on this button: [image]/lincko/app/images/generic/onboarding/MainMenu.png[/image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
 			$comment->ob->{'10007'} = new \stdClass;
 			$comment->ob->{'10007'}->{'0'} = array(
 				'now',
-				10008, //Each project has Tasks, Notes, Chats, and Files - use tasks to set the goals of your project, use notes to store important information for the team - like meeting notes, processes, policies, designs and requirements, or other longer information.
+				10021, //Each project has Tasks, Notes, Chats, and Files - use tasks to set the goals of your project, use notes to store important information for the team - like meeting notes, processes, policies, designs and requirements, or other longer information.
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -541,7 +542,7 @@ class Onboarding {
 			$comment->ob->{'10008'} = new \stdClass;
 			$comment->ob->{'10008'}->{'0'} = array(
 				'now',
-				10009, //Use Chats for quick communication, and use Files for all your important documents and images. Every project has these four areas to keep you organised.
+				10011, //[image]/lincko/app/images/generic/onboarding/NavigationRepeat.gif[/image]
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -593,9 +594,10 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//Anytime you upload a file to your project Chat, or attach it to a task or note - it will automatically be stored in the Files section of your project. You can link existing notes and files to tasks as well.
 			$comment->ob->{'10010'} = new \stdClass;
-			$comment->ob->{'10010'}->{'0'} = array(
-				'now',
-				10011, //​​​​​​​[image]/lincko/app/images/generic/onboarding/NavigationRepeat.gif[/image]
+			//What else ?
+			$comment->ob->{'10010'}->{'11008'} = array(
+				'next',
+				10012, //​​​​​​​No project goes according to plan - quickly turn any line item in a note (including the action items in your meeting notes) into a task, or convert any chat message into a task by long pressing or clicking on the chat message. This let’s you turn communication into action.
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -623,7 +625,7 @@ class Onboarding {
 			//What else ?
 			$comment->ob->{'10011'}->{'11008'} = array(
 				'next',
-				10012, //​​​​​​​No project goes according to plan - quickly turn any line item in a note (including the action items in your meeting notes) into a task, or convert any chat message into a task by long pressing or clicking on the chat message. This let’s you turn communication into action.
+				10009, //Use Chats for quick communication, and use Files for all your important documents and images. Every project has these four areas to keep you organised.
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -650,7 +652,7 @@ class Onboarding {
 			$comment->ob->{'10012'} = new \stdClass;
 			$comment->ob->{'10012'}->{'0'} = array(
 				'now',
-				10013, //​​​​​​​[image]/lincko/app/images/generic/onboarding/NavigationRepeat.gif[/image]
+				10022, //​​​​​​​[image]/lincko/app/images/generic/onboarding/CreateTaskFromChat.gif[/image]
 			);
 			$item->comment = json_encode($comment);
 			$item->save();
@@ -772,6 +774,10 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//​​​​​​​[image]/lincko/app/images/generic/onboarding/ProjectActivity.gif[/image]
 			$comment->ob->{'10016'} = new \stdClass;
+			$comment->ob->{'10016'}->{'0'} = array(
+				'now',
+				10017, //​​​​​​​Okay, we’re almost done - everyone has their own personal space - this is a special project that only you have access to. Everything you store will not be shared. We have also given you access to a sample project, so you can see how one team sets their tasks and goals in the project, and uses Notes, Chat groups and Files.
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -782,7 +788,8 @@ class Onboarding {
 			$item->brutSave();
 			unset($item);
 
-			$this->next(10017); //Okay, we’re almost done - everyone has their own personal space - this is a special project that only you have access to. Everything you store will not be shared. We have also given you access to a sample project, so you can see how one team sets their tasks and goals in the project, and uses Notes, Chat groups and Files.
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10017){
@@ -802,7 +809,7 @@ class Onboarding {
 			//Help me create my own project
 			$comment->ob->{'10017'}->{'11011'} = array(
 				'action',
-				10019, //​​​​​​​
+				10019, //​​​​​​​You're on your way to being a Lincko master now! I'll be back to send you regular updates on your progess, but for now, thanks for trying out Lincko. 
 				'Open project creation submenu, focus on title then create button',
 				5,
 			);
@@ -829,6 +836,13 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//Okay, we’re almost done - everyone has their own personal space - this is a special project that only you have access to. Everything you store will not be shared. We have also given you access to a sample project, so you can see how one team sets their tasks and goals in the project, and uses Notes, Chat groups and Files.
 			$comment->ob->{'10018'} = new \stdClass;
+			//Help me create my own project
+			$comment->ob->{'10018'}->{'11011'} = array(
+				'action',
+				10019, //​​​​​​​You're on your way to being a Lincko master now! I'll be back to send you regular updates on your progess, but for now, thanks for trying out Lincko. 
+				'Open project creation submenu, focus on title then create button',
+				5,
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -839,7 +853,8 @@ class Onboarding {
 			$item->brutSave();
 			unset($item);
 
-			$this->next(10019);
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
 		}
 
 		else if($next==10019){
@@ -851,6 +866,10 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//You're on your way to being a Lincko master now! I'll be back to send you regular updates on your progess, but for now, thanks for trying out Lincko. 
 			$comment->ob->{'10019'} = new \stdClass;
+			$comment->ob->{'10019'}->{'0'} = array(
+				'now',
+				10023, //[image]/lincko/app/images/generic/onboarding/Bruno.jpg[/image]
+			);
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -862,7 +881,8 @@ class Onboarding {
 			unset($item);
 
 			//Stop the sequence
-			$this->runOnboarding(1, false);
+			//$this->runOnboarding(1, false);
+			$this->runOnboarding(1, true); //toto
 		}
 
 		else if($next==10020){
@@ -889,6 +909,81 @@ class Onboarding {
 
 			//Insure the sequence is running
 			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10021){
+			$item = new Comments();
+			$item->parent_type = 'projects';
+			$item->parent_id = $this->getOnboarding('projects', 1);
+			$comment = new \stdClass;
+			$comment->ob = new \stdClass;
+			//[image]/lincko/app/images/generic/onboarding/Contacts.png[/image]
+			$comment->ob->{'10021'} = new \stdClass;
+			//What else ?
+			$comment->ob->{'10021'}->{'11008'} = array(
+				'next',
+				10008, //Each project has Tasks, Notes, Chats, and Files - use tasks to set the goals of your project, use notes to store important information for the team - like meeting notes, processes, policies, designs and requirements, or other longer information.
+			);
+			$item->comment = json_encode($comment);
+			$item->save();
+			//Force to use LinckoBot as creator
+			$item->created_by = 0;
+			$item->updated_by = 0;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10022){
+			$item = new Comments();
+			$item->parent_type = 'projects';
+			$item->parent_id = $this->getOnboarding('projects', 1);
+			$comment = new \stdClass;
+			$comment->ob = new \stdClass;
+			//[image]/lincko/app/images/generic/onboarding/CreateTaskFromChat.gif[/image]
+			$comment->ob->{'10022'} = new \stdClass;
+			$comment->ob->{'10022'}->{'0'} = array(
+				'now',
+				10013, //Let's try it. I'm going to send you a message, click or long press on the message to turn it into a task.
+			);
+			$item->comment = json_encode($comment);
+			$item->save();
+			//Force to use LinckoBot as creator
+			$item->created_by = 0;
+			$item->updated_by = 0;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, true);
+		}
+
+		else if($next==10023){ //toto (delete it, it's for fun)
+			$item = new Comments();
+			$item->parent_type = 'projects';
+			$item->parent_id = $this->getOnboarding('projects', 1);
+			$comment = new \stdClass;
+			$comment->ob = new \stdClass;
+			//[image]/lincko/app/images/generic/onboarding/Bruno.jpg[/image]
+			$comment->ob->{'10023'} = new \stdClass;
+			$item->comment = json_encode($comment);
+			$item->save();
+			//Force to use LinckoBot as creator
+			$item->created_by = 0;
+			$item->updated_by = 0;
+			$item->noticed_by = '';
+			$item->viewed_by = '';
+			$item->brutSave();
+			unset($item);
+
+			//Insure the sequence is running
+			$this->runOnboarding(1, false);
 		}
 
 		//It save something only if there is a change

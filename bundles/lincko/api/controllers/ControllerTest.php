@@ -1007,8 +1007,7 @@ class ControllerTest extends Controller {
 
 		//$tp = Tasks::find(11498)->getDependency();
 
-		$tp = Chats::find(722);
-		$tp = $tp->getUsersTable();
+		$tp = Chats::find(830)->setPerm();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
