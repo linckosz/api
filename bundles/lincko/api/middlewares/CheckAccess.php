@@ -94,7 +94,10 @@ class CheckAccess extends \Slim\Middleware {
 	}
 
 	protected function setUserLanguage(){
-		Users::getUser()->setLanguage();
+		$app = $this->app;
+		if(isset($app->lincko->data['uid'])){
+			Users::getUser()->setLanguage();
+		}
 		return true;
 	}
 
