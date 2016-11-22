@@ -26,41 +26,42 @@ class Translation {
 		'en' => 'en_US.utf8',
 		'fr' => 'fr_FR.utf8',
 		'zh-chs' => 'zh_CN.utf8',
+		'zh-cht' => 'zh_TW.utf8',
 	);
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 	}
 
-	public function getHTML($bundle, $category, $phrase, array $data = array()){
-		$result = $this->get($bundle, $category, $phrase, $data);
+	public function getHTML($bundle, $category, $phrase, array $data = array(), $force_lang=false){
+		$result = $this->get($bundle, $category, $phrase, $data, $force_lang);
 		$result = STR::sql_to_html($result);
 		return $result;
 	}
 
-	public function getINPUT($bundle, $category, $phrase, array $data = array()){
-		$result = $this->getHTML($bundle, $category, $phrase, $data);
+	public function getINPUT($bundle, $category, $phrase, array $data = array(), $force_lang=false){
+		$result = $this->getHTML($bundle, $category, $phrase, $data, $force_lang);
 		return $result;
 	}
 
-	public function getTEXTAREA($bundle, $category, $phrase, array $data = array()){
-		$result = $this->getBRUT($bundle, $category, $phrase, $data);
+	public function getTEXTAREA($bundle, $category, $phrase, array $data = array(), $force_lang=false){
+		$result = $this->getBRUT($bundle, $category, $phrase, $data, $force_lang);
 		return $result;
 	}
 
-	public function getJS($bundle, $category, $phrase, array $data = array()){
-		$result = $this->get($bundle, $category, $phrase, $data);
+	public function getJS($bundle, $category, $phrase, array $data = array(), $force_lang=false){
+		$result = $this->get($bundle, $category, $phrase, $data, $force_lang);
 		$result = STR::sql_to_js($result);
 		return $result;
 	}
 
-	public function getJSON($bundle, $category, $phrase, array $data = array()){
-		$result = $this->getJS($bundle, $category, $phrase, $data);
+	public function getJSON($bundle, $category, $phrase, array $data = array(), $force_lang=false){
+		$result = $this->getJS($bundle, $category, $phrase, $data, $force_lang);
 		return $result;
 	}
 
-	public function getBRUT($bundle, $category, $phrase, array $data = array()){
-		$result = $this->get($bundle, $category, $phrase, $data);
+	public function getBRUT($bundle, $category, $phrase, array $data = array(), $force_lang=false){
+		$result = $this->get($bundle, $category, $phrase, $data, $force_lang);
 		return $result;
 	}
 
@@ -201,7 +202,7 @@ class Translation {
 		return $text;
 	}
 
-	protected function get($bundle, $category, $phrase, $data){
+	protected function get($bundle, $category, $phrase, $data, $force_lang=false){
 		$app = $this->app;
 		$value = false;
 		if(!empty($data)){
@@ -219,6 +220,11 @@ class Translation {
 				$this->setLanguage();
 				if(isset($this->translation[$bundle][$category][$phrase])){
 					$value = $this->translation[$bundle][$category][$phrase];
+				} else if($force_lang){
+					$lang = $force_lang;
+					if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){
+						$value = $value->getAttribute($lang);
+					}
 				} else if(isset($this->lang[$bundle])){
 					$lang = $this->lang[$bundle];
 					if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){

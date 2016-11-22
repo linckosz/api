@@ -398,6 +398,10 @@ class Users extends ModelLincko {
 		return $this->id;
 	}
 
+	public function getSha(){
+		return $this->username_sha1;
+	}
+
 	public function save(array $options = array()){
 		$app = self::getApp();
 		$return = null;
@@ -529,6 +533,19 @@ class Users extends ModelLincko {
 			}
 		}
 		return $save;	
+	}
+
+	public function setLanguage(){
+		$app = self::getApp();
+		$language = $app->trans->getClientLanguage();
+		if(!empty($language) && $language!=$this->language){
+			$this->language = strtolower($language);
+			$this->brutSave(); //Because teh language settings doesn't need to be shown on front
+		}
+	}
+
+	public function getLanguage(){
+		return $this->language;
 	}
 
 }

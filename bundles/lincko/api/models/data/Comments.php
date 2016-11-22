@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\Notif;
 
 class Comments extends ModelLincko {
 
@@ -289,6 +290,47 @@ class Comments extends ModelLincko {
 		}
 
 		return $history;
+	}
+
+	public function pushNotif($new=false){
+		$app = self::getApp();
+		$parent = $this->getParent();
+		$table = $parent->getTable();
+		if($table=='projects' || $table=='chats'){
+			if($table=='projects'){
+				$users = $parent->users()
+					->where('users_x_projects.access', 1)
+					->where('users_x_projects.silence', 0)
+					->get();
+			}
+			if($table=='chats'){
+				$users = $parent->users()
+					->where('users_x_chats.access', 1)
+					->where('users_x_chats.silence', 0)
+					->get();
+			}
+			$aliases = array();
+			foreach ($users as $value) {
+				$aliases[] = Users::find($value->pivot->users_id)->getSha();
+			}
+			unset($aliases[$this->updated_by]); //Exlude the creator
+			if($this->updated_by==0){
+				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+				return true; //[toto] We need to remove this line to allow "app_models_resume_format_sentence"
+			} else {
+				$sender = Users::find($this->updated_by)->getUsername();
+			}
+			if($parent->single){
+				$title = $sender;
+				$content = $this->comment;
+			} else {
+				$title = $parent->title;
+				$content = $sender.': '.$this->comment;
+			}
+			$notif = new Notif;
+			return $notif->push($title, $content, $this, $aliases);
+		}
+		return true;
 	}
 
 }

@@ -93,6 +93,11 @@ class CheckAccess extends \Slim\Middleware {
 		return false;
 	}
 
+	protected function setUserLanguage(){
+		Users::getUser()->setLanguage();
+		return true;
+	}
+
 	//In case a client is using their one server to store data, we
 	protected function setWorkspaceConnection($workspace) {
 		if($workspace->remote){
@@ -322,6 +327,7 @@ class CheckAccess extends \Slim\Middleware {
 
 		if($valid){
 			$this->setUserId();
+			$this->setUserLanguage();
 			$this->flashKeys();
 		}
 

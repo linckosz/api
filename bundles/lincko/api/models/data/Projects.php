@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Chats;
 use \libs\Json;
 
 class Projects extends ModelLincko {
@@ -85,9 +86,13 @@ class Projects extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	protected static $dependencies_visible = array(
+		'users' => array('users_x_projects', array('fav', 'silence')),
+	);
+
 	//Many(Projects) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access', 'fav');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access', 'fav', 'silence');
 	}
 
 	//Many(Projects) to One(Workspaces)
@@ -271,6 +276,29 @@ class Projects extends ModelLincko {
 			}
 		}
 		return $save;	
+	}
+
+	public function setPerm(){
+		$users = $this->users()
+			->where('users_x_projects.access', 1)
+			->get();
+		$users_inform = array();
+		$pivot = new \stdClass;
+		$pivot->{'users>access'} = new \stdClass;
+		foreach ($users as $value) {
+			//Automatically include all users in all chats
+			$pivot->{'users>access'}->{$value->pivot->users_id} = true;
+			$users_inform[$value->pivot->users_id] = array('chats' => 1);
+		}
+		//We don't need to care about previous access settings since the one outisde a projects won't appear on chat users list
+		$chats = Chats::Where('parent_type', 'projects')->where('parent_id', $this->id)->get();
+		foreach ($chats as $model) {
+			$model->pivots_format($pivot);
+			$model->forceSaving();
+			$model->pivots_save();
+			$model->touchUpdateAt($users_inform, true);
+		}
+		return parent::setPerm();
 	}
 
 }

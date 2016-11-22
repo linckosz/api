@@ -71,18 +71,16 @@ class Chats extends ModelLincko {
 
 	protected static $has_perm = true;
 
-	protected static $access_accept = true; //toto => if we false, we allow all user in a project to be part of the chat, but noone is include in root chats then (error)
-
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'users' => array('users_x_chats', array('fav')),
+		'users' => array('users_x_chats', array('fav', 'silence', 'hide')),
 		'spaces' => array('spaces_x', array('created_at')),
 	);
 
 	//Many(Chats) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access', 'fav');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access', 'fav', 'silence');
 	}
 
 	//Many(Chats) to Many(Workspaces)
@@ -153,74 +151,40 @@ class Chats extends ModelLincko {
 	public function scopegetItems($query, $list=array(), $get=false){
 		$query = $query
 		->where(function ($query) use ($list) {
-			//Everything inside projects as parent get access
-			$ask = false;
-			$table_name = 'projects';
-			if(isset($list[$table_name])){
-				$list_id = $list[$table_name];
-				if(!empty($table_name) && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
-					$this->var['parent_type'] = $table_name;
-					$this->var['parent_id_array'] = $list_id;
-					$query = $query
-					->orWhere(function ($query) {
-						$query
-						->where('chats.parent_type', $this->var['parent_type'])
-						->whereIn('chats.parent_id', $this->var['parent_id_array']);
-					});
-					$ask = true;
-				}
-			}
-			if(!$ask){
-				$query = $query
-				->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
-			}
-			$query = $query
-			->whereHas("users", function($query) {
-				$app = self::getApp();
-				$query
-				->where('users_id', $app->lincko->data['uid'])
-				->where('access', 0);
-			}, '<', 1);
-		})
-		->orWhere(function ($query) use ($list) {
 			$query
-			//Everything without projects as parent need explicite access
-			->where(function ($query) use ($list) {
-				$query
-				->where(function ($query) {
-					$app = self::getApp();
-					$query
-					->where('chats.parent_type', '')
-					->orWhere('chats.parent_type', null);
-				})
-				->orWhere(function ($query) use ($list) {
-					unset($list['projects']); //Make sure we exclude 'projects' because we caclulate it before
-					$ask = false;
-					foreach ($list as $table_name => $list_id) {
-						if(!empty($table_name) && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
-							$this->var['parent_type'] = $table_name;
-							$this->var['parent_id_array'] = $list_id;
-							$query = $query
-							->orWhere(function ($query) {
-								$query
-								->where('chats.parent_type', $this->var['parent_type'])
-								->whereIn('chats.parent_id', $this->var['parent_id_array']);
-							});
-							$ask = true;
-						}
-					}
-					if(!$ask){
-						$query = $query
-						->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
-					}
-				});
-			})
-			->whereHas('users', function ($query) {
+			->where(function ($query) {
 				$app = self::getApp();
 				$query
-				->where('users_id', $app->lincko->data['uid'])
-				->where('access', 1);
+				->where('chats.parent_type', '')
+				->orWhere('chats.parent_type', null);
+			})
+			->orWhere(function ($query) use ($list) {
+				$ask = false;
+				foreach ($list as $table_name => $list_id) {
+					if(!empty($table_name) && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
+						$this->var['parent_type'] = $table_name;
+						$this->var['parent_id_array'] = $list_id;
+						$query = $query
+						->orWhere(function ($query) {
+							$query
+							->where('chats.parent_type', $this->var['parent_type'])
+							->whereIn('chats.parent_id', $this->var['parent_id_array']);
+						});
+						$ask = true;
+					}
+				}
+				if(!$ask){
+					$query = $query
+					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
+				}
 			});
+		})
+		->whereHas('users', function ($query) {
+			$app = self::getApp();
+			$query
+			->where('users_id', $app->lincko->data['uid'])
+			->where('access', 1)
+			->where('hide', 0);
 		});
 
 		if(self::$with_trash_global){

@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\Notif;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class Messages extends ModelLincko {
@@ -261,6 +262,34 @@ class Messages extends ModelLincko {
 		return null;
 	}
 	*/
+
+	public function pushNotif($new=false){
+		$app = self::getApp();
+		$parent = $this->getParent();
+		$users = $parent->users()
+			->where('users_x_chats.access', 1)
+			->where('users_x_chats.silence', 0)
+			->get();
+		$aliases = array();
+		foreach ($users as $value) {
+			$aliases[] = Users::find($value->pivot->users_id)->getSha();
+		}
+		unset($aliases[$this->created_by]); //Exlude the creator
+		if($this->created_by==0){
+			$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+		} else {
+			$sender = Users::find($this->created_by)->getUsername();
+		}
+		if($parent->single){
+			$title = $sender;
+			$content = $this->comment;
+		} else {
+			$title = $parent->title;
+			$content = $sender.': '.$this->comment;
+		}
+		$notif = new Notif;
+		return $notif->push($title, $content, $this, $aliases);
+	}
 
 	//toto, delete save, it was for test only
 	public function save(array $options = array()){

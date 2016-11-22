@@ -2091,6 +2091,10 @@ abstract class ModelLincko extends Model {
 		return $users_tables;
 	}
 
+	public function pushNotif($new=false){
+		return true;
+	}
+
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
 		if(!$this->checkAccess()){
@@ -2245,48 +2249,19 @@ abstract class ModelLincko extends Model {
 			foreach($dirty as $key => $value) {
 				//We exclude "created_at" if not we will always record it on history table, that might fulfill it too quickly
 				if($key != 'created_at' && $key != 'updated_at'){
-					$old = null;
-					$new = null;
-					if(isset($original[$key])){ $old = $original[$key]; }
-					if(isset($dirty[$key])){ $new = $dirty[$key]; }
+					$old_att = null;
+					$new_att = null;
+					if(isset($original[$key])){ $old_att = $original[$key]; }
+					if(isset($dirty[$key])){ $new_att = $dirty[$key]; }
 					//We excluse default modification
-					if(isset($this::$archive[$key]) || isset($this::$archive[$key.'_'.$new])){
-						$this->setHistory($key, $new, $old);
+					if(isset($this::$archive[$key]) || isset($this::$archive[$key.'_'.$new_att])){
+						$this->setHistory($key, $new_att, $old_att);
 					}
 				}
 			}
 		}
 
-		/*
-		//toto
-		//We record Tree for faster query
-		$users_list = array();
-		$users_list[$app->lincko->data['uid']] = $app->lincko->data['uid'];
-		foreach ($users_tables as $users_id => $value) {
-			$users_list[$users_id] = $users_id;
-		}
-		//Tree::TreeUpdateOrCreate($this, $users_list, true);
-		if($this->change_schema || $this->change_permission){
-			$class = $this::getClass();
-			$table = $this->getTable();
-			$suffix = $class::getPivotUsersSuffix();
-			$pivot = new PivotUsers(array($table));
-			try {
-				if($pivot->tableExists($pivot->getTable()) && $pivots = $pivot->withTrashed()->where($table.$suffix, $this->id)->get(['users_id', $table.$suffix, 'access'])){
-					foreach ($pivots as $model) {
-						$users_id = $model->users_id;
-						$fields = array(
-							'access' => $model->access,
-						);
-						//Tree::TreeUpdateOrCreate($this, array($users_id), false, $fields);
-						//\libs\Watch::php( $item->id, $table, __FILE__, false, false, true);
-					}
-				}
-			} catch (\Exception $e) {
-				\libs\Watch::php( $e->getFile()."\n".$e->getLine()."\n".$e->getMessage(), $table, __FILE__, false, false, true);
-			}
-		}
-		*/
+		$this->pushNotif($new);
 
 		return $return;
 		

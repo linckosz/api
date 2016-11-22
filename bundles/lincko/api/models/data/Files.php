@@ -7,6 +7,7 @@ use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Workspaces;
+use \bundles\lincko\api\models\Notif;
 use \libs\Json;
 use \libs\Folders;
 use \libs\Video;
@@ -359,6 +360,38 @@ class Files extends ModelLincko {
 		return array($flip_x, $flip_y, $angle);
 	}
 
+	public function pushNotif($new=false){
+		$app = self::getApp();
+		$parent = $this->getParent();
+		$table = $parent->getTable();
+		if($this->progress>=100 && $table=='chats'){ //Do only alert for files in chats
+			$users = $parent->users()
+				->where('users_x_chats.access', 1)
+				->where('users_x_chats.silence', 0)
+				->get();
+			if($this->updated_by==0){
+				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+			} else {
+				$sender = Users::find($this->updated_by)->getUsername();
+			}
+			$content = $this->title;
+			$notif = new Notif;
+			foreach ($users as $value) {
+				if($value->pivot->users_id != $this->updated_by){
+					$user = Users::find($value->pivot->users_id);
+					$alias = array($user->getSha());
+					$language = $user->getLanguage();
+					if($new){
+						$title = $app->trans->getBRUT('api', 9, 23, array('un' => $sender,), $language); //@un~~ created a task
+					} else {
+						$title = $app->trans->getBRUT('api', 9, 24, array('un' => $sender,), $language); //@un~~ modified a task
+					}
+					$notif->push($title, $content, $this, $alias);
+				}
+			}
+		}
+		return true;
+	}
 	
 	public function save(array $options = array()){
 		$app = self::getApp();
