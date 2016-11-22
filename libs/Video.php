@@ -204,7 +204,6 @@ class Video {
 				$this->source = $source.'.video';
 				$source = $this->source;
 				//EXEC in running in background
-				$toto = 'no';
 				if($quality==1){//LOW quality (360p)
 					$this->scale(640);
 					$filter = $this->filter;

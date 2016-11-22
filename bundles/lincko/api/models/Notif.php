@@ -66,9 +66,11 @@ class Notif {
 			'_open_page' => 'winPage',
 		);
 		if($item){
+			$domain = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'];
+			$url = 'javascript:app_generic_state.openItem(false, \''.$domain.'/#'.$item->getTable().'-'.$item->id.'\');';
+			\libs\Watch::php($url, '$url', __FILE__, false, false, true);
 			$notif['extras'] = array(
-				'type' => $item->getTable(),
-				'id' => $item->id,
+				'url' => $url,
 			);
 		}
 		return $this->send($msg, $notif, $aliases);

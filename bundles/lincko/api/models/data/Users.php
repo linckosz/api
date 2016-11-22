@@ -5,6 +5,7 @@ namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\Onboarding;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
@@ -431,6 +432,8 @@ class Users extends ModelLincko {
 				$project = Projects::setPersonal();
 
 				$app->lincko->data['user_log']->save();
+				$onboarding = new Onboarding;
+				$onboarding->next(10001); //initialize the onboarding process
 			} catch(\Exception $e){
 				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
 				$return = null;

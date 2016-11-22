@@ -272,7 +272,12 @@ class Messages extends ModelLincko {
 			->get();
 		$aliases = array();
 		foreach ($users as $value) {
-			$aliases[] = Users::find($value->pivot->users_id)->getSha();
+			if($user = Users::find($value->pivot->users_id)){
+				$sha = $user->getSha();
+				if(!empty($sha)){
+					$aliases[] = $sha;
+				}
+			}
 		}
 		unset($aliases[$this->created_by]); //Exlude the creator
 		if($this->created_by==0){
