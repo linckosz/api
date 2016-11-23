@@ -36,4 +36,25 @@ $app->group('/note', function () use ($app) {
 	)
 	->name('note_restore'.$app->lincko->method_suffix);
 
+	$app->group('/lock', function () use ($app) {
+
+		$app->post(
+			'/start',
+			'\bundles\lincko\api\controllers\ControllerNote:lock_start'.$app->lincko->method_suffix
+		)
+		->name('note_lock_start'.$app->lincko->method_suffix);
+
+		$app->post(
+			'/unlock',
+			'\bundles\lincko\api\controllers\ControllerNote:lock_unlock'.$app->lincko->method_suffix
+		)
+		->name('note_lock_unlock'.$app->lincko->method_suffix);
+
+		$app->post(
+			'/check',
+			'\bundles\lincko\api\controllers\ControllerNote:lock_check'.$app->lincko->method_suffix
+		)
+		->name('note_lock_check'.$app->lincko->method_suffix);
+	});
+
 });

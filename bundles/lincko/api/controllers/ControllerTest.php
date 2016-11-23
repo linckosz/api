@@ -1011,6 +1011,19 @@ class ControllerTest extends Controller {
 
 		//$tp = Chats::find(830)->setPerm();
 
+		$expired = Carbon::now();
+		$expired->second = -36000;
+		$tata = Tasks::Where('updated_at', '>', $expired)->get();
+
+		$truc = Carbon::now();
+		$truc->second = -30000;
+		$tp = [];
+		foreach ($tata as $key => $value) {
+			if($value->updated_at > $truc){
+				$tp[] = $value->toArray();
+			}
+		}
+
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);

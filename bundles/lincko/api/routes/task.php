@@ -36,4 +36,25 @@ $app->group('/task', function () use ($app) {
 	)
 	->name('task_restore'.$app->lincko->method_suffix);
 
+	$app->group('/lock', function () use ($app) {
+
+		$app->post(
+			'/start',
+			'\bundles\lincko\api\controllers\ControllerTask:lock_start'.$app->lincko->method_suffix
+		)
+		->name('task_lock_start'.$app->lincko->method_suffix);
+
+		$app->post(
+			'/unlock',
+			'\bundles\lincko\api\controllers\ControllerTask:lock_unlock'.$app->lincko->method_suffix
+		)
+		->name('task_lock_unlock'.$app->lincko->method_suffix);
+
+		$app->post(
+			'/check',
+			'\bundles\lincko\api\controllers\ControllerTask:lock_check'.$app->lincko->method_suffix
+		)
+		->name('task_lock_check'.$app->lincko->method_suffix);
+	});
+
 });

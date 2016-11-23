@@ -211,4 +211,33 @@ class Chats extends ModelLincko {
 		return parent::checkPermissionAllow($level);
 	}
 
+	public function pivots_save(array $parameters = array()){
+		//For all chats that depends of a projects, we automatically give them same access as projects
+		$parent = $this->getParent();
+		if($parent && $parent->getTable()=='projects'){
+			$users_inform = array();
+			$pivot = new \stdClass;
+			$pivot->{'users>access'} = new \stdClass;
+			if($perm_project = json_decode($parent->getPerm())){
+				if($perm_chat = json_decode($this->getPerm())){
+					foreach ($perm_chat as $uid => $value) {
+						$users_inform[$uid] = array('chats' => 1);
+						unset($perm_project->$uid); //No need to save any user already registered
+					}
+				}
+				$save = false;
+				foreach ($perm_project as $uid => $value) {
+					$users_inform[$uid] = array('chats' => 1);
+					$save = true;
+					$pivot->{'users>access'}->{$uid} = true;
+				}
+				
+				if($save){
+					$this->pivots_format($pivot, true);
+				}
+			}
+		}
+		return parent::pivots_save($parameters);
+	}
+
 }

@@ -49,7 +49,7 @@ class Notif {
 			$result = $response->send();
 			return $result;
 		} catch (\JPush\Exceptions\JPushException $e) {
-			\libs\Watch::php($e, 'JPushException', __FILE__, true); //error
+			\libs\Watch::php('$e', 'JPushException', __FILE__, true); //error
 			return false;
 		}
 	}
@@ -68,7 +68,6 @@ class Notif {
 		if($item){
 			$domain = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'];
 			$url = 'javascript:app_generic_state.openItem(false, \''.$domain.'/#'.$item->getTable().'-'.$item->id.'\');';
-			\libs\Watch::php($url, '$url', __FILE__, false, false, true);
 			$notif['extras'] = array(
 				'url' => $url,
 			);

@@ -292,4 +292,58 @@ class ControllerNote extends Controller {
 		return false;
 	}
 
+	public function lock_start_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$result = false;
+		if(isset($form->id) && Notes::validNumeric($form->id)){ //Required
+			if($model = Notes::getModel($form->id)){
+				$result = $model->startLock();
+			}
+		}
+		if($result[1]){
+			return $this->read_post();
+		} else {
+			$msg = $app->trans->getBRUT('api', 10, 4); //Note accessed.
+			$app->render(200, array('msg' => $msg));
+			return true;
+		}
+	}
+
+	public function lock_unlock_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$result = false;
+		if(isset($form->id) && Notes::validNumeric($form->id)){ //Required
+			if($model = Notes::getModel($form->id)){
+				$result = $model->unLock();
+			}
+		}
+		if($result[1]){
+			return $this->read_post();
+		} else {
+			$msg = $app->trans->getBRUT('api', 10, 4); //Note accessed.
+			$app->render(200, array('msg' => $msg));
+			return true;
+		}
+	}
+
+	public function lock_check_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$result = false;
+		if(isset($form->id) && Notes::validNumeric($form->id)){ //Required
+			if($model = Notes::getModel($form->id)){
+				$result = $model->checkLock();
+			}
+		}
+		if($result[1]){
+			return $this->read_post();
+		} else {
+			$msg = $app->trans->getBRUT('api', 10, 4); //Note accessed.
+			$app->render(200, array('msg' => $msg));
+			return true;
+		}
+	}
+
 }

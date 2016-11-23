@@ -1435,6 +1435,67 @@ abstract class ModelLincko extends Model {
 		return self::getDependencies($list_id, $classes);
 	}
 
+	public function startLock(){
+		$app = self::getApp();
+		$get_item = false;
+		$result = false;
+		if(in_array('locked_by', $this->visible) && $this->checkAccess() && $this->checkPermissionAllow('edit')){
+			$expired = Carbon::now();
+			$expired->second = 610; //Without action from anyone (close browser by mistake), we lock 10 minutes by default
+			//Create new instance
+			if(is_null($this->locked_at)){
+				$this->locked_by = $app->lincko->data['uid'];
+				$this->locked_at = $expired;
+				$this->brutSave(); //Make sure we don't modiffy any other fields
+				$this->touchUpdateAt(); //This will make sure that everyone will see this item as locked
+				$get_item = true;
+				$result = true;
+			}
+			//Extend the time 10 minutes again
+			else if($this->locked_by == $app->lincko->data['uid']){
+				$this->locked_at = $expired;
+				$this->brutSave(); //Make sure we don't modiffy any other fields
+				//We don't need to update the updated_at field since the visible value on front is "locek_by" and others doesn't need to know how time it remain
+				$result = true;
+			}
+		}
+		return [$result, $get_item];
+	}
+
+	public function unLock($save=true){
+		$app = self::getApp();
+		$get_item = false;
+		$result = true;
+		if(in_array('locked_by', $this->visible) && $this->locked_by == $app->lincko->data['uid']){
+			$this->locked_by = null;
+			$this->locked_at = null;
+			if($save){
+				$this->brutSave();
+				$this->touchUpdateAt();
+				$get_item = true;
+			}
+		}
+		return [$result, $get_item];
+	}
+
+	public function checkLock(){
+		$app = self::getApp();
+		$get_item = false;
+		$result = null; //Return null to match database default value (null) for nobody
+		if(in_array('locked_by', $this->visible) && !is_null($this->locked_by)){
+			$expired = Carbon::now();
+			if($this->locked_at <= $expired){
+				$this->locked_by = null;
+				$this->locked_at = null;
+				$this->brutSave();
+				$this->touchUpdateAt();
+				$get_item = true;
+			}
+			return $this->locked_by;
+		}
+		return [$result, $get_item];
+	}
+
 	/*
 	//toto => function to finish
 	public function moveProject(){
@@ -2105,6 +2166,9 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 		$app = self::getApp();
+
+		//Unlock without saving
+		$this->unLock(false);
 
 		//Insure that the user has at least a read access to the element where it's attached
 		//The access to the parent has been previously check in $this->checkAccess()

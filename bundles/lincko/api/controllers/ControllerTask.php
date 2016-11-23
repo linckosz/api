@@ -397,4 +397,58 @@ class ControllerTask extends Controller {
 		return false;
 	}
 
+	public function lock_start_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$result = false;
+		if(isset($form->id) && Tasks::validNumeric($form->id)){ //Required
+			if($model = Tasks::getModel($form->id)){
+				$result = $model->startLock();
+			}
+		}
+		if($result[1]){
+			return $this->read_post();
+		} else {
+			$msg = $app->trans->getBRUT('api', 9, 4); //Task accessed.
+			$app->render(200, array('msg' => $msg));
+			return true;
+		}
+	}
+
+	public function lock_unlock_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$result = false;
+		if(isset($form->id) && Tasks::validNumeric($form->id)){ //Required
+			if($model = Tasks::getModel($form->id)){
+				$result = $model->unLock();
+			}
+		}
+		if($result[1]){
+			return $this->read_post();
+		} else {
+			$msg = $app->trans->getBRUT('api', 9, 4); //Task accessed.
+			$app->render(200, array('msg' => $msg));
+			return true;
+		}
+	}
+
+	public function lock_check_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$result = false;
+		if(isset($form->id) && Tasks::validNumeric($form->id)){ //Required
+			if($model = Tasks::getModel($form->id)){
+				$result = $model->checkLock();
+			}
+		}
+		if($result[1]){
+			return $this->read_post();
+		} else {
+			$msg = $app->trans->getBRUT('api', 9, 4); //Task accessed.
+			$app->render(200, array('msg' => $msg));
+			return true;
+		}
+	}
+
 }

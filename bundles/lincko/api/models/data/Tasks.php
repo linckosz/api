@@ -31,6 +31,7 @@ class Tasks extends ModelLincko {
 		'updated_by',
 		'fav',
 		'approved_by',
+		'locked_by',
 		'title',
 		'comment',
 		'duration', //A negative value means there is no due date
@@ -114,6 +115,7 @@ class Tasks extends ModelLincko {
 	protected $model_integer = array(
 		'fav',
 		'approved_by',
+		'locked_by',
 		'duration',
 		'progress',
 		'status',
@@ -436,6 +438,16 @@ class Tasks extends ModelLincko {
 			$class = 'tasks';
 		}
 		return parent::getClass($class);
+	}
+
+	public function toJson($detail=true, $options = 0){
+		$this->locked_by = $this->checkLock()[0];
+		return parent::toJson($detail, $options);
+	}
+
+	public function toVisible(){
+		$this->locked_by = $this->checkLock()[0];
+		return parent::toVisible();
 	}
 
 }

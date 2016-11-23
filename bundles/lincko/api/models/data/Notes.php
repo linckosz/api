@@ -25,6 +25,7 @@ class Notes extends ModelLincko {
 		'deleted_at',
 		'created_by',
 		'updated_by',
+		'locked_by',
 		'fav',
 		'title',
 		'comment',
@@ -69,6 +70,7 @@ class Notes extends ModelLincko {
 
 	protected $model_integer = array(
 		'fav',
+		'locked_by',
 	);
 
 	protected static $allow_single = true;
@@ -183,6 +185,16 @@ class Notes extends ModelLincko {
 		} else {
 			return $query;
 		}
+	}
+
+	public function toJson($detail=true, $options = 0){
+		$this->locked_by = $this->checkLock()[0];
+		return parent::toJson($detail, $options);
+	}
+
+	public function toVisible(){
+		$this->locked_by = $this->checkLock()[0];
+		return parent::toVisible();
 	}
 
 }
