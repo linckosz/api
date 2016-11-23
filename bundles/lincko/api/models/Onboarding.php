@@ -142,7 +142,7 @@ class Onboarding {
 	}
 
 	//Launch the next onboarding
-	public function next($next, $answer=false, $temp_id=null){
+	public function next($next, $answer=false, $temp_id=''){
 		$app = self::getApp();
 
 		//the user answered the question
@@ -191,15 +191,9 @@ class Onboarding {
 				$item->description = $app->trans->getBRUT('api', 2000, 2); //This project helps you to learn how to use Lincko. Be free to modify it as you want.
 				$item->parent_id = 0; //Shared folder only
 				$item->pivots_format($project_pivot, false);
-				$item->save();
+				$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 				//Set the user as Manager "id:2" (cannot delete items then)
 				PivotUsersRoles::setMyRole($item, 2);
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
 				$item->setPerm();
 				$this->setOnboarding($item, 1);
 				unset($item);
@@ -223,13 +217,7 @@ class Onboarding {
 				10003, //OK - let's start by making sure your settings are correct:
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -249,13 +237,7 @@ class Onboarding {
 				10005, //[image]/lincko/app/images/generic/onboarding/LinckoMeditate.gif[/image]
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -283,13 +265,7 @@ class Onboarding {
 				10004,
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -312,15 +288,9 @@ class Onboarding {
 				$item->pivots_format($task_pivot, false);
 				$item->approved = true; //Marked as approved
 				$item->duration = 1; //Today
-				$item->save();
+				$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 				//Lock the deletion
 				PivotUsersRoles::setMyRole($item, null, 2);
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
 				$item->setPerm();
 				$this->setOnboarding($item, 1);
 				unset($item);
@@ -333,15 +303,9 @@ class Onboarding {
 				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
 				$item->duration = 1; //Today
-				$item->save();
+				$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 				//Lock the deletion
 				PivotUsersRoles::setMyRole($item, null, 2);
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
 				$item->setPerm();
 				$this->setOnboarding($item, 2);
 				unset($item);
@@ -354,13 +318,7 @@ class Onboarding {
 				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
 				$item->duration = 1; //Today
-				$item->save();
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
+				$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 				$item->setPerm();
 				$this->setOnboarding($item, 3);
 				unset($item);
@@ -373,13 +331,7 @@ class Onboarding {
 				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
 				$item->duration = 1; //Today
-				$item->save();
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
+				$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 				$item->setPerm();
 				$this->setOnboarding($item, 4);
 				unset($item);
@@ -392,13 +344,7 @@ class Onboarding {
 				$item->parent_id = $this->getOnboarding('projects', 1);
 				$item->pivots_format($task_pivot, false);
 				$item->duration = 1; //Today
-				$item->save();
-				//Force to use LinckoBot as creator
-				$item->created_by = 0;
-				$item->updated_by = 0;
-				$item->noticed_by = '';
-				$item->viewed_by = '';
-				$item->brutSave();
+				$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 				$item->setPerm();
 				$this->setOnboarding($item, 5);
 				unset($item);
@@ -429,13 +375,7 @@ class Onboarding {
 				$this->getOnboarding('tasks', 5),
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use MonkeyKing as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -443,7 +383,7 @@ class Onboarding {
 		}
 
 		else if($next==10005){
-			sleep(3);
+			sleep(3); //ok
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -457,13 +397,7 @@ class Onboarding {
 				10003, //OK - let's start by making sure your settings are correct:
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -491,13 +425,7 @@ class Onboarding {
 				10007, //​​​​​​​Okay, you can add contacts at anytime by clicking on this button: [image]/lincko/app/images/generic/onboarding/MainMenu.png[/image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -505,26 +433,19 @@ class Onboarding {
 		}
 
 		else if($next==10007){
-			sleep(3);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
-			//Okay, you can add contacts at anytime by clicking on this button: [image]/lincko/app/images/generic/onboarding/MainMenu.png[/image] on your main menu. Don’t forget to also add them to the projects you want to work with them on.
+			//Okay, you can add contacts at anytime by clicking on this button on your main menu. Don’t forget to also add them to the projects you want to work with them on.
 			$comment->ob->{'10007'} = new \stdClass;
 			$comment->ob->{'10007'}->{'0'} = array(
 				'now',
 				10021, //Each project has Tasks, Notes, Chats, and Files - use tasks to set the goals of your project, use notes to store important information for the team - like meeting notes, processes, policies, designs and requirements, or other longer information.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -544,13 +465,7 @@ class Onboarding {
 				10011, //[image]/lincko/app/images/generic/onboarding/NavigationRepeat.gif[/image]
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -570,13 +485,7 @@ class Onboarding {
 				10010, //Anytime you upload a file to your project Chat, or attach it to a task or note - it will automatically be stored in the Files section of your project. You can link existing notes and files to tasks as well.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -584,7 +493,7 @@ class Onboarding {
 		}
 
 		else if($next==10010){
-			sleep(2);
+			sleep(2); //ok
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -598,13 +507,7 @@ class Onboarding {
 				10012, //​​​​​​​No project goes according to plan - quickly turn any line item in a note (including the action items in your meeting notes) into a task, or convert any chat message into a task by long pressing or clicking on the chat message. This let’s you turn communication into action.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -612,7 +515,7 @@ class Onboarding {
 		}
 
 		else if($next==10011){
-			sleep(3);
+			sleep(3); //ok
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -626,13 +529,7 @@ class Onboarding {
 				10009, //Use Chats for quick communication, and use Files for all your important documents and images. Every project has these four areas to keep you organised.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -652,13 +549,7 @@ class Onboarding {
 				10022, //​​​​​​​[image]/lincko/app/images/generic/onboarding/CreateTaskFromChat.gif[/image]
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -666,7 +557,7 @@ class Onboarding {
 		}
 
 		else if($next==10013){
-			sleep(1);
+			sleep(1); //ok
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -680,13 +571,7 @@ class Onboarding {
 				10014, //​​​​​​​Remember to invite others to use Lincko and have the chance to win a free stuff.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -702,7 +587,7 @@ class Onboarding {
 			//Remember to invite others to use Lincko and have the chance to win a free stuff.
 			$comment->ob->{'10014'} = new \stdClass;
 			$item->comment = json_encode($comment);
-			$item->save();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			//We need to know the comment ID
 			$comment = new \stdClass;
 			$comment->ob = new \stdClass;
@@ -716,11 +601,6 @@ class Onboarding {
 				$item->id,
 			);
 			$item->comment = json_encode($comment);
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
 			$item->brutSave();
 			$this->setOnboarding($item, 1);
 			unset($item);
@@ -749,13 +629,7 @@ class Onboarding {
 				10017, //​​​​​​​​​​​​​​Okay, we’re almost done - everyone has their own personal space - this is a special project that only you have access to. Everything you store will not be shared. We have also given you access to a sample project, so you can see how one team sets their tasks and goals in the project, and uses Notes, Chat groups and Files.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -775,13 +649,7 @@ class Onboarding {
 				10017, //​​​​​​​Okay, we’re almost done - everyone has their own personal space - this is a special project that only you have access to. Everything you store will not be shared. We have also given you access to a sample project, so you can see how one team sets their tasks and goals in the project, and uses Notes, Chat groups and Files.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -810,13 +678,7 @@ class Onboarding {
 				5,
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -839,13 +701,7 @@ class Onboarding {
 				5,
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -860,25 +716,12 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//You're on your way to being a Lincko master now! I'll be back to send you regular updates on your progess, but for now, thanks for trying out Lincko. 
 			$comment->ob->{'10019'} = new \stdClass;
-			/*
-			$comment->ob->{'10019'}->{'0'} = array(
-				'now',
-				10023, //[image]/lincko/app/images/generic/onboarding/Bruno.jpg[/image]
-			);
-			*/
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Stop the sequence
 			$this->runOnboarding(1, false);
-			//$this->runOnboarding(1, true); //toto
 		}
 
 		else if($next==10020){
@@ -894,13 +737,7 @@ class Onboarding {
 				10006, //Good work… but it looks like my friend the MonkeyKing doesn’t like you delegating work to him…but don’t worry you can add some coworkers or friends to collaborate with on Lincko. We help teams accomplish great things.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use Monkey King as creator
-			$item->created_by = 1;
-			$item->updated_by = 1;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>1)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -908,6 +745,7 @@ class Onboarding {
 		}
 
 		else if($next==10021){
+			sleep(2); //ok
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -921,13 +759,7 @@ class Onboarding {
 				10008, //Each project has Tasks, Notes, Chats, and Files - use tasks to set the goals of your project, use notes to store important information for the team - like meeting notes, processes, policies, designs and requirements, or other longer information.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
@@ -935,7 +767,7 @@ class Onboarding {
 		}
 
 		else if($next==10022){
-			sleep(1);
+			sleep(1); //ok
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -948,39 +780,11 @@ class Onboarding {
 				10013, //Let's try it. I'm going to send you a message, click or long press on the message to turn it into a task.
 			);
 			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
+			$item->save(array('uid'=>0)); //Force to use LinckoBot as creator
 			unset($item);
 
 			//Insure the sequence is running
 			$this->runOnboarding(1, true);
-		}
-
-		else if($next==10023){ //toto (delete it, it's for fun)
-			$item = new Comments();
-			$item->parent_type = 'projects';
-			$item->parent_id = $this->getOnboarding('projects', 1);
-			$comment = new \stdClass;
-			$comment->ob = new \stdClass;
-			//[image]/lincko/app/images/generic/onboarding/Bruno.jpg[/image]
-			$comment->ob->{'10023'} = new \stdClass;
-			$item->comment = json_encode($comment);
-			$item->save();
-			//Force to use LinckoBot as creator
-			$item->created_by = 0;
-			$item->updated_by = 0;
-			$item->noticed_by = '';
-			$item->viewed_by = '';
-			$item->brutSave();
-			unset($item);
-
-			//Insure the sequence is running
-			$this->runOnboarding(1, false);
 		}
 
 		//It save something only if there is a change

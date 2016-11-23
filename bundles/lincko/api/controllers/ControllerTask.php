@@ -338,9 +338,7 @@ class ControllerTask extends Controller {
 		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
 			$errfield = 'id';
-		}
-
-		if($model = Tasks::find($form->id)){
+		} else if($model = Tasks::find($form->id)){
 			if($model->delete()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 8)); //Task deleted.
 				$data = new Data();
@@ -374,9 +372,7 @@ class ControllerTask extends Controller {
 		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
 			$errfield = 'id';
-		}
-
-		if($model = Tasks::onlyTrashed()->find($form->id)){
+		} else if($model = Tasks::onlyTrashed()->find($form->id)){
 			if($model->restore()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 9, 21)); //Task restored.
 				$data = new Data();

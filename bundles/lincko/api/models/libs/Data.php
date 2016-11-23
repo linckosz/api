@@ -57,6 +57,7 @@ class Data {
 		$app = $this->app;
 		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
 		if($lastvisit = $this->setLastVisit()){
+			$lastvisit = $this->lastvisit_timestamp;
 			$msg = array_merge(
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.

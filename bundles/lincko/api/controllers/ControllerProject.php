@@ -241,9 +241,7 @@ class ControllerProject extends Controller {
 		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
 			$errfield = 'id';
-		}
-
-		if($model = Projects::find($form->id)){
+		} else if($model = Projects::find($form->id)){
 			if($model->delete()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 8)); //Project deleted.
 				$data = new Data();
@@ -277,9 +275,7 @@ class ControllerProject extends Controller {
 		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
 			$errfield = 'id';
-		}
-
-		if($model = Projects::onlyTrashed()->find($form->id)){
+		} else if($model = Projects::onlyTrashed()->find($form->id)){
 			if($model->restore()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 21)); //Project restored.
 				$data = new Data();

@@ -243,9 +243,7 @@ class ControllerNote extends Controller {
 		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
-		}
-
-		if($model = Notes::find($form->id)){
+		} else if($model = Notes::find($form->id)){
 			if($model->delete()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 8)); //Note deleted.
 				$data = new Data();
@@ -279,9 +277,7 @@ class ControllerNote extends Controller {
 		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
-		}
-
-		if($model = Notes::onlyTrashed()->find($form->id)){
+		} else if($model = Notes::onlyTrashed()->find($form->id)){
 			if($model->restore()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 21)); //Note restored.
 				$data = new Data();

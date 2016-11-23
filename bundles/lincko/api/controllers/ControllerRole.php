@@ -341,9 +341,7 @@ class ControllerRole extends Controller {
 		if(!isset($form->id) || !Roles::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 15); //We could not validate the role ID.
 			$errfield = 'id';
-		}
-
-		if($model = Roles::find($form->id)){
+		} else if($model = Roles::find($form->id)){
 			if($model->delete()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 17, 8)); //Role deleted.
 				$data = new Data();
@@ -377,9 +375,7 @@ class ControllerRole extends Controller {
 		if(!isset($form->id) || !Roles::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 15); //We could not validate the role ID.
 			$errfield = 'id';
-		}
-
-		if($model = Roles::onlyTrashed()->find($form->id)){
+		} else if($model = Roles::onlyTrashed()->find($form->id)){
 			if($model->restore()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 17, 21)); //Role restored.
 				$data = new Data();

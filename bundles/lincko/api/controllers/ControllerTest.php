@@ -1010,19 +1010,33 @@ class ControllerTest extends Controller {
 
 
 		//$tp = Chats::find(830)->setPerm();
+		$theuser = Users::find($app->lincko->data['uid']);
+		$theuser::setDebugMode(true);
 
-		$expired = Carbon::now();
-		$expired->second = -36000;
-		$tata = Tasks::Where('updated_at', '>', $expired)->get();
+		$tp = Tasks::find(13316);
+		\libs\Watch::php( $tp->locked_by, '13316 $toVisible', __FILE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()), '13316 $toJson', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->toVisible(), '13316 $toVisible', __FILE__, false, false, true);
 
-		$truc = Carbon::now();
-		$truc->second = -30000;
-		$tp = [];
-		foreach ($tata as $key => $value) {
-			if($value->updated_at > $truc){
-				$tp[] = $value->toArray();
-			}
-		}
+		//$tp = Tasks::find(13316);
+		//\libs\Watch::php( json_decode($tp->toJson()), '13316 $toJson', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->toVisible(), '13316 $toVisible', __FILE__, false, false, true);
+
+		/*
+		$tp = Comments::find(39211);
+		\libs\Watch::php( $tp->toArray(), '39211 $toArray', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toJson(), '39211 $toJson', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toVisible(), '39211 $toVisible', __FILE__, false, false, true);
+		$tp = Comments::find(39215);
+		\libs\Watch::php( $tp->toArray(), '39215 $toArray', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toJson(), '39215 $toJson', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toVisible(), '39215 $toVisible', __FILE__, false, false, true);
+		$tp = Comments::find(39538);
+		\libs\Watch::php( $tp->toArray(), '39538 $toArray', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toJson(), '39538 $toJson', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toVisible(), '39538 $toVisible', __FILE__, false, false, true);
+		*/
+
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);

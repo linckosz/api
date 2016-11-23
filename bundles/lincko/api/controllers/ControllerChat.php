@@ -262,9 +262,7 @@ class ControllerChat extends Controller {
 		if(!isset($form->id) || !Chats::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
-		}
-
-		if($model = Chats::find($form->id)){
+		} else if($model = Chats::find($form->id)){
 			if($model->delete()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 13, 8)); //Discussion group deleted.
 				$data = new Data();
@@ -298,9 +296,7 @@ class ControllerChat extends Controller {
 		if(!isset($form->id) || !Chats::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
-		}
-
-		if($model = Chats::onlyTrashed()->find($form->id)){
+		} else if($model = Chats::onlyTrashed()->find($form->id)){
 			if($model->restore()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 13, 21)); //Discussion group restored.
 				$data = new Data();

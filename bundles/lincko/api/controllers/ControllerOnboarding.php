@@ -41,7 +41,7 @@ class ControllerOnboarding extends Controller {
 			if(isset($data->answer) && !empty($data->answer)){
 				$answer = $data->answer;
 			}
-			$temp_id = null;
+			$temp_id = '';
 			if(isset($data->temp_id) && !empty($data->temp_id)){
 				$temp_id = $data->temp_id;
 			}

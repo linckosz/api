@@ -286,9 +286,7 @@ class ControllerSpace extends Controller {
 		if(!isset($form->id) || !Spaces::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 32); //We could not validate the space ID.
 			$errfield = 'id';
-		}
-
-		if($model = Spaces::find($form->id)){
+		} else if($model = Spaces::find($form->id)){
 			if($model->delete()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 18, 8)); //Space deleted.
 				$data = new Data();
@@ -322,9 +320,7 @@ class ControllerSpace extends Controller {
 		if(!isset($form->id) || !Spaces::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 32); //We could not validate the space ID.
 			$errfield = 'id';
-		}
-
-		if($model = Spaces::onlyTrashed()->find($form->id)){
+		} else if($model = Spaces::onlyTrashed()->find($form->id)){
 			if($model->restore()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 18, 21)); //Space restored.
 				$data = new Data();
