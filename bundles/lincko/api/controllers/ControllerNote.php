@@ -174,7 +174,7 @@ class ControllerNote extends Controller {
 		$failmsg = $app->trans->getBRUT('api', 10, 5)."\n"; //Note update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		$errfield = 'undefined';
-
+		\libs\Watch::php(1, '$var', __FILE__, false, false, true);
 		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
@@ -195,15 +195,26 @@ class ControllerNote extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
-		else if($model = Notes::find($form->id)){
+		else if($model = Notes::withTrashed()->find($form->id)){
+			\libs\Watch::php(11, '$var', __FILE__, false, false, true);
 			if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
+			\libs\Watch::php(111, '$var', __FILE__, false, false, true);
 			if(count($dirty)>0 || $pivots){
+				//For deleted items we can modify links only
+				\libs\Watch::php($dirty, '$dirty', __FILE__, false, false, true);
+				\libs\Watch::php($pivots, '$pivots', __FILE__, false, false, true);
+				if(count($dirty)==0 && $pivots){
+					$model->enableTrash(true);
+					\libs\Watch::php(222, '$var', __FILE__, false, false, true);
+				}
 				if($model->getParentAccess() && $model->save()){
+					\libs\Watch::php(333, '$var', __FILE__, false, false, true);
+					$model->enableTrash(false);
 					$msg = array('msg' => $app->trans->getBRUT('api', 10, 6)); //Note updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);

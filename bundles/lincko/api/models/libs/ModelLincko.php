@@ -2550,7 +2550,9 @@ abstract class ModelLincko extends Model {
 	public function extraEncode($bindings){
 		$bindings = json_decode(json_encode($bindings)); //Clone (if not will delete proporties on object itself)
 		if(is_object($bindings) && !empty($bindings)){
+			if($this->id==37625){ \libs\Watch::php($bindings, '$model', __FILE__, false, false, true); }
 			if(isset($this->extra) || in_array('extra', self::getColumns())){
+				if($this->id==37625){ \libs\Watch::php(111, '$model', __FILE__, false, false, true); }
 				unset($bindings->extra); //Do not reencode own field
 				foreach (static::$hide_extra as $field) {
 					unset($bindings->$field);
@@ -2558,6 +2560,7 @@ abstract class ModelLincko extends Model {
 						unset($bindings->{static::$prefix_fields[$field]});
 					}
 				}
+				if($this->id==37625){ \libs\Watch::php($bindings, '$bindings', __FILE__, false, false, true); }
 				if($extra = json_encode($bindings)){
 					$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
 					return true;

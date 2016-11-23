@@ -375,6 +375,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
 				if($model->getParentAccess() && $model->save()){
+					$model->enableTrash(false);
 					$msg = array('msg' => $app->trans->getBRUT('api', 14, 6)); //File updated.
 					$data = new Data();
 					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
