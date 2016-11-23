@@ -142,12 +142,13 @@ class Onboarding {
 	}
 
 	//Launch the next onboarding
-	public function next($next, $answer=false){
+	public function next($next, $answer=false, $temp_id=null){
 		$app = self::getApp();
 
 		//the user answered the question
 		if($answer){
 			$item = new Comments();
+			$item->temp_id = $temp_id;
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
 			$item->comment = $answer;
@@ -163,7 +164,6 @@ class Onboarding {
 
 		//This is the entry where to start onboarding system (Initialiaze the first onboarding)
 		if($next==10001){
-
 			$project_id = $this->getOnboarding('projects', 1);
 			if($project_id && $item = Projects::find($project_id)){
 				//Increment new roject "Lincko [1]" => "Lincko [2]"
@@ -297,7 +297,6 @@ class Onboarding {
 		}
 
 		else if($next==10004){
-
 			//initialze task pivot
 			$task_pivot = new \stdClass;
 			$task_pivot->{'users>in_charge'} = new \stdClass;
@@ -444,6 +443,7 @@ class Onboarding {
 		}
 
 		else if($next==10005){
+			sleep(3);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -505,7 +505,7 @@ class Onboarding {
 		}
 
 		else if($next==10007){
-
+			sleep(3);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -532,7 +532,6 @@ class Onboarding {
 		}
 
 		else if($next==10008){
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -559,7 +558,6 @@ class Onboarding {
 		}
 
 		else if($next==10009){
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -586,7 +584,7 @@ class Onboarding {
 		}
 
 		else if($next==10010){
-
+			sleep(2);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -614,7 +612,7 @@ class Onboarding {
 		}
 
 		else if($next==10011){
-
+			sleep(3);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -642,7 +640,6 @@ class Onboarding {
 		}
 
 		else if($next==10012){
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -669,7 +666,7 @@ class Onboarding {
 		}
 
 		else if($next==10013){
-
+			sleep(1);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -697,7 +694,6 @@ class Onboarding {
 		}
 
 		else if($next==10014){
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -734,6 +730,7 @@ class Onboarding {
 		}
 
 		else if($next==10015){
+			sleep(3);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -766,7 +763,6 @@ class Onboarding {
 		}
 
 		else if($next==10016){
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -793,7 +789,7 @@ class Onboarding {
 		}
 
 		else if($next==10017){
-
+			sleep(2);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -828,7 +824,6 @@ class Onboarding {
 		}
 
 		else if($next==10018){
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -858,7 +853,6 @@ class Onboarding {
 		}
 
 		else if($next==10019){
-
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);
@@ -866,10 +860,12 @@ class Onboarding {
 			$comment->ob = new \stdClass;
 			//You're on your way to being a Lincko master now! I'll be back to send you regular updates on your progess, but for now, thanks for trying out Lincko. 
 			$comment->ob->{'10019'} = new \stdClass;
+			/*
 			$comment->ob->{'10019'}->{'0'} = array(
 				'now',
 				10023, //[image]/lincko/app/images/generic/onboarding/Bruno.jpg[/image]
 			);
+			*/
 			$item->comment = json_encode($comment);
 			$item->save();
 			//Force to use LinckoBot as creator
@@ -881,8 +877,8 @@ class Onboarding {
 			unset($item);
 
 			//Stop the sequence
-			//$this->runOnboarding(1, false);
-			$this->runOnboarding(1, true); //toto
+			$this->runOnboarding(1, false);
+			//$this->runOnboarding(1, true); //toto
 		}
 
 		else if($next==10020){
@@ -939,6 +935,7 @@ class Onboarding {
 		}
 
 		else if($next==10022){
+			sleep(1);
 			$item = new Comments();
 			$item->parent_type = 'projects';
 			$item->parent_id = $this->getOnboarding('projects', 1);

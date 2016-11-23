@@ -768,7 +768,7 @@ class Data {
 			//\time_checkpoint('before extra');
 			foreach ($result_no_extra as $table_name => $models) {
 				foreach ($models as $id => $model) {
-					//$model->extraEncode($result_bis->$uid->$table_name->$id);
+					$model->extraEncode($result_bis->$uid->$table_name->$id);
 				}
 			}
 			//\time_checkpoint('after extra');

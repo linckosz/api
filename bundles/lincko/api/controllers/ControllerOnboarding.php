@@ -41,7 +41,11 @@ class ControllerOnboarding extends Controller {
 			if(isset($data->answer) && !empty($data->answer)){
 				$answer = $data->answer;
 			}
-			$onboarding->next($data->next, $answer);
+			$temp_id = null;
+			if(isset($data->temp_id) && !empty($data->temp_id)){
+				$temp_id = $data->temp_id;
+			}
+			$onboarding->next($data->next, $answer, $temp_id);
 		}
 
 		//Current is the Comments_ID of the previous question (not the translation ID)
