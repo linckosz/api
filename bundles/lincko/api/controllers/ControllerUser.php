@@ -149,7 +149,7 @@ class ControllerUser extends Controller {
 			$errfield = 'email';
 		}
 		else if(!isset($form->password) || !Users::validPassword($form->password)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters - Alphanumeric
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters
 			$errfield = 'password';
 		}
 		else if(isset($form->username) && (!Users::validChar($form->username, true) || !Users::validTextNotEmpty($form->username, true))){ //Optional
@@ -728,7 +728,7 @@ class ControllerUser extends Controller {
 			$errfield = 'code';
 		}
 		else if(!isset($form->password) || !Users::validPassword($form->password)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters - Alphanumeric
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters
 			$errfield = 'password';
 		}
 		else if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){

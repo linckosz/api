@@ -313,7 +313,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public static function validPassword($data, $optional=false){
-		$return = is_string($data) && preg_match("/^[\w\d]{6,60}$/u", $data);
+		$return = is_string($data) && preg_match("/^[\S]{6,60}$/u", $data);
 		return $return;
 	}
 
