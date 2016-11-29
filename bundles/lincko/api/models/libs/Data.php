@@ -39,6 +39,18 @@ class Data {
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
+		//Get lastvisit field if it's part of form field of upload
+		if(!$this->data && isset($_FILES) && !empty($_FILES)){
+			$this->data = new \stdClass;
+			$this->data->data = new \stdClass;
+			$post = $app->request->post();
+			if(!empty($post)){
+				$post = (object) $post;
+				if(isset($post->lastvisit)){
+					$this->data->data->lastvisit = (int) $post->lastvisit;
+				}
+			}
+		}
 		return true;
 	}
 
@@ -56,8 +68,7 @@ class Data {
 	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0, $delete_temp_id=true, $schema=null){
 		$app = $this->app;
 		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
-		if($lastvisit = $this->setLastVisit()){
-			$lastvisit = $this->lastvisit_timestamp;
+		if($lastvisit && $this->setLastVisit()){
 			$msg = array_merge(
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.

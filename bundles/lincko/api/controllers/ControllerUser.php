@@ -188,11 +188,13 @@ class ControllerUser extends Controller {
 				$username = mb_strstr($email,'@',true);
 			}
 			$username_sha1 = sha1(mb_strtolower($email));
+			$username_sha1 = substr($username_sha1, 0, 20); //Truncate to 20 characters because of phone notification alias isue (limited to 64bits = 20 characters in Hex)
 			$internal_email = $username;
 			$limit = 1; //Limit while loop to 1000 iterations to avoid infinite loop
 			while( $limit <= 1000 && Users::where('internal_email', '=', $username)->orWhere('username_sha1', '=', $username_sha1)->first() ){
 				$internal_email = $username.mt_rand(1, 9999);
 				$username_sha1 = sha1(mb_strtolower($internal_email));
+				$username_sha1 = substr($username_sha1, 0, 20);
 				$limit++;
 			}
 
@@ -240,7 +242,7 @@ class ControllerUser extends Controller {
 							$app->flashNow('public_key', $authorize['public_key']);
 						}
 						if(isset($authorize['username_sha1'])){
-							$app->flashNow('username_sha1', $authorize['username_sha1']);
+							$app->flashNow('username_sha1', substr($authorize['username_sha1'], 0, 20)); //Truncate to 20 character because phone alias notification limitation
 						}
 						if(isset($authorize['uid'])){
 							$app->flashNow('uid', $authorize['uid']);
@@ -434,7 +436,7 @@ class ControllerUser extends Controller {
 							$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
 						}
 						if(isset($authorize['username_sha1'])){
-							$app->flashNow('username_sha1', $authorize['username_sha1']);
+							$app->flashNow('username_sha1', substr($authorize['username_sha1'], 0, 20)); //Truncate to 20 character because phone alias notification limitation
 						}
 						if(isset($authorize['uid'])){
 							$app->flashNow('uid', $authorize['uid']);
