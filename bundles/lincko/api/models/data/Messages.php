@@ -275,11 +275,15 @@ class Messages extends ModelLincko {
 			if($user = Users::find($value->pivot->users_id)){
 				$sha = $user->getSha();
 				if(!empty($sha)){
-					$aliases[] = $sha;
+					$aliases[$value->pivot->users_id] = $sha;
 				}
 			}
 		}
 		unset($aliases[$this->created_by]); //Exlude the creator
+		unset($aliases[$app->lincko->data['uid']]); //Exclude the user itself
+		if(empty($aliases)){
+			return true;
+		}
 		if($this->created_by==0){
 			$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
 		} else {

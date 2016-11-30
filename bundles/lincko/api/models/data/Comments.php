@@ -314,11 +314,15 @@ class Comments extends ModelLincko {
 				if($user = Users::find($value->pivot->users_id)){
 					$sha = $user->getSha();
 					if(!empty($sha)){
-						$aliases[] = $sha;
+						$aliases[$value->pivot->users_id] = $sha;
 					}
 				}
 			}
-			unset($aliases[$this->updated_by]); //Exlude the creator
+			unset($aliases[$this->updated_by]); //Exlude the updater
+			unset($aliases[$app->lincko->data['uid']]); //Exclude the user itself
+			if(empty($aliases)){
+				return true;
+			}
 			if($this->updated_by==0){
 				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
 				return true; //[toto] We need to remove this line to allow "app_models_resume_format_sentence"

@@ -347,14 +347,18 @@ class Tasks extends ModelLincko {
 		$content = $this->title;
 		$notif = new Notif;
 		foreach ($users as $value) {
-			if($value->pivot->users_id != $this->updated_by){
+			if($value->pivot->users_id != $this->updated_by && $value->pivot->users_id != $app->lincko->data['uid']){
 				$user = Users::find($value->pivot->users_id);
-				$alias = array($user->getSha());
+				$alias = array($value->pivot->users_id => $user->getSha());
 				$language = $user->getLanguage();
 				if($new){
 					$title = $app->trans->getBRUT('api', 9, 23, array('un' => $sender,), $language); //@un~~ created a task
 				} else {
 					$title = $app->trans->getBRUT('api', 9, 24, array('un' => $sender,), $language); //@un~~ modified a task
+				}
+				unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
+				if(empty($alias)){
+					continue;
 				}
 				$notif->push($title, $content, $this, $alias);
 			}

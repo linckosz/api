@@ -400,7 +400,7 @@ class Users extends ModelLincko {
 	}
 
 	public function getSha(){
-		return $this->username_sha1;
+		return substr($this->username_sha1, 0, 20); //Truncate to 20 characters because of phone notification alias isue (limited to 64bits = 20 characters in Hex)
 	}
 
 	public function save(array $options = array()){
