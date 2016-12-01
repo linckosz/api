@@ -52,6 +52,11 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 		return $app->trans->getLanguages($bundle);
 	}
 
+	public function get_Languages_short($bundle = NULL){
+		$app = \Slim\Slim::getInstance();
+		return $app->trans->getLanguagesShort($bundle);
+	}
+
 	public function get_Language(){
 		$app = \Slim\Slim::getInstance();
 		return $app->trans->getClientLanguage();
@@ -113,6 +118,7 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 				new \Twig_SimpleFunction('_trans', array($this, 'get_Trans'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_filelatest', array($this, 'get_Filelatest'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_languages', array($this, 'get_Languages'), array('is_safe' => array('html'))),
+				new \Twig_SimpleFunction('_languages_short', array($this, 'get_Languages_short'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_language', array($this, 'get_Language'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_language_full', array($this, 'get_Language_full'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_route', array($this, 'get_Route'), array('is_safe' => array('html'))),

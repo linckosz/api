@@ -679,7 +679,7 @@ class ControllerUser extends Controller {
 			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->first()){
 				$user_log->code = substr(str_shuffle("123456789"), 0, 6);
 				$limit = Carbon::now();
-				$limit->second = 610; //We give 10 minutes to enter the code (including 10 more seconds to cover communication latency)
+				$limit->second = $limit->second + 610; //We give 10 minutes to enter the code (including 10 more seconds to cover communication latency)
 				$user_log->code_limit = $limit;
 				$user_log->code_try = 3; //We give 3 shots to success
 				if($user_log->save()){

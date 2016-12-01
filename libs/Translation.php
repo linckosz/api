@@ -140,6 +140,15 @@ class Translation {
 		}
 	}
 
+	public function getLanguagesShort($bundle = NULL){
+		$list = $this->getLanguages($bundle);
+		$listshort = array();
+		foreach ($list as $key => $value) {
+			$listshort[$key] = trim(preg_replace('/\(.+\)$/', '', $value));
+		}
+		return $listshort;
+	}
+
 	public function setDefaultLanguage($bundle = NULL){
 		if(is_string($bundle) && isset($app->lincko->databases[$bundle])){
 			$this->bundle = $bundle;

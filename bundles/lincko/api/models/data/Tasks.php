@@ -428,7 +428,7 @@ class Tasks extends ModelLincko {
 	public function overdue($deadline){
 		if(!$this->approved && $this->start < $deadline){
 			$duedate = Carbon::createFromFormat('Y-m-d H:i:s', $this->start);
-			$duedate->second = $this->duration;
+			$duedate->second = $duedate->second + $this->duration;
 			if($duedate < $deadline){
 				return $deadline->diffInSeconds($duedate, true);
 			}

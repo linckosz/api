@@ -72,4 +72,10 @@ $app->group('/data', function () use ($app) {
 	)
 	->name('data_resume_hourly_get');
 
+	$app->get(
+		'/unlock',
+		'\bundles\lincko\api\controllers\ControllerData:unlock_get'
+	)
+	->name('data_unlock_get');
+
 });

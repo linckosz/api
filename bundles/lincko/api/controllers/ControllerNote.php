@@ -309,7 +309,8 @@ class ControllerNote extends Controller {
 			}
 		}
 		if($result[1]){
-			return $this->read_post();
+			//return $this->read_post();
+			return (new ControllerData)->latest_post();
 		} else {
 			$msg = $app->trans->getBRUT('api', 10, 4); //Note accessed.
 			$app->render(200, array('msg' => $msg));
@@ -327,7 +328,8 @@ class ControllerNote extends Controller {
 			}
 		}
 		if($result[1]){
-			return $this->read_post();
+			//return $this->read_post();
+			return (new ControllerData)->latest_post();
 		} else {
 			$msg = $app->trans->getBRUT('api', 10, 4); //Note accessed.
 			$app->render(200, array('msg' => $msg));
@@ -344,12 +346,10 @@ class ControllerNote extends Controller {
 				$result = $model->checkLock();
 			}
 		}
-		if($result[1]){
-			return $this->read_post();
+		if($result[1]>0){
+			return (new ControllerData)->latest_post();
 		} else {
-			$msg = $app->trans->getBRUT('api', 10, 4); //Note accessed.
-			$app->render(200, array('msg' => $msg));
-			return true;
+			return $this->read_post(); //We do only read the item itself if lastvisit is missing
 		}
 	}
 

@@ -1437,18 +1437,17 @@ abstract class ModelLincko extends Model {
 
 	public function startLock(){
 		$app = self::getApp();
-		$get_item = false;
 		$result = false;
+		$lastvisit = (new Data())->getTimestamp();
 		if(in_array('locked_by', $this->visible) && $this->checkAccess() && $this->checkPermissionAllow('edit')){
 			$expired = Carbon::now();
-			$expired->second = 610; //Without action from anyone (close browser by mistake), we lock 10 minutes by default
+			$expired->second = $expired->second + 310; //Without action from anyone (close browser by mistake), we lock 5 minutes by default (5 minutes to cover lose of internet connection from users)
 			//Create new instance
 			if(is_null($this->locked_at)){
 				$this->locked_by = $app->lincko->data['uid'];
 				$this->locked_at = $expired;
 				$this->brutSave(); //Make sure we don't modiffy any other fields
 				$this->touchUpdateAt(); //This will make sure that everyone will see this item as locked
-				$get_item = true;
 				$result = true;
 			}
 			//Extend the time 10 minutes again
@@ -1459,42 +1458,42 @@ abstract class ModelLincko extends Model {
 				$result = true;
 			}
 		}
-		return [$result, $get_item];
+		return [$result, $lastvisit];
 	}
 
 	public function unLock($save=true){
 		$app = self::getApp();
-		$get_item = false;
 		$result = true;
+		$lastvisit = (new Data())->getTimestamp();
 		if(in_array('locked_by', $this->visible) && $this->locked_by == $app->lincko->data['uid']){
 			$this->locked_by = null;
 			$this->locked_at = null;
 			if($save){
 				$this->brutSave();
 				$this->touchUpdateAt();
-				$get_item = true;
 			}
 		}
-		return [$result, $get_item];
+		return [$result, $lastvisit];
 	}
 
 	public function checkLock(){
 		$app = self::getApp();
-		$get_item = false;
 		$result = null; //Return null to match database default value (null) for nobody
-		if(in_array('locked_by', $this->visible) && !is_null($this->locked_by)){
-			$expired = Carbon::now();
-			$locked_at = Carbon::createFromFormat('Y-m-d H:i:s', $this->locked_at);
-			if($locked_at->lte($expired)){
-				$this->locked_by = null;
-				$this->locked_at = null;
-				$this->brutSave();
-				$this->touchUpdateAt();
-				$get_item = true;
+		if(in_array('locked_by', $this->visible)){
+			$lastvisit = (new Data())->getTimestamp();
+			if(!is_null($this->locked_by)){
+				$expired = Carbon::now();
+				$locked_at = Carbon::createFromFormat('Y-m-d H:i:s', $this->locked_at);
+				if($locked_at->lte($expired)){
+					$this->locked_by = null;
+					$this->locked_at = null;
+					$this->brutSave();
+					$this->touchUpdateAt();
+				}
+				$result = $this->locked_by;
 			}
-			$result = $this->locked_by;
 		}
-		return [$result, $get_item];
+		return [$result, $lastvisit];
 	}
 
 	/*

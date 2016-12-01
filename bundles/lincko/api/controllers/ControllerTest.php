@@ -17,6 +17,7 @@ use \bundles\lincko\api\models\libs\Invitation;
 use \bundles\lincko\api\models\libs\Tree;
 use \bundles\lincko\api\models\libs\Models;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\Notif;
@@ -1010,12 +1011,14 @@ class ControllerTest extends Controller {
 
 
 		//$tp = Chats::find(830)->setPerm();
+		/*
 		$theuser = Users::find($app->lincko->data['uid']);
 		$theuser::setDebugMode(true);
 
 		$tp = Tasks::find(13316);
 		\libs\Watch::php( $tp->locked_by, '13316 $toVisible', __FILE__, false, false, true);
 		\libs\Watch::php( json_decode($tp->toJson()), '13316 $toJson', __FILE__, false, false, true);
+		*/
 		//\libs\Watch::php( $tp->toVisible(), '13316 $toVisible', __FILE__, false, false, true);
 
 		//$tp = Tasks::find(13316);
@@ -1037,9 +1040,16 @@ class ControllerTest extends Controller {
 		\libs\Watch::php( $tp->toVisible(), '39538 $toVisible', __FILE__, false, false, true);
 		*/
 
+		$time = (new Tasks)->freshTimestamp();
+		$time->second = $time->second - 10;
+
+		Tasks::whereIn('id', [14509, 14512, 14516])->update(['locked_by' => $app->lincko->data['uid'],'locked_at' => $time]);
+
+		Data::unLockAll();
+
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*

@@ -882,6 +882,53 @@ class Data {
 
 	}
 
+	
+	public static function unLockAll(){
+		if(function_exists('proc_nice')){proc_nice(20);}
+		$app = \Slim\Slim::getInstance();
+		$time = (new Users)->freshTimestamp();
+		$users = array();
+
+		//Unlock Tasks
+		$tasks_query = Tasks::withTrashed()->whereNotNull('locked_by')->where('locked_at', '<', $time);
+		$tasks_perm = $tasks_query->get(array('_perm'));
+		if(count($tasks_perm)>0){
+			$tasks_update = $tasks_query->getQuery()->update(['updated_at' => $time, 'extra' => null, 'locked_by' => null, 'locked_at' => null]);
+			foreach ($tasks_perm as $items) {
+				if(!is_null($items->_perm) && $perm = json_decode($items->_perm)){
+					foreach ($perm as $uid => $list) {
+						if(!isset($users[$uid])){
+							$users[$uid] = array();
+						}
+						$users[$uid]['tasks'] = true;
+					}
+				}
+			}
+		}
+
+		//Unlock Notes
+		$notes_query = Notes::withTrashed()->whereNotNull('locked_by')->where('locked_at', '<', $time);
+		$notes_perm = $notes_query->get(array('_perm'));
+		if(count($notes_perm)>0){
+			$notes_update = $notes_query->getQuery()->update(['updated_at' => $time, 'extra' => null, 'locked_by' => null, 'locked_at' => null]);
+			foreach ($notes_perm as $items) {
+				if(!is_null($items->_perm) && $perm = json_decode($items->_perm)){
+					foreach ($perm as $uid => $list) {
+						if(!isset($users[$uid])){
+							$users[$uid] = array();
+						}
+						$users[$uid]['notes'] = true;
+					}
+				}
+			}
+		}
+		\libs\Watch::php( $users, '$users', __FILE__, false, false, true);
+		Updates::informUsers($users);
+		if(function_exists('proc_nice')){proc_nice(0);}
+		return true;
+	}
+	
+
 	//$period (string) => 'daily', 'weekly'
 	public static function getResume(){ //Default is 24H (daily is 86,400s), weekly is 604,800s.
 		$app = \Slim\Slim::getInstance();
@@ -920,14 +967,14 @@ class Data {
 				$base = 700;
 			}
 			$timenext = $timeend->copy();
-			$timenext->second = $timeback; //Give one more day/week to indicate a close target
+			$timenext->second = $timenext->second - $timeback; //Give one more day/week to indicate a close target
 			$timestart = $timeend->copy();
-			$timestart->second = -$timeback; //When do we start to compare, fro one day/week before
+			$timestart->second = $timestart->second - $timeback; //When do we start to compare, fro one day/week before
 			$timeprevious = $timeend->copy();
-			$timeprevious->second = -2*$timeback; //This help to compare to previous day/week
+			$timeprevious->second = $timeprevious->second - 2*$timeback; //This help to compare to previous day/week
 			$timelimit = $timestart->copy();
 			if($period=='weekly'){
-				$timelimit->second = -$timeback; //This help to display at least one message of no activity for weekly report
+				$timelimit->second = $timelimit->second - $timeback; //This help to display at least one message of no activity for weekly report
 			}
 
 			
