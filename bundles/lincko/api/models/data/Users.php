@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\Onboarding;
+use \bundles\lincko\api\models\Notif;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 

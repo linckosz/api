@@ -9,6 +9,7 @@ use \libs\Datassl;
 use \libs\SimpleImage;
 use \libs\File;
 use \libs\STR;
+use \libs\Folders;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
@@ -17,6 +18,7 @@ use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\libs\Data;
 use WideImage\WideImage;
+use Endroid\QrCode\QrCode;
 
 class ControllerFile extends Controller {
 
@@ -474,6 +476,80 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return $this->open_get($workspace, $uid, $type, $id);
 	}
 
+	public function qrcode_get(){
+		$app = $this->app;
+		ob_clean();
+		flush();
+		$uid = $app->lincko->data['uid'];
+		$user = Users::find($uid);
+		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/uid/'.Datassl::encrypt($user->id, 'invitation');
+		$timestamp = $user->created_at->timestamp; 
+		$gmt_mtime = gmdate('r', $timestamp);
+		header('Last-Modified: '.$gmt_mtime);
+		header('Expires: '.gmdate(DATE_RFC1123,time()+16)); //About 6 months cached
+		header('ETag: "'.md5($uid.'-'.$timestamp).'"');
+		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+			if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmt_mtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($uid.'-'.$timestamp)) {
+				header('HTTP/1.1 304 Not Modified');
+				return exit(0);
+			}
+		}
+
+		//https://packagist.org/packages/endroid/qrcode
+		$qrCode = new QrCode();
+
+		$server_path_full = $app->lincko->filePathPrefix.$app->lincko->filePath;
+		$folder = new Folders;
+		$folder->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/qrcode/');
+
+		$exists = false;
+		$basename = $_SERVER['REQUEST_SCHEME'].'-'.$_SERVER['SERVER_HOST'].'-';
+
+		if($user->profile_pic>0 && $file = Files::withTrashed()->find($user->profile_pic)){
+			$path = $folder->getPath().$basename.$user->profile_pic.'.png';
+			$thumbnail = $server_path_full.'/'.$file->created_by.'/thumbnail/'.$file->link;
+			if(is_file($path)){
+				$exists = true;
+			} else if(is_file($thumbnail)){
+				//Generate the qrcode picture
+				$mini = $folder->getPath().$basename.$user->profile_pic.'_mini.png';
+				$src = WideImage::load($thumbnail);
+				$src = $src->resize(72, 72, 'outside', 'any');
+				$src = $src->crop("center", "middle", 72, 72);
+				$src = $src->roundCorners(12, null, 2);
+				$src = $src->saveToFile($mini, 9, PNG_NO_FILTER);
+				$qrCode
+					->setLogo($mini)
+					->setLogoSize(72)
+				;
+			}
+		} else {
+			$path = $folder->getPath().$basename.'qrcode.png';
+			if(is_file($path)){
+				$exists = true;
+			}
+		}
+		
+		if(!$exists){
+			$qrCode
+				->setText($url)
+				->setSize(320)
+				->setPadding(10) //Total = 2*170
+				->setErrorCorrection('high')
+				->setForegroundColor(array('r' => 233, 'g' => 135, 'b' => 34, 'a' => 0))
+				->setBackgroundColor(array('r' => 255, 'g' => 255, 'b' => 255, 'a' => 0))
+				->setImageType(QrCode::IMAGE_TYPE_PNG)
+			;
+			header('Content-Type: '.$qrCode->getContentType());
+			$qrCode->save($path);
+			$qrCode->render();
+		} else {
+			WideImage::load($path)->output('png');;
+		}
+		
+		return exit(0);
+	}
+
 	public function open_get($workspace, $uid, $type, $id){
 		$app = $this->app;
 		ob_clean();
@@ -526,7 +602,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					$timestamp = filemtime($path); 
 					$gmt_mtime = gmdate('r', $timestamp);
 					header('Last-Modified: '.$gmt_mtime);
-					header('Expires: '.gmdate(DATE_RFC1123,time()+86400));
+					header('Expires: '.gmdate(DATE_RFC1123,time()+16000000)); //About 6 months cached
 					header('ETag: "'.md5($timestamp.$path).'"');
 					if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
 						if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmt_mtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($timestamp.$path)) {
@@ -558,7 +634,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$timestamp = filemtime($path); 
 		$gmt_mtime = gmdate('r', $timestamp);
 		header('Last-Modified: '.$gmt_mtime);
-		header('Expires: '.gmdate(DATE_RFC1123,time()+86400));
+		header('Expires: '.gmdate(DATE_RFC1123,time()+3000000)); //About 1 month
 		header('ETag: "'.md5($timestamp.$path).'"');
 		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
 			if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmt_mtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($timestamp.$path)) {

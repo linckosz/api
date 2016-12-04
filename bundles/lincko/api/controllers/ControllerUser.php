@@ -10,6 +10,7 @@ use \libs\STR;
 use \libs\Email;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\Invitation;
@@ -207,6 +208,11 @@ class ControllerUser extends Controller {
 				}
 			}
 
+			$user_code = false;
+			if(isset($form->user_code) && !empty($form->user_code)){
+				$user_code = Datassl::decrypt($form->user_code, 'invitation');
+			}
+
 			/*
 			Those lines were used for closed beta
 			if(!$invitation){
@@ -274,6 +280,43 @@ class ControllerUser extends Controller {
 					//Invitation
 					if($invitation){
 						$pivot = new \stdClass;
+						if($invitation->created_by>0 && $user = Users::find($invitation->created_by)){
+							//For guest & host
+							$pivot->{'users>access'} = new \stdClass;
+							$pivot->{'users>access'}->{$user->id} = true;
+							$model->pivots_format($pivot);
+							$model->forceSaving();
+							$model->save();
+
+							$mail = new Email();
+							$mail_subject = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
+							$mail_body_array = array(
+								'mail_username' => $user->username,
+							);
+							$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_code~~ accepted your invitation.
+							$mail_template_array = array(
+								'mail_head' => $mail_subject,
+								'mail_body' => $mail_body,
+								'mail_foot' => '',
+							);
+							$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+							$mail->addAddress($user->email);
+							$mail->setSubject($mail_subject);
+							$mail->sendLater($mail_template);
+
+							//Send mobile notification
+							(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
+						}
+						//Record for invotation
+						$invitation->guest = $model->id;
+						$invitation->used = true;
+						$invitation->save();
+					}
+
+					/*
+					//User code (used as URL fixed ID)
+					if($invitation){
+						$pivot = new \stdClass;
 						if($invitation->created_by>0 && Users::find($invitation->created_by)){
 							//For guest & host
 							$pivot->{'users>access'} = new \stdClass;
@@ -282,11 +325,12 @@ class ControllerUser extends Controller {
 							$model->forceSaving();
 							$model->save();
 						}
-						//Record for invotation
+						//Record for invitation
 						$invitation->guest = $model->id;
 						$invitation->used = true;
 						$invitation->save();
 					}
+					*/
 
 					$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)."\n".$app->trans->getBRUT('api', 15, 11)),)); //Account created. Check your email for validation code.
 					return true;
@@ -631,6 +675,9 @@ class ControllerUser extends Controller {
 						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
 						return true;
 					}
+
+					//Send mobile notification
+					(new Notif)->push($mail_subject, $mail_body, $guest, $guest->getSha());
 				}
 				
 			}
@@ -689,7 +736,13 @@ class ControllerUser extends Controller {
 						'mail_username' => $user->username,
 						'mail_code' => $user_log->code,
 					);
-					$mail_body = $app->trans->getBRUT('api', 1004, 2, $mail_body_array); //You have resquested a password reset. You need to eneter the code below within 2 minutes in the required field to be able to confirm the operation. CODE: <b>@@mail_code~~<b/>
+					$mail_body = $app->trans->getBRUT('api', 1004, 2, $mail_body_array); //You have requested a password reset. You need to enter the code below within 10 minutes in the required field to be able to confirm the operation. CODE: <b>@@mail_code~~<b/>
+
+					//Send mobile notification
+					$title = $app->trans->getBRUT('api', 1004, 3); //You have requested a password reset.
+					$msg = $app->trans->getBRUT('api', 1004, 4, $mail_body_array); //CODE: @@mail_code~~
+					(new Notif)->push($title, $msg, false, $user->getSha());
+
 					$mail_template_array = array(
 						'mail_head' => $mail_subject,
 						'mail_body' => $mail_body,
@@ -704,7 +757,6 @@ class ControllerUser extends Controller {
 						return true;
 					}
 				}
-
 			}	
 		}
 

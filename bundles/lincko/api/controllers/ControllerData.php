@@ -211,4 +211,11 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function unlock_get(){
+		Data::unLockAll();
+		echo "\n<br />\n<br />\nUnlock all<br />\n..........................................................\n\n";
+		exit(0);
+		return true;
+	}
+
 }

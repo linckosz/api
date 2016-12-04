@@ -423,9 +423,17 @@ class CheckAccess extends \Slim\Middleware {
 		$signout = false;
 		$resignin = false;
 
-		//For cronjob to launch auto daily resume
+		//For cronjob to launch auto daily resume && unlock items
 		//Use files servers (gluster) to not slow down request on logic servers
-		if($app->lincko->method_suffix == '_get' && preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/data\/resume\/hourly$/ui", $app->request->getResourceUri()) && $this->checkRoute()!==false){
+		if(
+			   $app->lincko->method_suffix == '_get'
+			&& preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host)
+			&& (
+				   preg_match("/^\/data\/resume\/hourly$/ui", $app->request->getResourceUri())
+				|| preg_match("/^\/data\/unlock$/ui", $app->request->getResourceUri())
+			)
+			&& $this->checkRoute()!==false
+		){
 			return $this->next->call();
 		}
 
@@ -479,7 +487,7 @@ class CheckAccess extends \Slim\Middleware {
 				}
 			} else if(
 				   $app->lincko->method_suffix == '_get'
-				&& preg_match("/^\/file\/(\d+)\/(\d+)\/(?:link|thumbnail|download)\/\d+\/.+$/ui", $app->request->getResourceUri(), $matches)
+				&& preg_match("/^\/file\/(\d+)\/(\d+)\/(?:link|thumbnail|download|qrcode)\/\d+\/.+$/ui", $app->request->getResourceUri(), $matches)
 				&& $this->checkRoute()!==false
 			){ //File reading
 				$w_id = $matches[1];

@@ -983,8 +983,16 @@ class ControllerTest extends Controller {
 
 		//$tp = $users::find(598);
 
-		//$tp = new Notif;
-		//$tp->sample();
+
+
+		
+		$title = 'Hello <i>bruno <b>martin</b></i>, life is<span style=\'color:#FFFF00;\'>blue</span>';
+		$content = 'My content is <span style=\'color:#00FFFF;font-weight:bold\'>RED</span>';
+		$user = Users::find($app->lincko->data['uid']);
+		$alias = $user->getSha();
+		$tp = new Notif;
+		$tp->push($title, $content, $user, $alias);
+		
 
 		//$onboarding = new Onboarding;
 		//$onboarding->next(10001);
@@ -1039,17 +1047,27 @@ class ControllerTest extends Controller {
 		\libs\Watch::php( $tp->toJson(), '39538 $toJson', __FILE__, false, false, true);
 		\libs\Watch::php( $tp->toVisible(), '39538 $toVisible', __FILE__, false, false, true);
 		*/
-
+		/*
 		$time = (new Tasks)->freshTimestamp();
 		$time->second = $time->second - 10;
 
 		Tasks::whereIn('id', [14509, 14512, 14516])->update(['locked_by' => $app->lincko->data['uid'],'locked_at' => $time]);
+		*/
+		//Data::unLockAll();
+		/*
+		$user_code = '120';
+		\libs\Watch::php( $user_code, '$user_code', __FILE__, false, false, true);
+		$tp = base64_encode($user_code);
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		$tp = Datassl::encrypt($user_code, 'invitation');
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		$tp = Datassl::encrypt_smp($user_code);
+		*/
 
-		Data::unLockAll();
-
+		
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 		
 		/*

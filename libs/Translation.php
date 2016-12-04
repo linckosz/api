@@ -227,13 +227,13 @@ class Translation {
 				$this->getList($bundle);
 				$this->bundle = $bundle;
 				$this->setLanguage();
-				if(isset($this->translation[$bundle][$category][$phrase])){
-					$value = $this->translation[$bundle][$category][$phrase];
-				} else if($force_lang){
+				if($force_lang){
 					$lang = $force_lang;
 					if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){
 						$value = $value->getAttribute($lang);
 					}
+				} else if(isset($this->translation[$bundle][$category][$phrase])){
+					$value = $this->translation[$bundle][$category][$phrase];
 				} else if(isset($this->lang[$bundle])){
 					$lang = $this->lang[$bundle];
 					if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){

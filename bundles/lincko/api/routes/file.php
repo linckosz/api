@@ -57,6 +57,18 @@ $app->group('/file', function () use ($app) {
 	))
 	->name('file_open_get');
 
+	$app->get(
+		'/:workspace/:uid/qrcode/:id/:name',
+		'\bundles\lincko\api\controllers\ControllerFile:qrcode_get'
+	)
+	->conditions(array(
+		'workspace' => '\d+',
+		'uid' => '\d+',
+		'id' => '\d+',
+		'name' => '.+',
+	))
+	->name('file_qrcode_get');
+
 	$app->post(
 		'/progress/:id',
 		'\bundles\lincko\api\controllers\ControllerFile:progress_post'

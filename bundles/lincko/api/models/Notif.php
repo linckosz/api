@@ -54,8 +54,9 @@ class Notif {
 		}
 	}
 
-	public function push($title, $content, $item=false, $aliases=array()){
-		$msg = $content;
+	public function push($title, $msg, $item=false, $aliases=array()){
+		$title = (new \Html2Text\Html2Text($title))->getText();
+		$msg = (new \Html2Text\Html2Text($msg))->getText();
 		$notif = array(
 			'sound' => $title,
 			'title' => $title,

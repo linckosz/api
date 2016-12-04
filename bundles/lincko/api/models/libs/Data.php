@@ -6,6 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
 use Carbon\Carbon;
 
+use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\libs\Models;
@@ -922,7 +923,7 @@ class Data {
 				}
 			}
 		}
-		\libs\Watch::php( $users, '$users', __FILE__, false, false, true);
+		
 		Updates::informUsers($users);
 		if(function_exists('proc_nice')){proc_nice(0);}
 		return true;
@@ -956,6 +957,11 @@ class Data {
 			//$users_resume[$user->id] = $weekday; //toto (show for test)
 		}
 		//\libs\Watch::php($users_resume, '$users_resume: '.$current_hour, __FILE__, false, false, true);
+
+		$notif_team_daily = array();
+		$notif_team_weekly = array();
+		$notif_individual_daily = array();
+		$notif_individual_weekly = array();
 
 		foreach ($period_all as $period) {
 
@@ -1267,6 +1273,22 @@ class Data {
 					$comment->_perm = json_encode($users_perm);
 					$comment->saveRobot();
 					//\libs\Watch::php(json_decode($msg), $period.': [team] $project '.$project->id, __FILE__, false, false, true);
+
+					//Team Daily
+					//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
+					if($period=='daily'){
+						foreach ($users_perm as $uid => $value) {
+							$notif_team_daily[''.$uid] = $uid;
+						}
+					}
+
+					//Team Weekly
+					//Your weekly progress update is here! See how the team did last week and what's coming this week.
+					if($period=='weekly'){
+						foreach ($users_perm as $uid => $value) {
+							$notif_team_weekly[''.$uid] = $uid;
+						}
+					}
 				}
 
 				//For Individual
@@ -1281,11 +1303,73 @@ class Data {
 					$comment->_perm = json_encode($users_perm);
 					$comment->saveRobot();
 					//\libs\Watch::php(json_decode($msg_users), $period.':[individual] $project '.$project->id, __FILE__, false, false, true);
+
+					//Individual Daily
+					//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
+					if($period=='daily'){
+						foreach ($users_perm as $uid => $value) {
+							$notif_individual_daily[''.$uid] = $uid;
+						}
+					}
+
+					//Individual Weekly
+					//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend.
+					if($period=='weekly'){
+						foreach ($users_perm as $uid => $value) {
+							$notif_individual_weekly[''.$uid] = $uid;
+						}
+					}
 				}
 
 			}
 
 		}
+
+		//Send notification according to the languages
+		//To merge array we need to make sure we are using string as keys
+		$notif_users = array_merge($notif_team_daily, $notif_team_weekly, $notif_individual_daily, $notif_individual_weekly);
+		$list = Users::withTrashed()->whereIn('id', $notif_users)->get(array('id', 'language', 'username_sha1'));
+		$lang_team_daily = array();
+		$lang_team_weekly = array();
+		$lang_individual_daily = array();
+		$lang_individual_weekly = array();
+		foreach ($list as $model) {
+			//Team Daily
+			if(!isset($lang_team_daily[$model->language])){ $lang_team_daily[$model->language] = array(); }
+			$lang_team_daily[$model->language][$model->id] = $model->getSha();
+			//Team Weekly
+			if(!isset($lang_team_weekly[$model->language])){ $lang_team_weekly[$model->language] = array(); }
+			$lang_team_weekly[$model->language][$model->id] = $model->getSha();
+			//Individual Daily
+			if(!isset($lang_individual_daily[$model->language])){ $lang_individual_daily[$model->language] = array(); }
+			$lang_individual_daily[$model->language][$model->id] = $model->getSha();
+			//Individual Weekly
+			if(!isset($lang_individual_weekly[$model->language])){ $lang_individual_weekly[$model->language] = array(); }
+			$lang_individual_weekly[$model->language][$model->id] = $model->getSha();
+		}
+
+		$title = 'Lincko';
+		foreach ($lang_team_daily as $language => $alias) {
+			//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
+			$content = $app->trans->getBRUT('api', 19, 1, array(), $language);
+			$notif->push($title, $content, false, $alias);
+		}
+		foreach ($lang_team_weekly as $language => $alias) {
+			//Your weekly progress update is here! See how the team did last week and what's coming this week.
+			$content = $app->trans->getBRUT('api', 19, 2, array(), $language);
+			$notif->push($title, $content, false, $alias);
+		}
+		foreach ($lang_individual_daily as $language => $alias) {
+			//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
+			$content = $app->trans->getBRUT('api', 19, 3, array(), $language);
+			$notif->push($title, $content, false, $alias);
+		}
+		foreach ($lang_individual_weekly as $language => $alias) {
+			//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend!
+			$content = $app->trans->getBRUT('api', 19, 4, array(), $language);
+			$notif->push($title, $content, false, $alias);
+		}
+
 
 		//Force all user to update their schema
 		if($comments_update){
