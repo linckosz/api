@@ -234,7 +234,7 @@ class ControllerProject extends Controller {
 		$form = $this->form;
 		$lastvisit = time();
 
-		$failmsg = $app->trans->getBRUT('api', 12, 7)."\n"; //Project deletion failed.
+		$failmsg = $app->trans->getBRUT('api', 12, 10)."\n"; //Project archiving failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
@@ -243,7 +243,7 @@ class ControllerProject extends Controller {
 			$errfield = 'id';
 		} else if($model = Projects::find($form->id)){
 			if($model->delete()){
-				$msg = array('msg' => $app->trans->getBRUT('api', 12, 8)); //Project deleted.
+				$msg = array('msg' => $app->trans->getBRUT('api', 12, 11)); //Project archived.
 				$data = new Data();
 				$schema = $data->getSchema();
 				$data->dataUpdateConfirmation($msg, 200, false, $lastvisit, true, $schema);
@@ -254,7 +254,7 @@ class ControllerProject extends Controller {
 			$access = $model->checkAccess();
 			$model->enableTrash(false);
 			if($access){
-				$msg = $app->trans->getBRUT('api', 12, 9); //Project already deleted.
+				$msg = $app->trans->getBRUT('api', 12, 12); //Project already archived.
 				$app->render(200, array('show' => true, 'msg' => array('msg' => $msg)));
 			}
 		}

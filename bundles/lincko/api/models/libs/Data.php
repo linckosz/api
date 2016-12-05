@@ -1348,6 +1348,7 @@ class Data {
 			$lang_individual_weekly[$model->language][$model->id] = $model->getSha();
 		}
 
+		$notif = new Notif;
 		$title = 'Lincko';
 		foreach ($lang_team_daily as $language => $alias) {
 			//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
