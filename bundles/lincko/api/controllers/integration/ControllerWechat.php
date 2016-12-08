@@ -16,11 +16,12 @@ class ControllerWechat extends Controller {
 		return true;
 	}
 
-	public function connect_get(){
+	public function connect_get($var=false){
 		ob_clean();
 		header("Content-type: text/html; charset=UTF-8");
 		http_response_code(200);
-		echo 'wecaht connection';
+		echo 'Wechat connection';
+		echo '<br />'.$var;
 		return exit(0);
 	}
 
