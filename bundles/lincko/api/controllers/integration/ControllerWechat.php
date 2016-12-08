@@ -1,5 +1,4 @@
 <?php
-// Category 13
 
 namespace bundles\lincko\api\controllers\integration;
 
