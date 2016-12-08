@@ -12,6 +12,7 @@
         "html2text/html2text": "4.*",
         "smottt/wideimage": "*",
         "jpush/jpush": "v3.5.*",
-        "endroid/qrcode": "1.*"
+        "endroid/qrcode": "1.*",
+        "mongodb/mongodb": "*"
     }
 }

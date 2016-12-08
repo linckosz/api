@@ -984,7 +984,7 @@ class ControllerTest extends Controller {
 		//$tp = $users::find(598);
 
 
-
+/*
 		
 		$title = 'Hello <i>bruno <b>martin</b></i>, life is<span style=\'color:#FFFF00;\'>blue</span>';
 		$content = 'My content is <span style=\'color:#00FFFF;font-weight:bold\'>RED</span>';
@@ -992,7 +992,7 @@ class ControllerTest extends Controller {
 		$alias = $user->getSha();
 		$tp = new Notif;
 		$tp->push($title, $content, $user, $alias);
-		
+		*/
 
 		//$onboarding = new Onboarding;
 		//$onboarding->next(10001);
@@ -1064,6 +1064,10 @@ class ControllerTest extends Controller {
 		$tp = Datassl::encrypt_smp($user_code);
 		*/
 
+		$tp = Tasks::find(14671);
+		$extra = $tp->extraDecode();
+		\libs\Watch::php( $extra->updated_at, '$extra', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->updated_at->getTimestamp(), '$tp', __FILE__, false, false, true);
 		
 
 		//Display mysql requests

@@ -628,8 +628,14 @@ class Data {
 				$list_id[$table_name][$id] = $id;
 				unset($temp);
 				if($temp = $model->extraDecode()){
-					$list_id_extra[$table_name][$id] = $id;
-				} else {
+					//Double check that extra field is up to date
+					if(isset($model->updated_at) && isset($temp->updated_at) && $temp->updated_at != $model->updated_at->getTimestamp()){
+						$temp = false;
+					} else {
+						$list_id_extra[$table_name][$id] = $id;
+					}
+				}
+				if(!$temp){
 					$result_no_extra[$table_name][$id] = $model;
 					$list_id_no_extra[$table_name][$id] = $id;
 					$temp = new \stdClass;
@@ -644,6 +650,7 @@ class Data {
 						//need delete information for schema
 						$temp->deleted_at = $model->deleted_at;
 					}
+
 					$temp->_parent = $model->setParentAttributes();
 				}
 				unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
@@ -762,7 +769,7 @@ class Data {
 			//---OK---
 			if($this->history_detail){
 				$histories = Users::getHistories($list_id, $list_models, true);
-			} else {
+			} else { //For element where extra was not calculated, we do force the calculation to cache it for any other calls, even if we don't need to display it immediatly to the final user
 				$histories = Users::getHistories($list_id_no_extra, $list_models, false);
 			}
 			foreach ($histories as $table_name => $models) {
@@ -804,10 +811,16 @@ class Data {
 				}
 			}
 			
-		}	
+		}
 
 		//Get the relations list
-		if($this->full_schema){
+		if(
+			   $this->full_schema
+			&& (
+				   (isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god'])
+				|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
+			)
+		){
 			$result_bis->$uid->{'_history_title'} = new \stdClass;
 		}
 
@@ -844,6 +857,15 @@ class Data {
 			foreach ($result_bis->$uid as $table_name => $models) {
 				if(!isset($app->lincko->api['x_'.$table_name]) || !$app->lincko->api['x_'.$table_name]){
 					unset($result_bis->$uid->$table_name);
+				}
+			}
+			//Delete history if no access
+			if(!isset($app->lincko->api['x__history']) || !$app->lincko->api['x__history']){
+				unset($result_bis->$uid->_history);
+				foreach ($result_bis->$uid as $table_name => $models) {
+					foreach ($models as $id => $model) {
+						unset($result_bis->$uid->$table_name->$id->history);
+					}
 				}
 			}
 		}
@@ -1333,31 +1355,40 @@ class Data {
 		$lang_team_weekly = array();
 		$lang_individual_daily = array();
 		$lang_individual_weekly = array();
+		$notified_users = array(); //Help to send only one message at the same moment
 		foreach ($list as $model) {
-			//Team Daily
-			if(!isset($lang_team_daily[$model->language])){ $lang_team_daily[$model->language] = array(); }
-			$lang_team_daily[$model->language][$model->id] = $model->getSha();
-			//Team Weekly
-			if(!isset($lang_team_weekly[$model->language])){ $lang_team_weekly[$model->language] = array(); }
-			$lang_team_weekly[$model->language][$model->id] = $model->getSha();
-			//Individual Daily
-			if(!isset($lang_individual_daily[$model->language])){ $lang_individual_daily[$model->language] = array(); }
-			$lang_individual_daily[$model->language][$model->id] = $model->getSha();
 			//Individual Weekly
 			if(!isset($lang_individual_weekly[$model->language])){ $lang_individual_weekly[$model->language] = array(); }
-			$lang_individual_weekly[$model->language][$model->id] = $model->getSha();
+			if(isset($notif_team_daily[''.$model->id]) && !isset($notified_user[$model->id])){
+				$notified_user[$model->id] = true;
+				$notif_individual_weekly[$model->language][$model->id] = $model->getSha();
+			}
+			//Individual Daily
+			if(!isset($lang_individual_daily[$model->language])){ $lang_individual_daily[$model->language] = array(); }
+			if(isset($notif_team_daily[''.$model->id]) && !isset($notified_user[$model->id])){
+				$notified_user[$model->id] = true;
+				$notif_individual_daily[$model->language][$model->id] = $model->getSha();
+			}
+			//Team Weekly
+			if(!isset($lang_team_weekly[$model->language])){ $lang_team_weekly[$model->language] = array(); }
+			if(isset($notif_team_weekly[''.$model->id]) && !isset($notified_user[$model->id])){
+				$notified_user[$model->id] = true;
+				$lang_team_weekly[$model->language][$model->id] = $model->getSha();
+			}
+			//Team Daily
+			if(!isset($lang_team_daily[$model->language])){ $lang_team_daily[$model->language] = array(); }
+			if(isset($notif_team_daily[''.$model->id]) && !isset($notified_user[$model->id])){
+				$notified_user[$model->id] = true;
+				$lang_team_daily[$model->language][$model->id] = $model->getSha();
+			}
 		}
 
 		$notif = new Notif;
 		$title = 'Lincko';
-		foreach ($lang_team_daily as $language => $alias) {
-			//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
-			$content = $app->trans->getBRUT('api', 19, 1, array(), $language);
-			$notif->push($title, $content, false, $alias);
-		}
-		foreach ($lang_team_weekly as $language => $alias) {
-			//Your weekly progress update is here! See how the team did last week and what's coming this week.
-			$content = $app->trans->getBRUT('api', 19, 2, array(), $language);
+		
+		foreach ($lang_individual_weekly as $language => $alias) {
+			//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend!
+			$content = $app->trans->getBRUT('api', 19, 4, array(), $language);
 			$notif->push($title, $content, false, $alias);
 		}
 		foreach ($lang_individual_daily as $language => $alias) {
@@ -1365,10 +1396,15 @@ class Data {
 			$content = $app->trans->getBRUT('api', 19, 3, array(), $language);
 			$notif->push($title, $content, false, $alias);
 		}
-		foreach ($lang_individual_weekly as $language => $alias) {
-			//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend!
-			$content = $app->trans->getBRUT('api', 19, 4, array(), $language);
-			$notif->push($title, $content, false, $alias);
+		foreach ($lang_team_weekly as $language => $alias) {
+			//Your weekly progress update is here! See how the team did last week and what's coming this week.
+			$content = $app->trans->getBRUT('api', 19, 2, array(), $language);
+			//$notif->push($title, $content, false, $alias); //It generates to many notifications for the user
+		}
+		foreach ($lang_team_daily as $language => $alias) {
+			//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
+			$content = $app->trans->getBRUT('api', 19, 1, array(), $language);
+			//$notif->push($title, $content, false, $alias); //It generates to many notifications for the user
 		}
 
 
