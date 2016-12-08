@@ -1,7 +1,7 @@
 <?php
 // Category 13
 
-namespace bundles\lincko\api\controllers;
+namespace bundles\lincko\api\controllers\integration;
 
 use \libs\Controller;
 
@@ -17,7 +17,11 @@ class ControllerWechat extends Controller {
 	}
 
 	public function connect_get(){
-		echo 'ok';
+		ob_clean();
+		header("Content-type: text/html; charset=UTF-8");
+		http_response_code(200);
+		echo 'wecaht connection';
+		return exit(0);
 	}
 
 }

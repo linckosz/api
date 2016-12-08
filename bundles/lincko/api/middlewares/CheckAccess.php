@@ -423,14 +423,23 @@ class CheckAccess extends \Slim\Middleware {
 		$signout = false;
 		$resignin = false;
 
-		//For cronjob to launch auto daily resume && unlock items
-		//Use files servers (gluster) to not slow down request on logic servers
+		$resourceUri = $app->request->getResourceUri();
+
+		//Wechat integration
+		if(
+			   $app->lincko->method_suffix == '_get'
+			&& preg_match("/^\/wechat\/connect&\\S+$/ui", $resourceUri)
+			&& $this->checkRoute()!==false
+		){
+			return $this->next->call();
+		}
+
 		if(
 			   $app->lincko->method_suffix == '_get'
 			&& preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host)
 			&& (
-				   preg_match("/^\/data\/resume\/hourly$/ui", $app->request->getResourceUri())
-				|| preg_match("/^\/data\/unlock$/ui", $app->request->getResourceUri())
+				   preg_match("/^\/data\/resume\/hourly$/ui", $resourceUri)
+				|| preg_match("/^\/data\/unlock$/ui", $resourceUri)
 			)
 			&& $this->checkRoute()!==false
 		){
@@ -438,9 +447,9 @@ class CheckAccess extends \Slim\Middleware {
 		}
 
 		//For file uploading, make a specific process
-		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $app->request->getResourceUri())){
+		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $resourceUri)){
 			Handler::session_initialize(true);
-			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $app->request->getResourceUri()) ){ //Video conversion
+			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $resourceUri) ){ //Video conversion
 				//Security is not important here since we do not use POSt as variable to be injected somewhere
 				$post = $this->data;
 				$w_id = $post->workspace_id;
@@ -487,7 +496,7 @@ class CheckAccess extends \Slim\Middleware {
 				}
 			} else if(
 				   $app->lincko->method_suffix == '_get'
-				&& preg_match("/^\/file\/(\d+)\/(\d+)\/(?:link|thumbnail|download|qrcode)\/\d+\/.+$/ui", $app->request->getResourceUri(), $matches)
+				&& preg_match("/^\/file\/(\d+)\/(\d+)\/(?:link|thumbnail|download|qrcode)\/\d+\/.+$/ui", $resourceUri, $matches)
 				&& $this->checkRoute()!==false
 			){ //File reading
 				$w_id = $matches[1];
