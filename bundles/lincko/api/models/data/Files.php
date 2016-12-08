@@ -85,8 +85,8 @@ class Files extends ModelLincko {
 		'_' => 902, //[{un}] modified a file
 		'name' => 903, //[{un}] changed a file name
 		'comment' => 904, //[{un}] modified a file description
-		'pivot_access_0' => 996, //[{un}] blocked [{[{cun}]}]'s access to a file
-		'pivot_access_1' => 997, //[{un}] authorized [{[{cun}]}]'s access to a file
+		'pivot_access_0' => 996, //[{un}] blocked [{cun}]'s access to a file
+		'pivot_access_1' => 997, //[{un}] authorized [{cun}]'s access to a file
 		'_restore' => 998,//[{un}] restored a file
 		'_delete' => 999,//[{un}] deleted a file
 	);

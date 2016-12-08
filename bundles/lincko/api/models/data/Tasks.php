@@ -88,8 +88,8 @@ class Tasks extends ModelLincko {
 		'pivot_approver_1' => 554, //[{cun}] is no longer an approver to a task
 		'approved_0' => 555, //[{un}] reopened a task
 		'approved_1' => 556, //[{un}] completed a task
-		'pivot_access_0' => 596, //[{un}] blocked [{[{cun}]}]'s access to a task
-		'pivot_access_1' => 597, //[{un}] authorized [{[{cun}]}]'s access to a task
+		'pivot_access_0' => 596, //[{un}] blocked [{cun}]'s access to a task
+		'pivot_access_1' => 597, //[{un}] authorized [{cun}]'s access to a task
 		'_restore' => 598,//[{un}] restored a task
 		'_delete' => 599,//[{un}] deleted a task
 		

@@ -813,17 +813,6 @@ class Data {
 			
 		}
 
-		//Get the relations list
-		if(
-			   $this->full_schema
-			&& (
-				   (isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god'])
-				|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
-			)
-		){
-			$result_bis->$uid->{'_history_title'} = new \stdClass;
-		}
-
 		//It gather the fields we need to workspace only
 		if(!is_null($this->partial) && isset($this->partial->$uid)){
 			if(isset($this->partial->$uid->{'_history_title'})){
@@ -832,22 +821,57 @@ class Data {
 		}
 
 		if(
-			$this->full_schema
-			||
-			(
-				!is_null($this->partial)
-				&& isset($this->partial->$uid)
-				&& isset($this->partial->$uid->{'_history_title'})
+			   (isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god'])
+			|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
+		){
+
+			$result_bis->$uid->{'_history'} = new \stdClass;
+			foreach ($result_bis->$uid as $table_name => $models) {
+				foreach ($models as $id => $model) {
+					if(!is_object($model)){
+						continue;
+					}
+					$previous_timestamp = 0;
+					$model->_not = false;
+					if(isset($model->history)){
+						foreach ($model->history as $timestamp => $hists) {
+							foreach ($hists as $hist_id => $hist) {
+								$hist->it = $table_name.'-'.$id; //item
+								$hist->rt = false; //root (chats or projects)
+								$result_bis->$uid->{'_history'}->$hist_id = $hist;
+								if(isset($hist->notid) && $timestamp >= $previous_timestamp){
+									$timestamp = $previous_timestamp;
+									$model->_not = (bool)(strpos($hist->notid, ';'.$uid.';')===false);
+									unset($hist->notid);
+								}
+							}
+						}
+						//unset($model->history);
+					}
+				}
+			}
+
+			if(
+				$this->full_schema
+				||
+				(
+					!is_null($this->partial)
+					&& isset($this->partial->$uid)
+					&& isset($this->partial->$uid->{'_history_title'})
+				)
 			)
-		)
-		{
-			foreach($list_models as $key => $value) {
-				$model = new $value;
-				$table_name = $model->getTable();
-				if($this->item_detail){
-					$result_bis->$uid->{'_history_title'}->$table_name = $model->getHistoryTitles();
-				} else {
-					$result_bis->$uid->{'_history_title'}->$table_name = new \stdClass;
+			{
+				if(!isset($result_bis->$uid->{'_history_title'})){
+					$result_bis->$uid->{'_history_title'} = new \stdClass;
+				}
+				foreach($list_models as $key => $value) {
+					$model = new $value;
+					$table_name = $model->getTable();
+					if($this->item_detail){
+						$result_bis->$uid->{'_history_title'}->$table_name = $model->getHistoryTitles();
+					} else {
+						$result_bis->$uid->{'_history_title'}->$table_name = new \stdClass;
+					}
 				}
 			}
 		}

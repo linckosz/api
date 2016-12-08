@@ -1064,10 +1064,7 @@ class ControllerTest extends Controller {
 		$tp = Datassl::encrypt_smp($user_code);
 		*/
 
-		$tp = Tasks::find(14671);
-		$extra = $tp->extraDecode();
-		\libs\Watch::php( $extra->updated_at, '$extra', __FILE__, false, false, true);
-		\libs\Watch::php( $tp->updated_at->getTimestamp(), '$tp', __FILE__, false, false, true);
+		$tp = (bool)(strpos('abc', 'd')===false);
 		
 
 		//Display mysql requests

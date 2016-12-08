@@ -67,8 +67,8 @@ abstract class ModelLincko extends Model {
 	protected static $archive = array(
 		'created_at' => 1,  //[{un}] created a new item
 		'_' => 2,//[{un}] modified an item
-		'_access_0' => 96, //[{un}] blocked [{[{cun}]}]'s access to an item
-		'_access_1' => 97, //[{un}] authorized [{[{cun}]}]'s access to an item
+		'_access_0' => 96, //[{un}] blocked [{cun}]'s access to an item
+		'_access_1' => 97, //[{un}] authorized [{cun}]'s access to an item
 		'_restore' => 98,//[{un}] restored an item
 		'_delete' => 99,//[{un}] deleted an item
 	);
@@ -1435,7 +1435,7 @@ abstract class ModelLincko extends Model {
 		return self::getDependencies($list_id, $classes);
 	}
 
-	public function startLock(){
+	public function startLock($save=true){
 		$app = self::getApp();
 		$result = false;
 		$lastvisit = (new Data())->getTimestamp();
@@ -1457,14 +1457,18 @@ abstract class ModelLincko extends Model {
 			if(is_null($this->locked_by)){
 				$this->locked_by = $app->lincko->data['uid'];
 				$this->locked_at = $expired;
-				$this->brutSave(); //Make sure we don't modiffy any other fields
-				$this->touchUpdateAt(); //This will make sure that everyone will see this item as locked
+				if($save){
+					$this->brutSave(); //Make sure we don't modify any other fields
+					$this->touchUpdateAt(); //This will make sure that everyone will see this item as locked
+				}
 				$result = true;
 			}
 			//Extend the time 10 minutes again
 			else if($this->locked_by == $app->lincko->data['uid']){
 				$this->locked_at = $expired;
-				$this->brutSave(); //Make sure we don't modiffy any other fields
+				if($save){
+					$this->brutSave(); //Make sure we don't modify any other fields
+				}
 				//We don't need to update the updated_at field since the visible value on front is "locek_by" and others doesn't need to know how time it remain
 				$result = true;
 			}
@@ -2182,8 +2186,13 @@ abstract class ModelLincko extends Model {
 		}
 		$app = self::getApp();
 
-		//Unlock without saving
-		$this->unLock(false);
+		if(isset($this->locked)){
+			if($this->locked){
+				$this->startLock(false); //Extend lock without saving
+			} else {
+				$this->unLock(false); //Unlock without saving
+			}
+		}
 
 		//Insure that the user has at least a read access to the element where it's attached
 		//The access to the parent has been previously check in $this->checkAccess()

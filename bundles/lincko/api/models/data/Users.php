@@ -81,9 +81,9 @@ class Users extends ModelLincko {
 		'email' => 602,//[{un}] modified [{hh}] profile
 		'timeoffset' => 602,//[{un}] modified [{hh}] profile
 		'resume' => 602,//[{un}] modified [{hh}] profile
-		'pivot_invitation_1' => 695, //[{un}] has invited [{[{cun}]}]
-		'pivot_access_0' => 696, //[{un}] blocked [{[{cun}]}]'s access to [{hh}] profile
-		'pivot_access_1' => 697, //[{un}] authorized [{[{cun}]}]'s access to [{hh}] profile
+		'pivot_invitation_1' => 695, //[{un}] has invited [{cun}]
+		'pivot_access_0' => 696, //[{un}] blocked [{cun}]'s access to [{hh}] profile
+		'pivot_access_1' => 697, //[{un}] authorized [{cun}]'s access to [{hh}] profile
 		'_restore' => 698,//[{un}] restored [{hh}] profile
 		'_delete' => 699,//[{un}] deleted [{hh}] profile
 	);

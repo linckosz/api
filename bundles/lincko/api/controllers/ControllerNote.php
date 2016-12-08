@@ -85,6 +85,9 @@ class ControllerNote extends Controller {
 				$form->title = substr($form->title, 0, 197).'...';
 			}
 		}
+		if(isset($form->locked)){
+			$form->locked = (int) boolval($form->locked);
+		}
 		return $this->form = $form;
 	}
 
@@ -97,7 +100,7 @@ class ControllerNote extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(isset($form->fav) && !Tasks::validNumeric($form->fav, true)){ //Optional
+		if(isset($form->fav) && !Notes::validNumeric($form->fav, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
 			$errfield = 'fav';
 		}
@@ -113,12 +116,17 @@ class ControllerNote extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
+		else if(isset($form->locked) && !Notes::validBoolean($form->locked, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'locked';
+		}
 		else if($model = new Notes()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 			$model->parent_id = $form->parent_id;
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(isset($form->locked)){ $model->locked = $form->locked; } //Optional
 			$model->pivots_format($form, false);
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 10, 2)); //Note created.
@@ -174,12 +182,11 @@ class ControllerNote extends Controller {
 		$failmsg = $app->trans->getBRUT('api', 10, 5)."\n"; //Note update failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		$errfield = 'undefined';
-		\libs\Watch::php(1, '$var', __FILE__, false, false, true);
 		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		}
-		else if(isset($form->fav) && !Tasks::validNumeric($form->fav, true)){ //Optional
+		else if(isset($form->fav) && !Notes::validNumeric($form->fav, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
 			$errfield = 'fav';
 		}
@@ -195,25 +202,24 @@ class ControllerNote extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
 			$errfield = 'comment';
 		}
+		else if(isset($form->locked) && !Notes::validBoolean($form->locked, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'locked';
+		}
 		else if($model = Notes::withTrashed()->find($form->id)){
-			\libs\Watch::php(11, '$var', __FILE__, false, false, true);
 			if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(isset($form->locked)){ $model->locked = $form->locked; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
-			\libs\Watch::php(111, '$var', __FILE__, false, false, true);
 			if(count($dirty)>0 || $pivots){
 				//For deleted items we can modify links only
-				\libs\Watch::php($dirty, '$dirty', __FILE__, false, false, true);
-				\libs\Watch::php($pivots, '$pivots', __FILE__, false, false, true);
 				if(count($dirty)==0 && $pivots){
 					$model->enableTrash(true);
-					\libs\Watch::php(222, '$var', __FILE__, false, false, true);
 				}
 				if($model->getParentAccess() && $model->save()){
-					\libs\Watch::php(333, '$var', __FILE__, false, false, true);
 					$model->enableTrash(false);
 					$msg = array('msg' => $app->trans->getBRUT('api', 10, 6)); //Note updated.
 					$data = new Data();

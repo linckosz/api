@@ -60,8 +60,8 @@ class Notes extends ModelLincko {
 		'title' => 803,//[{un}] changed a note title
 		'comment' => 804, //[{un}] modified a note content
 		'parent_id' => 805, //[{un}] moved a note to the project "[{pj|ucfirst}]"
-		'pivot_access_0' => 896, //[{un}] blocked [{[{cun}]}]'s access to a note
-		'pivot_access_1' => 897, //[{un}] authorized [{[{cun}]}]'s access to a note
+		'pivot_access_0' => 896, //[{un}] blocked [{cun}]'s access to a note
+		'pivot_access_1' => 897, //[{un}] authorized [{cun}]'s access to a note
 		'_restore' => 898,//[{un}] restored a note
 		'_delete' => 899,//[{un}] deleted a note
 	);
