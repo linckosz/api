@@ -1090,7 +1090,7 @@ class ControllerTest extends Controller {
 					$comment = str_replace("/$shaold/$type/$fileid/", "/$shanew/$type/$fileid/", $comment);
 				}
 				$item::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
-				\libs\Watch::php( $ifalsetem->toArray(), '$tp', __FILE__, false, false, true);
+				\libs\Watch::php( $item->toArray(), '$notes', __FILE__, false, false, true);
 			}
 		}
 		\time_checkpoint('end notes');
@@ -1109,7 +1109,7 @@ class ControllerTest extends Controller {
 					$comment = str_replace("/$shaold/$type/$fileid/", "/$shanew/$type/$fileid/", $comment);
 				}
 				$item::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
-				\libs\Watch::php( $item->toArray(), '$tp', __FILE__, false, false, true);
+				\libs\Watch::php( $item->toArray(), '$tasks', __FILE__, false, false, true);
 			}
 		}
 		\time_checkpoint('end tasks');	
