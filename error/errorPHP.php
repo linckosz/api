@@ -11,8 +11,13 @@ $app = \Slim\Slim::getInstance();
 
 //Special functions to manage errors
 function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UNK'){
+	//To avoid "EXH: Error => Exception: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found" we give enough time to the server to retry teh transaction
+	if($type=='EXH' && mb_strpos($errmsg, 'try restarting transaction')!==false){
+		usleep(300000); //Give 300ms to finish SQL transaction and try again
+		return false;
+	}
 	//Hide some warnings of exif_read_data because there is a PHP bug if EXIF are not standard
-	if($errmsg!="" && (mb_strpos($errmsg, "exif_read_data")===false || mb_strpos($errmsg, "Illegal")===false)){
+	if($errmsg!="" && (mb_strpos($errmsg, 'exif_read_data')===false || mb_strpos($errmsg, 'Illegal')===false)){
 		$app = \Slim\Slim::getInstance();
 		$logPath = $app->lincko->logPath.'/php';
 		$dt = date("Y-m-d H:i:s (T)");
@@ -50,8 +55,8 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 			32767 => 'All'
 		);
 		
-		$errid = "unknown"; //User ID
-		$erruser = "unknown"; //User Login
+		$errid = 'unknown'; //User ID
+		$erruser = 'unknown'; //User Login
 		if( isset($app->lincko) && isset($app->lincko->data) ){
 			if(isset($app->lincko->data['uid'])){
 				$errid = $app->lincko->data['uid'];
@@ -145,8 +150,8 @@ function getTraceAsString($e, $count=0){
 }
 
 //Start PHP error monitoring
-set_error_handler("error\userErrorHandler");
-register_shutdown_function("error\shutdownHandler");
+set_error_handler('error\userErrorHandler');
+register_shutdown_function('error\shutdownHandler');
 set_exception_handler('error\exceptionHandler');
 
 $app->error(function (\Throwable $exception) use ($app) {

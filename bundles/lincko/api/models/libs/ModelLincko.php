@@ -2185,7 +2185,7 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 		$app = self::getApp();
-\libs\Watch::php(123, '$var', __FILE__, false, false, true);
+
 		if(isset($this->locked)){
 			if($this->locked){
 				$this->startLock(false); //Extend lock without saving
@@ -2274,12 +2274,12 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		$dirty = $this->getDirty();
-		\libs\Watch::php(111, '$var', __FILE__, false, false, true);
+		
 		//do nothing if dirty is empty
 		if(!$this->force_save && count($dirty)<=0){
 			return true;
 		}
-		\libs\Watch::php(222, '$var', __FILE__, false, false, true);
+		
 		$change_parent = false;
 		if(isset($dirty['parent_type']) || isset($dirty['parent_id'])){
 			if(isset($this->id)){
