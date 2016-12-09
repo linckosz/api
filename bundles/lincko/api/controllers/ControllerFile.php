@@ -469,11 +469,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 	}
 
 	//This is used for third party software, it's more secured
-	public function open_post($type, $id){
+	public function open_post($sha, $type, $id){
 		$app = $this->app;
 		$workspace = $app->lincko->data['workspace_id'];
-		$uid = $app->lincko->data['uid'];
-		return $this->open_get($workspace, $uid, $type, $id);
+		return $this->open_get($workspace, $sha, $type, $id);
 	}
 
 	public function qrcode_get(){
@@ -550,7 +549,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return exit(0);
 	}
 
-	public function open_get($workspace, $uid, $type, $id){
+	public function open_get($workspace, $sha, $type, $id){
 		$app = $this->app;
 		ob_clean();
 		flush();
@@ -558,7 +557,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$height = 200;
 		$scale = false;
 		$file = Files::withTrashed()->find($id); //We allow businesses to be able to see deleted files for restoring purpose
-		if($file && $file->checkAccess(false)){
+		if($file && $file->checkAccess(false) && $file->link==Datassl::decrypt_smp(base64_decode($sha))){
 			Workspaces::getSFTP();
 			$content_type = 'application/force-download';
 			if($file->progress<100 && $file->category=='video'){
@@ -627,7 +626,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			\libs\Watch::php("Files :\n".json_encode($file->toArray()), $msg, __FILE__, true);
 		} else {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php("No file\nworkspace: $workspace\nuid: $uid\ntype: $type\nid: $id", $msg, __FILE__, true);
+			\libs\Watch::php("No file\nworkspace: $workspace\nsha: $sha\ntype: $type\nid: $id", $msg, __FILE__, true);
 		}
 		
 		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/unavailable.png';

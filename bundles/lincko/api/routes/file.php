@@ -45,12 +45,12 @@ $app->group('/file', function () use ($app) {
 	->name('file_result'.$app->lincko->method_suffix);
 
 	$app->get(
-		'/:workspace/:uid/:type/:id/:name',
+		'/:workspace/:sha/:type/:id/:name',
 		'\bundles\lincko\api\controllers\ControllerFile:open_get'
 	)
 	->conditions(array(
 		'workspace' => '\d+',
-		'uid' => '\d+',
+		'sha' => '[\d\w]+=',
 		'type' => 'link|thumbnail|download',
 		'id' => '\d+',
 		'name' => '.+',
@@ -58,12 +58,12 @@ $app->group('/file', function () use ($app) {
 	->name('file_open_get');
 
 	$app->get(
-		'/:workspace/:uid/qrcode/:id/:name',
+		'/:workspace/:sha/qrcode/:id/:name',
 		'\bundles\lincko\api\controllers\ControllerFile:qrcode_get'
 	)
 	->conditions(array(
 		'workspace' => '\d+',
-		'uid' => '\d+',
+		'sha' => '[\d\w]+',
 		'id' => '\d+',
 		'name' => '.+',
 	))
@@ -120,11 +120,12 @@ $app->group('/files', function () use ($app) {
 	->name('files_progress_post');
 
 	$app->post(
-		'/:type/:id/:name',
+		'/:type/:sha/:id/:name',
 		'\bundles\lincko\api\controllers\ControllerFile:open_post'
 	)
 	->conditions(array(
 		'type' => 'link|thumbnail|download',
+		'sha' => '[\d\w]+=',
 		'id' => '\d+',
 		'name' => '.+',
 	))

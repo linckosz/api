@@ -1064,12 +1064,57 @@ class ControllerTest extends Controller {
 		$tp = Datassl::encrypt_smp($user_code);
 		*/
 
-		$tp = (bool)(strpos('abc', 'd')===false);
+		//$tp = Projects::find(877);
 		
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+
+		
+		//----------------------------------------
+		//Modify the links
+		set_time_limit(3600); //Set to 1 hour workload at the most
+
+		\time_checkpoint('start notes');
+		$items = Notes::withTrashed()->get(array('id', 'comment'));
+		foreach ($items as $item) {
+			$comment = $item->comment;
+			if(preg_match_all("/<img.*?\/([=\d\w]+)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $comment, $matches)){
+				foreach ($matches[0] as $key => $value) {
+					$shaold = $matches[1][$key];
+					$type = $matches[2][$key];
+					$fileid = $matches[3][$key];
+					usleep(10000);
+					$shanew = base64_encode(Datassl::encrypt_smp(Files::withTrashed()->find($fileid)->link));
+					$comment = str_replace("/$shaold/$type/$fileid/", "/$shanew/$type/$fileid/", $comment);
+				}
+				$item::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
+				\libs\Watch::php( $ifalsetem->toArray(), '$tp', __FILE__, false, false, true);
+			}
+		}
+		\time_checkpoint('end notes');
+
+		\time_checkpoint('start tasks');
+		$items = Tasks::withTrashed()->get(array('id', 'comment'));
+		foreach ($items as $item) {
+			$comment = $item->comment;
+			if(preg_match_all("/<img.*?\/([=\d\w]+)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $comment, $matches)){
+				foreach ($matches[0] as $key => $value) {
+					$shaold = $matches[1][$key];
+					$type = $matches[2][$key];
+					$fileid = $matches[3][$key];
+					usleep(10000);
+					$shanew = base64_encode(Datassl::encrypt_smp(Files::withTrashed()->find($fileid)->link));
+					$comment = str_replace("/$shaold/$type/$fileid/", "/$shanew/$type/$fileid/", $comment);
+				}
+				$item::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
+				\libs\Watch::php( $item->toArray(), '$tp', __FILE__, false, false, true);
+			}
+		}
+		\time_checkpoint('end tasks');	
+
+
 		
 		/*
 		//----------------------------------------

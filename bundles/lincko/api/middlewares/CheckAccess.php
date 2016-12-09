@@ -496,7 +496,7 @@ class CheckAccess extends \Slim\Middleware {
 				}
 			} else if(
 				   $app->lincko->method_suffix == '_get'
-				&& preg_match("/^\/file\/(\d+)\/(\d+)\/(?:link|thumbnail|download|qrcode)\/\d+\/.+$/ui", $resourceUri, $matches)
+				&& preg_match("/^\/file\/(\d+)\/([\d\w]+=)\/(?:link|thumbnail|download|qrcode)\/\d+\/.+$/ui", $resourceUri, $matches)
 				&& $this->checkRoute()!==false
 			){ //File reading
 				$w_id = $matches[1];

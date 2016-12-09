@@ -105,6 +105,21 @@ class Projects extends ModelLincko {
 		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Tasks', 'parent_id');
 	}
 
+	//One(Projects) to Many(Notes)
+	public function notes(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'parent_id');
+	}
+
+	//One(Projects) to Many(Files)
+	public function files(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Files', 'parent_id')->where('files.parent_type', 'projects');
+	}
+
+	//One(Projects) to Many(Files)
+	public function Chats(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'parent_id')->where('files.parent_type', 'projects');
+	}
+
 ////////////////////////////////////////////
 
 	public static function isValid($form){
@@ -299,6 +314,106 @@ class Projects extends ModelLincko {
 			$model->touchUpdateAt($users_inform, true);
 		}
 		return parent::setPerm();
+	}
+
+	public function clone($offset=false, $attributes=array(), $links=array()){
+		$app = self::getApp();
+		$uid = $app->lincko->data['uid'];
+		if($offset===false){
+			$offset = $this->created_at->diffInSeconds();
+		}
+		$clone = $this->replicate();
+
+		foreach ($attributes as $key => $value) {
+			$clone->$key = $value;
+		}
+		
+		//Initialization of attributes
+		$clone->temp_id = '';
+		if(!is_null($clone->deleted_at)){ $clone->deleted_at->addSeconds($offset); }
+		if(!is_null($clone->approved_at)){ $clone->approved->addSeconds($offset); }
+		$clone->created_by = $uid;
+		$clone->personal_private = null;
+		$clone->_perm = '';
+		$clone->noticed_by = '';
+		$clone->viewed_by = '';
+		$clone->resume = 0;
+		$clone->extra = null;
+
+		//Increment new project "A title [1]" => "A title [2]"
+		$title = trim($clone->title);
+		if(preg_match("/^.+\[(\d+)\]$/ui", $title, $matches)){
+			$i = intval($matches[1])+1;
+			$clone->title = preg_replace("/^(.*)(\[\d+\])$/ui", '${1}['.$i.']', $title);
+		} else {
+			$clone->title = $title.' [1]';
+		}
+
+		$clone->save();
+		$link['projects'][$this->id] = [$clone->id];
+
+		//Clone files
+		$attributes = array(
+			'parent_type' => 'projects',
+			'parent_id' => $clone->id,
+		);
+		$files = $this->files()->withTrashed()->get();
+		foreach ($files as $file) {
+			$file->clone($offset, $attributes, $links);
+		}
+
+		//Clone tasks
+		$attributes = array(
+			'parent_id' => $clone->id,
+		);
+		$tasks = $this->tasks()->withTrashed()->get();
+		foreach ($tasks as $task) {
+			$task->clone($offset, $attributes, $links);
+		}
+
+		//Clone notes
+		$attributes = array(
+			'parent_id' => $clone->id,
+		);
+		$notes = $this->notes()->withTrashed()->get();
+		foreach ($notes as $note) {
+			$note->clone($offset, $attributes, $links);
+		}
+
+		//Clone chats
+		$attributes = array(
+			'parent_type' => 'projects',
+			'parent_id' => $clone->id,
+		);
+		$chats = $this->chats()->withTrashed()->get();
+		foreach ($chats as $chat) {
+			$chat->clone($offset, $attributes, $links);
+		}
+
+		//Modify any link (toto => update this part the day the new tag spec is ready)
+		if(isset($links['files'])){
+			$description = $clone->description;
+			$save = false;
+			foreach ($links['files'] as $old => $new) {
+				if(preg_match_all("/<img.*?\/([=\d\w]+)\/(thumbnail|link|download)\/$old\/.*?>/ui", $description, $matches)){
+					$save = true;
+					foreach ($matches[0] as $key => $value) {
+						$sha = $matches[1][$key];
+						$type = $matches[2][$key];
+						$fileid = $matches[3][$key];
+						$description = str_replace("/$sha/$type/$old/", "/$sha/$type/$new/", $description);
+					}
+				}
+			}
+			if($save){
+				$clone->description = $description;
+				$clone->brutSave(); //Make sure we don't modify any other fields
+				$clone->touchUpdateAt(); //This will make sure that everyone will see this item as locked
+			}
+		}
+		
+
+		return $links;
 	}
 
 }

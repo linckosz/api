@@ -13,6 +13,7 @@ use \libs\Folders;
 use \libs\Video;
 use \libs\IptcManager;
 use \libs\SimpleImage;
+use \libs\Datassl;
 use WideImage\WideImage;
 
 class Files extends ModelLincko {
@@ -49,6 +50,7 @@ class Files extends ModelLincko {
 		'orientation',
 		'progress',
 		'error',
+		'sha',
 		'_parent',
 		'_tasks',
 		'_notes',
@@ -166,7 +168,7 @@ class Files extends ModelLincko {
 
 	//Many(Files) to Many(Comments)
 	public function comments(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'files', 'id', 'parent_id');
 	}
 
 	//Many(Files) to Many(Comments)
@@ -176,12 +178,12 @@ class Files extends ModelLincko {
 
 	//Many(Files) to Many(Projects)
 	public function projects(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'comments', 'id', 'parent_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'files', 'id', 'parent_id');
 	}
 
 	//Many(Files) to Many(Projects)
 	public function chats(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'comments', 'id', 'parent_id');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'files', 'id', 'parent_id');
 	}
 
 	//One(Files) to Many(Users)
@@ -304,6 +306,16 @@ class Files extends ModelLincko {
 
 	public function checkPermissionAllow($level, $msg=false){ //toto
 		return true;
+	}
+
+	public function toJson($detail=true, $options = 0){
+		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));
+		return parent::toJson($detail, $options);
+	}
+
+	public function toVisible(){
+		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));
+		return parent::toVisible();
 	}
 
 	public function setOrientation(){

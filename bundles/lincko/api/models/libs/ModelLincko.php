@@ -2175,6 +2175,10 @@ abstract class ModelLincko extends Model {
 		return true;
 	}
 
+	public function clone($offset=false, $attributes=array(), $links=array()){
+		return false;
+	}
+
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
 		if(!$this->checkAccess()){
