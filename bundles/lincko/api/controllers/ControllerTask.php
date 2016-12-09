@@ -320,7 +320,11 @@ class ControllerTask extends Controller {
 			if(isset($form->locked)){ $model->locked = $form->locked; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
-			if(count($dirty)>0 || $pivots){
+			if(isset($form->locked) || count($dirty)>0 || $pivots){
+				//For deleted items we can modify links only
+				if(count($dirty)==0 && $pivots){
+					$model->enableTrash(true);
+				}
 				if($model->getParentAccess() && $model->save()){
 					$model->enableTrash(false);
 					$msg = array('msg' => $app->trans->getBRUT('api', 9, 6)); //Task updated.
