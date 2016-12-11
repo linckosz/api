@@ -117,7 +117,7 @@ class Projects extends ModelLincko {
 
 	//One(Projects) to Many(Files)
 	public function Chats(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'parent_id')->where('files.parent_type', 'projects');
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'parent_id')->where('chats.parent_type', 'projects');
 	}
 
 ////////////////////////////////////////////
@@ -316,7 +316,7 @@ class Projects extends ModelLincko {
 		return parent::setPerm();
 	}
 
-	public function clone($offset=false, $attributes=array(), $links=array()){
+	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		$app = self::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
@@ -330,88 +330,117 @@ class Projects extends ModelLincko {
 		
 		//Initialization of attributes
 		$clone->temp_id = '';
-		if(!is_null($clone->deleted_at)){ $clone->deleted_at->addSeconds($offset); }
-		if(!is_null($clone->approved_at)){ $clone->approved->addSeconds($offset); }
+		if(!is_null($clone->deleted_at)){
+			$clone->deleted_at = Carbon::createFromFormat('Y-m-d H:i:s', $clone->deleted_at)->addSeconds($offset);
+		}
 		$clone->created_by = $uid;
+		if(!is_null($clone->deleted_by)){ $clone->deleted_by = $uid; }
 		$clone->personal_private = null;
-		$clone->_perm = '';
 		$clone->noticed_by = '';
 		$clone->viewed_by = '';
+		$clone->_perm = '';
+		$clone->title = trim($this->title).' ['.$app->trans->getBRUT('api', 5, 3).']'; //copy
 		$clone->resume = 0;
 		$clone->extra = null;
 
+		/*
 		//Increment new project "A title [1]" => "A title [2]"
-		$title = trim($clone->title);
+		$title = trim($this->title);
 		if(preg_match("/^.+\[(\d+)\]$/ui", $title, $matches)){
 			$i = intval($matches[1])+1;
 			$clone->title = preg_replace("/^(.*)(\[\d+\])$/ui", '${1}['.$i.']', $title);
 		} else {
 			$clone->title = $title.' [1]';
 		}
+		*/
 
 		$clone->save();
-		$link['projects'][$this->id] = [$clone->id];
+		$link[$this->getTable()][$this->id] = [$clone->id];
 
-		//Clone files
-		$attributes = array(
-			'parent_type' => 'projects',
-			'parent_id' => $clone->id,
-		);
-		$files = $this->files()->withTrashed()->get();
-		foreach ($files as $file) {
-			$file->clone($offset, $attributes, $links);
+		//Clone spaces (no dependencies)
+		if(!isset($exclude_links['spaces'])){
+			$attributes = array(
+				'parent_type' => 'projects',
+				'parent_id' => $clone->id,
+			);
+			if($spaces = $this->spaces){
+				foreach ($spaces as $space) {
+					$links = $space->clone($offset, $attributes, $links);
+				}
+			}
 		}
 
-		//Clone tasks
-		$attributes = array(
-			'parent_id' => $clone->id,
-		);
-		$tasks = $this->tasks()->withTrashed()->get();
-		foreach ($tasks as $task) {
-			$task->clone($offset, $attributes, $links);
+		//Clone chats (spaces)
+		if(!isset($exclude_links['chats'])){
+			$attributes = array(
+				'parent_type' => 'projects',
+				'parent_id' => $clone->id,
+			);
+			if($chats = $this->chats){
+				foreach ($chats as $chat) {
+					$links = $chat->clone($offset, $attributes, $links);
+				}
+			}
 		}
 
-		//Clone notes
-		$attributes = array(
-			'parent_id' => $clone->id,
-		);
-		$notes = $this->notes()->withTrashed()->get();
-		foreach ($notes as $note) {
-			$note->clone($offset, $attributes, $links);
+		//Clone files (spaces)
+		if(!isset($exclude_links['files'])){
+			$attributes = array(
+				'parent_type' => 'projects',
+				'parent_id' => $clone->id,
+			);
+			if($files = $this->files){
+				foreach ($files as $file) {
+					\libs\Watch::php($file->toArray(), '$var', __FILE__, false, false, true);
+					$links = $file->clone($offset, $attributes, $links);
+				}
+			}
 		}
 
-		//Clone chats
-		$attributes = array(
-			'parent_type' => 'projects',
-			'parent_id' => $clone->id,
-		);
-		$chats = $this->chats()->withTrashed()->get();
-		foreach ($chats as $chat) {
-			$chat->clone($offset, $attributes, $links);
+		//Clone notes (spaces, files)
+		if(!isset($exclude_links['notes'])){
+			$attributes = array(
+				'parent_id' => $clone->id,
+			);
+			if($notes = $this->notes){
+				foreach ($notes as $note) {
+					$links = $note->clone($offset, $attributes, $links);
+				}
+			}
+		}
+
+		//Clone tasks (spaces, files)
+		if(!isset($exclude_links['tasks'])){
+			$attributes = array(
+				'parent_id' => $clone->id,
+			);
+			if($tasks = $this->tasks){
+				foreach ($tasks as $task) {
+					$links = $task->clone($offset, $attributes, $links);
+				}
+			}
 		}
 
 		//Modify any link (toto => update this part the day the new tag spec is ready)
-		if(isset($links['files'])){
-			$description = $clone->description;
-			$save = false;
-			foreach ($links['files'] as $old => $new) {
-				if(preg_match_all("/<img.*?\/([=\d\w]+)\/(thumbnail|link|download)\/$old\/.*?>/ui", $description, $matches)){
-					$save = true;
-					foreach ($matches[0] as $key => $value) {
-						$sha = $matches[1][$key];
-						$type = $matches[2][$key];
-						$fileid = $matches[3][$key];
-						$description = str_replace("/$sha/$type/$old/", "/$sha/$type/$new/", $description);
-					}
+		$text = $clone->description;
+		if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $text, $matches)){
+			foreach ($matches[0] as $key => $value) {
+				$sha = $matches[1][$key];
+				$type = $matches[2][$key];
+				$id = $matches[3][$key];
+				if(isset($links['files'][$id])){
+					$sha_new = $sha;
+					$id_new = $links['files'][$id];
+				} else {
+					$sha_new = '0'; //broken link
+					$id_new = '0'; //broken link
 				}
+				$text = str_replace("/$sha/$type/$id/", "/$sha_new/$type/$id_new/", $text);
 			}
-			if($save){
-				$clone->description = $description;
-				$clone->brutSave(); //Make sure we don't modify any other fields
-				$clone->touchUpdateAt(); //This will make sure that everyone will see this item as locked
-			}
+			$clone->description = $text;
+			$clone->brutSave();
+			$clone->touchUpdateAt();
 		}
-		
 
 		return $links;
 	}

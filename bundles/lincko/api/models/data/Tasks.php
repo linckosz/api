@@ -454,4 +454,92 @@ class Tasks extends ModelLincko {
 		return parent::toVisible();
 	}
 
+	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+		$app = self::getApp();
+		$uid = $app->lincko->data['uid'];
+		if($offset===false){
+			$offset = $this->created_at->diffInSeconds();
+		}
+		$clone = $this->replicate();
+
+		foreach ($attributes as $key => $value) {
+			$clone->$key = $value;
+		}
+		
+		//Initialization of attributes
+		$clone->temp_id = '';
+		if(!is_null($clone->deleted_at)){
+			$clone->deleted_at = Carbon::createFromFormat('Y-m-d H:i:s', $clone->deleted_at)->addSeconds($offset);
+		}
+		$clone->created_by = $uid;
+		if(!is_null($clone->deleted_by)){ $clone->deleted_by = $uid; }
+		if(!is_null($clone->approved_by)){ $clone->approved_by = $uid; }
+		$clone->noticed_by = '';
+		$clone->viewed_by = '';
+		$clone->_perm = '';
+		$clone->locked_by = null;
+		$clone->locked_at = null;
+		if(!is_null($clone->start)){
+			$clone->start = Carbon::createFromFormat('Y-m-d H:i:s', $clone->start)->addSeconds($offset);
+		}
+		$clone->extra = null;
+
+		//Pivots
+		$pivots = new \stdClass;
+		$dependencies_visible = $clone::getDependenciesVisible();
+		foreach ($dependencies_visible as $dep => $value) {
+			if(isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+				$items = $clone->$dep;
+				foreach ($items as $item) {
+					$table = $item->getTable();
+					if(isset($links[$table][$item->id])){
+						\libs\Watch::php($item, '$tasks', __FILE__, false, false, true);
+						if(!isset($pivots->{$dep.'>access'})){ $pivots->{$dep.'>access'} = new \stdClass; }
+						$pivots->{$dep.'>access'}->{$links[$table]} = true;
+						foreach ($dependencies_visible[$dep][1] as $field) {
+							if(isset($item->pivot->$field)){
+								$pivots->{ $dep.'>'.$field}->{$links[$table]} = $item->pivot->$field;
+								//If it's a Carbon object, we add the offset
+								if($offset!=0){
+									if(preg_match("/^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/ui", $item->pivot->$field)){
+										try {
+											$item->pivot->$field = Carbon::createFromFormat('Y-m-d H:i:s', $item->pivot->$field)->addSeconds($offset);
+										} catch (\Exception $e) {}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		$clone->pivots_format($pivots, false);
+
+		$clone->save();
+		$link[$this->getTable()][$this->id] = [$clone->id];
+
+		//Modify any link (toto => update this part the day the new tag spec is ready)
+		$text = $clone->comment;
+		if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $text, $matches)){
+			foreach ($matches[0] as $key => $value) {
+				$sha = $matches[1][$key];
+				$type = $matches[2][$key];
+				$id = $matches[3][$key];
+				if(isset($links['files'][$id])){
+					$sha_new = $sha;
+					$id_new = $links['files'][$id];
+				} else {
+					$sha_new = '0'; //broken link
+					$id_new = '0'; //broken link
+				}
+				$text = str_replace("/$sha/$type/$id/", "/$sha_new/$type/$id_new/", $text);
+			}
+			$clone->comment = $text;
+			$clone->brutSave();
+			$clone->touchUpdateAt();
+		}
+
+		return $links;
+	}
+
 }

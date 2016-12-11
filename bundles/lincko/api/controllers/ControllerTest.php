@@ -1065,13 +1065,18 @@ class ControllerTest extends Controller {
 		*/
 
 		//$tp = Projects::find(877);
-		
+		//$tp = Users::where('username_sha1', 'LIKE', '660609b17%')->first();
+
+		$tp = Projects::find(324)->clone();
+
+
+
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
 
-		
+		/*
 		//----------------------------------------
 		//Modify the links
 		set_time_limit(3600); //Set to 1 hour workload at the most
@@ -1080,7 +1085,7 @@ class ControllerTest extends Controller {
 		$items = Notes::withTrashed()->get(array('id', 'comment'));
 		foreach ($items as $item) {
 			$comment = $item->comment;
-			if(preg_match_all("/<img.*?\/([=\d\w]+)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $comment, $matches)){
+			if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $comment, $matches)){
 				foreach ($matches[0] as $key => $value) {
 					$shaold = $matches[1][$key];
 					$type = $matches[2][$key];
@@ -1099,7 +1104,7 @@ class ControllerTest extends Controller {
 		$items = Tasks::withTrashed()->get(array('id', 'comment'));
 		foreach ($items as $item) {
 			$comment = $item->comment;
-			if(preg_match_all("/<img.*?\/([=\d\w]+)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $comment, $matches)){
+			if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $comment, $matches)){
 				foreach ($matches[0] as $key => $value) {
 					$shaold = $matches[1][$key];
 					$type = $matches[2][$key];
@@ -1113,7 +1118,7 @@ class ControllerTest extends Controller {
 			}
 		}
 		\time_checkpoint('end tasks');	
-
+		*/
 
 		
 		/*

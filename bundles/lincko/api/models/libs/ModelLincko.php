@@ -258,7 +258,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public static function validDate($data, $optional=false){
-		$return = is_string($data) && preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u", $data);
+		$return = preg_match("/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/u", $data);
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
@@ -2175,7 +2175,7 @@ abstract class ModelLincko extends Model {
 		return true;
 	}
 
-	public function clone($offset=false, $attributes=array(), $links=array()){
+	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		return false;
 	}
 

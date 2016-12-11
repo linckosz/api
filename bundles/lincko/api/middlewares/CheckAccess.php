@@ -496,19 +496,26 @@ class CheckAccess extends \Slim\Middleware {
 				}
 			} else if(
 				   $app->lincko->method_suffix == '_get'
-				&& preg_match("/^\/file\/(\d+)\/([\d\w]+=)\/(?:link|thumbnail|download|qrcode)\/\d+\/.+$/ui", $resourceUri, $matches)
+				&& preg_match("/^\/file\/(\d+)\/([=\d\w]+?)\/(link|thumbnail|download|qrcode)\/(\d+)\/.+$/ui", $resourceUri, $matches)
 				&& $this->checkRoute()!==false
 			){ //File reading
+				//toto => to make it more secure, we can first ask the front server which will contact the back with a post and user information. The back will return a generated link including a timestamp (valid for few minutes only). The browser can cache like that the front link to cache it, but someone else will get an error if he copy/paste the link because of timestamp expiration.
 				$w_id = $matches[1];
-				$app->lincko->data['uid'] = $matches[2];
-				if($w_id==0){ //Shared
-					return $this->next->call();
-				} else if($workspace = Workspaces::where('id', $w_id)->first()){
-					$app->lincko->data['workspace'] = $workspace->url;
-					$app->lincko->data['workspace_id'] = $workspace->id;
-					$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
-					$workspace = $this->setWorkspaceConnection($workspace);
-					if($workspace->checkAccess(false)){
+				if($matches[3]=='qrcode'){
+					if($user = Users::where('username_sha1', 'LIKE', $matches[2].'%')->Where('id', $matches[4])->first()){
+						$app->lincko->data['uid'] = $user->id; //We only use user code
+					} else {
+						$file_error = true;
+					}
+				}
+				if(!$file_error){
+					if($w_id==0){ //Shared
+						return $this->next->call();
+					} else if($workspace = Workspaces::where('id', $w_id)->first()){
+						$app->lincko->data['workspace'] = $workspace->url;
+						$app->lincko->data['workspace_id'] = $workspace->id;
+						$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+						$workspace = $this->setWorkspaceConnection($workspace);
 						return $this->next->call();
 					}
 				}

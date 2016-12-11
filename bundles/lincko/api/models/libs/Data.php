@@ -653,7 +653,14 @@ class Data {
 
 					$temp->_parent = $model->setParentAttributes();
 				}
-				unset($temp->{'id'}); //Delete ID property since it becomes the key of the table
+				$temp->new = false;
+				if(isset($temp->viewed_by)){
+					if(strpos($temp->viewed_by, ';'.$uid.';')===false){
+						$temp->new = true;
+					}
+					unset($temp->viewed_by);
+				}
+				unset($temp->id); //Delete ID property since it becomes the key of the table
 				$result_bis->$uid->$table_name->$id = $temp;
 			}
 		}

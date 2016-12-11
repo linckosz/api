@@ -50,7 +50,7 @@ $app->group('/file', function () use ($app) {
 	)
 	->conditions(array(
 		'workspace' => '\d+',
-		'sha' => '[\d\w]+=',
+		'sha' => '[=\d\w]+',
 		'type' => 'link|thumbnail|download',
 		'id' => '\d+',
 		'name' => '.+',
@@ -125,7 +125,7 @@ $app->group('/files', function () use ($app) {
 	)
 	->conditions(array(
 		'type' => 'link|thumbnail|download',
-		'sha' => '[\d\w]+=',
+		'sha' => '[=\d\w]+',
 		'id' => '\d+',
 		'name' => '.+',
 	))
