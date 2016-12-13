@@ -65,6 +65,7 @@ class Invitation extends ModelLincko {
 			$this->used = true;
 		}
 		$return = Model::save($options);
+		usleep(30000); //30ms
 		return $return;
 	}
 

@@ -70,6 +70,7 @@ class History extends ModelLincko {
 			$this->timestamps = false; //Don't update updated_at
 		}
 		$return = Model::save($options);
+		usleep(30000); //30ms
 		return $return;
 	}
 
@@ -127,6 +128,7 @@ class History extends ModelLincko {
 			//Update History
 			foreach ($histories as $history) {
 				$history->save();
+				usleep(10000); //Give a 10ms pause to limit a deadlock issue
 				$parent_list[$history->parent_type][$history->parent_id] = true;
 			}
 			//Update object itself
@@ -138,6 +140,7 @@ class History extends ModelLincko {
 							if(isset($model->noticed_by) && strpos($model->noticed_by, ';'.$app->lincko->data['uid'].';') === false){
 								$noticed_by = $model->noticed_by.';'.$app->lincko->data['uid'].';';
 								$class::where('id', $id)->getQuery()->update(['noticed_by' => $noticed_by]); //toto => with about 200+ viewed, it crashes (1317 Query execution was interrupted)
+								usleep(30000); //30ms
 								$model->touchUpdateAt();
 								if(!$partial){ $partial = new \stdClass; }
 								if(!isset($partial->$uid)){ $partial->$uid = new \stdClass; }

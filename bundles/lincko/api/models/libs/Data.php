@@ -948,6 +948,7 @@ class Data {
 		$tasks_perm = $tasks_query->get(array('_perm'));
 		if(count($tasks_perm)>0){
 			$tasks_update = $tasks_query->getQuery()->update(['updated_at' => $time, 'extra' => null, 'locked_by' => null, 'locked_at' => null]);
+			usleep(100000); //100ms
 			foreach ($tasks_perm as $items) {
 				if(!is_null($items->_perm) && $perm = json_decode($items->_perm)){
 					foreach ($perm as $uid => $list) {
@@ -965,6 +966,7 @@ class Data {
 		$notes_perm = $notes_query->get(array('_perm'));
 		if(count($notes_perm)>0){
 			$notes_update = $notes_query->getQuery()->update(['updated_at' => $time, 'extra' => null, 'locked_by' => null, 'locked_at' => null]);
+			usleep(100000); //100ms
 			foreach ($notes_perm as $items) {
 				if(!is_null($items->_perm) && $perm = json_decode($items->_perm)){
 					foreach ($perm as $uid => $list) {

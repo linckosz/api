@@ -196,7 +196,9 @@ class Tree extends ModelLincko {
 			$sql = 'INSERT INTO `tree` (`users_id`, `item_type`, `item_id`, `parent_type`, `parent_id`, `updated_at`, `deleted_at`'.$insert_fields.') VALUES '.$values.' ON DUPLICATE KEY UPDATE '.$updates.';';
 		}
 		//\libs\Watch::php( $sql, '$sql', __FILE__, false, false, true);
-		return $db->insert( $db->raw($sql));
+		$result = $db->insert( $db->raw($sql));
+		usleep(30000); //30ms
+		return $result;
 	}
 
 	//Only available for development purpose, dangerous

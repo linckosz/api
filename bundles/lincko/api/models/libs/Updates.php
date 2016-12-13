@@ -71,6 +71,7 @@ class Updates extends ModelLincko {
 	public function save(array $options = array()){
 		//Skip ModelLincko save procedure
 		$return = Model::save($options);
+		usleep(30000); //30ms
 		return $return;
 	}
 
@@ -104,6 +105,7 @@ class Updates extends ModelLincko {
 			}
 			$sql = 'INSERT INTO `updates` (`id`, `'.$table_name.'`) VALUES '.$values.' ON DUPLICATE KEY UPDATE `'.$table_name.'`=\''.$time.'\';';
 			$db->insert( $db->raw($sql));
+			usleep(30000); //30ms
 		}
 		
 

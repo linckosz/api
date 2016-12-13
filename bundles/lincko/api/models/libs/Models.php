@@ -101,6 +101,7 @@ class Models extends ModelLincko {
 			//\libs\Watch::php( $sql, '$plus', __FILE__, false, false, true);
 			$db = static::getDB();
 			$result = $db->insert( $db->raw($sql));
+			usleep(30000); //30ms
 			return $result;
 		}
 		return false;
@@ -126,6 +127,7 @@ class Models extends ModelLincko {
 			//\libs\Watch::php( $sql, '$less', __FILE__, false, false, true);
 			$db = static::getDB();
 			$result = $db->insert( $db->raw($sql));
+			usleep(30000); //30ms
 			return $result;
 		}
 		return false;

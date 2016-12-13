@@ -245,7 +245,9 @@ class Comments extends ModelLincko {
 	}
 
 	public function saveRobot(array $options = array()){
-		return Model::save($options);
+		$result = Model::save($options);
+		usleep(30000); //30ms
+		return $result;
 	}
 
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){

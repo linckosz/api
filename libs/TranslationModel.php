@@ -43,6 +43,7 @@ class TranslationModel extends Model {
 			$dirty = $this->getDirty();
 			if(count($dirty) > 0){
 				$return = $this->where('category', $this->category)->where('phrase', $this->phrase)->getQuery()->update((array) $dirty);
+				usleep(30000); //30ms
 			}
 		}
 		return $return;

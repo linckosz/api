@@ -348,7 +348,9 @@ abstract class ModelLincko extends Model {
 
 	public function scopeextraUpdate($query, array $bindings=array()){
 		$bindings['extra'] = null;
-		return $query->withTrashed()->update($bindings);
+		$result = $query->withTrashed()->update($bindings);
+		usleep(30000); //30ms
+		return $result;
 	}
 
 	public static function getHasPerm(){
@@ -993,6 +995,7 @@ abstract class ModelLincko extends Model {
 					$class = $list_models[$table_name];
 					if((is_bool($class::$has_perm) && $class::$has_perm) || in_array('_perm', $class::getColumns())){ //has_perm is a shortcut to limit some SQL calls
 						$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json, 'extra' => null]);
+						usleep(30000); //30ms
 						$users = json_decode($json);
 						if(is_object($users)){
 							foreach ($users as $users_id => $value) {
@@ -1366,6 +1369,7 @@ abstract class ModelLincko extends Model {
 		$timestamp = time();
 		if($all){
 			Users::getQuery()->update(['check_schema' => $timestamp]);
+			usleep(30000); //30ms
 			return true;
 		}
 		if(isset($this->_perm)){
@@ -1380,6 +1384,7 @@ abstract class ModelLincko extends Model {
 			}
 			if(!empty($users)){
 				Users::getQuery()->whereIn('id', $users)->update(['check_schema' => $timestamp]);
+				usleep(30000); //30ms
 				return true;
 			}
 		}
@@ -1387,6 +1392,7 @@ abstract class ModelLincko extends Model {
 			$this->getTable() => array($this->id),
 		);
 		Users::getUsers($list)->getQuery()->update(['check_schema' => $timestamp]);
+		usleep(30000); //30ms
 		return true;
 	}
 
@@ -1399,9 +1405,11 @@ abstract class ModelLincko extends Model {
 				'workspaces' => array($app->lincko->data['workspace_id']),
 			);
 			Users::getUsers($list)->getQuery()->update(['force_schema' => $timestamp]);
+			usleep(30000); //30ms
 		} else {
 			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
 			Users::getQuery()->update(['force_schema' => $timestamp]);
+			usleep(30000); //30ms
 		}
 		//Force to rebuild all extra
 		//Reinitialize all permissions
@@ -1411,6 +1419,7 @@ abstract class ModelLincko extends Model {
 			//Force to recalculate all extra
 			if(in_array('extra', $class::getColumns())){
 				$class::getQuery()->update(['extra' => null]);
+				usleep(30000); //30ms
 			}
 		}
 		return true;
@@ -1833,6 +1842,7 @@ abstract class ModelLincko extends Model {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
 				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]); //toto => with about 200+ viewed, it crashes (1317 Query execution was interrupted)
+				usleep(30000); //30ms
 				$this->touchUpdateAt();
 				usleep(5000); //5ms (trying to avoid crash (1317 Query execution was interrupted) when over +200 viewed to updated)
 				return true;
@@ -2307,6 +2317,7 @@ abstract class ModelLincko extends Model {
 		$return = false;
 		try {
 			$return = parent::save($options);
+			usleep(30000); //30ms
 			if($new){
 				$this->new_model = true;
 				if($this->getTable()=='users'){
@@ -2373,7 +2384,9 @@ abstract class ModelLincko extends Model {
 
 	//Note: this is unsafe because it skip every step of checking
 	public function brutSave(array $options = array()){
-		return Model::save($options);
+		$result = Model::save($options);
+		usleep(30000); //30ms
+		return $result;
 	}
 
 	//This will update updated_at, even if the user doesn't have write permission
@@ -2385,6 +2398,7 @@ abstract class ModelLincko extends Model {
 
 		$time = $this->freshTimestamp();
 		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time, 'extra' => null]);
+		usleep(30000); //30ms
 
 		$users_tables = $this->getUsersTable($users_tables);
 
@@ -2411,6 +2425,7 @@ abstract class ModelLincko extends Model {
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->delete();
+			usleep(30000); //30ms
 			$this->touchUpdateAt();
 		}
 		return true;
@@ -2434,6 +2449,7 @@ abstract class ModelLincko extends Model {
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->restore();
+			usleep(30000); //30ms
 			$this->touchUpdateAt();
 		}
 		return true;
@@ -2600,6 +2616,7 @@ abstract class ModelLincko extends Model {
 				}
 				if($extra = json_encode($bindings)){
 					$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
+					usleep(30000); //Give 30ms after anyking of update
 					return true;
 				}
 			}
