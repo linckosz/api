@@ -12,7 +12,7 @@ class Watch {
 
 	//Special functions to see variables
 	/*
-	\libs\Watch::php(true, '$var', __FILE__, false, false, true);
+	\libs\Watch::php(true, '$var', __FILE__.'('.__LINE__.')', false, false, true);
 	*/
 	public static function php($var='yes', $comment='undefined', $filename=__FILE__, $error=false, $reset=false, $cleaner=false){
 		global $app;

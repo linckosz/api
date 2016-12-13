@@ -857,4 +857,30 @@ class ControllerUser extends Controller {
 		return false;
 	}
 
+
+	public function integration_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$reset = false;
+
+		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		if(!isset($form->party) || !Users::validChar($form->party)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
+			$errfield = 'party';
+		}
+		else if(!isset($form->data)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
+			$errfield = 'data';
+		}
+		else {
+			\libs\Watch::php($form, '$form', __FILE__.'('.__LINE__.')', false, false, true);
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield, 'reset' => $reset), 'error' => true));
+		return false;
+	}
+
 }

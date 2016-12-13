@@ -427,8 +427,8 @@ class CheckAccess extends \Slim\Middleware {
 
 		//Wechat integration
 		if(
-			   $app->lincko->method_suffix == '_get'
-			&& preg_match("/^\/integration\/wechat\/connect\\S*$/ui", $resourceUri)
+			   $app->lincko->method_suffix == '_post'
+			&& preg_match("/^\/integration\/wechat\/connect$/ui", $resourceUri)
 			&& $this->checkRoute()!==false
 		){
 			return $this->next->call();
