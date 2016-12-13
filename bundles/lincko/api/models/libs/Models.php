@@ -98,7 +98,7 @@ class Models extends ModelLincko {
 			//So we should check if the user row is missing and doing a getItems before any update
 
 			$sql = "INSERT INTO `models` (`users_id`, `type`, `list`) VALUES $values ON DUPLICATE KEY UPDATE `list`=IF(`list` NOT LIKE '%;$id;%', CONCAT(`list`, ';$id;'), `list`);";
-			//\libs\Watch::php( $sql, '$plus', __FILE__, false, false, true);
+			//\libs\Watch::php( $sql, '$plus', __FILE__, __LINE__, false, false, true);
 			$db = static::getDB();
 			$result = $db->insert( $db->raw($sql));
 			usleep(30000); //30ms
@@ -124,7 +124,7 @@ class Models extends ModelLincko {
 			//So we should check if the user row is missing and doing a getItems before any update
 			
 			$sql = "INSERT INTO `models` (`users_id`, `type`, `list`) VALUES $values ON DUPLICATE KEY UPDATE `list`=IF(`list` LIKE '%;$id;%', REPLACE(`list`, ';$id;', ''), `list`);";
-			//\libs\Watch::php( $sql, '$less', __FILE__, false, false, true);
+			//\libs\Watch::php( $sql, '$less', __FILE__, __LINE__, false, false, true);
 			$db = static::getDB();
 			$result = $db->insert( $db->raw($sql));
 			usleep(30000); //30ms

@@ -49,7 +49,7 @@ class Notif {
 			$result = $response->send();
 			return $result;
 		} catch (\JPush\Exceptions\JPushException $e) {
-			//\libs\Watch::php('$e', 'JPushException', __FILE__, true); //error
+			//\libs\Watch::php('$e', 'JPushException', __FILE__, __LINE__, true); //error
 			return false;
 		}
 	}

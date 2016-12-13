@@ -110,6 +110,8 @@ class Users extends ModelLincko {
 	protected static $has_perm = false;
 
 	protected static $me = false;
+
+	protected static $integration = false;
 	
 ////////////////////////////////////////////
 
@@ -436,7 +438,7 @@ class Users extends ModelLincko {
 				$onboarding = new Onboarding;
 				$onboarding->next(10001); //initialize the onboarding process
 			} catch(\Exception $e){
-				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
+				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 				$return = null;
 				return $return;
 			}

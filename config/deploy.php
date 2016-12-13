@@ -76,11 +76,11 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 		echo $result;
 	} else {
 		echo "cURL error!\n";
-		\libs\Watch::php(curl_getinfo($ch), '$ch', __FILE__, false, false, true);
+		\libs\Watch::php(curl_getinfo($ch), '$ch', __FILE__, __LINE__, false, false, true);
 		$error = '['.curl_errno($ch)."] => ".htmlspecialchars(curl_error($ch));
-		\libs\Watch::php($error, '$error', __FILE__, false, false, true);
+		\libs\Watch::php($error, '$error', __FILE__, __LINE__, false, false, true);
 		rewind($verbose);
-		\libs\Watch::php(stream_get_contents($verbose), '$verbose', __FILE__, false, false, true);
+		\libs\Watch::php(stream_get_contents($verbose), '$verbose', __FILE__, __LINE__, false, false, true);
 		fclose($verbose);
 	}
 	

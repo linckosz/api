@@ -236,7 +236,7 @@ class Projects extends ModelLincko {
 					return true;
 				}
 				$msg = $app->trans->getBRUT('api', 5, 1); //Cannot save more than one private project per user.
-				\libs\Watch::php($msg, 'Projects->save()', __FILE__, true);
+				\libs\Watch::php($msg, 'Projects->save()', __FILE__, __LINE__, true);
 				return parent::checkPermissionAllow(4, $msg); //this will only launch error, since $level = 4
 			}
 			return false;
@@ -391,7 +391,7 @@ class Projects extends ModelLincko {
 			);
 			if($files = $this->files){
 				foreach ($files as $file) {
-					\libs\Watch::php($file->toArray(), '$var', __FILE__, false, false, true);
+					\libs\Watch::php($file->toArray(), '$var', __FILE__, __LINE__, false, false, true);
 					$links = $file->clone($offset, $attributes, $links);
 				}
 			}

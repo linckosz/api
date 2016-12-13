@@ -4,7 +4,7 @@ namespace bundles\lincko\api\controllers\integration;
 
 use \libs\Controller;
 
-class ControllerWechat extends Controller {
+class ControllerIntegration extends Controller {
 
 	protected $app = NULL;
 	protected $data = NULL;
@@ -16,7 +16,7 @@ class ControllerWechat extends Controller {
 	}
 
 	public function connect_post(){
-		\libs\Watch::php($this->data, '$data', __FILE__, false, false, true);
+		\libs\Watch::php($this->data, '$data', __FILE__, __LINE__, false, false, true);
 	}
 
 }

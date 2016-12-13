@@ -913,7 +913,7 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		}
-//\libs\Watch::php($children, '$children', __FILE__, false, false, true);
+//\libs\Watch::php($children, '$children', __FILE__, __LINE__, false, false, true);
 		$all_perm = array();
 		$tree_models = array();
 		foreach ($children as $table_name => $models) {
@@ -982,7 +982,7 @@ abstract class ModelLincko extends Model {
 			}
 		}
 
-		//\libs\Watch::php($all_perm, '$all_perm', __FILE__, false, false, true);
+		//\libs\Watch::php($all_perm, '$all_perm', __FILE__, __LINE__, false, false, true);
 
 		$users_tables = array();
 		$time = $this->freshTimestamp();
@@ -1342,7 +1342,7 @@ abstract class ModelLincko extends Model {
 			return $parent;
 		}
 		$msg = $app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
-		\libs\Watch::php($this, $msg, __FILE__, true);
+		\libs\Watch::php($this, $msg, __FILE__, __LINE__, true);
 		$json = new Json($msg, true, 406);
 		$json->render(406);
 		return false;
@@ -2067,7 +2067,7 @@ abstract class ModelLincko extends Model {
 			$suffix = $this->getTable();
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 			$suffix = $this->getTable();
-			\libs\Watch::php($suffix." :\n".parent::toJson(), $msg, __FILE__, true);
+			\libs\Watch::php($suffix." :\n".parent::toJson(), $msg, __FILE__, __LINE__, true);
 			if(!self::$debugMode){
 				$json = new Json($msg, true, 406);
 				$json->render(406);
@@ -2121,7 +2121,7 @@ abstract class ModelLincko extends Model {
 		if(!$msg){
 			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		}
-		\libs\Watch::php($detail, $msg, __FILE__, true);
+		\libs\Watch::php($detail, $msg, __FILE__, __LINE__, true);
 		if(!self::$debugMode){
 			$json = new Json($msg, true, 406);
 			$json->render(406);
@@ -2259,7 +2259,7 @@ abstract class ModelLincko extends Model {
 			}
 			$app->lincko->translation['table_name'] = $this->table;
 			$msg = $app->trans->getBRUT('api', 4, 2); //The format is not valid (@@table_name~~), some fields do not match the minimum request, or are missing: @@fields_not_valid~~
-			\libs\Watch::php($this, $msg, __FILE__, true);
+			\libs\Watch::php($this, $msg, __FILE__, __LINE__, true);
 			$json = new Json($msg, true, 406);
 			$json->render(406);
 			return false;
@@ -2330,7 +2330,7 @@ abstract class ModelLincko extends Model {
 			}
 			$this->pivots_save();
 		} catch(\Exception $e){
-			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
+			\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 		}
 
 		//Make sure we set here users_tables before setPerm to inform users that migth be removed, Users::informUsers is also called inside setPerm for new Users

@@ -12,9 +12,9 @@ class Watch {
 
 	//Special functions to see variables
 	/*
-	\libs\Watch::php(true, '$var'.' ('.__LINE__.')', __FILE__, false, false, true);
+	\libs\Watch::php(true, '$var', __FILE__, __LINE__, false, false, true);
 	*/
-	public static function php($var='yes', $comment='undefined', $filename=__FILE__, $error=false, $reset=false, $cleaner=false){
+	public static function php($var='yes', $comment='undefined', $filename=__FILE__, $fileline=__LINE__, $error=false, $reset=false, $cleaner=false){
 		global $app;
 
 		if($cleaner && !self::$cleaner){
@@ -62,7 +62,7 @@ class Watch {
 		
 		if(is_file($filename)){
 			$path_parts = pathinfo($filename);
-			$basename = $path_parts['basename'];
+			$basename = $path_parts['basename'].' ('.$fileline.')';
 		} else {
 			$basename = 'undefined';
 		}

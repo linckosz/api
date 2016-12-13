@@ -8,6 +8,7 @@ use \libs\Datassl;
 use \bundles\lincko\api\models\Api;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\Integration;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Roles;
 use \bundles\lincko\api\models\data\Workspaces;
@@ -326,6 +327,8 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorizeAccess = true;
 			$valid = true;
+		} else if($this->route == 'integration_connect' && $integration = Integration::check($data)){
+			 
 		}
 
 		if($valid){

@@ -167,7 +167,7 @@ class Roles extends ModelLincko {
 		if(isset($this->shared) && $this->shared==1){
 			//We disallow any modification of shared Roles
 			$msg = $app->trans->getBRUT('api', 17, 5)."\n".$app->trans->getBRUT('api', 0, 5); //Role update failed. You are not allowed to edit the server data.
-			\libs\Watch::php($msg, 'Missing arguments', __FILE__, true);
+			\libs\Watch::php($msg, 'Missing arguments', __FILE__, __LINE__, true);
 			$json = new Json($msg, true, 406);
 			$json->render(406);
 			return false;

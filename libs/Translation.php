@@ -188,7 +188,7 @@ class Translation {
 						$replace = self::filter($replace, $array[1]);
 					}
 				} else if($watch){
-					\libs\Watch::php('The word could not be converted: '.$array[0]." \n".$text,'Translation::get',__FILE__,true);
+					\libs\Watch::php('The word could not be converted: '.$array[0]." \n".$text, 'Translation::get', __FILE__, __LINE__, true);
 				}
 				$text = str_replace($value[0], $replace, $text);
 			}
@@ -244,7 +244,7 @@ class Translation {
 			$value = self::pushData($value);
 			return $value;
 		}
-		\libs\Watch::php('The translation does not exist: '.$bundle.' | '.$category.' | '.$phrase,'Translation::get',__FILE__,true);
+		\libs\Watch::php('The translation does not exist: '.$bundle.' | '.$category.' | '.$phrase, 'Translation::get', __FILE__, __LINE__, true);
 		return flase;
 	}
 
@@ -252,7 +252,7 @@ class Translation {
 		$app = $this->app;
 		$bundle = $this->bundle;
 		if(!isset($app->lincko->databases[$bundle])){
-			\libs\Watch::php('The database is not registered: '.$bundle, 'Database',__FILE__,true);
+			\libs\Watch::php('The database is not registered: '.$bundle, 'Database', __FILE__, __LINE__, true);
 			return false;
 		} else if(!Capsule::schema($bundle)->hasTable('translation')){
 			return false;

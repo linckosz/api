@@ -84,10 +84,4 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_reset'.$app->lincko->method_suffix);
 
-	$app->post(
-		'/integration',
-		'\bundles\lincko\api\controllers\ControllerUser:integration'.$app->lincko->method_suffix
-	)
-	->name('user_integration'.$app->lincko->method_suffix);
-
 });

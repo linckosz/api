@@ -10,7 +10,7 @@ function time_checkpoint($msg=''){
 			$app->lincko->time_start = $milliseconds;
 		}
 		$detail = ($milliseconds-$app->lincko->time_record) . "ms to reach this point\n" . ($milliseconds-$app->lincko->time_start)  . "ms in total";
-		\libs\Watch::php( $detail , 'Checkpoint: '.$msg, __FILE__, false, false, true);
+		\libs\Watch::php( $detail , 'Checkpoint: '.$msg, __FILE__, __LINE__, false, false, true);
 		$app->lincko->time_record = $milliseconds;
 	}
 }

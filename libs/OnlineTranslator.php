@@ -18,7 +18,7 @@ class OnlineTranslator {
 		try {
 			$this->translator = new MicrosoftTranslator(new AzureMarketplaceAuthenticator($app->lincko->translator['client_id'], $app->lincko->translator['client_secret'] ,self::API_URL));
 		} catch (Exception $obj_exception) {
-			\libs\Watch::php($obj_exception->getMessage(),'OnlineTranslator->__construct() error',__FILE__,true);
+			\libs\Watch::php($obj_exception->getMessage(), 'OnlineTranslator->__construct() error', __FILE__, __LINE__, true);
 			return '['.$app->trans->getBRUT('default', 1, 1).']'; //The translation failed
 		}
 	}
@@ -30,7 +30,7 @@ class OnlineTranslator {
 			}
 			return mb_strtolower($this->translator->detect($str_source_text));
 		} catch (Exception $obj_exception) {
-			\libs\Watch::php($obj_exception->getMessage(),'OnlineTranslator->from() error',__FILE__,true);
+			\libs\Watch::php($obj_exception->getMessage(), 'OnlineTranslator->from() error', __FILE__, __LINE__, true);
 			return 'error';
 		}
 	}
@@ -52,7 +52,7 @@ class OnlineTranslator {
 			$text = str_replace('&#10;', "\n", $text);
 			return $text;
 		} catch (Exception $obj_exception) {
-			\libs\Watch::php($obj_exception->getMessage(),'OnlineTranslator->autoTranslate() error',__FILE__,true);
+			\libs\Watch::php($obj_exception->getMessage(), 'OnlineTranslator->autoTranslate() error', __FILE__, __LINE__, true);
 			return '['.$app->trans->getBRUT('default', 1, 1).']'; //The translation failed
 		}
 	}

@@ -480,7 +480,7 @@ class Files extends ModelLincko {
 							rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
 						}
 					} catch(\Exception $e){
-						\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
+						\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 						$this->thu_type = 'image/png';
 						$this->thu_ext = 'png';
 						copy($app->lincko->path.'/bundles/lincko/api/public/images/generic/unavailable.png', $folder_thu->getPath().$this->link);
@@ -517,7 +517,7 @@ class Files extends ModelLincko {
 				}
 				$new = true;
 			} catch(\Exception $e){
-				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, true);
+				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 				return false;
 			}
 		}

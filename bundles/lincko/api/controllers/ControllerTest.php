@@ -66,7 +66,7 @@ class ControllerTest extends Controller {
 		$db->enableQueryLog();
 		$tp = null;
 
-		//\libs\Watch::php(Users::getUser()->toJson(),'$user',__FILE__);
+		//\libs\Watch::php(Users::getUser()->toJson(),'$user', __FILE__, __LINE__);
 		
 		//$tp = Users::where('email', '=', mb_strtolower('bruno@lincko.net'))->first()->usersLog;
 		//$user = 1;
@@ -85,10 +85,10 @@ class ControllerTest extends Controller {
 
 
 
-		//\libs\Watch::php($tp->toJson(),'$tp',__FILE__);
-		//\libs\Watch::php($tp,'$tp',__FILE__);
+		//\libs\Watch::php($tp->toJson(),'$tp',__FILE__, __LINE__);
+		//\libs\Watch::php($tp,'$tp',__FILE__, __LINE__);
 
-		//\libs\Watch::php( json_decode($tp->toJson()) ,'tp', __FILE__, false, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'tp', __FILE__, __LINE__, false, false, true);
 
 		//$user_log = UsersLog::where('email', '=', mb_strtolower($form->email))->first()
 
@@ -110,31 +110,31 @@ class ControllerTest extends Controller {
 		//$tp = Users::toto();
 		//$tp = Users::getUser()->users();
 		//$tp = Users::getUser()->usersInvert();
-		//\libs\Watch::php( $tp ,'$tp',__FILE__);
-		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp',__FILE__);
+		//\libs\Watch::php( $tp ,'$tp',__FILE__, __LINE__);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp',__FILE__, __LINE__);
 
 		//$tp = Tasks::getLinked()->get();
-		//\libs\Watch::php( json_decode($tp->toJson()) ,'$get',__FILE__);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$get',__FILE__, __LINE__);
 /*
 		$tp = Tasks::getLinked()->get()->each(function($result){
 			//\libs\Watch::php( $result ,'$tp',__FILE__);
 			$tt = $result->tasks;
-			\libs\Watch::php( json_decode($tt->toJson()) ,'$tt',__FILE__);
+			\libs\Watch::php( json_decode($tt->toJson()) ,'$tt',__FILE__, __LINE__);
 		});
 */
 /*
 		$tp = Tasks::getLinked()->get()->each(function($result){
-			//\libs\Watch::php( $result ,'$tp',__FILE__);
+			//\libs\Watch::php( $result ,'$tp',__FILE__, __LINE__);
 			$tp = $result->tasks->each(function($result){
-				//\libs\Watch::php( $result ,'$tp',__FILE__);
+				//\libs\Watch::php( $result ,'$tp',__FILE__, __LINE__);
 				$tp = $result->id;
-				\libs\Watch::php( $tp ,'$tp',__FILE__);
+				\libs\Watch::php( $tp ,'$tp',__FILE__, __LINE__);
 			});
 		});
 */
 			
 		//$tp = Tasks::all()->first()->getWorkspaceID();
-		//\libs\Watch::php( $tp ,'$tp',__FILE__);
+		//\libs\Watch::php( $tp ,'$tp',__FILE__, __LINE__);
 
 		//$tp = Projects::with('userAccess')->where('users_x_projects.access', 1)->get();
 
@@ -142,7 +142,7 @@ class ControllerTest extends Controller {
 		/*
 		$tp = Projects::with(['userAccess' => function ($query){
 			$query->where('access', 1);
-			\libs\Watch::php( $query ,'$tp', __FILE__, false, true);
+			\libs\Watch::php( $query ,'$tp', __FILE__, __LINE__, false, true);
 		}]);
 		*/
 		//$tp = Projects::with('userAccess')->first();
@@ -167,18 +167,18 @@ class ControllerTest extends Controller {
 */
 		/*
 		$tp = Users::getUser()->username;
-		\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
+		\libs\Watch::php( $tp ,'$tp', __FILE__, __LINE__, false, true);
 */
 
 		//$tp = Users::getUser()->self()->where('users_x_users.access', 1)->get();
 		//$tp = Workspaces::getLinked()->find(2)->users;
 		//$tp = Workspaces::getLinked()->find(2)->users()->where('users_x_workspaces.workspaces_id','<>','1')->get();
-		//\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
+		//\libs\Watch::php( $tp ,'$tp', __FILE__, __LINE__, false, true);
 
 		//$tp = Tasks::find(7)->count();
 		//$tp = Tasks::find(7)->hasColumn('created_by');
-		//\libs\Watch::php( $tp ,'$tp', __FILE__, false, true);
-		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, true);
+		//\libs\Watch::php( $tp ,'$tp', __FILE__, __LINE__, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, __LINE__, false, true);
 		//\error\sendMsg();
 
 		//$tp = Tasks::find(4);
@@ -223,7 +223,7 @@ class ControllerTest extends Controller {
 		//$tp = $data->getForceSchema();
 		
 
-		//\libs\Watch::php($tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php($tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 		//$tp = Users::getUser()->getUsersContacts();
 
@@ -287,31 +287,31 @@ class ControllerTest extends Controller {
 
 /*
 		$tp = Chats::getLinked()->get();
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$Chats', __FILE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Chats', __FILE__, __LINE__, false, false, true);
 
 		$tp = ChatsComments::getLinked()->get();
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$ChatsComments', __FILE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$ChatsComments', __FILE__, __LINE__, false, false, true);
 
 		$tp = Workspaces::getLinked()->get();
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$Workspaces', __FILE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Workspaces', __FILE__, __LINE__, false, false, true);
 
 		$tp = Projects::getLinked()->get();
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$Projects', __FILE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Projects', __FILE__, __LINE__, false, false, true);
 */
 		//$tp = Tasks::find(8)->users()->get();
-		//\libs\Watch::php( $tp ,'$Tasks', __FILE__, false, false, true);
-		//\libs\Watch::php( Tasks::getLinked()->find($app->lincko->data['uid']) ,'$Tasks', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp ,'$Tasks', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( Tasks::getLinked()->find($app->lincko->data['uid']) ,'$Tasks', __FILE__, __LINE__, false, false, true);
 		//$tp = Tasks::getLinked()->get();
-		//\libs\Watch::php( json_decode($tp->toJson()) ,'$Tasks', __FILE__, false, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$Tasks', __FILE__, __LINE__, false, false, true);
 /*
 		$tp = Users::getLinked()->get();
-		\libs\Watch::php( json_decode($tp->toJson()) ,'$Users', __FILE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()) ,'$Users', __FILE__, __LINE__, false, false, true);
 */
 		//$tp = Projects::find(5)->getRelations();
-		//\libs\Watch::php( $tp ,'$Projects', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp ,'$Projects', __FILE__, __LINE__, false, false, true);
 
 		//$tp = Projects::find(5);
-		//\libs\Watch::php( $tp->getTable() ,'Object', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->getTable() ,'Object', __FILE__, __LINE__, false, false, true);
 
 		/*
 		$tp = array(
@@ -323,32 +323,32 @@ class ControllerTest extends Controller {
 
 		$tp = array_merge($tp);
 
-		\libs\Watch::php( $tp ,'tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp ,'tp', __FILE__, __LINE__, false, false, true);
 		*/
 
-		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, false, false, true);
-		//\libs\Watch::php( Tasks::getRelations() ,'models ', __FILE__, false, false, true);
-		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, false, false, true);
+		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( Tasks::getRelations() ,'models ', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( Tasks::$relations_keys ,'models ', __FILE__, __LINE__, false, false, true);
 
 		/*
 		$tp1 = new Projects();
 		$tp2 = new Tasks();
 		$tp2->getRelations();
-		\libs\Watch::php( $tp1::$relations_keys_list ,'Projects', __FILE__, false, false, true);
-		\libs\Watch::php( $tp2::$relations_keys_list ,'Tasks', __FILE__, false, false, true);
-		\libs\Watch::php( $tp1::$relations_keys_list ,'Projects', __FILE__, false, false, true);
+		\libs\Watch::php( $tp1::$relations_keys_list ,'Projects', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp2::$relations_keys_list ,'Tasks', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp1::$relations_keys_list ,'Projects', __FILE__, __LINE__, false, false, true);
 		*/
-		//\libs\Watch::php( Projects::getTableStatic()  ,'Projects', __FILE__, false, false, true);
-		//\libs\Watch::php( Users::getTableStatic()  ,'Users', __FILE__, false, false, true);
+		//\libs\Watch::php( Projects::getTableStatic()  ,'Projects', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( Users::getTableStatic()  ,'Users', __FILE__, __LINE__, false, false, true);
 
 
 		//$tp = new Data();
-		//\libs\Watch::php( $tp->toto() ,'toto', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->toto() ,'toto', __FILE__, __LINE__, false, false, true);
 
 		//$tp = ChatsComments::find(7)->users()->first();
 
-		//\libs\Watch::php($tp, '$tp', __FILE__, false, false, true);
-		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, false, false, true);
+		//\libs\Watch::php($tp, '$tp', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()) ,'$tp', __FILE__, __LINE__, false, false, true);
 
 		//$tp = new Projects();
 		//$tp = Projects::find(5);
@@ -359,7 +359,7 @@ class ControllerTest extends Controller {
 
 		//$db = Capsule::connection('data');
 		//$data = $db->getQueryLog();
-		//\libs\Watch::php( $data ,'$data', __FILE__);
+		//\libs\Watch::php( $data ,'$data', __FILE__, __LINE__);
 		//$msg = time();
 
 
@@ -405,7 +405,7 @@ class ControllerTest extends Controller {
 		//$tp = Users::find(2)->getItems();
 		//$tp = $tp->projects()->first();
 		//$tp->projects()->whereId($this->parent_id)->whereAccess(1)->first()
-		//\libs\Watch::php( $tp , $app->lincko->data['uid'], __FILE__, false, false, true);
+		//\libs\Watch::php( $tp , $app->lincko->data['uid'], __FILE__, __LINE__, false, false, true);
 
 		//$tp = History::whereParentType('projects')->whereParentId([8, 201])->get();
 		//$tp = History::whereParentType('projects')->whereIn('parent_id', [8, 201])->get();
@@ -486,7 +486,7 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(1)->roles()->get()->toArray();
 /*
 		$tp = Users::getUser()->roles()->get(); //This is not optimized because need jointure
-		\libs\Watch::php( $tp->toArray() ,'$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toArray() ,'$tp', __FILE__, __LINE__, false, false, true);
 		$list_roles = array();
 		foreach ($tp as $value){
 			$type = $value->pivot->parent_type;
@@ -530,7 +530,7 @@ class ControllerTest extends Controller {
 		//$tp1 = Tasks::find(4);
 		$tp1 = Projects::find(5);
 		$tp = $tp1->getRolePivotValue($app->lincko->data['uid']);
-		\libs\Watch::php( $tp ,'$getRolePivotValue', __FILE__, false, false, true);
+		\libs\Watch::php( $tp ,'$getRolePivotValue', __FILE__, __LINE__, false, false, true);
 		$tp = $tp1->checkPermissionAllow(1);
 		*/
 		//$tp = Projects::find(5)->getRolePivotValue($app->lincko->data['uid']);
@@ -625,9 +625,9 @@ class ControllerTest extends Controller {
 		$user = Users::find($app->lincko->data['uid']);
 		$user = Users::find(48);
 		$tp = (object) $user->toArray();
-		\libs\Watch::php( $tp , '$toArray', __FILE__, false, false, true);
+		\libs\Watch::php( $tp , '$toArray', __FILE__, __LINE__, false, false, true);
 		$tp = json_decode($user->toJson());
-		\libs\Watch::php( $tp , '$toJson', __FILE__, false, false, true);
+		\libs\Watch::php( $tp , '$toJson', __FILE__, __LINE__, false, false, true);
 		*/
 		
 		//$tp = PivotUsersRoles::whereIn('users_x_roles_x.id', [1])->with('roles')->get();
@@ -655,25 +655,25 @@ class ControllerTest extends Controller {
 		
 		
 		//$tp->delete();
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 		//$tp->comment='test '.time();
 		//$tp = $tp->rolesUsers();
 		//$tp->getParent();
-		//\libs\Watch::php( $tp->checkAccess(true), 'checkAccess '.$tp->getTable(), __FILE__, false, false, true);
-		//\libs\Watch::php( $tp->getWorkspaceSuper(), 'getWorkspaceSuper '.$tp->getTable(), __FILE__, false, false, true);
-		//\libs\Watch::php( $tp->checkPermissionAllow(1), 'create '.$tp->getTable(), __FILE__, false, false, true);
-		//\libs\Watch::php( $tp->checkPermissionAllow(2), 'edit '.$tp->getTable(), __FILE__, false, false, true);
-		//\libs\Watch::php( $tp->checkPermissionAllow(3), 'delete '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->checkAccess(true), 'checkAccess '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp->getWorkspaceSuper(), 'getWorkspaceSuper '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(1), 'create '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(2), 'edit '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(3), 'delete '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		//\libs\Watch::php( $tp, 'new '.$tp->getTable(), __FILE__, false, false, true);
 
-		//\libs\Watch::php( $tp->checkAccess(true, false), 'checkAccess '.$tp->getTable(), __FILE__, false, false, true);
-		//\libs\Watch::php( $tp->getWorkspaceSuper(), 'getWorkspaceSuper '.$tp->getTable(), __FILE__, false, false, true);
-		//\libs\Watch::php( $tp->checkPermissionAllow(3), 'delete '.$tp->getTable(), __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->checkAccess(true, false), 'checkAccess '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp->getWorkspaceSuper(), 'getWorkspaceSuper '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp->checkPermissionAllow(3), 'delete '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 
 		//$tp = Users::getUser()
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 		//$tp = Users::find(3)->workspaces()->first()->pivot;
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 		//----------------------------------------
 
 		/*
@@ -705,7 +705,7 @@ class ControllerTest extends Controller {
 		//$tp = $tp->tableExists($tp->getTable());
 
 		//$database = Capsule::schema('data')->getConnection()->getDatabaseName();
-		//\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 		$tp = $tp->getTablesList();
 		*/
 
@@ -715,7 +715,7 @@ class ControllerTest extends Controller {
 		if($tp->tableExists($tp->getTable())){
 			$tp = $tp->where('users_id', 3)->withTrashed()->get();
 			foreach ($tp as $key => $value) {
-				\libs\Watch::php( $value->access, '$projects_id => '.$value->projects_id, __FILE__, false, false, true);
+				\libs\Watch::php( $value->access, '$projects_id => '.$value->projects_id, __FILE__, __LINE__, false, false, true);
 			}
 		}
 		*/
@@ -743,7 +743,7 @@ class ControllerTest extends Controller {
 				$pivot->{'users>access'} = new \stdClass;
 				$pivot->{'users>access'}->{$invitation->created_by} = true;
 				$guest->pivots_format($pivot);
-				\libs\Watch::php( $guest, '$guest', __FILE__, false, false, true);
+				\libs\Watch::php( $guest, '$guest', __FILE__, __LINE__, false, false, true);
 				$guest->save();
 			}
 			//Record for invotation
@@ -781,7 +781,7 @@ class ControllerTest extends Controller {
 		foreach ($tp->comments as $key => $value) {
 			$array[$value->id] = $value->id;
 		}
-		\libs\Watch::php( count($array), '$array', __FILE__, false, false, true);
+		\libs\Watch::php( count($array), '$array', __FILE__, __LINE__, false, false, true);
 		\time_checkpoint('getTrees');
 */
 /*
@@ -790,7 +790,7 @@ class ControllerTest extends Controller {
 		foreach ($tp as $key => $value) {
 			$array[$value->id] = $value->id;
 		}
-		\libs\Watch::php( count($array), '$array', __FILE__, false, false, true);
+		\libs\Watch::php( count($array), '$array', __FILE__, __LINE__, false, false, true);
 		\time_checkpoint('getLinked(true)');
 */
 /*
@@ -799,7 +799,7 @@ class ControllerTest extends Controller {
 		foreach ($tp as $key => $value) {
 			$array[$value->id] = $value->id;
 		}
-		\libs\Watch::php( count($array), '$array', __FILE__, false, false, true);
+		\libs\Watch::php( count($array), '$array', __FILE__, __LINE__, false, false, true);
 		\time_checkpoint('getLinked_todelete(false, true)');
 */
 
@@ -810,7 +810,7 @@ class ControllerTest extends Controller {
 		foreach ($tp as $key => $value) {
 			$array[$value->id] = $value->id;
 		}
-		\libs\Watch::php( count($array), 'count $array', __FILE__, false, false, true);
+		\libs\Watch::php( count($array), 'count $array', __FILE__, __LINE__, false, false, true);
 		//s\time_checkpoint('getLinked_todelete(true, true)');
 */
 		/*
@@ -819,7 +819,7 @@ class ControllerTest extends Controller {
 		foreach ($tp as $key => $value) {
 			$array[$value->id] = $value->id;
 		}
-		\libs\Watch::php( $array, '$array', __FILE__, false, false, true);
+		\libs\Watch::php( $array, '$array', __FILE__, __LINE__, false, false, true);
 		*/
 
 		//Roles::getQuery()->update(['_perm' => '']);
@@ -836,7 +836,7 @@ class ControllerTest extends Controller {
 		/*
 		$tp = array('in_charge' => 2, 'approver' => 4);
 		foreach ($tp as $key => $value) {
-			\libs\Watch::php( $value, $key, __FILE__, false, false, true);
+			\libs\Watch::php( $value, $key, __FILE__, __LINE__, false, false, true);
 		}
 		*/
 
@@ -860,7 +860,7 @@ class ControllerTest extends Controller {
 		foreach ($files as $file) {
 			$tp[$file->id] = $file->id;
 		}
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 		$users = array(3=>3, 14=>14);
 		$files = Files::getProfilePics($users)->get();
@@ -1024,28 +1024,28 @@ class ControllerTest extends Controller {
 		$theuser::setDebugMode(true);
 
 		$tp = Tasks::find(13316);
-		\libs\Watch::php( $tp->locked_by, '13316 $toVisible', __FILE__, false, false, true);
-		\libs\Watch::php( json_decode($tp->toJson()), '13316 $toJson', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->locked_by, '13316 $toVisible', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( json_decode($tp->toJson()), '13316 $toJson', __FILE__, __LINE__, false, false, true);
 		*/
-		//\libs\Watch::php( $tp->toVisible(), '13316 $toVisible', __FILE__, false, false, true);
+		//\libs\Watch::php( $tp->toVisible(), '13316 $toVisible', __FILE__, __LINE__, false, false, true);
 
 		//$tp = Tasks::find(13316);
-		//\libs\Watch::php( json_decode($tp->toJson()), '13316 $toJson', __FILE__, false, false, true);
-		//\libs\Watch::php( $tp->toVisible(), '13316 $toVisible', __FILE__, false, false, true);
+		//\libs\Watch::php( json_decode($tp->toJson()), '13316 $toJson', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp->toVisible(), '13316 $toVisible', __FILE__, __LINE__, false, false, true);
 
 		/*
 		$tp = Comments::find(39211);
-		\libs\Watch::php( $tp->toArray(), '39211 $toArray', __FILE__, false, false, true);
-		\libs\Watch::php( $tp->toJson(), '39211 $toJson', __FILE__, false, false, true);
-		\libs\Watch::php( $tp->toVisible(), '39211 $toVisible', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toArray(), '39211 $toArray', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp->toJson(), '39211 $toJson', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp->toVisible(), '39211 $toVisible', __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(39215);
-		\libs\Watch::php( $tp->toArray(), '39215 $toArray', __FILE__, false, false, true);
-		\libs\Watch::php( $tp->toJson(), '39215 $toJson', __FILE__, false, false, true);
-		\libs\Watch::php( $tp->toVisible(), '39215 $toVisible', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toArray(), '39215 $toArray', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp->toJson(), '39215 $toJson', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp->toVisible(), '39215 $toVisible', __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(39538);
-		\libs\Watch::php( $tp->toArray(), '39538 $toArray', __FILE__, false, false, true);
-		\libs\Watch::php( $tp->toJson(), '39538 $toJson', __FILE__, false, false, true);
-		\libs\Watch::php( $tp->toVisible(), '39538 $toVisible', __FILE__, false, false, true);
+		\libs\Watch::php( $tp->toArray(), '39538 $toArray', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp->toJson(), '39538 $toJson', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp->toVisible(), '39538 $toVisible', __FILE__, __LINE__, false, false, true);
 		*/
 		/*
 		$time = (new Tasks)->freshTimestamp();
@@ -1056,11 +1056,11 @@ class ControllerTest extends Controller {
 		//Data::unLockAll();
 		/*
 		$user_code = '120';
-		\libs\Watch::php( $user_code, '$user_code', __FILE__, false, false, true);
+		\libs\Watch::php( $user_code, '$user_code', __FILE__, __LINE__, false, false, true);
 		$tp = base64_encode($user_code);
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 		$tp = Datassl::encrypt($user_code, 'invitation');
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 		$tp = Datassl::encrypt_smp($user_code);
 		*/
 
@@ -1071,8 +1071,8 @@ class ControllerTest extends Controller {
 
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 		/*
 		//----------------------------------------
@@ -1093,7 +1093,7 @@ class ControllerTest extends Controller {
 					$comment = str_replace("/$shaold/$type/$fileid/", "/$shanew/$type/$fileid/", $comment);
 				}
 				$item::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
-				\libs\Watch::php( $item->toArray(), '$notes', __FILE__, false, false, true);
+				\libs\Watch::php( $item->toArray(), '$notes', __FILE__, __LINE__, false, false, true);
 			}
 		}
 		\time_checkpoint('end notes');
@@ -1112,7 +1112,7 @@ class ControllerTest extends Controller {
 					$comment = str_replace("/$shaold/$type/$fileid/", "/$shanew/$type/$fileid/", $comment);
 				}
 				$item::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
-				\libs\Watch::php( $item->toArray(), '$tasks', __FILE__, false, false, true);
+				\libs\Watch::php( $item->toArray(), '$tasks', __FILE__, __LINE__, false, false, true);
 			}
 		}
 		\time_checkpoint('end tasks');	
@@ -1173,7 +1173,7 @@ class ControllerTest extends Controller {
 			\time_checkpoint($table.' => '.$count[$table]);
 		}
 		\time_checkpoint('end');
-		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
+		\libs\Watch::php( $count, '$count', __FILE__, __LINE__, false, false, true);
 		if(function_exists('proc_nice')){proc_nice(0);}
 		*/
 		
@@ -1206,14 +1206,14 @@ class ControllerTest extends Controller {
 					}
 				}
 			} catch (\Exception $e) {
-				\libs\Watch::php( $e->getFile()."\n".$e->getLine()."\n".$e->getMessage(), $table, __FILE__, false, false, true);
+				\libs\Watch::php( $e->getFile()."\n".$e->getLine()."\n".$e->getMessage(), $table, __FILE__, __LINE__, false, false, true);
 			}
 			
 
 			\time_checkpoint($table.' => '.$count[$table]);
 		}
 		\time_checkpoint('end');
-		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
+		\libs\Watch::php( $count, '$count', __FILE__, __LINE__, false, false, true);
 		*/
 		
 
@@ -1285,7 +1285,7 @@ class ControllerTest extends Controller {
 	public function user_get(){
 		$app = $this->app;
 		if($user = Users::all()){	
-			\libs\Watch::php($user->toJson(),'$user',__FILE__);
+			\libs\Watch::php($user->toJson(),'$user',__FILE__, __LINE__);
 		}
 		return true;
 	}
@@ -1330,98 +1330,98 @@ class ControllerTest extends Controller {
 		$theuser = Users::find($app->lincko->data['uid']);
 		$theuser::setDebugMode(true);
 
-		\libs\Watch::php( $app->lincko->data['workspace'], 'workspace', __FILE__, false, false, true);
-		\libs\Watch::php( $app->lincko->data['workspace_id'], 'workspace_id', __FILE__, false, false, true);
+		\libs\Watch::php( $app->lincko->data['workspace'], 'workspace', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $app->lincko->data['workspace_id'], 'workspace_id', __FILE__, __LINE__, false, false, true);
 
 		$tp = new Users;
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Users::find(3);
-		\libs\Watch::php( resultTest($tp), 'Self '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Self '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Users::find(5);
-		\libs\Watch::php( resultTest($tp), 'Direct '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Direct '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Users::find(6);
-		\libs\Watch::php( resultTest($tp), 'Hidden '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Hidden '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		$tp = new Roles;
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Roles::find(2);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Roles::find(4);
-		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Roles::find(7);
-		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		$tp = new Workspaces;
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Workspaces::find(1);
-		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Workspaces::find(2);
-		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		$tp = new Projects;
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Projects::find(3);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Projects::find(13);
-		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Projects::find(59);
-		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Projects::find(61);
-		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		$tp = new Tasks;
 		$tp->parent_id=3;
 		$tp->setParentAttributes();
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Tasks::find(3);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Tasks::find(6);
-		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Tasks::find(15);
-		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Tasks::find(18);
-		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		$tp = new Notes;
 		$tp->parent_id=3;
 		$tp->setParentAttributes();
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Notes::find(13);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Notes::find(16);
-		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Notes::find(19);
-		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Notes::find(22);
-		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		$tp = new Chats;
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Chats::find(28);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Chats::find(42);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Chats::find(13);
-		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Chats::find(24);
-		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Chats::find(25);
-		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		$tp = new Comments;
-		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'new '.$tp->getTable(), __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(87);
-		\libs\Watch::php( resultTest($tp), 'Users5 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Users5 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(6);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(28);
-		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'Shared '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(1);
-		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W0 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(7);
-		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W1 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 		$tp = Comments::find(90);
-		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, false, false, true);
+		\libs\Watch::php( resultTest($tp), 'W2 '.$tp->getTable().':'.$tp->id, __FILE__, __LINE__, false, false, true);
 
 		return true;
 	}
@@ -1545,7 +1545,7 @@ class ControllerTest extends Controller {
 			}
 		}
 
-		\libs\Watch::php( '!!!!!!!!!! START !!!!!!!!!!' , 'Permissions', __FILE__, false, false, true);
+		\libs\Watch::php( '!!!!!!!!!! START !!!!!!!!!!' , 'Permissions', __FILE__, __LINE__, false, false, true);
 
 		foreach ($users as $role_id => $users_id) {
 			$app->lincko->data['uid'] = $users_id;
@@ -1585,7 +1585,7 @@ class ControllerTest extends Controller {
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($model->checkAccess());
 						$d = intval($model->checkPermissionAllow('read'));
-						\libs\Watch::php( $a.'...BUG READ...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->access() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
+						\libs\Watch::php( $a.'...BUG READ...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->access() => User: '.$users_id.' | role: '.$role_id, __FILE__, __LINE__, false, false, true);
 					}
 				}
 
@@ -1594,7 +1594,7 @@ class ControllerTest extends Controller {
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($model->checkAccess());
 						$d = intval($model->checkPermissionAllow('edit'));
-						\libs\Watch::php( $a.'...BUG EDIT...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->edit() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
+						\libs\Watch::php( $a.'...BUG EDIT...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->edit() => User: '.$users_id.' | role: '.$role_id, __FILE__, __LINE__, false, false, true);
 					}
 				}
 
@@ -1603,7 +1603,7 @@ class ControllerTest extends Controller {
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($model->checkAccess());
 						$d = intval($model->checkPermissionAllow('delete'));
-						\libs\Watch::php( $a.'...BUG DELETE...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->delete() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
+						\libs\Watch::php( $a.'...BUG DELETE...'.$b.': '.$c.'|'.$d , '['.$model->getKey().'] '.$model->getTable().'->delete() => User: '.$users_id.' | role: '.$role_id, __FILE__, __LINE__, false, false, true);
 					}
 				}
 
@@ -1612,7 +1612,7 @@ class ControllerTest extends Controller {
 					if(!($b==-1 && (!isset($model->created_by) || (isset($model->created_by) && $model->created_by != $app->lincko->data['uid'])))){
 						$c = intval($new_model->checkAccess());
 						$d = intval($new_model->checkPermissionAllow('edit'));
-						\libs\Watch::php( $a.'...BUG CREATION...'.$b.': '.$c.'|'.$d , '[*] '.$new_model->getTable().'->create() => User: '.$users_id.' | role: '.$role_id, __FILE__, false, false, true);
+						\libs\Watch::php( $a.'...BUG CREATION...'.$b.': '.$c.'|'.$d , '[*] '.$new_model->getTable().'->create() => User: '.$users_id.' | role: '.$role_id, __FILE__, __LINE__, false, false, true);
 					}
 				}
 
@@ -1620,8 +1620,8 @@ class ControllerTest extends Controller {
 
 		}
 
-		\libs\Watch::php( '!!!!!!!!!!  END  !!!!!!!!!!' , 'Permissions', __FILE__, false, false, true);
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, false, false, true);
+		\libs\Watch::php( '!!!!!!!!!!  END  !!!!!!!!!!' , 'Permissions', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		$json = new Json('OK', false);
 		$json->render(200);
 		return true;

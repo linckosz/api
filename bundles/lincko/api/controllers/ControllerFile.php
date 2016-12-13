@@ -285,9 +285,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			return true;
 		} else {
 			if(isset($_FILES)){
-				\libs\Watch::php(array_merge((array) $form, $_FILES), 'Upload failed',__FILE__,true);
+				\libs\Watch::php(array_merge((array) $form, $_FILES), 'Upload failed', __FILE__, __LINE__, true);
 			} else {
-				\libs\Watch::php($form, 'Upload failed (no file)',__FILE__,true);
+				\libs\Watch::php($form, 'Upload failed (no file)', __FILE__, __LINE__, true);
 			}
 		}
 
@@ -623,10 +623,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				$scale = true;
 			}
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php("Files :\n".json_encode($file->toArray()), $msg, __FILE__, true);
+			\libs\Watch::php("Files :\n".json_encode($file->toArray()), $msg, __FILE__, __LINE__, true);
 		} else {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php("No file\nworkspace: $workspace\nsha: $sha\ntype: $type\nid: $id", $msg, __FILE__, true);
+			\libs\Watch::php("No file\nworkspace: $workspace\nsha: $sha\ntype: $type\nid: $id", $msg, __FILE__, __LINE__, true);
 		}
 		
 		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/unavailable.png';

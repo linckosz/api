@@ -152,7 +152,7 @@ class Data {
 			\time_checkpoint($table.' => '.$count[$table]);
 		}
 		\time_checkpoint('end');
-		\libs\Watch::php( $count, '$count', __FILE__, false, false, true);
+		\libs\Watch::php( $count, '$count', __FILE__, __LINE__, false, false, true);
 		if(function_exists('proc_nice')){proc_nice(0);}
 		$app->lincko->time_record = $time_record;
 	}
@@ -375,7 +375,7 @@ class Data {
 	}
 
 	public static function getAccesses($tree_id){
-		//\libs\Watch::php($tree_id, '$tree_id', __FILE__, false, false, true);
+		//\libs\Watch::php($tree_id, '$tree_id', __FILE__, __LINE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
 		$tree_access = array();
 		if(isset($tree_id['users'])){
@@ -386,7 +386,7 @@ class Data {
 					$tree_access[$table] = $class::filterPivotAccessList($list, true); //Getting real Pivot value
 				}
 			}
-			//\libs\Watch::php($tree_access, '$tree_access', __FILE__, false, false, true);
+			//\libs\Watch::php($tree_access, '$tree_access', __FILE__, __LINE__, false, false, true);
 			$users = array();
 			foreach ($tree_access as $type => $type_list) {
 				foreach ($type_list as $users_id => $value) {
@@ -930,8 +930,8 @@ class Data {
 			}
 		}
 
-		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, false, false, true);
-		//\libs\Watch::php( $db->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $db->getQueryLog() ,'QueryLog', __FILE__, __LINE__, false, false, true);
 		return $result_bis;
 
 	}
@@ -1011,7 +1011,7 @@ class Data {
 			$users_resume[$user->id] = $user->weekly;
 			//$users_resume[$user->id] = $weekday; //toto (show for test)
 		}
-		//\libs\Watch::php($users_resume, '$users_resume: '.$current_hour, __FILE__, false, false, true);
+		//\libs\Watch::php($users_resume, '$users_resume: '.$current_hour, __FILE__, __LINE__, false, false, true);
 
 		$notif_team_daily = array();
 		$notif_team_weekly = array();
@@ -1286,7 +1286,7 @@ class Data {
 						if(isset($data) && is_object($data)){
 							$comments_update = true;
 							$msg = json_encode($data);
-							//\libs\Watch::php($data, '[team] $project '.$project->id, __FILE__, false, false, true);
+							//\libs\Watch::php($data, '[team] $project '.$project->id, __FILE__, __LINE__, false, false, true);
 						}
 						
 						//Resume for individual
@@ -1308,7 +1308,7 @@ class Data {
 						if(isset($data_users) && is_object($data_users)){
 							$comments_update = true;
 							$msg_users = json_encode($data_users);
-							//\libs\Watch::php($data_users, '[individual] $project '.$project->id, __FILE__, false, false, true);
+							//\libs\Watch::php($data_users, '[individual] $project '.$project->id, __FILE__, __LINE__, false, false, true);
 						}
 					}
 
@@ -1327,7 +1327,7 @@ class Data {
 					$comment->comment = $msg;
 					$comment->_perm = json_encode($users_perm);
 					$comment->saveRobot();
-					//\libs\Watch::php(json_decode($msg), $period.': [team] $project '.$project->id, __FILE__, false, false, true);
+					//\libs\Watch::php(json_decode($msg), $period.': [team] $project '.$project->id, __FILE__, __LINE__, false, false, true);
 
 					//Team Daily
 					//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
@@ -1357,7 +1357,7 @@ class Data {
 					$comment->comment = $msg_users;
 					$comment->_perm = json_encode($users_perm);
 					$comment->saveRobot();
-					//\libs\Watch::php(json_decode($msg_users), $period.':[individual] $project '.$project->id, __FILE__, false, false, true);
+					//\libs\Watch::php(json_decode($msg_users), $period.':[individual] $project '.$project->id, __FILE__, __LINE__, false, false, true);
 
 					//Individual Daily
 					//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
@@ -1447,7 +1447,7 @@ class Data {
 		}
 
 		if(function_exists('proc_nice')){proc_nice(0);}
-		//\libs\Watch::php( Capsule::connection($app->lincko->data['database_data'])->getQueryLog() ,'QueryLog', __FILE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection($app->lincko->data['database_data'])->getQueryLog() ,'QueryLog', __FILE__, __LINE__, false, false, true);
 		return true;
 	}
 
