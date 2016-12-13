@@ -179,6 +179,7 @@ $app->lincko->routeFilter = array(
 	'user_signout_post',
 	'user_forgot_post',
 	'user_reset_post',
+	'wechat_connect_post',
 );
 
 //The hook ModifyRequest will redirect to the right class method according to the method requested in the body, it's not HTTP request which is always POST expect for file uploading (GET to get form, or POST to upload file)
