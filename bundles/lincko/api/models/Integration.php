@@ -2,6 +2,7 @@
 
 namespace bundles\lincko\api\models;
 
+use \libs\Datassl;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\data\Users;
 
@@ -53,7 +54,7 @@ class Integration extends Model {
 				$integration->party_id = $data->data->party_id;
 				$integration->json = json_encode($data->data->data);
 				$param = new \stdClass;
-				$param->email = $data->data->party.'.'.$data->data->party_id.md5(uniqid()).'@'.$app->lincko->domain;
+				$param->email = time().'.'.$data->data->party.'.'.$data->data->party_id.md5(uniqid()).'@'.$app->lincko->domain;
 				usleep(10000);
 				$param->password = Datassl::encrypt(md5($data->data->party_id), $param->email);
 				if($data->data->party=='wechat'){
@@ -76,14 +77,14 @@ class Integration extends Model {
 		return $valid;
 	}
 
-	protected static function createUser($data, $param){return false;
+	protected static function createUser($data, $param){
 		$app = \Slim\Slim::getInstance();
 
 		$data->data = $param;
 		$data->public_key = $app->lincko->security['public_key']; //Use public key for account creation
-		$data->checksum = md5($data->public_key.json_encode($data->data, JSON_UNESCAPED_UNICODE));
+		$data->checksum = md5($data->private_key.json_encode($data->data, JSON_UNESCAPED_UNICODE));
 
-		$url = 'https://'.$app->lincko->data['lincko_back'].$app->lincko->domain.':10443/user/create';
+		$url = 'https://'.$_SERVER['HTTP_HOST'].'/user/create';
 
 		$data = json_encode($data);
 		$timeout = 8;
@@ -110,7 +111,7 @@ class Integration extends Model {
 
 		if($result = curl_exec($ch)){
 			$result = json_decode($result);
-			\libs\Watch::php(json_decode($result), '$result', __FILE__, __LINE__, false, false, true);
+			\libs\Watch::php($result, '$result', __FILE__, __LINE__, false, false, true);
 		} else {
 			\libs\Watch::php(curl_getinfo($ch), '$ch', __FILE__, __LINE__, false, false, true);
 			$error = '['.curl_errno($ch)."] => ".htmlspecialchars(curl_error($ch));

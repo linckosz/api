@@ -146,6 +146,7 @@ $app->lincko->translation = array(
 //Some generic data for translation word conversion
 $app->lincko->data = array(
 	'domain' => $app->lincko->domain,
+	'lincko_back' => '',
 	'title' => $app->lincko->title,
 	'workspace' => '',
 );
