@@ -17,7 +17,9 @@ class Integration extends Model {
 
 	protected $visible = array();
 
-	protected $data = null;
+	protected static $data = null;
+
+	protected static $integration = false;
 
 	/////////////////////////////////////
 
@@ -29,44 +31,61 @@ class Integration extends Model {
 		return false;
 	}
 
-	/*
+	public static function getIntegration(){
+		return self::$integration;
+	}
+
+	
 	public static function check($data){
 		\libs\Watch::php($data, '$Integration', __FILE__, __LINE__, false, false, true);
+		$app = \Slim\Slim::getInstance();
 		$valid = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && isset($data->data->data)){
+			$json = $data->data->data;
 			//If integration exists
 			if($integration = self::Where('party', $data->data->party)->where('party_id', $data->data->party_id)->first()){
 				
 			}
 			//If new integration, we create a user account
 			else {
+				$integration = new Integration;
+				$integration->party = $data->data->party;
+				$integration->party_id = $data->data->party_id;
+				$integration->json = json_encode($data->data->data);
+				$param = new \stdClass;
+				$param->email = $data->data->party.'.'.$data->data->party_id.md5(uniqid()).'@'.$app->lincko->domain;
+				usleep(10000);
+				$param->password = Datassl::encrypt(md5($data->data->party_id), $param->email);
 				if($data->data->party=='wechat'){
-					$user = new Users;
+					$param->username = $json->nickname;
+					$param->gender = 0; //Male
+					if($json->sex==2){ $param->gender = 1; } //Female
+					if($user = self::createUser($data, $param)){
+						\libs\Watch::php($user, '$user', __FILE__, __LINE__, false, false, true);
+						$integration->users_id = $user->id;
+						if($integration->save()){
+							$valid = true;
+						}
+					}
 				}
-
-			}
-			self::$data = $data->data->data;
-			if($data->data->party==''){
-
 			}
 			if($valid){
-				Users::$integration = $integration;
+				self::$integration = $integration;
 			}
 		}
 		return $valid;
 	}
 
-	public static function createUser($param){
-		$app = $this->app;
+	protected static function createUser($data, $param){return false;
+		$app = \Slim\Slim::getInstance();
 
-		$data = json_decode($app->request->getBody());
-		$data->checksum
+		$data->data = $param;
+		$data->public_key = $app->lincko->security['public_key']; //Use public key for account creation
+		$data->checksum = md5($data->public_key.json_encode($data->data, JSON_UNESCAPED_UNICODE));
 
-		if(!is_object($data)){
-			return false;
-		}
+		$url = 'https://'.$app->lincko->data['lincko_back'].$app->lincko->domain.':10443/user/create';
+
 		$data = json_encode($data);
-		\libs\Watch::php($data, $url, __FILE__, __LINE__, false, false, true);
 		$timeout = 8;
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url); //Port used is 10443 only
@@ -104,10 +123,6 @@ class Integration extends Model {
 		@curl_close($ch);
 		return $result;
 	}
-	*/
-
-}
-
-class Wechat {
 	
+
 }

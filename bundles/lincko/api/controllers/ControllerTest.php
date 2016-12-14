@@ -1067,13 +1067,7 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(877);
 		//$tp = Users::where('username_sha1', 'LIKE', '660609b17%')->first();
 
-		$tp = new \DateTime();
-		$tp->sub(new \DateInterval('PT'.$app->lincko->security['expired'].'S'));
-
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
-
-		$tp = Carbon::now();
-		$tp->second = $tp->second - intval($app->lincko->security['expired']);
+		$tp = md5('oN_U0wPB2VLXkYzTyAB_spjgOQfk');
 
 
 		//$tp = Projects::find(324)->clone();

@@ -532,10 +532,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if(!$exists){
 			$qrCode
 				->setText($url)
-				->setSize(320)
-				->setPadding(10) //Total = 2*170
+				->setSize(160)
+				->setPadding(5)
 				->setErrorCorrection('high')
-				->setForegroundColor(array('r' => 233, 'g' => 135, 'b' => 34, 'a' => 0))
+				->setForegroundColor(array('r' => 251, 'g' => 160, 'b' => 38, 'a' => 0))
 				->setBackgroundColor(array('r' => 255, 'g' => 255, 'b' => 255, 'a' => 0))
 				->setImageType(QrCode::IMAGE_TYPE_PNG)
 			;

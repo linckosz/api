@@ -110,8 +110,6 @@ class Users extends ModelLincko {
 	protected static $has_perm = false;
 
 	protected static $me = false;
-
-	protected static $integration = false;
 	
 ////////////////////////////////////////////
 
