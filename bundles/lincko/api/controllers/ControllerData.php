@@ -2,6 +2,7 @@
 
 namespace bundles\lincko\api\controllers;
 
+use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\data\Users;
@@ -212,6 +213,7 @@ class ControllerData extends Controller {
 	}
 
 	public function unlock_get(){
+		Authorization::clean();
 		Data::unLockAll();
 		echo "\n<br />\n<br />\nUnlock all<br />\n..........................................................\n\n";
 		exit(0);

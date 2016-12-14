@@ -71,7 +71,7 @@ class CheckAccess extends \Slim\Middleware {
 				if($authorize = $user_log->authorize($data)){
 					if(isset($authorize['public_key']) && isset($authorize['private_key'])){
 						$app->lincko->securityFlash = $authorize;
-						return true;
+						return $authorize['public_key'];
 					}
 				}
 			}
@@ -327,8 +327,15 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorizeAccess = true;
 			$valid = true;
-		} else if($this->route == 'integration_connect' && $integration = Integration::check($data)){
-			 
+		} else if($this->route == 'integration_connect_post' && $integration = Integration::check($data)){
+			 $this->authorization = $integration->users_id;
+			 if($this->authorization = Authorization::find_finger($this->reSignIn(), $data->fingerprint)){
+			 	//Must overwrite by standard keys because the checksum has been calculated with the standard one
+				$this->authorization->public_key = $app->lincko->security['public_key'];
+				$this->authorization->private_key = $app->lincko->security['private_key'];
+				$this->authorizeAccess = true;
+				$valid = true;
+			 }
 		}
 
 		if($valid){
@@ -394,7 +401,10 @@ class CheckAccess extends \Slim\Middleware {
 			$expired->add(new \DateInterval('PT'.$app->lincko->security['expired'].'S'));
 			$now = new \DateTime();
 			if($expired < $now){
-				return $this->reSignIn();
+				if($this->reSignIn()){
+					return true;
+				}
+				return false;
 			}
 			return true;
 		}

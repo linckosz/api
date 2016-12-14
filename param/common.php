@@ -150,6 +150,10 @@ $app->lincko->data = array(
 	'workspace' => '',
 );
 
+if(isset($_SERVER["LINCKO_BACK"]) && !empty($_SERVER["LINCKO_BACK"])){
+	$app->lincko->data['lincko_back'] = $_SERVER["LINCKO_BACK"].'.';
+}
+
 ////////////////////////////////////
 // BUNDLE lincko/api
 ////////////////////////////////////

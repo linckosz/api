@@ -3,6 +3,7 @@
 namespace bundles\lincko\api\models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Authorization extends Model {
 
@@ -19,10 +20,10 @@ class Authorization extends Model {
 
 	/////////////////////////////////////
 
-	public static function clean($users_id=NULL){
+	public static function clean($users_id=false){
 		$app = \Slim\Slim::getInstance();
-		$limit = new \DateTime();
-		$limit->sub(new \DateInterval('PT'.$app->lincko->security['expired'].'S'));
+		$limit = Carbon::now();
+		$limit->second = $limit->second - intval($app->lincko->security['expired']);
 		
 		if($users_id){
 			//Only delete own user authorization records
