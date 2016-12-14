@@ -181,7 +181,7 @@ class ControllerUser extends Controller {
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$app->flashNow('signout', true);
-			$limit = 1;
+			$accept = false;
 			$email = mb_strtolower($model->email);
 			if(isset($model->username)){
 				$username = $model->username;
@@ -192,11 +192,19 @@ class ControllerUser extends Controller {
 			$username_sha1 = substr($username_sha1, 0, 20); //Truncate to 20 characters because of phone notification alias isue (limited to 64bits = 20 characters in Hex)
 			$internal_email = $username;
 			$limit = 1; //Limit while loop to 1000 iterations to avoid infinite loop
-			while( $limit <= 1000 && Users::where('internal_email', '=', $username)->orWhere('username_sha1', '=', $username_sha1)->first() ){
-				$internal_email = $username.mt_rand(1, 9999);
-				$username_sha1 = sha1(mb_strtolower($internal_email));
-				$username_sha1 = substr($username_sha1, 0, 20);
-				$limit++;
+			if(Users::where('email', '=', $email)->first()){
+				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 10); //Email address already in use.
+				$errfield = 'email';
+			} else {
+				while( $limit <= 1000 && Users::where('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first() ){
+					$internal_email = $username.mt_rand(1, 9999);
+					$username_sha1 = sha1(uniqid());
+					$username_sha1 = substr($username_sha1, 0, 20);
+					$limit++;
+				}
+				if($limit < 1000){
+					$accept = true;
+				}
 			}
 
 			$invitation = false;
@@ -221,12 +229,7 @@ class ControllerUser extends Controller {
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
 			}
 			*/
-			if(Users::where('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first()){
-				//If the field username is missing, we keep the standard error message.
-			} else if(Users::where('email', '=', $email)->first()){
-				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 10); //Email address already in use.
-				$errfield = 'email';
-			} else if($limit<1000){
+			if($accept){
 				$app->lincko->data['user_log'] = new UsersLog();
 				$app->lincko->data['user_log']->username_sha1 = $username_sha1;
 				$app->lincko->data['user_log']->password = password_hash($model->password, PASSWORD_BCRYPT);

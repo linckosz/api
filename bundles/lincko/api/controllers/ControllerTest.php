@@ -1067,7 +1067,7 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(877);
 		//$tp = Users::where('username_sha1', 'LIKE', '660609b17%')->first();
 
-		$tp = md5('oN_U0wPB2VLXkYzTyAB_spjgOQfk');
+		$tp = sha1('oN_U0wPB2VLXkYzTyAB_spjgOQfk');
 
 
 		//$tp = Projects::find(324)->clone();
