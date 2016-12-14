@@ -38,14 +38,14 @@ class Integration extends Model {
 
 	
 	public static function check($data){
-		\libs\Watch::php($data, '$Integration', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php($data, '$Integration', __FILE__, __LINE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
 		$valid = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If integration exists
 			if($integration = self::Where('party', $data->data->party)->where('party_id', $data->data->party_id)->first()){
-				
+				self::$integration = $integration;
 			}
 			//If new integration, we create a user account
 			else {
@@ -54,19 +54,20 @@ class Integration extends Model {
 				$integration->party_id = $data->data->party_id;
 				$integration->json = json_encode($data->data->data);
 				$param = new \stdClass;
-				$param->email = time().'.'.$data->data->party.'.'.$data->data->party_id.md5(uniqid()).'@'.$app->lincko->domain;
+				$param->email = $data->data->party.'.'.md5($data->data->party_id.md5(uniqid())).'@'.$app->lincko->domain;
 				usleep(10000);
 				$param->password = Datassl::encrypt(md5($data->data->party_id), $param->email);
-				if($data->data->party=='wechat'){
+				$creation = false;
+				if($data->data->party=='wechat'){ //Wechat
 					$param->username = $json->nickname;
 					$param->gender = 0; //Male
 					if($json->sex==2){ $param->gender = 1; } //Female
-					if($user = self::createUser($data, $param)){
-						\libs\Watch::php($user, '$user', __FILE__, __LINE__, false, false, true);
-						$integration->users_id = $user->id;
-						if($integration->save()){
-							$valid = true;
-						}
+					$creation = self::createUser($data, $param);
+				}
+				if($creation && $creation->status==201 && $app->lincko->data['uid']){
+					$integration->users_id = $app->lincko->data['uid'];
+					if($integration->save()){
+						$valid = true;
 					}
 				}
 			}
@@ -82,7 +83,7 @@ class Integration extends Model {
 
 		$data->data = $param;
 		$data->public_key = $app->lincko->security['public_key']; //Use public key for account creation
-		$data->checksum = md5($data->private_key.json_encode($data->data, JSON_UNESCAPED_UNICODE));
+		$data->checksum = md5($app->lincko->security['private_key'].json_encode($data->data, JSON_UNESCAPED_UNICODE));
 
 		$url = 'https://'.$_SERVER['HTTP_HOST'].'/user/create';
 
@@ -111,7 +112,6 @@ class Integration extends Model {
 
 		if($result = curl_exec($ch)){
 			$result = json_decode($result);
-			\libs\Watch::php($result, '$result', __FILE__, __LINE__, false, false, true);
 		} else {
 			\libs\Watch::php(curl_getinfo($ch), '$ch', __FILE__, __LINE__, false, false, true);
 			$error = '['.curl_errno($ch)."] => ".htmlspecialchars(curl_error($ch));
