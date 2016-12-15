@@ -251,7 +251,7 @@ class ControllerUser extends Controller {
 							$app->flashNow('public_key', $authorize['public_key']);
 						}
 						if(isset($authorize['username_sha1'])){
-							$app->flashNow('username_sha1', substr($authorize['username_sha1'], 0, 20)); //Truncate to 20 character because phone alias notification limitation
+							$app->flashNow('username_sha1', $authorize['username_sha1']);
 						}
 						if(isset($authorize['uid'])){
 							$app->flashNow('uid', $authorize['uid']);

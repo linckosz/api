@@ -72,7 +72,7 @@ class Integration extends Model {
 					&& isset($creation->flash->uid)
 					&& $creation->flash->uid > 0
 				){
-					$integration->users_id = $creation->status->flash->uid;
+					$integration->users_id = $creation->flash->uid;
 					if($integration->save()){
 						$valid = true;
 					}

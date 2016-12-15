@@ -513,13 +513,13 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				//Generate the qrcode picture
 				$mini = $folder->getPath().$basename.$user->profile_pic.'_mini.png';
 				$src = WideImage::load($thumbnail);
-				$src = $src->resize(72, 72, 'outside', 'any');
-				$src = $src->crop("center", "middle", 72, 72);
-				$src = $src->roundCorners(12, null, 2);
+				$src = $src->resize(36, 36, 'outside', 'any');
+				$src = $src->crop("center", "middle", 36, 36);
+				$src = $src->roundCorners(6, null, 2);
 				$src = $src->saveToFile($mini, 9, PNG_NO_FILTER);
 				$qrCode
 					->setLogo($mini)
-					->setLogoSize(72)
+					->setLogoSize(36)
 				;
 			}
 		} else {
