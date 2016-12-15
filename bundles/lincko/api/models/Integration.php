@@ -5,6 +5,7 @@ namespace bundles\lincko\api\models;
 use \libs\Datassl;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\UsersLog;
 
 class Integration extends Model {
 
@@ -21,6 +22,8 @@ class Integration extends Model {
 	protected static $data = null;
 
 	protected static $integration = false;
+
+	protected static $flash = false;
 
 	/////////////////////////////////////
 
@@ -73,10 +76,16 @@ class Integration extends Model {
 					&& !is_null($creation->flash->username_sha1)
 					&& isset($creation->flash->uid)
 					&& $creation->flash->uid > 0
+					&& isset($creation->flash->public_key)
+					&& $users_log = UsersLog::Where('username_sha1', '=', $creation->flash->username_sha1)->first()
 				){
+					$data->public_key = $creation->flash->public_key;
+					$data->data->password = $users_log->password;
+					$users_log->authorize($data);
+
 					$integration->username_sha1 = $creation->flash->username_sha1;
 					if($integration->save()){
-						$users_id = $creation->flash->uid;
+						self::$flash = $creation->flash;
 					}
 				}
 			}
