@@ -64,8 +64,15 @@ class Integration extends Model {
 					if($json->sex==2){ $param->gender = 1; } //Female
 					$creation = self::createUser($data, $param);
 				}
-				if($creation && $creation->status==201 && $app->lincko->data['uid']){
-					$integration->users_id = $app->lincko->data['uid'];
+				if(
+					   $creation
+					&& isset($creation->status)
+					&& $creation->status==201
+					&& isset($creation->flash)
+					&& isset($creation->flash->uid)
+					&& $creation->flash->uid > 0
+				){
+					$integration->users_id = $creation->status->flash->uid;
 					if($integration->save()){
 						$valid = true;
 					}
