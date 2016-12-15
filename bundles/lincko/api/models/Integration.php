@@ -79,6 +79,7 @@ class Integration extends Model {
 					&& isset($creation->flash->public_key)
 					&& $users_log = UsersLog::Where('username_sha1', '=', $creation->flash->username_sha1)->first()
 				){
+					$users_id = $creation->flash->uid;
 					$data->public_key = $creation->flash->public_key;
 					$data->data->password = $users_log->password;
 					$users_log->authorize($data);
