@@ -40,7 +40,7 @@ class Integration extends Model {
 	public static function check($data){
 		//\libs\Watch::php($data, '$Integration', __FILE__, __LINE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
-		$valid = false;
+		$users_id = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If integration exists
@@ -69,20 +69,22 @@ class Integration extends Model {
 					&& isset($creation->status)
 					&& $creation->status==201
 					&& isset($creation->flash)
+					&& isset($creation->flash->username_sha1)
+					&& !is_null($creation->flash->username_sha1)
 					&& isset($creation->flash->uid)
 					&& $creation->flash->uid > 0
 				){
-					$integration->users_id = $creation->flash->uid;
+					$integration->username_sha1 = $creation->flash->username_sha1;
 					if($integration->save()){
-						$valid = true;
+						$users_id = $creation->flash->uid;
 					}
 				}
 			}
-			if($valid){
+			if($users_id){
 				self::$integration = $integration;
 			}
 		}
-		return $valid;
+		return $users_id;
 	}
 
 	protected static function createUser($data, $param){

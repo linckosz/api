@@ -323,19 +323,18 @@ class CheckAccess extends \Slim\Middleware {
 			$valid = true;
 		} else if($this->authorization = Authorization::find_finger($this->autoSign(), $data->fingerprint)){
 			//Must overwrite by standard keys because the checksum has been calculated with the standard one
-			$this->authorization->public_key = $app->lincko->security['public_key'];
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorizeAccess = true;
 			$valid = true;
-		} else if($this->route == 'integration_connect_post' && $integration = Integration::check($data)){
-			 $this->authorization = $integration->users_id;
-			 if($this->authorization = Authorization::find_finger($this->reSignIn(), $data->fingerprint)){
-			 	//Must overwrite by standard keys because the checksum has been calculated with the standard one
-				$this->authorization->public_key = $app->lincko->security['public_key'];
+		} else if($this->route == 'integration_connect_post' && $users_id = Integration::check($data)){
+			$this->authorization = new Authorization;
+			$this->authorization->users_id = $users_id; //Set only for reSignIn()
+			if($this->authorization = Authorization::find_finger($this->reSignIn(), $data->fingerprint)){
+				//Must overwrite by standard keys because the checksum has been calculated with the standard one
 				$this->authorization->private_key = $app->lincko->security['private_key'];
 				$this->authorizeAccess = true;
 				$valid = true;
-			 }
+			}
 		}
 
 		if($valid){
