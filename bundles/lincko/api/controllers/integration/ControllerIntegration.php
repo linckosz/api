@@ -4,6 +4,8 @@ namespace bundles\lincko\api\controllers\integration;
 
 use \libs\Controller;
 use \bundles\lincko\api\models\Integration;
+use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\data\Users;
 
 class ControllerIntegration extends Controller {
 
@@ -18,12 +20,17 @@ class ControllerIntegration extends Controller {
 
 	public function connect_post(){
 		$app = $this->app;
+		$data = $this->data;
 		$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 0, 7); //Sign in failed. Please try again.
 		$errfield = 'undefined';
 
-		if($integration = Integration::$integration && $flash = Integration::$flash){
-			if(isset($integration->username_sha1) && $user = Users::Where('username_sha1', '=', $integration->username_sha1)->first()){
-				if(isset($flash->public_key) && isset($flash->uid) && $flash->uid==$user->id && $authorization = Authorization::find_finger($flash->public_key, $data->fingerprint)){
+		$integration = Integration::getIntegration();
+		$flash = Integration::getFlash();
+
+		if($integration && $flash && isset($integration->username_sha1) && isset($flash->public_key) && isset($flash->uid)){
+			if($user = Users::Where('username_sha1', '=', $integration->username_sha1)->first()){
+				if($flash->uid==$user->id && Authorization::find_finger($flash->public_key, $data->fingerprint)){
+					$authorize = (array)$flash;
 					$msg = $app->trans->getBRUT('api', 15, 13); //You are already signed in.
 					if(isset($authorize['private_key'])){
 						$app->flashNow('private_key', $authorize['private_key']);
@@ -56,7 +63,7 @@ class ControllerIntegration extends Controller {
 			}
 		}
 		
-		\libs\Watch::php(array($errmsg, $form), 'Sign in failed', __FILE__, __LINE__, true);
+		\libs\Watch::php($errmsg, 'Sign in failed', __FILE__, __LINE__, true);
 		$app->flashNow('signout', true);
 		$app->render(401, array('msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true,));
 		return false;

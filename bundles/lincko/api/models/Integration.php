@@ -39,6 +39,10 @@ class Integration extends Model {
 		return self::$integration;
 	}
 
+	public static function getFlash(){
+		return self::$flash;
+	}
+
 	
 	public static function check($data){
 		//\libs\Watch::php($data, '$Integration', __FILE__, __LINE__, false, false, true);

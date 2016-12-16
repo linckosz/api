@@ -335,7 +335,7 @@ class ControllerUser extends Controller {
 					}
 					*/
 
-					$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)."\n".$app->trans->getBRUT('api', 15, 11)),)); //Account created. Check your email for validation code.
+					$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)),)); //Account created.
 					return true;
 				}
 			}

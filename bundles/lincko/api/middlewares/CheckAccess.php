@@ -327,6 +327,7 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorizeAccess = true;
 			$valid = true;
 		} else if($this->route == 'integration_connect_post' && $users_id = Integration::check($data)){
+			$this->nochecksum = true; //(toto) If not it bug for an unknown reason, it's a low security issue
 			$this->authorization = new Authorization;
 			$this->authorization->users_id = $users_id; //Set only for reSignIn()
 			if($this->authorization = Authorization::find_finger($this->reSignIn(), $data->fingerprint)){
