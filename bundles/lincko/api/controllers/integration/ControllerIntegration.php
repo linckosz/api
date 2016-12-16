@@ -30,31 +30,27 @@ class ControllerIntegration extends Controller {
 		if($integration && $flash && isset($integration->username_sha1) && isset($flash->public_key) && isset($flash->uid)){
 			if($user = Users::Where('username_sha1', '=', $integration->username_sha1)->first()){
 				if($flash->uid==$user->id && Authorization::find_finger($flash->public_key, $data->fingerprint)){
-					$authorize = (array)$flash;
+					foreach ($flash as $key => $value) {
+						$app->flashNow($key, $value);
+					}
 					$msg = $app->trans->getBRUT('api', 15, 13); //You are already signed in.
-					if(isset($authorize['private_key'])){
-						$app->flashNow('private_key', $authorize['private_key']);
+					if(isset($flash->private_key)){
 						$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
 					}
-					if(isset($authorize['public_key'])){
-						$app->flashNow('public_key', $authorize['public_key']);
+					if(isset($flash->public_key)){
 						$app->lincko->translation['user_username'] = $user->username;
 						$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
 					}
-					if(isset($authorize['username_sha1'])){
-						$app->flashNow('username_sha1', substr($authorize['username_sha1'], 0, 20)); //Truncate to 20 character because phone alias notification limitation
+					if(isset($flash->username_sha1)){
+						$app->flashNow('username_sha1', substr($flash->username_sha1, 0, 20)); //Truncate to 20 character because phone alias notification limitation
 					}
-					if(isset($authorize['uid'])){
-						$app->flashNow('uid', $authorize['uid']);
-					}
-					if(isset($authorize['refresh'])){
-						if($authorize['refresh']){
+					if(isset($flash->refresh)){
+						if($flash->refresh){
 							$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
 						} else {
 							$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
 						}
 					}
-					$app->flashNow('username', $user->username);
 					$app->render(200, array('msg' => array('msg' => $msg)));
 					return true;
 				}

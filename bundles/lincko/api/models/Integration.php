@@ -90,7 +90,9 @@ class Integration extends Model {
 
 					$integration->username_sha1 = $creation->flash->username_sha1;
 					if($integration->save()){
-						self::$flash = $creation->flash;
+						foreach ($creation->flash as $key => $value) {
+							self::$flash->$key = $value;
+						}
 					}
 				}
 			}
@@ -103,6 +105,9 @@ class Integration extends Model {
 
 	protected static function createUser($data, $param){
 		$app = \Slim\Slim::getInstance();
+
+		self::$flash->youjian = $param->email;
+		self::$flash->lianke = Datassl::encrypt($param->password, $param->email);
 
 		$data->data = $param;
 		$data->public_key = $app->lincko->security['public_key']; //Use public key for account creation
