@@ -571,7 +571,7 @@ class Files extends ModelLincko {
 			$data = json_encode(array(
 				'remote' => $app->lincko->data['remote'],
 				'workspace_id' => $app->lincko->data['workspace_id'],
-				'uid' => $app->lincko->data['uid'],
+				'uid' => $this->created_by,
 				'method' => 'POST',
 			));
 			$ch = curl_init();
