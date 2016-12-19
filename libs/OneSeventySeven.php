@@ -26,6 +26,7 @@ class OneSeventySeven {
 		//Add or Update key/value
 		foreach($array as $key => $value) {
 			self::$cookies[$key] = $value;
+			$_SESSION['one_seventy_seven'][$key] = $value;
 		}
 		self::$change = true;
 		return true;
@@ -44,7 +45,7 @@ class OneSeventySeven {
 		return null;
 	}
 
-	protected static function getCookies(){
+	public static function getCookies(){
 		//Assign only once all real cookies to memory
 		if(self::$first || count(self::$cookies)<=0){
 			$app = \Slim\Slim::getInstance();
@@ -60,7 +61,7 @@ class OneSeventySeven {
 				}
 			}
 			self::$first = false;
-			return true;
+			return self::$cookies;
 		}
 		return false;
 	}

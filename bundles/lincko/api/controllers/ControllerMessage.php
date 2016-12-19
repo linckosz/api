@@ -61,6 +61,8 @@ class ControllerMessage extends Controller {
 		} else {
 			$form = $this->data->data;
 		}
+		//Convert to object
+		$form = (object)$form;
 		//Convert NULL to empty string to help isset returning true
 		if(is_array($form) || is_object($form)){
 			foreach ($form as $key => $value) {
@@ -222,7 +224,7 @@ class ControllerMessage extends Controller {
 			$errfield = 'id_max';
 		}
 		else if(isset($form->id_max) && !Messages::validNumeric($form->id_max, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: -Integer
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
 			$errfield = 'id_max';
 		}
 		else {

@@ -221,18 +221,17 @@ class Translation {
 			);
 		}
 		if(isset($app->lincko->databases[$bundle])){
-			if(isset($this->translation[$bundle][$category][$phrase])){
+			if(!empty($force_lang)){
+				if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first()){
+					$value = $value->getAttribute($force_lang);
+				}
+			} else if(isset($this->translation[$bundle][$category][$phrase])){
 				$value = $this->translation[$bundle][$category][$phrase];
 			} else {
 				$this->getList($bundle);
 				$this->bundle = $bundle;
 				$this->setLanguage();
-				if($force_lang){
-					$lang = $force_lang;
-					if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){
-						$value = $value->getAttribute($lang);
-					}
-				} else if(isset($this->translation[$bundle][$category][$phrase])){
+				if(isset($this->translation[$bundle][$category][$phrase])){
 					$value = $this->translation[$bundle][$category][$phrase];
 				} else if(isset($this->lang[$bundle])){
 					$lang = $this->lang[$bundle];
@@ -278,13 +277,28 @@ class Translation {
 		return true;
 	}
 
+	protected function getForceLanguage($force_lang){
+		$app = $this->app;
+		$bundle = $this->bundle;
+		$list = $this->list[$bundle];
+		$langlong = str_replace('_', '-', $force_lang);
+		$langshort = preg_replace("/-.*/ui", '', $langlong);
+		if(isset($list[$langlong])){
+			return $list[$langlong];
+		}
+		if(isset($list[$langshort])){
+			return $list[$langshort];
+		}
+		return false;
+	}
+
 	protected function getBodyLanguage(){
 		$app = $this->app;
 		$bundle = $this->bundle;
 		$list = $this->list[$bundle];
 		$json = json_decode($app->request->getBody());
 		if(isset($json->language)){
-			$langlong = $json->language;
+			$langlong = str_replace('_', '-', $json->language);
 			$langshort = preg_replace("/-.*/ui", '', $langlong);
 			if(isset($list[$langlong])){
 				return $list[$langlong];
@@ -301,6 +315,7 @@ class Translation {
 		$bundle = $this->bundle;
 		$list = $this->list[$bundle];
 		if($langlong = OneSeventySeven::get('yuyan')){
+			$langlong = str_replace('_', '-', $langlong);
 			$langshort = preg_replace("/-.*/ui", '', $langlong);
 			if(isset($list[$langlong])){
 				return $list[$langlong];
@@ -318,7 +333,7 @@ class Translation {
 		if(isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
 			preg_match_all("/([\w-]{2,})(?:$|\W)/ui", $_SERVER['HTTP_ACCEPT_LANGUAGE'], $matches, PREG_SET_ORDER);
 			foreach($matches as $key => $value) {
-				$langlong = $matches[$key][1];
+				$langlong = str_replace('_', '-', $matches[$key][1]);
 				$langshort = preg_replace("/-.*/ui", '', $langlong);
 				if(isset($list[$langlong])){
 					return $list[$langlong];
@@ -331,11 +346,11 @@ class Translation {
 		return false;
 	}
 
-	protected function getDefaultLanguage(){
+	public function getDefaultLanguage(){
 		$app = $this->app;
 		$bundle = $this->bundle;
 		$list = $this->list[$bundle];
-		$langlong = $this->default_lang;
+		$langlong = str_replace('_', '-', $this->default_lang);
 		$langshort = preg_replace("/-.*/ui", '', $langlong);
 		if(isset($list[$langlong])){
 			return $list[$langlong];
@@ -346,13 +361,15 @@ class Translation {
 		return false;
 	}
 
-	protected function setLanguage(){
+	public function setLanguage($force_lang=false){
 		$bundle = $this->bundle;
 		if(!$this->setList()){
 			return false;
 		}
 		$tp = false;
-		if(isset($this->lang[$bundle])){
+		if(!empty($force_lang) && $tp = $this->getForceLanguage($force_lang)){
+			$this->lang[$bundle] = $tp;
+		} else if(isset($this->lang[$bundle])){
 			//Do nothing
 		} else if($tp = $this->getBodyLanguage()){
 			$this->lang[$bundle] = $tp;
@@ -373,7 +390,7 @@ class Translation {
 		}
 
 		$this->setDefaultLocale($bundle);
-		return true;
+		return $this->default_lang;
 	}
 
 	protected function getListfull(){

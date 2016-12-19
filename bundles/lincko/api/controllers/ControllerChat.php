@@ -58,6 +58,8 @@ class ControllerChat extends Controller {
 		} else {
 			$form = $this->data->data;
 		}
+		//Convert to object
+		$form = (object)$form;
 		//Convert NULL to empty string to help isset returning true
 		if(is_array($form) || is_object($form)){
 			foreach ($form as $key => $value) {

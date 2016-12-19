@@ -216,7 +216,7 @@ abstract class ModelLincko extends Model {
 		parent::__construct($attributes);
 		//$db = Capsule::connection($this->connection);
 		//$db->enableQueryLog();
-		if(isset($app->lincko->data['uid'])){
+		if(isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			$this->record_user = $app->lincko->data['uid'];
 		}
 	}
@@ -553,7 +553,7 @@ abstract class ModelLincko extends Model {
 
 	public function setPerm(){
 		$app = self::getApp();
-		if(!isset($app->lincko->data['uid'])){
+		if(!isset($app->lincko->data['uid']) || $app->lincko->data['uid']===false){
 			return array();
 		}
 		$list_models = Data::getModels();
@@ -1861,9 +1861,9 @@ abstract class ModelLincko extends Model {
 	//In case the developer change the user ID, we reset all access
 	public function checkUser(){
 		$app = self::getApp();
-		if(!isset($app->lincko->data['uid'])){
+		if(!isset($app->lincko->data['uid']) || $app->lincko->data['uid']===false){
 			$errmsg = $app->trans->getBRUT('api', 0, 2); //Please sign in.
-			$this::errorMsg('No user logged', $errmsg);
+			$this::errorMsg('No user logged', $errmsg, true);
 			return false;
 		} else if($this->record_user != $app->lincko->data['uid']){
 			$this->record_user = null;
@@ -2116,14 +2116,14 @@ abstract class ModelLincko extends Model {
 		return false;
 	}
 
-	protected static function errorMsg($detail='', $msg=false){
+	protected static function errorMsg($detail='', $msg=false, $resignin=false){
 		$app = self::getApp();
 		if(!$msg){
 			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		}
 		\libs\Watch::php($detail, $msg, __FILE__, __LINE__, true);
 		if(!self::$debugMode){
-			$json = new Json($msg, true, 406);
+			$json = new Json($msg, true, 406, $resignin);
 			$json->render(406);
 		}
 		return false;
@@ -2146,7 +2146,7 @@ abstract class ModelLincko extends Model {
 
 	public function getUsersTable($users_tables=array()){
 		$app = self::getApp();
-		if(!isset($app->lincko->data['uid'])){
+		if(!isset($app->lincko->data['uid']) || $app->lincko->data['uid']===false){
 			return $users_tables;
 		}
 		$users_tables[$app->lincko->data['uid']][$this->getTable()] = true;
@@ -2266,7 +2266,7 @@ abstract class ModelLincko extends Model {
 		}
 
 		//Give access to the user itself
-		if($new && isset($app->lincko->data['uid'])){
+		if($new && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			$pivots = new \stdClass;
 			$pivots->{'users>access'} = new \stdClass;
 			$pivots->{'users>access'}->{$app->lincko->data['uid']} = true;

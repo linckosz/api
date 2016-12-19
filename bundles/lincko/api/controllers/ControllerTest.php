@@ -1067,7 +1067,7 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(877);
 		//$tp = Users::where('username_sha1', 'LIKE', '660609b17%')->first();
 
-		$tp = sha1('oN_U0wPB2VLXkYzTyAB_spjgOQfk');
+		//$tp = sha1('oN_U0wPB2VLXkYzTyAB_spjgOQfk');
 
 
 		//$tp = Projects::find(324)->clone();
@@ -1076,6 +1076,25 @@ class ControllerTest extends Controller {
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+
+
+		/*
+		//----------------------------------------
+		//Add part_id for email login
+		//	=> turn log into PRIMARY
+		//	=> turn part-party_id into UNIQUE
+		$all = Users::all();
+		foreach ($all as $user) {
+			$username_sha1 = $user->username_sha1;
+			if($log = UsersLog::Where('username_sha1', $username_sha1)->where('party', null)->get()->first()){
+				//\libs\Watch::php( $log->id, '$log', __FILE__, __LINE__, false, false, true);
+				usleep(100000);
+				$log->party_id = $user->email;
+				$log->log = md5(uniqid());
+				$log->save();
+			}
+		}
+		*/
 
 		/*
 		//----------------------------------------

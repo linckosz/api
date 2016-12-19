@@ -46,13 +46,13 @@ class Comments extends ModelLincko {
 	protected $name_code = 200;
 
 	protected static $archive = array(
-		'created_at' => 201, //[{un}] sent a new message
-		'_' => 202,//[{un}] modified a message
-		'comment' => 202,//[{un}] modified a message
-		'recalled_by' => 203,//[{un}] recalled a message
+		'created_at' => 201, //[{un}] sent a new comment
+		'_' => 202,//[{un}] modified a comment
+		'comment' => 202,//[{un}] modified a comment
+		'recalled_by' => 203,//[{un}] recalled a comment
 		//'_commented_on_item' => 210,//[{un}] commented on an item
 		//'_commented_on_chats' => 211,//[{un}]  commented on a chat group
-		'_commented_on_comments' => 212,//[{un}]  commented on a message
+		'_commented_on_comments' => 212,//[{un}] replied on a comment
 		//'_commented_on_workspaces' => 213,//[{un}] commented on a workspace
 		//'_commented_on_projects' => 214,//[{un}] commented on a project
 		'_commented_on_tasks' => 215,//[{un}] commented on a task
@@ -61,8 +61,8 @@ class Comments extends ModelLincko {
 		'_commented_on_files' => 218,//[{un}] commented on a file
 		'_commented_on_notes' => 219,//[{un}] commented on a note
 		//'_commented_on_spaces' => 220,//[{un}] commented on a space
-		'_restore' => 298,//[{un}] restored a message
-		'_delete' => 299,//[{un}] deleted a message
+		'_restore' => 298,//[{un}] restored a comment
+		'_delete' => 299,//[{un}] deleted a comment
 	);
 
 	protected static $parent_list = array('users', 'comments', 'workspaces', 'projects', 'tasks', 'notes', 'files');

@@ -15,6 +15,8 @@ class Integration extends Model {
 
 	public $incrementing = false; //This helps to get primary key as a string instead of an integer
 
+	protected $primaryKey = 'id';
+
 	public $timestamps = true;
 
 	protected $visible = array();
@@ -23,7 +25,7 @@ class Integration extends Model {
 
 	protected static $integration = false;
 
-	protected static $flash = false;
+	protected static $flash = array();
 
 	/////////////////////////////////////
 
@@ -86,12 +88,12 @@ class Integration extends Model {
 					$users_id = $creation->flash->uid;
 					$data->public_key = $creation->flash->public_key;
 					$data->data->password = $users_log->password;
-					$users_log->authorize($data);
+					$users_log->getAuthorize($data);
 
 					$integration->username_sha1 = $creation->flash->username_sha1;
 					if($integration->save()){
 						foreach ($creation->flash as $key => $value) {
-							self::$flash->$key = $value;
+							self::$flash[$key] = $value;
 						}
 					}
 				}
@@ -106,8 +108,8 @@ class Integration extends Model {
 	protected static function createUser($data, $param){
 		$app = \Slim\Slim::getInstance();
 
-		self::$flash->youjian = $param->email;
-		self::$flash->lianke = Datassl::encrypt($param->password, $param->email);
+		self::$flash['youjian'] = $param->email;
+		self::$flash['lianke'] = Datassl::encrypt($param->password, $param->email);
 
 		$data->data = $param;
 		$data->public_key = $app->lincko->security['public_key']; //Use public key for account creation

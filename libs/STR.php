@@ -78,7 +78,38 @@ class STR {
 		return $text;
 	}
 
-
+	//Convert any variable into JS readable in a JS file
+	//echo convertToJS($arr);
+	public static function convertToJS(&$arr, &$echo='response', $first=true){
+		if($first && !empty($echo)){
+			$echo .= '=';
+		}
+		if((is_object($arr) || is_array($arr)) && !empty($arr)){
+			$echo .= '{';
+			foreach ($arr as $key => $value) {
+				if(is_bool($value)){
+					if($value){
+						$echo .= $key.':true,';
+					} else {
+						$echo .= $key.':false,';
+					}
+				} else if(is_integer($value)){
+					$echo .= $key.':'.$value.',';
+				} else if(is_string($value)){
+					$echo .= $key.':"'.STR::sql_to_js($value).'",';
+				} else if((is_object($value) || is_array($value)) && !empty($value)){
+					$echo .= $key.':';
+					convertToJS($value, $echo, false);
+				}
+			}
+			$echo .= '}';
+			if(!$first){
+				$echo .= ',';
+			} else {
+				return $echo .= ';';
+			}
+		}
+	}
 
 
 

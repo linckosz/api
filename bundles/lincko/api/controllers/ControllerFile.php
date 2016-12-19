@@ -10,8 +10,6 @@ use \libs\SimpleImage;
 use \libs\File;
 use \libs\STR;
 use \libs\Folders;
-use \bundles\lincko\api\models\UsersLog;
-use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Projects;
@@ -80,6 +78,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		} else {
 			$form = $this->data->data;
 		}
+		//Convert to object
+		$form = (object)$form;
 		//Convert NULL to empty string to help isset returning true
 		if(is_array($form) || is_object($form)){
 			foreach ($form as $key => $value) {

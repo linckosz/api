@@ -31,8 +31,7 @@ class Watch {
 		}
 
 		$folder = new Folders;
-		$folder->createPath($logPath);
-		$folder->setCHMOD(0770);
+		$folder->createPath($logPath, 0770);
 
 		if(file_exists($fic)){
 			$truncate = 500000;
@@ -106,17 +105,19 @@ $msg
 		} else {
 			$errip = $app->request->getIp();
 		}
+
+		$url = $app->request->headers->Host.$app->request->getResourceUri();
 		
 		$err  = "DATE: $dt\n";
 		$err .= "USER: $errid / $erruser / $errip\n";
+		$err .= "URL : $url\n";
 		$err .= "$errmsg\n\n\n";
 
 $err = str_replace("\n","
 ",$err);
 
 		$folder = new Folders;
-		$folder->createPath($logPath);
-		$folder->setCHMOD(0770);
+		$folder->createPath($logPath, 0770);
 
 		$fic = $logPath.'/logJS_'.date('ymd').'.txt';
 		if(file_exists($fic)){

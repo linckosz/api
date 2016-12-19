@@ -82,10 +82,10 @@ class Folders {
 		return false;
 	}
 
-	public function createPath($folder){
+	public function createPath($folder, $chmod=0755){
 		$this->folder = false;
 		if(!is_dir($folder)){
-			if(mkdir($folder, 0755, true)){
+			if(mkdir($folder, $chmod, true)){
 				return $this->setPath($folder);
 			}
 		}

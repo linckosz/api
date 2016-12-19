@@ -55,9 +55,6 @@ class ControllerUser extends Controller {
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
-		if(isset($this->data->data) && isset($this->data->data->email) && isset($this->data->data->password)){
-			$this->data->data->password = Datassl::decrypt($this->data->data->password, $this->data->data->email);
-		}
 		$this->form = new \stdClass;
 		$this->setFields();
 		return true;
@@ -66,12 +63,15 @@ class ControllerUser extends Controller {
 	protected function setFields(){
 		$app = $this->app;
 		$form = new \stdClass;
+
 		if(!isset($this->data->data)){
 			$app->render(400, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 0, 4)), 'error' => true,)); //No data form received.
 			return true;
 		} else {
 			$form = $this->data->data;
 		}
+		//Convert to object
+		$form = (object)$form;
 		//Convert NULL to empty string to help isset returning true
 		if(is_array($form) || is_object($form)){
 			foreach ($form as $key => $value) {
@@ -80,6 +80,15 @@ class ControllerUser extends Controller {
 				}
 			}
 		}
+
+		//If default account and email field is fill in, we consider email (original format) as party_id
+		if(!isset($form->party) || empty($form->party)){
+			$form->party = null; //Insure to define party
+			if((!isset($form->party_id) || empty($form->party_id)) && isset($form->email) && !empty($form->email)){
+				$form->party_id = $form->email;
+			}
+		}
+
 		if(isset($form->id) && is_numeric($form->id)){
 			$form->id = (int) $form->id;
 		}
@@ -125,6 +134,7 @@ class ControllerUser extends Controller {
 				$form->resume = 0;
 			}
 		}
+
 		return $this->form = $form;
 	}
 
@@ -145,13 +155,18 @@ class ControllerUser extends Controller {
 		else if(!$app->lincko->data['create_user']){
 			$errmsg = $app->trans->getBRUT('api', 15, 19); //You need to sign out from the application before being able to create a new user account.
 		}
-		else if(!isset($form->email) || !Users::validEmail($form->email)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
-			$errfield = 'email';
+		else if(!isset($form->party_id) || !Users::validChar($form->party_id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
+			$errfield = 'party_id';
 		}
-		else if(!isset($form->password) || !Users::validPassword($form->password)){ //Required
+		//party must be defined in setForm and is null for default Lincko account login system
+		else if(empty($form->party) && (!isset($form->party_id) || !isset($form->password) || !Users::validPassword(Datassl::decrypt($form->password, $form->party_id)))){ //Required (optional for integration)
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters
 			$errfield = 'password';
+		}
+		else if(isset($form->email) && !Users::validEmail($form->email)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
+			$errfield = 'email';
 		}
 		else if(isset($form->username) && (!Users::validChar($form->username, true) || !Users::validTextNotEmpty($form->username, true))){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 10); //We could not validate the username format: - 104 characters max - Without space
@@ -171,8 +186,7 @@ class ControllerUser extends Controller {
 		}
 		else if($model = new Users()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
-			$model->email = $form->email;
-			$model->password = $form->password;
+			if(isset($form->email)){ $model->email = $form->email; } //Optional
 			if(isset($form->username)){ $model->username = $form->username; } //Optional
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
@@ -230,9 +244,21 @@ class ControllerUser extends Controller {
 			}
 			*/
 			if($accept){
-				$app->lincko->data['user_log'] = new UsersLog();
-				$app->lincko->data['user_log']->username_sha1 = $username_sha1;
-				$app->lincko->data['user_log']->password = password_hash($model->password, PASSWORD_BCRYPT);
+				$users_log = new UsersLog;
+				$log_id = md5(uniqid());
+				while(UsersLog::Where('log', $log_id)->first(array('log'))){
+					usleep(10000);
+					$log_id = md5(uniqid());
+				}
+				$users_log->log = $log_id;
+				$users_log->party = $form->party;
+				$users_log->party_id = $form->party_id;
+				$users_log->username_sha1 = $username_sha1;
+				if(isset($form->password) && !empty($form->password)){
+					$password = Datassl::decrypt($form->password, $form->party_id);
+					$users_log->password = password_hash($password, PASSWORD_BCRYPT);
+				}
+				$users_log->save();
 				$model->username = $username;
 				$model->username_sha1 = $username_sha1;
 				$model->internal_email = $internal_email;
@@ -241,22 +267,8 @@ class ControllerUser extends Controller {
 					$app->lincko->data['uid'] = $model->id;
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', false);
-					$app->flashNow('username', $model->username);
 					//Setup public and private key
-					if($authorize = $app->lincko->data['user_log']->authorize($this->data)){
-						if(isset($authorize['private_key'])){
-							$app->flashNow('private_key', $authorize['private_key']);
-						}
-						if(isset($authorize['public_key'])){
-							$app->flashNow('public_key', $authorize['public_key']);
-						}
-						if(isset($authorize['username_sha1'])){
-							$app->flashNow('username_sha1', $authorize['username_sha1']);
-						}
-						if(isset($authorize['uid'])){
-							$app->flashNow('uid', $authorize['uid']);
-						}
-					}
+					$authorize = $users_log->getAuthorize($this->data);
 
 					//Send congrat email
 					$link = 'https://'.$app->lincko->domain;
@@ -468,46 +480,35 @@ class ControllerUser extends Controller {
 		$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 0, 7); //Sign in failed. Please try again.
 		$errfield = 'undefined';
 
-		if(Users::isValid($form)){
-			if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
-				if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->first()){
-					if($authorize = $user_log->authorize($data)){
-						$msg = $app->trans->getBRUT('api', 15, 13); //You are already signed in.
-						if(isset($authorize['private_key'])){
-							$app->flashNow('private_key', $authorize['private_key']);
-							$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
-						}
-						if(isset($authorize['public_key'])){
-							$app->flashNow('public_key', $authorize['public_key']);
-							$app->lincko->translation['user_username'] = $user->username;
-							$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
-						}
-						if(isset($authorize['username_sha1'])){
-							$app->flashNow('username_sha1', substr($authorize['username_sha1'], 0, 20)); //Truncate to 20 character because phone alias notification limitation
-						}
-						if(isset($authorize['uid'])){
-							$app->flashNow('uid', $authorize['uid']);
-						}
-						if(isset($authorize['refresh'])){
-							if($authorize['refresh']){
-								$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
-							} else {
-								$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
-							}
-						}
-						$app->flashNow('username', $user->username);
-						$app->render(200, array('msg' => array('msg' => $msg)));
-						return true;
-					} else {
-						$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 31); //Sign in failed. Wrong password.
-					}
+		if($authorize = (new UsersLog)->getAuthorize($data)){
+			$msg = $app->trans->getBRUT('api', 15, 13); //You are already signed in.
+			if(isset($authorize['private_key'])){
+				$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
+			}
+			if(isset($authorize['public_key'])){
+				$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
+			}
+			if(isset($authorize['refresh'])){
+				if($authorize['refresh']){
+					$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
 				} else {
-					$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 0, 7); //Sign in failed. Please try again.
+					$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
 				}
-			} else {
+			}
+			$app->render(200, array('msg' => array('msg' => $msg)));
+			return true;
+		} else {
+			if(!isset($form->party) || empty($form->party)){ //Email/speudo
+				if(isset($form->party_id) && UsersLog::Where('party', null)->where('party_id', $form->party_id)->first(array('id'))){
+					$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 31); //Sign in failed. Wrong password.
+				} else {
+					$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 32); //Sign in failed. This account does not exist.
+				}
+			} else if(isset($form->party_id) && !UsersLog::Where('party', $dform->party)->where('party_id', $form->party_id)->first(array('id'))){ //Integration
 				$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 32); //Sign in failed. This account does not exist.
 			}
 		}
+
 		//Hide the password to avoid hacking
 		if(isset($form->password)){
 			$form->password = '******';
@@ -545,8 +546,8 @@ class ControllerUser extends Controller {
 
 		$msg = $app->trans->getBRUT('api', 15, 16); //You are already signed out.
 
-		if($var = Authorization::find_finger($data->public_key, $data->fingerprint)){
-			$var = $var->delete();
+		if($authorization = Authorization::find_finger($data->public_key, $data->fingerprint)){
+			$authorization->delete();
 			$msg = $app->trans->getBRUT('api', 15, 17); //You have signed out of your account.
 		}
 
@@ -721,11 +722,11 @@ class ControllerUser extends Controller {
 		$errmsg = $failmsg;
 		$errfield = 'undefined';
 
-		if(!isset($form->email) || !Users::validEmail($form->email)){ //Required
+		if(!isset($form->party_id) || !Users::validEmail($form->party_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
 			$errfield = 'email';
 		}
-		else if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
+		else if($user = Users::where('email', '=', mb_strtolower($form->party_id))->first()){
 			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->first()){
 				$user_log->code = substr(str_shuffle("123456789"), 0, 6);
 				$limit = Carbon::now();
@@ -776,7 +777,7 @@ class ControllerUser extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->email) || !Users::validEmail($form->email)){ //Required
+		if(!isset($form->party_id) || !Users::validEmail($form->party_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
 			$errfield = 'email';
 		}
@@ -788,7 +789,7 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters
 			$errfield = 'password';
 		}
-		else if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
+		else if($user = Users::where('email', '=', mb_strtolower($form->party_id))->first()){
 			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->Where('code', '!=', null)->first()){
 				if($user_log->code == $form->code){
 					$now = time();

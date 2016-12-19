@@ -35,7 +35,7 @@ $app->configureMode('development', function () use ($app) {
 	//usleep(500000); //500ms
 });
 
-require_once $path.'/config/autoload.php' ;
+require_once $path.'/config/autoload.php';
 require_once $path.'/error/errorPHP.php';
 require_once $path.'/config/eloquent.php';
 require_once $path.'/config/session.php';
@@ -43,7 +43,7 @@ require_once $path.'/config/session.php';
 $app->map('/:catchall', function() use ($app) {
 	$app->render(404, array(
 		'error' => true,
-		'msg' => 'Sorry, we could not understand the request.', //Cannot use translation because we don't know which bundle will be loaded
+		'msg' => $app->trans->getBRUT('default', 1, 4), //Sorry, we could not understand the request.
 	));
 })->conditions(array('catchall' => '.*'))
 ->name('catchall')

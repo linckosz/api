@@ -38,65 +38,49 @@ class CheckAccess extends \Slim\Middleware {
 		return true;
 	}
 
-	protected function autoSign(){
+	protected function autoSign($log_id=false){
 		$app = $this->app;
 		$data = $this->data;
 		$form = $data->data;
-		if(isset($form->email) && isset($form->password)){
-			$form->password = Datassl::decrypt($form->password, $form->email);
-			if(Users::isValid($form)){
-				if($user = Users::where('email', '=', mb_strtolower($form->email))->first()){
-					if($user_log = UsersLog::where('username_sha1', '=', mb_strtolower($user->username_sha1))->first()){
-						if($authorize = $user_log->authorize($data)){
-							if(isset($authorize['public_key']) && isset($authorize['private_key'])){
-								$form->password = Datassl::encrypt($form->password, $form->email);
-								$this->app->lincko->securityFlash = $authorize;
-								return $authorize['public_key'];
-							}
-						}
-					}
-				}
-			}
-			$form->password = Datassl::encrypt($form->password, $form->email);
+		if(!$log_id && isset($form->log_id)){
+			$log_id = Datassl::decrypt($form->log_id, 'log_id');
 		}
-		return $this->data->public_key;
-	}
-
-	protected function reSignIn(){
-		$app = $this->app;
-		$data = $this->data;
-		$authorization = $this->authorization;
-		if($authorization){
-			if($user_log = UsersLog::find($authorization->users_id)){
-				if($authorize = $user_log->authorize($data)){
-					if(isset($authorize['public_key']) && isset($authorize['private_key'])){
-						$app->lincko->securityFlash = $authorize;
-						return $authorize['public_key'];
-					}
-				}
-			}
+		$user_log = false;
+		if($log_id){
+			$user_log = UsersLog::find($log_id); //the coloumn must be primary
+			//$user_log = UsersLog::where('log', $log_id)->first();
 		}
-		return false;
+		if(!$user_log){
+			$user_log = new UsersLog;
+		}
+		$authorize = $user_log->getAuthorize($data);
+		if(is_array($authorize) && isset($authorize['public_key'])){
+			return $authorize['public_key'];
+		}
+		if(isset($data->public_key)){
+			Authorization::clean();
+			return $data->public_key;
+		} else {
+			return null;
+		}
 	}
 
 	protected function setUserId(){
 		$app = $this->app;
-		if(isset($app->lincko->data['uid'])){
+		if(isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			return $app->lincko->data['uid'];
-		} else if(isset($this->authorization->users_id) && $this->authorization->users_id>0){
-			if($user_log = UsersLog::find($this->authorization->users_id)){
-				if($user = Users::where('username_sha1', '=', $user_log->username_sha1)->first()){
-					$app->lincko->data['yonghu'] = $user->username; //This variable is used for error logs only
-					return $app->lincko->data['uid'] = $user->id;
-				}
+		} else if(isset($this->authorization->sha) && !empty($this->authorization->sha)){
+			if($user = Users::where('username_sha1', $this->authorization->sha)->first()){
+				$app->lincko->data['yonghu'] = $user->username; //This variable is used for error logs only
+				return $app->lincko->data['uid'] = $user->id;
 			}
 		}
-		return false;
+		return $app->lincko->data['uid'] = false;
 	}
 
 	protected function setUserLanguage(){
 		$app = $this->app;
-		if(isset($app->lincko->data['uid'])){
+		if(isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			Users::getUser()->setLanguage();
 		}
 		return true;
@@ -326,11 +310,9 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorizeAccess = true;
 			$valid = true;
-		} else if($this->route == 'integration_connect_post' && $users_id = Integration::check($data)){
+		} else if($this->route == 'integration_connect_post' && $log_id = UsersLog::check($data)){
 			$this->nochecksum = true; //(toto) If not it bug for an unknown reason, it's a low security issue
-			$this->authorization = new Authorization;
-			$this->authorization->users_id = $users_id; //Set only for reSignIn()
-			if($this->authorization = Authorization::find_finger($this->reSignIn(), $data->fingerprint)){
+			if($this->authorization = Authorization::find_finger($this->autoSign($log_id), $data->fingerprint)){
 				//Must overwrite by standard keys because the checksum has been calculated with the standard one
 				$this->authorization->private_key = $app->lincko->security['private_key'];
 				$this->authorizeAccess = true;
@@ -354,13 +336,13 @@ class CheckAccess extends \Slim\Middleware {
 			if(empty($data->workspace)){ //Shared workspace
 				$app->lincko->data['workspace'] = '';
 				$app->lincko->data['workspace_id'] = 0;
-				$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+				//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 				return true;
 			} else {
 				if($workspace = Workspaces::where('url', $data->workspace)->first()){
 					$app->lincko->data['workspace'] = $workspace->url;
 					$app->lincko->data['workspace_id'] = $workspace->id;
-					$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+					//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 					$workspace = $this->setWorkspaceConnection($workspace);
 					if($workspace->checkAccess(false)){
 						return true;
@@ -374,7 +356,7 @@ class CheckAccess extends \Slim\Middleware {
 		}
 		$app->lincko->data['workspace'] = '';
 		$app->lincko->data['workspace_id'] = (new Workspaces)->getWorkspaceID();
-		$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+		//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 		return false;
 	}
 
@@ -401,7 +383,7 @@ class CheckAccess extends \Slim\Middleware {
 			$expired->add(new \DateInterval('PT'.$app->lincko->security['expired'].'S'));
 			$now = new \DateTime();
 			if($expired < $now){
-				if($this->reSignIn()){
+				if($this->autoSign($authorization->log)){
 					return true;
 				}
 				return false;
@@ -472,7 +454,7 @@ class CheckAccess extends \Slim\Middleware {
 				} else if($workspace = Workspaces::where('id', $w_id)->first()){
 					$app->lincko->data['workspace'] = $workspace->url;
 					$app->lincko->data['workspace_id'] = $workspace->id;
-					$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+					//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 					$workspace = $this->setWorkspaceConnection($workspace);
 					if($workspace->checkAccess(false)){
 						return $this->next->call();
@@ -527,7 +509,7 @@ class CheckAccess extends \Slim\Middleware {
 					} else if($workspace = Workspaces::where('id', $w_id)->first()){
 						$app->lincko->data['workspace'] = $workspace->url;
 						$app->lincko->data['workspace_id'] = $workspace->id;
-						$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
+						//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 						$workspace = $this->setWorkspaceConnection($workspace);
 						return $this->next->call();
 					}
@@ -561,7 +543,7 @@ class CheckAccess extends \Slim\Middleware {
 
 		//Check if the route exists, we don't force to signout here
 		} else if(!$this->checkRoute()) {
-			$msg = $app->trans->getBRUT('api', 0, 1); //Sorry, we could not understand the request.
+			$msg = $app->trans->getBRUT('default', 1, 4); //Sorry, we could not understand the request.
 			$status = 404;
 
 		//Check if the front application has the right to access to ressources via an API key

@@ -364,7 +364,7 @@ class Users extends ModelLincko {
 
 	public function scopetheUser($query){
 		$app = self::getApp();
-		if(isset($app->lincko->data['uid'])){
+		if(isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			return $query->where('users.id', $app->lincko->data['uid']);
 		}
 		return $query->where('users.id', -1); //It will force an error since the user -1 does not exists
@@ -432,7 +432,6 @@ class Users extends ModelLincko {
 				
 				$project = Projects::setPersonal();
 
-				$app->lincko->data['user_log']->save();
 				$onboarding = new Onboarding;
 				$onboarding->next(10001); //initialize the onboarding process
 			} catch(\Exception $e){

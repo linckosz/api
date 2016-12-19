@@ -79,12 +79,15 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 		} else {
 			$var = (string)$vars;
 		}
+
+		$url = $app->request->headers->Host.$app->request->getResourceUri();
 		
 		$err  = "DATE: $dt\n";
 		$err .= "USER: $errid / $erruser / $errip\n";
 		$err .= "BROW: $infos\n";
 		$err .= "LINE: $linenum\n";
-		$err .= "URL : $filename\n";
+		$err .= "FILE : $filename\n";
+		$err .= "URL : $url\n";
 		$err .= "MSG : $type: $errortype[$errno] => $errmsg\n";
 		$err .= "DBT : $var\n\n\n";
 
@@ -92,8 +95,7 @@ $err = str_replace("\n","
 ",$err);
 
 		$folder = new Folders;
-		$folder->createPath($logPath);
-		$folder->setCHMOD(0770);
+		$folder->createPath($logPath, 0770);
 
 		$fic = $logPath.'/logPHP_'.date('ymd').'.txt';
 		if(file_exists($fic)){
