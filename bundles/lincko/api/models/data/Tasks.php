@@ -32,6 +32,7 @@ class Tasks extends ModelLincko {
 		'fav',
 		'approved_by',
 		'locked_by',
+		'locked_fp',
 		'title',
 		'comment',
 		'duration', //A negative value means there is no due date
@@ -65,6 +66,8 @@ class Tasks extends ModelLincko {
 		'title',
 		'comment',
 		'viewed_by',
+		'locked_by',
+		'locked_fp',
 	);
 
 	protected $name_code = 500;
@@ -171,6 +174,11 @@ class Tasks extends ModelLincko {
 	//Many(Tasks) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_tasks', 'tasks_id', 'users_id')->withPivot('access', 'in_charge', 'approver');
+	}
+
+	//One(Tasks) to Many(Comments)
+	public function comments(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'tasks', 'id', 'parent_id');
 	}
 
 	//Many(Tasks) to Many(Files)
@@ -537,6 +545,19 @@ class Tasks extends ModelLincko {
 			$clone->comment = $text;
 			$clone->brutSave();
 			$clone->touchUpdateAt();
+		}
+
+		//Clone comments (no dependencies)
+		if(!isset($exclude_links['comments'])){
+			$attributes = array(
+				'parent_type' => 'tasks',
+				'parent_id' => $clone->id,
+			);
+			if($comments = $this->comments){
+				foreach ($comments as $comment) {
+					$links = $comment->clone($offset, $attributes, $links);
+				}
+			}
 		}
 
 		return $links;

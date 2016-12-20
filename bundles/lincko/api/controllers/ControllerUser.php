@@ -499,13 +499,13 @@ class ControllerUser extends Controller {
 			return true;
 		} else {
 			if(!isset($form->party) || empty($form->party)){ //Email/speudo
-				if(isset($form->party_id) && UsersLog::Where('party', null)->where('party_id', $form->party_id)->first(array('id'))){
-					$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 31); //Sign in failed. Wrong password.
+				if(isset($form->party_id) && UsersLog::Where('party', null)->where('party_id', $form->party_id)->first(array('log'))){
+					$errmsg = $app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
 				} else {
-					$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 32); //Sign in failed. This account does not exist.
+					$errmsg = $app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
 				}
-			} else if(isset($form->party_id) && !UsersLog::Where('party', $dform->party)->where('party_id', $form->party_id)->first(array('id'))){ //Integration
-				$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 32); //Sign in failed. This account does not exist.
+			} else if(isset($form->party_id) && !UsersLog::Where('party', $dform->party)->where('party_id', $form->party_id)->first(array('log'))){ //Integration
+				$errmsg = $app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
 			}
 		}
 
@@ -723,7 +723,7 @@ class ControllerUser extends Controller {
 		$errfield = 'undefined';
 
 		if(!isset($form->party_id) || !Users::validEmail($form->party_id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 35); //E-mail address format incorrect
 			$errfield = 'email';
 		}
 		else if($user = Users::where('email', '=', mb_strtolower($form->party_id))->first()){
@@ -778,7 +778,7 @@ class ControllerUser extends Controller {
 		$errfield = 'undefined';
 
 		if(!isset($form->party_id) || !Users::validEmail($form->party_id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 35); //E-mail address format incorrect
 			$errfield = 'email';
 		}
 		else if(!isset($form->code) || !Users::validCode($form->code)){ //Required

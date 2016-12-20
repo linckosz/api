@@ -95,6 +95,11 @@ class Projects extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access', 'fav', 'silence');
 	}
 
+	//One(Projects) to Many(Comments)
+	public function comments(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'projects', 'id', 'parent_id');
+	}
+
 	//Many(Projects) to One(Workspaces)
 	public function workspaces(){
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Workspaces', 'parent_id');
@@ -417,6 +422,19 @@ class Projects extends ModelLincko {
 			if($tasks = $this->tasks){
 				foreach ($tasks as $task) {
 					$links = $task->clone($offset, $attributes, $links);
+				}
+			}
+		}
+
+		//Clone comments (files)
+		if(!isset($exclude_links['comments'])){
+			$attributes = array(
+				'parent_type' => 'projects',
+				'parent_id' => $clone->id,
+			);
+			if($comments = $this->comments){
+				foreach ($comments as $comment) {
+					$links = $comment->clone($offset, $attributes, $links);
 				}
 			}
 		}

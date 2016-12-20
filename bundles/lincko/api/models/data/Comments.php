@@ -94,7 +94,7 @@ class Comments extends ModelLincko {
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'created_by');
 	}
 
-	//Many(comments) to Many(Comments)
+	//One(comments) to Many(Comments)
 	public function comments(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
 	}
@@ -242,6 +242,80 @@ class Comments extends ModelLincko {
 		}
 		$model = parent::toVisible();
 		return $model;
+	}
+
+	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+		$app = self::getApp();
+		$uid = $app->lincko->data['uid'];
+		if($offset===false){
+			$offset = $this->created_at->diffInSeconds();
+		}
+		$clone = $this->replicate();
+
+		foreach ($attributes as $key => $value) {
+			$clone->$key = $value;
+		}
+		
+		//Initialization of attributes
+		$clone->temp_id = '';
+		if(!is_null($clone->deleted_at)){
+			$clone->deleted_at = Carbon::createFromFormat('Y-m-d H:i:s', $clone->deleted_at)->addSeconds($offset);
+		}
+		$clone->created_by = $uid;
+		if(!is_null($clone->deleted_by)){ $clone->deleted_by = $uid; }
+		$clone->recalled_by = '';
+		$clone->noticed_by = '';
+		$clone->viewed_by = '';
+		$clone->_perm = '';
+		$clone->extra = null;
+
+		//Pivots
+		$pivots = new \stdClass;
+		$dependencies_visible = $clone::getDependenciesVisible();
+		foreach ($dependencies_visible as $dep => $value) {
+			if(isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+				$items = $clone->$dep;
+				foreach ($items as $item) {
+					$table = $item->getTable();
+					if(isset($links[$table][$item->id])){
+						if(!isset($pivots->{$dep.'>access'})){ $pivots->{$dep.'>access'} = new \stdClass; }
+						$pivots->{$dep.'>access'}->{$links[$table]} = true;
+						foreach ($dependencies_visible[$dep][1] as $field) {
+							if(isset($item->pivot->$field)){
+								$pivots->{ $dep.'>'.$field}->{$links[$table]} = $item->pivot->$field;
+								//If it's a Carbon object, we add the offset
+								if($offset!=0){
+									if(preg_match("/^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/ui", $item->pivot->$field)){
+										try {
+											$item->pivot->$field = Carbon::createFromFormat('Y-m-d H:i:s', $item->pivot->$field)->addSeconds($offset);
+										} catch (\Exception $e) {}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		$clone->pivots_format($pivots, false);
+
+		$clone->save();
+		$link[$this->getTable()][$this->id] = [$clone->id];
+
+		//Clone comments (no dependencies)
+		if(!isset($exclude_links['comments'])){
+			$attributes = array(
+				'parent_type' => 'comments',
+				'parent_id' => $clone->id,
+			);
+			if($comments = $this->comments){
+				foreach ($comments as $comment) {
+					$links = $comment->clone($offset, $attributes, $links);
+				}
+			}
+		}
+
+		return $links;
 	}
 
 	public function saveRobot(array $options = array()){

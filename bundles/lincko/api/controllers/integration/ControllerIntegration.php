@@ -55,7 +55,7 @@ class ControllerIntegration extends Controller {
 					return true;
 				}
 			} else {
-				$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 32); //Sign in failed. This account does not exist.
+				$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
 			}
 		}
 		

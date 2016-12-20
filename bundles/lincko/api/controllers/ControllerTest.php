@@ -37,6 +37,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
 use Carbon\Carbon;
+use \libs\Translation;
 use JPush\Client as JPush;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -1070,7 +1071,8 @@ class ControllerTest extends Controller {
 		//$tp = sha1('oN_U0wPB2VLXkYzTyAB_spjgOQfk');
 
 
-		//$tp = Projects::find(324)->clone();
+		//$tp = Projects::find(1973)->clone();
+		$tp = Projects::find(324)->clone();
 
 
 		//Display mysql requests
@@ -1081,6 +1083,7 @@ class ControllerTest extends Controller {
 		/*
 		//----------------------------------------
 		//Add part_id for email login
+		//	=> in UsersLog.php, must switch to primary "id" before being able to use "log"
 		//	=> turn log into PRIMARY
 		//	=> turn part-party_id into UNIQUE
 		$all = Users::all();

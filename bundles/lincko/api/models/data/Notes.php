@@ -26,6 +26,7 @@ class Notes extends ModelLincko {
 		'created_by',
 		'updated_by',
 		'locked_by',
+		'locked_fp',
 		'fav',
 		'title',
 		'comment',
@@ -50,6 +51,8 @@ class Notes extends ModelLincko {
 		'title',
 		'comment',
 		'viewed_by',
+		'locked_by',
+		'locked_fp',
 	);
 
 	protected $name_code = 800;
@@ -101,6 +104,11 @@ class Notes extends ModelLincko {
 	//Many(Notes) to Many(Users)
 	public function users(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_notes', 'notes_id', 'users_id')->withPivot('access', 'fav');
+	}
+
+	//One(Notes) to Many(Comments)
+	public function comments(){
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'notes', 'id', 'parent_id');
 	}
 
 	//Many(Notes) to Many(Files)
@@ -275,6 +283,19 @@ class Notes extends ModelLincko {
 			$clone->comment = $text;
 			$clone->brutSave();
 			$clone->touchUpdateAt();
+		}
+
+		//Clone comments (no dependencies)
+		if(!isset($exclude_links['comments'])){
+			$attributes = array(
+				'parent_type' => 'notes',
+				'parent_id' => $clone->id,
+			);
+			if($comments = $this->comments){
+				foreach ($comments as $comment) {
+					$links = $comment->clone($offset, $attributes, $links);
+				}
+			}
 		}
 
 		return $links;

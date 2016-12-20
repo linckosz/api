@@ -2,9 +2,10 @@
 
 namespace bundles\lincko\api\middlewares;
 
-use \libs\Json;
 use \config\Handler;
+use \libs\Json;
 use \libs\Datassl;
+use \libs\OneSeventySeven;
 use \bundles\lincko\api\models\Api;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
@@ -48,7 +49,6 @@ class CheckAccess extends \Slim\Middleware {
 		$user_log = false;
 		if($log_id){
 			$user_log = UsersLog::find($log_id); //the coloumn must be primary
-			//$user_log = UsersLog::where('log', $log_id)->first();
 		}
 		if(!$user_log){
 			$user_log = new UsersLog;
@@ -65,8 +65,17 @@ class CheckAccess extends \Slim\Middleware {
 		}
 	}
 
+	//Convert pukpic into user ID
+	protected function getPukpic(){
+		if(isset($_COOKIE) && isset($_COOKIE['pukpic']) && !empty($_COOKIE['pukpic'])){
+			return Datassl::decrypt($_COOKIE['pukpic'], 'public_key_file');
+		}
+		return false;
+	}
+
 	protected function setUserId(){
 		$app = $this->app;
+		$app->lincko->fingerprint = $this->data->fingerprint;
 		if(isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			return $app->lincko->data['uid'];
 		} else if(isset($this->authorization->sha) && !empty($this->authorization->sha)){
@@ -294,7 +303,10 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 		$data = $this->data;
 		$valid = false;
-		if($data->public_key === $app->lincko->security['public_key'] && in_array($this->route, $app->lincko->routeFilter)){
+
+		if($this->authorizeAccess && !is_null($this->authorization)){
+			//Do nothing, we already agree and set object authorization
+		} else if($data->public_key === $app->lincko->security['public_key'] && in_array($this->route, $app->lincko->routeFilter)){
 			//This is for any request off log, so without user ID logged in. setUserId() will return false;
 			$this->authorization = new Authorization;
 			$this->authorization->public_key = $app->lincko->security['public_key'];
@@ -494,19 +506,38 @@ class CheckAccess extends \Slim\Middleware {
 				&& preg_match("/^\/file\/(\d+)\/([=\d\w]+?)\/(link|thumbnail|download|qrcode)\/(\d+)\/.+$/ui", $resourceUri, $matches)
 				&& $this->checkRoute()!==false
 			){ //File reading
-				//toto => to make it more secure, we can first ask the front server which will contact the back with a post and user information. The back will return a generated link including a timestamp (valid for few minutes only). The browser can cache like that the front link to cache it, but someone else will get an error if he copy/paste the link because of timestamp expiration.
-				$w_id = $matches[1];
-				if($matches[3]=='qrcode'){
-					if($user = Users::where('username_sha1', 'LIKE', $matches[2].'%')->Where('id', $matches[4])->first()){
-						$app->lincko->data['uid'] = $user->id; //We only use user code
-					} else {
-						$file_error = true;
-					}
+
+				$data = new \stdClass;
+				$post = $app->request->post();
+				$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
+				$data->workspace = $matches[1];
+				$data->checksum = 0;
+				if(isset($post['http_code_ok']) && $post['http_code_ok']){
+					$data->http_code_ok = (bool) $post['http_code_ok'];
 				}
+				$file_error = false;
+				$this->nochecksum = true;
+				$data->public_key = $this->getPukpic();
+				$data->fingerprint = false;
+				$username_sha1 = false;
+				if($data->public_key && $this->authorization = Authorization::find($data->public_key)){
+					$data->fingerprint = $this->authorization->fingerprint;
+					$username_sha1 = $this->authorization->sha;
+				} else {
+					$file_error = true;
+				}
+				$data->data = new \stdClass;
+				$this->data = $data;
+
 				if(!$file_error){
-					if($w_id==0){ //Shared
+					//We can skip lot of step since it's only for read, this also allow to display unavailable picture if necessary
+					$app->lincko->data['uid'] = false; //Force to signin if the file is not available
+					if($user = Users::Where('username_sha1', $username_sha1)->first()){
+						$app->lincko->data['uid'] = $user->id;
+					}
+					if($data->workspace==0){ //Shared
 						return $this->next->call();
-					} else if($workspace = Workspaces::where('id', $w_id)->first()){
+					} else if($workspace = Workspaces::where('id', $data->workspace)->first()){
 						$app->lincko->data['workspace'] = $workspace->url;
 						$app->lincko->data['workspace_id'] = $workspace->id;
 						//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
@@ -514,7 +545,6 @@ class CheckAccess extends \Slim\Middleware {
 						return $this->next->call();
 					}
 				}
-				$file_error = true;
 				
 			} else if($app->lincko->method_suffix == '_options'){ //Check if can upload file
 				if($this->checkRoute()!==false){

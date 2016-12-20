@@ -556,8 +556,19 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$width = 200;
 		$height = 200;
 		$scale = false;
-		$file = Files::withTrashed()->find($id); //We allow businesses to be able to see deleted files for restoring purpose
-		if($file && $file->checkAccess(false) && $file->link==Datassl::decrypt_smp(base64_decode($sha))){
+		$access = false;
+		$file = Files::withTrashed()->find($id);
+		if($app->lincko->data['uid'] && $file && $file->link==Datassl::decrypt_smp(base64_decode($sha)) ){ //We allow businesses to be able to see deleted files for restoring purpose
+			$access = $file->checkAccess(false);
+			if(!$access){
+				//Allow profile pictures
+				if(Users::Where('profile_pic', $file->id)){
+					$access = true;
+				}
+			}
+		}
+		
+		if($access){
 			Workspaces::getSFTP();
 			$content_type = 'application/force-download';
 			if($file->progress<100 && $file->category=='video'){

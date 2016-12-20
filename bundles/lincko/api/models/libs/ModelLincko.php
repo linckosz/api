@@ -1455,16 +1455,19 @@ abstract class ModelLincko extends Model {
 				$locked_at = Carbon::createFromFormat('Y-m-d H:i:s', $this->locked_at);
 				if($locked_at->lte($expired)){
 					$this->locked_by = null;
+					$this->locked_fp = null;
 					$this->locked_at = null;
 				}
 			} else {
 				$this->locked_by = null;
+				$this->locked_fp = null;
 				$this->locked_at = null;
 			}
 			$expired->second = $expired->second + 310; //Without action from anyone (close browser by mistake), we lock 5 minutes by default (5 minutes to cover lose of internet connection from users)
 			//Create new instance
 			if(is_null($this->locked_by)){
 				$this->locked_by = $app->lincko->data['uid'];
+				$this->locked_fp = $app->lincko->fingerprint;
 				$this->locked_at = $expired;
 				if($save){
 					$this->brutSave(); //Make sure we don't modify any other fields
@@ -1491,6 +1494,7 @@ abstract class ModelLincko extends Model {
 		$lastvisit = (new Data())->getTimestamp();
 		if(in_array('locked_by', $this->visible) && $this->locked_by == $app->lincko->data['uid']){
 			$this->locked_by = null;
+			$this->locked_fp = null;
 			$this->locked_at = null;
 			if($save){
 				$this->brutSave();
@@ -1510,6 +1514,7 @@ abstract class ModelLincko extends Model {
 				$locked_at = Carbon::createFromFormat('Y-m-d H:i:s', $this->locked_at);
 				if($locked_at->lte($expired)){
 					$this->locked_by = null;
+					$this->locked_fp = null;
 					$this->locked_at = null;
 					$this->brutSave();
 					$this->touchUpdateAt();
@@ -1519,6 +1524,7 @@ abstract class ModelLincko extends Model {
 		}
 		if(is_null($result)){
 			$this->locked_by = null;
+			$this->locked_fp = null;
 			$this->locked_at = null;
 		}
 		return [$result, $lastvisit];

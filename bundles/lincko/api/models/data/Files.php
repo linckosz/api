@@ -166,7 +166,7 @@ class Files extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'notes_x_files', 'files_id', 'notes_id')->withPivot('access', 'fav');
 	}
 
-	//Many(Files) to Many(Comments)
+	//One(Files) to Many(Comments)
 	public function comments(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'files', 'id', 'parent_id');
 	}
@@ -300,6 +300,7 @@ class Files extends ModelLincko {
 		}
 	}
 
+	/*
 	public function checkAccess($show_msg=true){ //toto
 		return true;
 	}
@@ -307,14 +308,17 @@ class Files extends ModelLincko {
 	public function checkPermissionAllow($level, $msg=false){ //toto
 		return true;
 	}
+	*/
 
 	public function toJson($detail=true, $options = 0){
 		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));
+		$this->sha = $this->link;
 		return parent::toJson($detail, $options);
 	}
 
 	public function toVisible(){
 		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));
+		$this->sha = $this->link;
 		return parent::toVisible();
 	}
 
@@ -747,6 +751,19 @@ class Files extends ModelLincko {
 
 		$clone->save();
 		$link[$this->getTable()][$this->id] = [$clone->id];
+
+		//Clone comments (no dependencies)
+		if(!isset($exclude_links['comments'])){
+			$attributes = array(
+				'parent_type' => 'files',
+				'parent_id' => $clone->id,
+			);
+			if($comments = $this->comments){
+				foreach ($comments as $comment) {
+					$links = $comment->clone($offset, $attributes, $links);
+				}
+			}
+		}
 
 		return $links;
 	}
