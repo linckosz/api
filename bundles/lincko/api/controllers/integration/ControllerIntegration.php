@@ -24,6 +24,9 @@ class ControllerIntegration extends Controller {
 		$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 0, 7); //Sign in failed. Please try again.
 		$errfield = 'undefined';
 
+		\libs\Watch::php($data, '$data', __FILE__, __LINE__, false, false, true);
+
+		/*
 		$integration = Integration::getIntegration();
 		$flash = Integration::getFlash();
 
@@ -58,9 +61,11 @@ class ControllerIntegration extends Controller {
 				$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
 			}
 		}
+
 		
 		\libs\Watch::php($errmsg, 'Sign in failed', __FILE__, __LINE__, true);
 		$app->flashNow('signout', true);
+		*/
 		$app->render(401, array('msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true,));
 		return false;
 	}

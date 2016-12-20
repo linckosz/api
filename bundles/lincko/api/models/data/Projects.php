@@ -321,7 +321,11 @@ class Projects extends ModelLincko {
 		return parent::setPerm();
 	}
 
-	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+		//Skip if it already exists
+		if(isset($link[$this->getTable()][$this->id])){
+			return array(null, $links);
+		}
 		$app = self::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
@@ -370,7 +374,7 @@ class Projects extends ModelLincko {
 			);
 			if($spaces = $this->spaces){
 				foreach ($spaces as $space) {
-					$links = $space->clone($offset, $attributes, $links);
+					$space->clone($offset, $attributes, $links);
 				}
 			}
 		}
@@ -383,11 +387,11 @@ class Projects extends ModelLincko {
 			);
 			if($chats = $this->chats){
 				foreach ($chats as $chat) {
-					$links = $chat->clone($offset, $attributes, $links);
+					$chat->clone($offset, $attributes, $links);
 				}
 			}
 		}
-/*
+
 		//Clone files (spaces)
 		if(!isset($exclude_links['files'])){
 			$attributes = array(
@@ -396,12 +400,11 @@ class Projects extends ModelLincko {
 			);
 			if($files = $this->files){
 				foreach ($files as $file) {
-					//\libs\Watch::php($file->toArray(), '$var', __FILE__, __LINE__, false, false, true);
-					$links = $file->clone($offset, $attributes, $links);
+					$file->clone($offset, $attributes, $links);
 				}
 			}
 		}
-*/
+
 		//Clone notes (spaces, files)
 		if(!isset($exclude_links['notes'])){
 			$attributes = array(
@@ -409,7 +412,7 @@ class Projects extends ModelLincko {
 			);
 			if($notes = $this->notes){
 				foreach ($notes as $note) {
-					$links = $note->clone($offset, $attributes, $links);
+					$note->clone($offset, $attributes, $links);
 				}
 			}
 		}
@@ -421,11 +424,12 @@ class Projects extends ModelLincko {
 			);
 			if($tasks = $this->tasks){
 				foreach ($tasks as $task) {
-					$links = $task->clone($offset, $attributes, $links);
+					$task->clone($offset, $attributes, $links);
 				}
 			}
 		}
-/*
+		
+
 		//Clone comments (files)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
@@ -434,11 +438,11 @@ class Projects extends ModelLincko {
 			);
 			if($comments = $this->comments){
 				foreach ($comments as $comment) {
-					$links = $comment->clone($offset, $attributes, $links);
+					$comment->clone($offset, $attributes, $links);
 				}
 			}
 		}
-*/
+
 		//Modify any link (toto => update this part the day the new tag spec is ready)
 		$text = $clone->description;
 		if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $text, $matches)){
@@ -460,7 +464,7 @@ class Projects extends ModelLincko {
 			$clone->touchUpdateAt();
 		}
 
-		return array($clone, $links);
+		return $clone; //$link is directly modified as parameter &$link
 	}
 
 }

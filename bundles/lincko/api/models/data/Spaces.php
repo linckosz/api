@@ -236,7 +236,11 @@ class Spaces extends ModelLincko {
 		return $pivot;
 	}
 
-	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+		//Skip if it already exists
+		if(isset($link[$this->getTable()][$this->id])){
+			return array(null, $links);
+		}
 		$app = self::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
@@ -292,7 +296,7 @@ class Spaces extends ModelLincko {
 		$clone->save();
 		$link[$this->getTable()][$this->id] = [$clone->id];
 
-		return $links;
+		return $clone; //$link is directly modified as parameter &$link
 	}
 
 }

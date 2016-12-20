@@ -462,7 +462,11 @@ class Tasks extends ModelLincko {
 		return parent::toVisible();
 	}
 
-	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+		//Skip if it already exists
+		if(isset($link[$this->getTable()][$this->id])){
+			return array(null, $links);
+		}
 		$app = self::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
@@ -546,8 +550,8 @@ class Tasks extends ModelLincko {
 			$clone->brutSave();
 			$clone->touchUpdateAt();
 		}
-/*
-		//Clone comments (no dependencies)
+
+		//Clone comments (files)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
 				'parent_type' => 'tasks',
@@ -555,12 +559,12 @@ class Tasks extends ModelLincko {
 			);
 			if($comments = $this->comments){
 				foreach ($comments as $comment) {
-					$links = $comment->clone($offset, $attributes, $links);
+					$comment->clone($offset, $attributes, $links);
 				}
 			}
 		}
-*/
-		return $links;
+
+		return $clone; //$link is directly modified as parameter &$link
 	}
 
 }

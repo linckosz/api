@@ -244,7 +244,11 @@ class Comments extends ModelLincko {
 		return $model;
 	}
 
-	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+		//Skip if it already exists
+		if(isset($link[$this->getTable()][$this->id])){
+			return array(null, $links);
+		}
 		$app = self::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
@@ -301,7 +305,8 @@ class Comments extends ModelLincko {
 
 		$clone->save();
 		$link[$this->getTable()][$this->id] = [$clone->id];
-/*
+
+		/*
 		//Clone comments (no dependencies)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
@@ -310,12 +315,13 @@ class Comments extends ModelLincko {
 			);
 			if($comments = $this->comments){
 				foreach ($comments as $comment) {
-					$links = $comment->clone($offset, $attributes, $links);
+					$comment->clone($offset, $attributes, $links);
 				}
 			}
 		}
-*/
-		return $links;
+		*/
+
+		return $clone; //$link is directly modified as parameter &$link
 	}
 
 	public function saveRobot(array $options = array()){

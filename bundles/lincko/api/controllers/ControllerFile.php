@@ -589,7 +589,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				}
 				if(filesize($path)!==false){
 					header('Content-Description: File Transfer');
-					header('Content-Type: application/force-download;');
+					header('Content-Type: attachment/force-download;');
+					//header('Content-Type: application/octet-stream'); //toto => test for ios
 					header('Content-Disposition: attachment; filename="'.$name.'"');
 					header('Content-Transfer-Encoding: binary');
 					header('Expires: 0');

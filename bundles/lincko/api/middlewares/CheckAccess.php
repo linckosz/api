@@ -67,6 +67,8 @@ class CheckAccess extends \Slim\Middleware {
 
 	//Convert pukpic into user ID
 	protected function getPukpic(){
+		\libs\Watch::php(isset($_COOKIE), '$_COOKIE', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php($_COOKIE, '$_COOKIE', __FILE__, __LINE__, false, false, true);
 		if(isset($_COOKIE) && isset($_COOKIE['pukpic']) && !empty($_COOKIE['pukpic'])){
 			return Datassl::decrypt($_COOKIE['pukpic'], 'public_key_file');
 		}
@@ -431,6 +433,9 @@ class CheckAccess extends \Slim\Middleware {
 		$resignin = false;
 
 		$resourceUri = $app->request->getResourceUri();
+		if($app->lincko->method_suffix == '_get'){
+			//\libs\Watch::php($_COOKIE, $resourceUri, __FILE__, __LINE__, false, false, true);			
+		}
 
 		//Wechat integration
 		if(
@@ -508,13 +513,9 @@ class CheckAccess extends \Slim\Middleware {
 			){ //File reading
 
 				$data = new \stdClass;
-				$post = $app->request->post();
 				$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
 				$data->workspace = $matches[1];
 				$data->checksum = 0;
-				if(isset($post['http_code_ok']) && $post['http_code_ok']){
-					$data->http_code_ok = (bool) $post['http_code_ok'];
-				}
 				$file_error = false;
 				$this->nochecksum = true;
 				$data->public_key = $this->getPukpic();

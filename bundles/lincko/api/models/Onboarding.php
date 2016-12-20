@@ -199,8 +199,7 @@ class Onboarding {
 			//Create a project
 			if(!$this->getOnboarding('projects', 1)){
 				$project_ori = Projects::find($clone_id);
-				$arr = Projects::find(1973)->clone();
-				$item = $arr[0];
+				$item = Projects::find(1973)->clone();
 				$item->title = $project_ori->title;
 				$item->pivots_format($project_pivot, false);
 				$item->save();

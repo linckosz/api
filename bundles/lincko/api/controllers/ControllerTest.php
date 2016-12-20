@@ -1072,8 +1072,14 @@ class ControllerTest extends Controller {
 
 
 		//$tp = Projects::find(1973)->clone();
-		$tp = Projects::find(324)->clone();
 
+		$links = array();
+		//$tp = Projects::find(324)->clone(false, array(), $links);
+		//$tp = Projects::find(2300)->clone(false, array(), $links);
+		//\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
+
+		$tp = Files::find(1034);
+		$tp = $tp->getPermissionMax();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

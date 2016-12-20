@@ -1914,7 +1914,7 @@ abstract class ModelLincko extends Model {
 		if(static::$permission_sheet[0] > $perm){
 			$perm = $this->getPermissionOwner($users_id);
 		}
-			
+		
 		//Check role
 		if(static::$permission_sheet[1] > $perm){
 			if(self::getWorkspaceSuper($users_id)){ //Check if super user (highest priority)
@@ -2191,8 +2191,8 @@ abstract class ModelLincko extends Model {
 		return true;
 	}
 
-	public function clone($offset=false, $attributes=array(), $links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
-		return false;
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+		return array(null, $links);
 	}
 
 	//When save, it helps to keep track of history
