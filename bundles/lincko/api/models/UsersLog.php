@@ -8,6 +8,7 @@ use \config\Handler;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\controllers\ControllerUser;
 
 class UsersLog extends Model {
 
@@ -144,73 +145,68 @@ class UsersLog extends Model {
 	}
 
 	public static function check($data){
-		//\libs\Watch::php($data, '$Integration', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php($data, '$users_log', __FILE__, __LINE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
-		$users_id = false;
+		$log_id = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
-			//If integration exists
-			if($integration = self::Where('party', $data->data->party)->where('party_id', $data->data->party_id)->first()){
-				self::$integration = $integration;
+			//If users_log exists
+			if($users_log = self::Where('party', $data->data->party)->where('party_id', $data->data->party_id)->first()){
+				return $users_log->id;
 			}
-			//If new integration, we create a user account
+			//If new users_log, we create a user account
 			else {
-				$integration = new Integration;
-				$integration->party = $data->data->party;
-				$integration->party_id = $data->data->party_id;
-				$integration->json = json_encode($data->data->data);
-				$param = new \stdClass;
-				$param->email = $data->data->party.'.'.md5($data->data->party_id.md5(uniqid())).'@'.$app->lincko->domain;
-				usleep(10000);
-				$param->password = Datassl::encrypt(md5($data->data->party_id), $param->email);
-				$creation = false;
-				if($data->data->party=='wechat'){ //Wechat
-					$param->username = $json->nickname;
-					$param->gender = 0; //Male
-					if($json->sex==2){ $param->gender = 1; } //Female
-					if($language = Translation::setLanguage($json->language)){
-						$param->language = $language;
-					}
-					$creation = self::createUser($data, $param);
+				$users_log = new Integration;
+				$log = md5(uniqid());
+				while(UsersLog::Where('log', $log)->first(array('log'))){
+					usleep(10000);
+					$log = md5(uniqid());
 				}
-				if(
-					   $creation
-					&& isset($creation->status)
-					&& $creation->status==201
-					&& isset($creation->flash)
-					&& isset($creation->flash->username_sha1)
-					&& !is_null($creation->flash->username_sha1)
-					&& isset($creation->flash->uid)
-					&& $creation->flash->uid > 0
-					&& isset($creation->flash->public_key)
-					&& $users_log = UsersLog::Where('username_sha1', '=', $creation->flash->username_sha1)->first()
-				){
-					$users_id = $creation->flash->uid;
-					$data->public_key = $creation->flash->public_key;
-					$data->data->password = $users_log->password;
-					$users_log->getAuthorize($data);
+				$users_log->log = $log;
+				$users_log->party = $data->data->party;
+				$users_log->party_id = $data->data->party_id;
+				$users_log->json = json_encode($data->data->data);
 
-					$integration->username_sha1 = $creation->flash->username_sha1;
-					if($integration->save()){
-						foreach ($creation->flash as $key => $value) {
-							self::$flash[$key] = $value;
-						}
+				$user = new Users;
+				$user->username = 'Lincko user';
+				$user->internal_email = $integration->party.'.'.$integration->party_id;
+				if($data->data->party=='wechat'){ //Wechat
+					$user->username = $json->nickname;
+					$user->gender = 0; //Male
+					if($json->sex==2){ $user->gender = 1; } //Female
+					if($language = (new Translation)->setLanguage($json->language)){
+						$user->language = $language;
 					}
 				}
-			}
-			if($users_id){
-				//toto => WARNING because we previously save, the primary ID may become empty!
-				self::$integration = $integration;
+
+				$limit = 0;
+				$username_sha1 = sha1($user->internal_emai);
+				$username_sha1 = substr($username_sha1, 0, 20);
+				$accept = false;
+				while( $limit <= 1000 && Users::Where('internal_email', $user->internal_email)->orWhere('username_sha1', $username_sha1)->first() ){
+					sleep(10000);
+					$username_sha1 = sha1(uniqid());
+					$username_sha1 = substr($username_sha1, 0, 20);
+					$limit++;
+				}
+				if($limit < 1000){
+					$accept = true;
+				}
+				$user->username_sha1 = $username_sha1;
+				$users_log->username_sha1 = $username_sha1;
+				if($accept && $user->save() && $users_log->save()){
+					$log_id = $users_log->id;
+				}
 			}
 		}
-		return $users_id;
+		return $log_id;
 	}
 
+	/*
 	protected static function createUser($data, $param){
 		$app = \Slim\Slim::getInstance();
 
-		self::$flash['youjian'] = $param->email;
-		self::$flash['lianke'] = Datassl::encrypt($param->password, $param->email);
+		
 
 		$data->data = $param;
 		$data->public_key = $app->lincko->security['public_key']; //Use public key for account creation
@@ -255,5 +251,6 @@ class UsersLog extends Model {
 		@curl_close($ch);
 		return $result;
 	}
+	*/
 
 }

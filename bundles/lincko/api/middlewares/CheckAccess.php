@@ -67,8 +67,6 @@ class CheckAccess extends \Slim\Middleware {
 
 	//Convert pukpic into user ID
 	protected function getPukpic(){
-		\libs\Watch::php(isset($_COOKIE), '$_COOKIE', __FILE__, __LINE__, false, false, true);
-		\libs\Watch::php($_COOKIE, '$_COOKIE', __FILE__, __LINE__, false, false, true);
 		if(isset($_COOKIE) && isset($_COOKIE['pukpic']) && !empty($_COOKIE['pukpic'])){
 			return Datassl::decrypt($_COOKIE['pukpic'], 'public_key_file');
 		}
@@ -324,8 +322,17 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorizeAccess = true;
 			$valid = true;
+		} else if($this->route == 'integration_connect_post' && $this->authorization = Authorization::find_finger($this->autoSign(UsersLog::check($data)), $data->fingerprint)){
+			//Must overwrite by standard keys because the checksum has been calculated with the standard one
+			$this->authorization->private_key = $app->lincko->security['private_key'];
+			$this->authorizeAccess = true;
+			$valid = true;
+		}
+		/*
 		} else if($this->route == 'integration_connect_post' && $log_id = UsersLog::check($data)){
-			$this->nochecksum = true; //(toto) If not it bug for an unknown reason, it's a low security issue
+			if($this->checksum()){ //We check earlier because private_key and data will change
+				$this->nochecksum = true;
+			}
 			if($this->authorization = Authorization::find_finger($this->autoSign($log_id), $data->fingerprint)){
 				//Must overwrite by standard keys because the checksum has been calculated with the standard one
 				$this->authorization->private_key = $app->lincko->security['private_key'];
@@ -333,6 +340,7 @@ class CheckAccess extends \Slim\Middleware {
 				$valid = true;
 			}
 		}
+		*/
 
 		if($valid){
 			$this->setUserId();
