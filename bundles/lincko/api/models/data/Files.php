@@ -312,13 +312,11 @@ class Files extends ModelLincko {
 
 	public function toJson($detail=true, $options = 0){
 		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));
-		$this->sha = $this->link;
 		return parent::toJson($detail, $options);
 	}
 
 	public function toVisible(){
 		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));
-		$this->sha = $this->link;
 		return parent::toVisible();
 	}
 
