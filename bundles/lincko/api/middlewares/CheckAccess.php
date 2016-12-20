@@ -433,9 +433,6 @@ class CheckAccess extends \Slim\Middleware {
 		$resignin = false;
 
 		$resourceUri = $app->request->getResourceUri();
-		if($app->lincko->method_suffix == '_get'){
-			//\libs\Watch::php($_COOKIE, $resourceUri, __FILE__, __LINE__, false, false, true);			
-		}
 
 		//Wechat integration
 		if(
@@ -521,7 +518,7 @@ class CheckAccess extends \Slim\Middleware {
 				$data->public_key = $this->getPukpic();
 				$data->fingerprint = false;
 				$username_sha1 = false;
-				if($data->public_key && $this->authorization = Authorization::find($data->public_key)){
+				if($data->public_key && $this->authorization = Authorization::find($data->public_key)){ //No need to care about expiration date
 					$data->fingerprint = $this->authorization->fingerprint;
 					$username_sha1 = $this->authorization->sha;
 				} else {
