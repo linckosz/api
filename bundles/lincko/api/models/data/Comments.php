@@ -301,7 +301,7 @@ class Comments extends ModelLincko {
 
 		$clone->save();
 		$link[$this->getTable()][$this->id] = [$clone->id];
-
+/*
 		//Clone comments (no dependencies)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
@@ -314,7 +314,7 @@ class Comments extends ModelLincko {
 				}
 			}
 		}
-
+*/
 		return $links;
 	}
 

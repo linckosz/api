@@ -387,7 +387,7 @@ class Projects extends ModelLincko {
 				}
 			}
 		}
-
+/*
 		//Clone files (spaces)
 		if(!isset($exclude_links['files'])){
 			$attributes = array(
@@ -396,12 +396,12 @@ class Projects extends ModelLincko {
 			);
 			if($files = $this->files){
 				foreach ($files as $file) {
-					\libs\Watch::php($file->toArray(), '$var', __FILE__, __LINE__, false, false, true);
+					//\libs\Watch::php($file->toArray(), '$var', __FILE__, __LINE__, false, false, true);
 					$links = $file->clone($offset, $attributes, $links);
 				}
 			}
 		}
-
+*/
 		//Clone notes (spaces, files)
 		if(!isset($exclude_links['notes'])){
 			$attributes = array(
@@ -425,7 +425,7 @@ class Projects extends ModelLincko {
 				}
 			}
 		}
-
+/*
 		//Clone comments (files)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
@@ -438,7 +438,7 @@ class Projects extends ModelLincko {
 				}
 			}
 		}
-
+*/
 		//Modify any link (toto => update this part the day the new tag spec is ready)
 		$text = $clone->description;
 		if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $text, $matches)){
@@ -460,7 +460,7 @@ class Projects extends ModelLincko {
 			$clone->touchUpdateAt();
 		}
 
-		return $links;
+		return array($clone, $links);
 	}
 
 }

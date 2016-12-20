@@ -433,7 +433,7 @@ class Users extends ModelLincko {
 				$project = Projects::setPersonal();
 
 				$onboarding = new Onboarding;
-				$onboarding->next(10001); //initialize the onboarding process
+				$onboarding->next(10101); //initialize the onboarding process
 			} catch(\Exception $e){
 				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 				$return = null;

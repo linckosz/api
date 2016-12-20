@@ -284,7 +284,7 @@ class Notes extends ModelLincko {
 			$clone->brutSave();
 			$clone->touchUpdateAt();
 		}
-
+/*
 		//Clone comments (no dependencies)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
@@ -297,7 +297,7 @@ class Notes extends ModelLincko {
 				}
 			}
 		}
-
+*/
 		return $links;
 	}
 
