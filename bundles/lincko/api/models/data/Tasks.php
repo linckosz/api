@@ -504,7 +504,6 @@ class Tasks extends ModelLincko {
 				foreach ($items as $item) {
 					$table = $item->getTable();
 					if(isset($links[$table][$item->id])){
-						\libs\Watch::php($item, '$tasks', __FILE__, __LINE__, false, false, true);
 						if(!isset($pivots->{$dep.'>access'})){ $pivots->{$dep.'>access'} = new \stdClass; }
 						$pivots->{$dep.'>access'}->{$links[$table]} = true;
 						foreach ($dependencies_visible[$dep][1] as $field) {

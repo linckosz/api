@@ -182,7 +182,8 @@ class UsersLog extends Model {
 				$username_sha1 = substr($username_sha1, 0, 20);
 				$accept = false;
 				while( $limit <= 1000 && Users::Where('internal_email', $user->internal_email)->orWhere('username_sha1', $username_sha1)->first() ){
-					sleep(10000);
+					usleep(10000);
+					$user->internal_email = $data->data->party.'.'.md5(uniqid());
 					$username_sha1 = sha1(uniqid());
 					$username_sha1 = substr($username_sha1, 0, 20);
 					$limit++;

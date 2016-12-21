@@ -420,6 +420,8 @@ class Users extends ModelLincko {
 					$this->resume = fmod($this->resume, 24);
 				}
 			}
+			$db = Capsule::connection($this->connection);
+			$db->beginTransaction();
 			try {
 				$return = parent::save($options);
 
@@ -434,9 +436,11 @@ class Users extends ModelLincko {
 
 				$onboarding = new Onboarding;
 				$onboarding->next(10101); //initialize the onboarding process
+				$db->commit();
 			} catch(\Exception $e){
 				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 				$return = null;
+				$db->rollback();
 				return $return;
 			}
 		}	
