@@ -506,7 +506,11 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		if($user->profile_pic>0 && $file = Files::withTrashed()->find($user->profile_pic)){
 			$path = $folder->getPath().$basename.$user->profile_pic.'.png';
-			$thumbnail = $server_path_full.'/'.$file->created_by.'/thumbnail/'.$file->link;
+			$puid = $file->created_by;
+			if(!is_null($file->puid)){
+				$puid = $file->puid;
+			}
+			$thumbnail = $server_path_full.'/'.$puid.'/thumbnail/'.$file->link;
 			if(is_file($path)){
 				$exists = true;
 			} else if(is_file($thumbnail)){
@@ -580,8 +584,12 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			if($type=='link' && $file->category!='image'){ //If the file is different than an image we download by default
 				$type = 'download';
 			}
+			$puid = $file->created_by;
+			if(!is_null($file->puid)){
+				$puid = $file->puid;
+			}
 			if($type=='download'){
-				$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$file->created_by.'/'.$file->link;
+				$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/'.$file->link;
 				$name = $file->name;
 				if($file->progress<100 && $file->category=='video'){
 					$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/mp4.png';
@@ -602,10 +610,10 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				}
 			} else if($type=='link' || $type=='thumbnail'){
 				if($type=='thumbnail'){
-					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$file->created_by.'/thumbnail/'.$file->link;
+					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/thumbnail/'.$file->link;
 					$content_type = $file->thu_type;
 				} else {
-					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$file->created_by.'/'.$file->link;
+					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/'.$file->link;
 					$content_type = $file->ori_type;
 				}
 				if(filesize($path)!==false){
