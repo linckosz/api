@@ -198,17 +198,39 @@ class Onboarding {
 
 			//Create a project
 			if(!$this->getOnboarding('projects', 1)){
-				$project_ori = Projects::find($clone_id);
-				$item = Projects::find(1973)->clone();
-				$item->title = $project_ori->title;
-				$item->pivots_format($project_pivot, false);
-				$item->save();
-				$this->setOnboarding($item, 1);
-				unset($item);
+				if($project_ori = Projects::find($clone_id)){
+					$links = array();
+					$item = $project_ori->clone(false, array(), $links);
+					$item->title = $project_ori->title;
+					$item->pivots_format($project_pivot, false);
+					$item->save();
+					$this->setOnboarding($item, 1);
+					unset($item);
+					foreach ($links as $table => $list) {
+						foreach ($list as $id) {
+							if($class = Projects::getClass($table)){
+								if($item = $class::withTrashed()->find($id)){
+									if(isset($item->created_by)){
+										$item->created_by = 1; //Monkey King
+									}
+									if(isset($item->updated_by)){
+										$item->updated_by = 1; //Monkey King
+									}
+									if(isset($item->deleted_by)){
+										$item->deleted_by = 1; //Monkey King
+									}
+									if(isset($item->approved_by)){
+										$item->approved_by = 1; //Monkey King
+									}
+								}
+							}
+						}
+					}
+					//Insure the sequence is running
+					$this->runOnboarding(1, true);
+				}
 			}
-
-			//Insure the sequence is running
-			$this->runOnboarding(1, true);
+			
 		}
 
 		else if($next==10102){

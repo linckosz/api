@@ -28,7 +28,7 @@ $app->configureMode('development', function () use ($app) {
 	));
 	ini_set('display_errors', '0');
 	ini_set('opcache.enable', '0');
-	$app->lincko->data['invitation_beta'] = flase;
+	$app->lincko->data['invitation_beta'] = false;
 	$app->lincko->data['allow_create_user'] = true;
 	$app->lincko->showError = true; //Force to see Error message
 	//Force to delay (microseconds) to simulate network slow speed

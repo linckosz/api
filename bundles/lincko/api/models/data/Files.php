@@ -689,7 +689,7 @@ class Files extends ModelLincko {
 
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		//Skip if it already exists
-		if(isset($link[$this->getTable()][$this->id])){
+		if(isset($links[$this->getTable()][$this->id])){
 			return array(null, $links);
 		}
 		$app = self::getApp();
@@ -705,17 +705,16 @@ class Files extends ModelLincko {
 
 		$clone = $this->replicate();
 
+		$clone->created_by = $uid;
+		if(!is_null($clone->deleted_by)){ $clone->deleted_by = $uid; }
 		foreach ($attributes as $key => $value) {
 			$clone->$key = $value;
 		}
-		
 		//Initialization of attributes
 		$clone->temp_id = '';
 		if(!is_null($clone->deleted_at)){
 			$clone->deleted_at = Carbon::createFromFormat('Y-m-d H:i:s', $clone->deleted_at)->addSeconds($offset);
 		}
-		$clone->created_by = $uid;
-		if(!is_null($clone->deleted_by)){ $clone->deleted_by = $uid; }
 		$clone->noticed_by = '';
 		$clone->viewed_by = '';
 		$clone->_perm = '';
@@ -752,7 +751,7 @@ class Files extends ModelLincko {
 		$clone->pivots_format($pivots, false);
 
 		$clone->parentSave(); //Specific to Files to skip file copy
-		$link[$this->getTable()][$this->id] = [$clone->id];
+		$links[$this->getTable()][$this->id] = [$clone->id];
 
 		//Clone comments (no dependencies)
 		if(!isset($exclude_links['comments'])){

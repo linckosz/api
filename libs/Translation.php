@@ -244,7 +244,7 @@ class Translation {
 			return $value;
 		}
 		\libs\Watch::php('The translation does not exist: '.$bundle.' | '.$category.' | '.$phrase, 'Translation::get', __FILE__, __LINE__, true);
-		return flase;
+		return false;
 	}
 
 	protected function setList(){
