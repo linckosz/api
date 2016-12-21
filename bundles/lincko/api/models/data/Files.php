@@ -435,6 +435,7 @@ class Files extends ModelLincko {
 				$this->thu_type = null;
 				$this->thu_ext = null;
 				$this->progress = 100;
+				$this->puid = $app->lincko->data['uid'];
 				$source = $this->tmp_name;
 				if($this->category=='image'){
 					$orientation = $this->setOrientation();
@@ -564,7 +565,11 @@ class Files extends ModelLincko {
 		if($this->category=='video' && $this->progress<100 && !$this->error && isset($this->id)){
 			$app = self::getApp();
 			
-			$path = $app->lincko->filePathLocal.'/'.$this->created_by.'/convert/'.$this->link;
+			$puid = $this->created_by;
+			if(!is_null($this->puid)){
+				$puid = $this->puid;
+			}
+			$path = $app->lincko->filePathLocal.'/'.$puid.'/convert/'.$this->link;
 			
 			if(is_file($path) && time()-filemtime($path) < 60 && $this->progress>=1){ //If the conversion file is less than 1 minutes, we should be in middle of conversion
 				return true;
@@ -603,8 +608,12 @@ class Files extends ModelLincko {
 			$app = self::getApp();
 			Workspaces::getSFTP();
 			set_time_limit(24*3600); //Set to 1 day workload at the most
-			$path = $app->lincko->filePathLocal.'/'.$this->created_by.'/convert/'.$this->link;
-			$file = $app->lincko->filePathPrefix.$this->server_path.'/'.$this->created_by.'/'.$this->link;
+			$puid = $this->created_by;
+			if(!is_null($this->puid)){
+				$puid = $this->puid;
+			}
+			$path = $app->lincko->filePathLocal.'/'.$puid.'/convert/'.$this->link;
+			$file = $app->lincko->filePathPrefix.$this->server_path.'/'.$puid.'/'.$this->link;
 			$users_tables = array();
 			$users_tables[$this->created_by] = array();
 			$users_tables[$this->created_by]['files'] = true;
