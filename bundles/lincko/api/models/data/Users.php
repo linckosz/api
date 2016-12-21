@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\Notif;
@@ -519,19 +520,47 @@ class Users extends ModelLincko {
 	public function pivots_format($form, $history_save=true){
 		$app = self::getApp();
 		$save = parent::pivots_format($form, $history_save);
+
 		if(isset($this->pivots_var->users)){
 			if(!isset($this->pivots_var->usersLinked)){ $this->pivots_var->usersLinked = new \stdClass; }
 			foreach ($this->pivots_var->users as $users_id => $column_list) {
 				if(!isset($this->pivots_var->usersLinked->$users_id)){ $this->pivots_var->usersLinked->$users_id = new \stdClass; }
 				foreach ($column_list as $column => $value) {
 					//This insure to give or block access to both users in case of invitation
+					//toto => this can be a security issue becuse users>access is set on front
 					if($column=='access'){
 						$save = true;
 						$access = $value[0];
 						$this->pivots_var->users->$users_id->invitation = array(false, false);
 						$this->pivots_var->usersLinked->$users_id->invitation = array(false, false);
-						if($access){
+						//this should be secure enough since we allow access at true only if there is an invitation pending
+						if($access && $pivot = (new PivotUsers(array('users')))->withTrashed()->where('invitation', 1)->where('users_id', $app->lincko->data['uid'])->where('users_id_link', $users_id)->first()){
 							$this->pivots_var->usersLinked->$users_id->access = array(true, true);
+							//set models access from host request
+							if(!is_null($pivot->models)){
+								$invitation_models = json_decode($pivot->models);
+								foreach ($invitation_models as $table => $list) {
+									//Don't give access to others users or workspace
+									if($table=='workspaces' || $table=='users'){
+										continue;
+									}
+									if(!isset($this->pivots_var->$table)){ $this->pivots_var->$table = new \stdClass; }
+									//Make sure that the host have access to the original item
+									//toto => to do
+									if(is_numeric($list)){
+										$id = intval($list);
+										if(!isset($this->pivots_var->$table->$id)){ $this->pivots_var->$table->$id = new \stdClass; }
+										$this->pivots_var->$table->$id->access = array(true, false);
+									} else if(is_array($list) || is_object($list)){
+										foreach ($list as $id) {
+											$id = intval($id);
+											if(!isset($this->pivots_var->$table->$id)){ $this->pivots_var->$table->$id = new \stdClass; }
+											$this->pivots_var->$table->$id->access = array(true, false);
+										}
+									}
+								}
+							}
+							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
 						} else {
 							$this->pivots_var->usersLinked->$users_id->access = array(false, true);
 						}

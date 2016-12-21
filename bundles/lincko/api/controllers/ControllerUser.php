@@ -135,6 +135,14 @@ class ControllerUser extends Controller {
 				$form->resume = 0;
 			}
 		}
+		if(isset($form->invite_access)){
+			if(!empty($form->invite_access) && (gettype($form->invite_access)=='object' || gettype($form->invite_access)=='array')){
+				$form->invite_access = json_encode((object) $form->invite_access);
+			} else {
+				unset($form->invite_access);
+			}
+		}
+
 
 		return $this->form = $form;
 	}
@@ -336,6 +344,28 @@ class ControllerUser extends Controller {
 							//For guest & host
 							$pivot->{'users>access'} = new \stdClass;
 							$pivot->{'users>access'}->{$user->id} = true;
+							//If gave access to some items
+							if(!is_null($invitation->models)){
+								$invitation_models = json_decode($invitation->models);
+								foreach ($invitation_models as $table => $list) {
+									//Don't give access to others users or workspace
+									if($table=='workspaces' || $table=='users'){
+										continue;
+									}
+									$pivot->{$table.'>access'} = new \stdClass;
+									//Make sure that the host have access to the original item
+									//toto => to do
+									if(is_numeric($list)){
+										$id = intval($list);
+										$pivot->{$table.'>access'}->$id = true;
+									} else if(is_array($list) || is_object($list)){
+										foreach ($list as $id) {
+											$id = intval($id);
+											$pivot->{$table.'>access'}->$id = true;
+										}
+									}
+								}
+							}
 							$model->pivots_format($pivot);
 							$model->forceSaving();
 							$model->save();
@@ -362,11 +392,12 @@ class ControllerUser extends Controller {
 						//Record for invotation
 						$invitation->guest = $model->id;
 						$invitation->used = true;
+						$invitation->models = null;
 						$invitation->save();
 					}
 
 					/*
-					//User code (used as URL fixed ID)
+					//User code (used as URL fixed ID) ucode
 					if($invitation){
 						$pivot = new \stdClass;
 						if($invitation->created_by>0 && Users::find($invitation->created_by)){
@@ -649,6 +680,9 @@ class ControllerUser extends Controller {
 					$user = Users::getUser();
 					$username = $user->username;
 					$invitation = new Invitation();
+					if(isset($form->invite_access)){
+						$invitation->models = $form->invite_access;
+					}
 					$invitation->save();
 					$code = $invitation->code;
 					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
@@ -688,6 +722,10 @@ class ControllerUser extends Controller {
 					$pivot->{'usersLinked>invitation'}->{$form->users_id} = true;
 					$pivot->{'usersLinked>access'} = new \stdClass;
 					$pivot->{'usersLinked>access'}->{$form->users_id} = false;
+					if(isset($form->invite_access)){
+						$pivot->{'usersLinked>models'} = new \stdClass;
+						$pivot->{'usersLinked>models'}->{$form->users_id} = $form->invite_access;
+					}
 					$user->pivots_format($pivot);
 					$user->save();
 					$link = 'https://'.$app->lincko->domain;
