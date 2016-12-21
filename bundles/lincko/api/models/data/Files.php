@@ -728,6 +728,7 @@ class Files extends ModelLincko {
 		$clone->viewed_by = '';
 		$clone->_perm = '';
 		$clone->extra = null;
+		$clone->puid = $this->created_by;
 
 		//Pivots
 		$pivots = new \stdClass;
