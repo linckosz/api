@@ -105,6 +105,9 @@ abstract class ModelLincko extends Model {
 	//It helps to recover some iformation on client side
 	protected $historyParameters = array();
 
+	//At fase we block history
+	protected $save_history = false;
+
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
 	protected static $parent_list = null;
 	protected static $parent_list_soft = null;
@@ -2366,7 +2369,7 @@ abstract class ModelLincko extends Model {
 		Updates::informUsers($users_tables);
 
 		//We do not record any setup for new model, but only change for existing model
-		if(!$new){
+		if(!$new && $this->save_history){
 			foreach($dirty as $key => $value) {
 				//We exclude "created_at" if not we will always record it on history table, that might fulfill it too quickly
 				if($key != 'created_at' && $key != 'updated_at'){
@@ -2381,11 +2384,16 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		}
+		$this->save_history = true; //Reenable the history record
 
 		$this->pushNotif($new);
 
 		return $return;
 		
+	}
+
+	public function saveHistory($value=true){
+		$this->save_history = $value;
 	}
 
 	//Note: this is unsafe because it skip every step of checking

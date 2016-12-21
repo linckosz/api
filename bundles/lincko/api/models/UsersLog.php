@@ -178,7 +178,7 @@ class UsersLog extends Model {
 				}
 
 				$limit = 0;
-				$username_sha1 = sha1($user->internal_emai);
+				$username_sha1 = sha1($user->internal_email);
 				$username_sha1 = substr($username_sha1, 0, 20);
 				$accept = false;
 				while( $limit <= 1000 && Users::Where('internal_email', $user->internal_email)->orWhere('username_sha1', $username_sha1)->first() ){
@@ -194,12 +194,48 @@ class UsersLog extends Model {
 				$user->username_sha1 = $username_sha1;
 				$users_log->username_sha1 = $username_sha1;
 				$app->lincko->data['create_user'] = true; //Authorize user account creation
-				if($accept && $user->getParentAccess() && $user->save() && $users_log->save()){
-					$app->lincko->data['uid'] = $user->id;
-					$app->flashNow('signout', false);
-					$app->flashNow('resignin', false);
-					$log_id = $users_log->id;
+				if($accept){
+					$committed = false;
+					if($user->getParentAccess()){
+						//Transaction is slowing down a lot the database
+						//$db_data = Capsule::connection($app->lincko->data['database_data']);
+						//$db_data->beginTransaction();
+						//$db_api = Capsule::connection('api');
+						//$db_api->beginTransaction();
+						try {
+							$user->save();
+							$users_log->save();
+							//$db_data->commit();
+							//$db_api->commit();
+							$committed = true;
+						} catch(\Exception $e){
+							$committed = false;
+							//$db_api->rollback();
+							//$db_data->rollback();
+							if(isset($user->id)){
+								$user->username = 'failed';
+								$user->username_sha1 = null;
+								$user->email = null;
+								$user->internal_email = null;
+								$user->brutSave();
+							}
+							if(isset($users_log->id)){
+								$users_log->username_sha1 = null;
+								$users_log->party = null;
+								$users_log->party_id = null;
+								$users_log->brutSave();
+							}
+						}
+						if($committed){
+							$app->lincko->data['uid'] = $user->id;
+							$app->flashNow('signout', false);
+							$app->flashNow('resignin', false);
+							$log_id = $users_log->id;
+						}
+					}
 				}
+
+					
 			}
 		}
 		return $log_id;

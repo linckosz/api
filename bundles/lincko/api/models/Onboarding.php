@@ -196,16 +196,23 @@ class Onboarding {
 			$project_pivot->{'users>access'} = new \stdClass;
 			$project_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
 
+			//Assign tasks to the user
+			$task_pivot = new \stdClass;
+			$task_pivot->{'users>in_charge'} = new \stdClass;
+			$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
+			$task_pivot->{'users>approver'} = new \stdClass;
+			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
+
 			//Create a project
 			if(!$this->getOnboarding('projects', 1)){
 				if($project_ori = Projects::find($clone_id)){
 					$links = array();
-					$item = $project_ori->clone(false, array(), $links);
-					$item->title = $project_ori->title;
-					$item->pivots_format($project_pivot, false);
-					$item->save();
-					$this->setOnboarding($item, 1);
-					unset($item);
+					$project_new = $project_ori->clone(false, array(), $links);
+					$project_new->title = $project_ori->title;
+					$project_new->pivots_format($project_pivot, false);
+					$project_new->save();
+					\libs\Watch::php($links, 'links', __FILE__, __LINE__, false, false, true);
+					$this->setOnboarding($project_new, 1);
 					foreach ($links as $table => $list) {
 						foreach ($list as $id) {
 							if($class = Projects::getClass($table)){
@@ -222,10 +229,18 @@ class Onboarding {
 									if(isset($item->approved_by)){
 										$item->approved_by = 1; //Monkey King
 									}
+									//Assign tasks
+									if($table=='tasks'){
+										\libs\Watch::php($id, $table, __FILE__, __LINE__, false, false, true);
+										$item->pivots_format($task_pivot, false);
+										$item->saveHistory(false);
+										$item->save();
+									}
 								}
 							}
 						}
 					}
+					$project_new->setPerm();
 					//Insure the sequence is running
 					$this->runOnboarding(1, true);
 				}

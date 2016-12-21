@@ -16,7 +16,7 @@ class ControllerIntegration extends Controller {
 	public function connect_post(){
 		$app = $this->app;
 		\libs\Watch::php(true, '$connect_post', __FILE__, __LINE__, false, false, true);
-		$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
+		$msg = 'OK!';
 		$app->render(200, array('msg' => array('msg' => $msg)));
 		return true;
 	}

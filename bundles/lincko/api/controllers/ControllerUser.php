@@ -15,6 +15,7 @@ use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\Invitation;
 use \bundles\lincko\api\models\data\Workspaces;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 /*
 
@@ -258,12 +259,48 @@ class ControllerUser extends Controller {
 					$password = Datassl::decrypt($form->password, $form->party_id);
 					$users_log->password = password_hash($password, PASSWORD_BCRYPT);
 				}
-				$users_log->save();
+				
 				$model->username = $username;
 				$model->username_sha1 = $username_sha1;
 				$model->internal_email = $internal_email;
 				$model->pivots_format($form, false);
-				if($model->getParentAccess() && $model->save()){
+
+					
+
+				$committed = false;
+				if($model->getParentAccess()){
+					//Transaction is slowing down a lot the database
+					//$db_data = Capsule::connection($app->lincko->data['database_data']);
+					//$db_data->beginTransaction();
+					//$db_api = Capsule::connection('api');
+					//$db_api->beginTransaction();
+					try {
+						$model->save();
+						$users_log->save();
+						//$db_data->commit();
+						//$db_api->commit();
+						$committed = true;
+					} catch(\Exception $e){
+						$committed = false;
+						//$db_api->rollback();
+						//$db_data->rollback();
+						if(isset($model->id)){
+							$model->username = 'failed';
+							$model->username_sha1 = null;
+							$model->email = null;
+							$model->internal_email = null;
+							$model->brutSave();
+						}
+						if(isset($users_log->id)){
+							$users_log->username_sha1 = null;
+							$users_log->party = null;
+							$users_log->party_id = null;
+							$users_log->brutSave();
+						}
+					}
+				}
+
+				if($committed){
 					$app->lincko->data['uid'] = $model->id;
 					$app->flashNow('signout', false);
 					$app->flashNow('resignin', false);

@@ -94,9 +94,9 @@ class Comments extends ModelLincko {
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'created_by');
 	}
 
-	//One(comments) to Many(Comments)
+	//One(Users) to Many(comments)
 	public function comments(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments', 'id', 'parent_id');
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'parent_id');
 	}
 
 	//Many(comments) to Many(Workspaces)
@@ -275,17 +275,21 @@ class Comments extends ModelLincko {
 		//Pivots
 		$pivots = new \stdClass;
 		$dependencies_visible = $clone::getDependenciesVisible();
+		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
 			if(isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
-				$items = $clone->$dep;
+				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
+					continue;
+				}
+				$items = $this->$dep; //Use the relation table
 				foreach ($items as $item) {
 					$table = $item->getTable();
 					if(isset($links[$table][$item->id])){
 						if(!isset($pivots->{$dep.'>access'})){ $pivots->{$dep.'>access'} = new \stdClass; }
-						$pivots->{$dep.'>access'}->{$links[$table]} = true;
+						$pivots->{$dep.'>access'}->{$links[$table][$item->id]} = true;
 						foreach ($dependencies_visible[$dep][1] as $field) {
 							if(isset($item->pivot->$field)){
-								$pivots->{ $dep.'>'.$field}->{$links[$table]} = $item->pivot->$field;
+								$pivots->{ $dep.'>'.$field}->{$links[$table][$item->id]} = $item->pivot->$field;
 								//If it's a Carbon object, we add the offset
 								if($offset!=0){
 									if(preg_match("/^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/ui", $item->pivot->$field)){
@@ -303,9 +307,8 @@ class Comments extends ModelLincko {
 		$clone->pivots_format($pivots, false);
 
 		$clone->save();
-		$links[$this->getTable()][$this->id] = [$clone->id];
+		$links[$this->getTable()][$this->id] = $clone->id;
 
-		/*
 		//Clone comments (no dependencies)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
@@ -318,7 +321,8 @@ class Comments extends ModelLincko {
 				}
 			}
 		}
-		*/
+
+		
 
 		return $clone; //$link is directly modified as parameter &$link
 	}

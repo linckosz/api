@@ -723,17 +723,21 @@ class Files extends ModelLincko {
 		//Pivots
 		$pivots = new \stdClass;
 		$dependencies_visible = $clone::getDependenciesVisible();
+		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
 			if(isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
-				$items = $clone->$dep;
+				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
+					continue;
+				}
+				$items = $this->$dep; //Use the relation table
 				foreach ($items as $item) {
 					$table = $item->getTable();
 					if(isset($links[$table][$item->id])){
 						if(!isset($pivots->{$dep.'>access'})){ $pivots->{$dep.'>access'} = new \stdClass; }
-						$pivots->{$dep.'>access'}->{$links[$table]} = true;
+						$pivots->{$dep.'>access'}->{$links[$table][$item->id]} = true;
 						foreach ($dependencies_visible[$dep][1] as $field) {
 							if(isset($item->pivot->$field)){
-								$pivots->{ $dep.'>'.$field}->{$links[$table]} = $item->pivot->$field;
+								$pivots->{ $dep.'>'.$field}->{$links[$table][$item->id]} = $item->pivot->$field;
 								//If it's a Carbon object, we add the offset
 								if($offset!=0){
 									if(preg_match("/^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/ui", $item->pivot->$field)){
@@ -751,7 +755,7 @@ class Files extends ModelLincko {
 		$clone->pivots_format($pivots, false);
 
 		$clone->parentSave(); //Specific to Files to skip file copy
-		$links[$this->getTable()][$this->id] = [$clone->id];
+		$links[$this->getTable()][$this->id] = $clone->id;
 
 		//Clone comments (no dependencies)
 		if(!isset($exclude_links['comments'])){

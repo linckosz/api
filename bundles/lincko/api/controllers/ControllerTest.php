@@ -1073,19 +1073,23 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::find(1973)->clone();
 
+
+		//test2016122104@lincko.cafe
 		$links = array();
 		//$tp = Projects::find(324)->clone(false, array(), $links);
 		$tp = Projects::find(2300)->clone(false, array(), $links);
 		\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
 
+		//$tp = Tasks::find(16616)->extraDecode();
 		//$tp = Files::find(1034);
 		//$tp = $tp->getPermissionMax();
 
-
+		//$tp = Comments::find(46117)->clone(false, array(), $links);
+		//\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
 		/*

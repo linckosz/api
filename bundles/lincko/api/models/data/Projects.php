@@ -364,7 +364,7 @@ class Projects extends ModelLincko {
 		*/
 
 		$clone->save();
-		$links[$this->getTable()][$this->id] = [$clone->id];
+		$links[$this->getTable()][$this->id] = $clone->id;
 
 		//Clone spaces (no dependencies)
 		if(!isset($exclude_links['spaces'])){
