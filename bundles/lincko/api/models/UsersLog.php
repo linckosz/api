@@ -26,10 +26,6 @@ class UsersLog extends Model {
 
 	protected static $data = null;
 
-	protected static $integration = false;
-
-	protected static $flash = array();
-
 ////////////////////////////////////////////
 
 	//Add these functions to insure that nobody can make them disappear
@@ -156,7 +152,7 @@ class UsersLog extends Model {
 			}
 			//If new users_log, we create a user account
 			else {
-				$users_log = new Integration;
+				$users_log = new UsersLog;
 				$log = md5(uniqid());
 				while(UsersLog::Where('log', $log)->first(array('log'))){
 					usleep(10000);
@@ -165,16 +161,18 @@ class UsersLog extends Model {
 				$users_log->log = $log;
 				$users_log->party = $data->data->party;
 				$users_log->party_id = $data->data->party_id;
-				$users_log->json = json_encode($data->data->data);
+				$users_log->party_json = json_encode($data->data->data);
 
 				$user = new Users;
 				$user->username = 'Lincko user';
-				$user->internal_email = $integration->party.'.'.$integration->party_id;
+				$user->internal_email = $data->data->party.'.'.$data->data->party_id;
 				if($data->data->party=='wechat'){ //Wechat
 					$user->username = $json->nickname;
 					$user->gender = 0; //Male
 					if($json->sex==2){ $user->gender = 1; } //Female
-					if($language = (new Translation)->setLanguage($json->language)){
+					$translation = new Translation;
+					$translation->getList('default');
+					if($language = $translation->setLanguage($json->language)){
 						$user->language = $language;
 					}
 				}
@@ -194,7 +192,11 @@ class UsersLog extends Model {
 				}
 				$user->username_sha1 = $username_sha1;
 				$users_log->username_sha1 = $username_sha1;
-				if($accept && $user->save() && $users_log->save()){
+				$app->lincko->data['create_user'] = true; //Authorize user account creation
+				if($accept && $user->getParentAccess() && $user->save() && $users_log->save()){
+					$app->lincko->data['uid'] = $user->id;
+					$app->flashNow('signout', false);
+					$app->flashNow('resignin', false);
 					$log_id = $users_log->id;
 				}
 			}

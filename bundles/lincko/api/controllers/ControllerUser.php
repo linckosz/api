@@ -60,13 +60,6 @@ class ControllerUser extends Controller {
 		return true;
 	}
 
-	public function setData($data){
-		$this->data = $data;
-		$this->form = new \stdClass;
-		$this->setFields();
-		return true;
-	}
-
 	protected function setFields(){
 		$app = $this->app;
 		$form = new \stdClass;
