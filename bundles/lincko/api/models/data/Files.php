@@ -864,7 +864,7 @@ class Files extends ModelLincko {
 			}
 		$list = "";
 		if(is_array($info)) {
-			$iptc = iptcparse($info["APP13"]);
+			$iptc = iptcparse($info['APP13']);
 			foreach (array_keys($iptc) as $s) {
 				$c = count ($iptc[$s]);
 				for ($i=0; $i <$c; $i++)

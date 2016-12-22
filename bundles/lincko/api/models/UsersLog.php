@@ -109,9 +109,8 @@ class UsersLog extends Model {
 				$sha1 = sha1(uniqid());
 			}
 			//Warning: $authorization->public_key will reset to empty value after save because it's a primary value
-			$app->lincko->securityFlash['public_key'] = $public_key = $authorization->public_key = $sha1;
-			$authorization->private_key = md5(uniqid());
-			$app->lincko->securityFlash['private_key'] = $private_key = $authorization->private_key;
+			$public_key = $authorization->public_key = $sha1;
+			$private_key = $authorization->private_key = md5(uniqid());
 			$authorization->fingerprint = $data->fingerprint;
 			$user = Users::where('username_sha1', '=', $users_log->username_sha1)->first(array('id', 'username'));
 			$authorization->sha = $users_log->username_sha1;
@@ -131,7 +130,7 @@ class UsersLog extends Model {
 					$arr['log_id'] = Datassl::encrypt($users_log->log, 'log_id');
 				}
 				foreach ($arr as $key => $value) {
-					$app->flashNow($key, $value);
+					$app->lincko->flash[$key] = $value;
 				}
 				return $arr;
 			}
@@ -197,21 +196,12 @@ class UsersLog extends Model {
 				if($accept){
 					$committed = false;
 					if($user->getParentAccess()){
-						//Transaction is slowing down a lot the database
-						//$db_data = Capsule::connection($app->lincko->data['database_data']);
-						//$db_data->beginTransaction();
-						//$db_api = Capsule::connection('api');
-						//$db_api->beginTransaction();
 						try {
 							$user->save();
 							$users_log->save();
-							//$db_data->commit();
-							//$db_api->commit();
 							$committed = true;
 						} catch(\Exception $e){
 							$committed = false;
-							//$db_api->rollback();
-							//$db_data->rollback();
 							if(isset($user->id)){
 								$user->username = 'failed';
 								$user->username_sha1 = null;
@@ -228,68 +218,16 @@ class UsersLog extends Model {
 						}
 						if($committed){
 							$app->lincko->data['uid'] = $user->id;
-							$app->flashNow('signout', false);
-							$app->flashNow('resignin', false);
+							$app->lincko->flash['signout'] = false;
+							$app->lincko->flash['resignin'] = false;
 							$log_id = $users_log->id;
 						}
 					}
 				}
-
 					
 			}
 		}
 		return $log_id;
 	}
-
-	/*
-	protected static function createUser($data, $param){
-		$app = \Slim\Slim::getInstance();
-
-		
-
-		$data->data = $param;
-		$data->public_key = $app->lincko->security['public_key']; //Use public key for account creation
-		$data->checksum = md5($app->lincko->security['private_key'].json_encode($data->data, JSON_UNESCAPED_UNICODE));
-
-		$url = 'https://'.$_SERVER['HTTP_HOST'].'/user/create';
-
-		$data = json_encode($data);
-		$timeout = 8;
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url); //Port used is 10443 only
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-		curl_setopt($ch, CURLOPT_POST, true);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-		curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
-		curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
-		curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-				'Content-Type: application/json; charset=UTF-8',
-				'Content-Length: ' . mb_strlen($data),
-			)
-		);
-
-		$verbose = fopen('php://temp', 'w+');
-		curl_setopt($ch, CURLOPT_VERBOSE, true);
-		curl_setopt($ch, CURLOPT_STDERR, $verbose);
-
-		if($result = curl_exec($ch)){
-			$result = json_decode($result);
-		} else {
-			\libs\Watch::php(curl_getinfo($ch), '$ch', __FILE__, __LINE__, false, false, true);
-			$error = '['.curl_errno($ch)."] => ".htmlspecialchars(curl_error($ch));
-			\libs\Watch::php($error, '$error', __FILE__, __LINE__, false, false, true);
-			rewind($verbose);
-			\libs\Watch::php(stream_get_contents($verbose), '$verbose', __FILE__, __LINE__, false, false, true);
-			fclose($verbose);
-		}
-
-		@curl_close($ch);
-		return $result;
-	}
-	*/
 
 }

@@ -33,7 +33,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 		}
 	}
 
-	$domain = $_SERVER["HTTP_HOST"];
+	$domain = $_SERVER['HTTP_HOST'];
 	if(strpos($domain, ':')){
 		$domain = strstr($domain, ':', true);
 	}
@@ -97,7 +97,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 ->name('get_translation_data');
 
 $app->post('/update', function () use($app) {
-	$domain = $_SERVER["HTTP_HOST"];
+	$domain = $_SERVER['HTTP_HOST'];
 	if(strpos($domain, ':')){
 		$domain = strstr($domain, ':', true);
 	}

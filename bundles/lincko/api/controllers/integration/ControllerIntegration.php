@@ -3,6 +3,7 @@
 namespace bundles\lincko\api\controllers\integration;
 
 use \libs\Controller;
+use \libs\Json;
 
 class ControllerIntegration extends Controller {
 
@@ -15,9 +16,8 @@ class ControllerIntegration extends Controller {
 
 	public function connect_post(){
 		$app = $this->app;
-		\libs\Watch::php(true, '$connect_post', __FILE__, __LINE__, false, false, true);
-		$msg = 'OK!';
-		$app->render(200, array('msg' => array('msg' => $msg)));
+		$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
+		$json->render(200);
 		return true;
 	}
 

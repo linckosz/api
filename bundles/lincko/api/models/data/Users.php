@@ -614,7 +614,7 @@ class Users extends ModelLincko {
 				$invite = self::inviteSomeone($guest, $data);
 			}
 		}
-		$app->flashNow('unset_user_code', true);
+		$app->lincko->flash['unset_user_code'] = true;
 		return $invite;
 	}
 

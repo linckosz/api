@@ -4,6 +4,8 @@ namespace libs;
 
 class Json {
 
+	protected $app = NULL;
+
 	protected $json = array(
 		'msg' => '',
 		'error' => true,
@@ -11,6 +13,7 @@ class Json {
 	);
 
 	public function __construct($msg, $error=true, $status=500, $signout=false, $resignin=false, $files=array(), $show=true){
+		$app = $this->app = \Slim\Slim::getInstance();
 		if(!$error){
 			$this->json['error'] = false;
 		}
@@ -18,6 +21,13 @@ class Json {
 		$this->json['msg'] = (string)$msg;
 
 		$this->json['show'] = $show;
+
+		foreach ($app->lincko->flash as $key => $value) {
+			if(!isset($this->json['flash'])){
+				$this->json['flash'] = array();
+			}
+			$this->json['flash'][$key] = $value;
+		}
 
 		//optional parameters for front end server
 		if($signout || $resignin){

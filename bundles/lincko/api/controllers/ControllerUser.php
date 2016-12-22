@@ -203,7 +203,7 @@ class ControllerUser extends Controller {
 			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
-			$app->flashNow('signout', true);
+			$app->lincko->flash['signout'] = true;
 			$accept = false;
 			$email = mb_strtolower($model->email);
 			if(isset($model->username)){
@@ -305,8 +305,8 @@ class ControllerUser extends Controller {
 
 				if($committed){
 					$app->lincko->data['uid'] = $model->id;
-					$app->flashNow('signout', false);
-					$app->flashNow('resignin', false);
+					$app->lincko->flash['signout'] = false;
+					$app->lincko->flash['resignin'] = false;
 					//Setup public and private key
 					$authorize = $users_log->getAuthorize($this->data);
 
@@ -577,7 +577,7 @@ class ControllerUser extends Controller {
 			$form->password = '******';
 		}
 		\libs\Watch::php(array($errmsg, $form), 'Sign in failed', __FILE__, __LINE__, true);
-		$app->flashNow('signout', true);
+		$app->lincko->flash['signout'] = true;
 		$app->render(401, array('msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true,));
 		return false;
 	}
@@ -614,7 +614,7 @@ class ControllerUser extends Controller {
 			$msg = $app->trans->getBRUT('api', 15, 17); //You have signed out of your account.
 		}
 
-		$app->flashNow('signout', true);
+		$app->lincko->flash['signout'] = true;
 		$app->render(200, array('msg' => $msg,));
 		return true;
 	}

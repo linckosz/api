@@ -48,12 +48,12 @@ $app->lincko->title = 'Lincko';
 $app->lincko->http_code_ok = false;
 
 //Domain name
-if(isset($_SERVER["SERVER_HOST"])){
-	$app->lincko->domain = $_SERVER["SERVER_HOST"];
-} else if(strpos($_SERVER["HTTP_HOST"], ':')){
-	$app->lincko->domain = strstr($_SERVER["HTTP_HOST"], ':', true);
+if(isset($_SERVER['SERVER_HOST'])){
+	$app->lincko->domain = $_SERVER['SERVER_HOST'];
+} else if(strpos($_SERVER['HTTP_HOST'], ':')){
+	$app->lincko->domain = strstr($_SERVER['HTTP_HOST'], ':', true);
 } else {
-	$app->lincko->domain = $_SERVER["HTTP_HOST"];
+	$app->lincko->domain = $_SERVER['HTTP_HOST'];
 }
 
 $app->lincko->domain_restriction = "/^(?:.{1,3}|(?:api|cloud|cron|dc|file|info|lincko|mail|mx|ns|pop|smtp|tp|debug|www)\d*)$/ui";
@@ -156,8 +156,11 @@ $app->lincko->data = array(
 	'workspace' => '',
 );
 
-if(isset($_SERVER["LINCKO_BACK"]) && !empty($_SERVER["LINCKO_BACK"])){
-	$app->lincko->data['lincko_back'] = $_SERVER["LINCKO_BACK"].'.';
+//Messages to be sent along with rendering
+$app->lincko->flash = array();
+
+if(isset($_SERVER['LINCKO_BACK']) && !empty($_SERVER['LINCKO_BACK'])){
+	$app->lincko->data['lincko_back'] = $_SERVER['LINCKO_BACK'].'.';
 }
 
 ////////////////////////////////////
@@ -202,8 +205,3 @@ if($contents){
 } else {
 	$app->lincko->method_suffix = '_'.strtolower($app->request->getMethod());
 }
-
-
-
-//Fillin the information about public and private key to the client side
-$app->lincko->securityFlash = array();

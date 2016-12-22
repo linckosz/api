@@ -16,14 +16,15 @@ class JsonApiView extends \JsonApiView {
 		ob_clean();
 
 		//Debug message must be a Global variable
-		//$app = \Slim\Slim::getInstance();
 		//$app->flashNow('debug', 'A debug message');
 
-		if(isset($app->lincko->securityFlash['public_key']) && isset($app->lincko->securityFlash['private_key'])){
-			$app->flashNow('public_key', $app->lincko->securityFlash['public_key']);
-			$app->flashNow('private_key', $app->lincko->securityFlash['private_key']);
-			$app->flashNow('pukpic', Datassl::encrypt($app->lincko->securityFlash['public_key'], 'public_key_file'));
+		foreach ($app->lincko->flash as $key => $value) {
+			$app->flashNow($key, $value);
+			if($key=='public_key'){
+				$app->flashNow('pukpic', Datassl::encrypt($value, 'public_key_file'));
+			}
 		}
+
 		parent::render($status, $data);
 	}
 }

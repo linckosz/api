@@ -259,7 +259,7 @@ class CheckAccess extends \Slim\Middleware {
 			
 			Users::getUser(true); //Force to use the user item from the third party database
 
-			$app->flashNow('remote', true);
+			$app->lincko->flash['remote'] = true;
 
 			Workspaces::setServerPath($home['workspaces']->server_path);
 			$app->lincko->data['remote'] = true;
@@ -272,7 +272,9 @@ class CheckAccess extends \Slim\Middleware {
 		$app = $this->app;
 		$data = $this->data;
 		if(isset($data->data->set_shangzai) && $data->data->set_shangzai===true ){
-			$app->lincko->securityFlash = $this->authorization;
+			foreach ($this->authorization as $key => $value) {
+				$app->lincko->flash[$key] = $value;
+			}
 		}
 	}
 
