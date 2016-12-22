@@ -73,6 +73,14 @@ class CheckAccess extends \Slim\Middleware {
 		return false;
 	}
 
+	protected function inviteSomeone(){
+		$app = $this->app;
+		$data = $this->data;
+		if(isset($data->user_code) && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
+			Users::inviteSomeoneCode($data);
+		}
+	}
+
 	protected function setUserId(){
 		$app = $this->app;
 		$app->lincko->fingerprint = $this->data->fingerprint;
@@ -344,6 +352,7 @@ class CheckAccess extends \Slim\Middleware {
 
 		if($valid){
 			$this->setUserId();
+			$this->inviteSomeone();
 			$this->setUserLanguage();
 			$this->flashKeys();
 		}

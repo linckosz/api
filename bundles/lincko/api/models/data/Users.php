@@ -3,6 +3,8 @@
 
 namespace bundles\lincko\api\models\data;
 
+use \libs\Datassl;
+use \libs\Email;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
@@ -449,10 +451,19 @@ class Users extends ModelLincko {
 		return $return;
 	}
 
+	//Unsafe method
+	public function giveEditAccess(){
+		$app = self::getApp();
+		$this->accessibility = (bool) true;
+		self::$permission_users[$app->lincko->data['uid']][$this->getTable()][$this->id] = 2;
+	}
+
 	//It checks if the user has access to it
 	public function checkAccess($show_msg=true){
 		$app = self::getApp();
-		if(!isset($this->id) || (isset($this->id) && $this->id == $app->lincko->data['uid'])){ //Always allow for the user itself
+		if($this->accessibility){
+			return true;
+		} else if(!isset($this->id) || (isset($this->id) && $this->id == $app->lincko->data['uid'])){ //Always allow for the user itself
 			return $this->accessibility = (bool) true;
 		}
 		return parent::checkAccess($show_msg);
@@ -550,15 +561,25 @@ class Users extends ModelLincko {
 									if(is_numeric($list)){
 										$id = intval($list);
 										if(!isset($this->pivots_var->$table->$id)){ $this->pivots_var->$table->$id = new \stdClass; }
-										$this->pivots_var->$table->$id->access = array(true, false);
+										$this->pivots_var->$table->$id->access = array(true, true);
+										if($table=='tasks'){
+											$this->pivots_var->$table->$id->in_charge = array(true, false);
+											$this->pivots_var->$table->$id->approver = array(true, false);
+										}
 									} else if(is_array($list) || is_object($list)){
 										foreach ($list as $id) {
 											$id = intval($id);
 											if(!isset($this->pivots_var->$table->$id)){ $this->pivots_var->$table->$id = new \stdClass; }
-											$this->pivots_var->$table->$id->access = array(true, false);
+											$this->pivots_var->$table->$id->access = array(true, true);
+											if($table=='tasks'){
+												$this->pivots_var->$table->$id->in_charge = array(true, false);
+												$this->pivots_var->$table->$id->approver = array(true, false);
+											}
 										}
 									}
 								}
+								$pivot->models = null;
+								$pivot->save();
 							}
 							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
 						} else {
@@ -583,6 +604,116 @@ class Users extends ModelLincko {
 
 	public function getLanguage(){
 		return $this->language;
+	}
+
+	public static function inviteSomeoneCode($data){
+		$app = self::getApp();
+		$invite = false;
+		if(isset($data->user_code) && $user_code = Datassl::decrypt($data->user_code, 'invitation')){
+			if($guest = Users::find($user_code)){
+				$invite = self::inviteSomeone($guest, $data);
+			}
+		}
+		$app->flashNow('unset_user_code', true);
+		return $invite;
+	}
+
+	public static function inviteSomeone($guest, $data){
+		$app = self::getApp();
+		$user = Users::getUser();
+		$pivot = (new PivotUsers(array('users')))->withTrashed()->where('users_id', $guest->id)->where('users_id_link', $user->id)->first();
+
+		if(!$pivot || !$pivot->access){
+			$username = $user->username;
+			$username_guest = $guest->username;
+			$pivot = new \stdClass;
+			$pivot->{'usersLinked>invitation'} = new \stdClass;
+			$pivot->{'usersLinked>invitation'}->{$guest->id} = true;
+			$pivot->{'usersLinked>access'} = new \stdClass;
+			$pivot->{'usersLinked>access'}->{$guest->id} = false;
+			if($data && isset($data->invite_access)){
+				$pivot->{'usersLinked>models'} = new \stdClass;
+				$pivot->{'usersLinked>models'}->{$guest->id} = $data->invite_access;
+			}
+			$user->pivots_format($pivot);
+			$user->save();
+			$link = 'https://'.$app->lincko->domain;
+			$mail = new Email();
+
+			$mail_subject = $app->trans->getBRUT('api', 1002, 1); //New Lincko collaboration request
+			$mail_body_array = array(
+				'mail_username_guest' => $username_guest,
+				'mail_username' => $username,
+				'mail_link' => $link,
+			);
+			$mail_body = $app->trans->getBRUT('api', 1002, 2, $mail_body_array); //You have a new collaboration request!<br><br>@@mail_username~~ has invited you to collaborate together using Lincko.
+
+			$mail_template_array = array(
+				'mail_head' => $mail_subject,
+				'mail_body' => $mail_body,
+				'mail_foot' => '',
+			);
+			$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
+			//Send mobile notification
+			(new Notif)->push($mail_subject, $mail_body, $guest, $guest->getSha());
+
+			$mail->addAddress($guest->email);
+			$mail->setSubject($mail_subject);
+			$mail->sendLater($mail_template);
+		} else if($pivot && $pivot->access){
+			//we directly give access to models
+			if($data && isset($data->invite_access)){
+				$invitation_models = json_decode($data->invite_access);
+				$guest->giveEditAccess(); //A bit unsafe method
+				foreach ($invitation_models as $table => $list) {
+					//Don't give access to others users or workspace
+					if($table=='workspaces' || $table=='users'){
+						continue;
+					}
+					if(is_numeric($list)){
+						$id = intval($list);
+						$pivots = new \stdClass;
+						$pivots->{$table.'>access'} = new \stdClass;
+						$pivots->{$table.'>access'}->{$id} = true;
+						if($table=='tasks'){
+							$pivots->{$table.'>in_charge'}->{$id} = true;
+							$pivots->{$table.'>approver'}->{$id} = true;
+						}
+						$guest->pivots_format($pivots);
+						$guest->save();
+						if($class = Users::getClass($table)){
+							if($item = $class::withTrashed()->find($id)){
+								$item->setPerm();
+								//$item->touchUpdateAt();
+							}
+						}
+						
+					} else if(is_array($list) || is_object($list)){
+						foreach ($list as $id) {
+							$id = intval($id);
+							$pivots = new \stdClass;
+							$pivots->{$table.'>access'} = new \stdClass;
+							$pivots->{$table.'>access'}->{$id} = true;
+							if($table=='tasks'){
+								$pivots->{$table.'>in_charge'}->{$id} = true;
+								$pivots->{$table.'>approver'}->{$id} = true;
+							}
+							$guest->pivots_format($pivots);
+							$guest->save();
+							if($class = Users::getClass($table)){
+								if($item = $class::withTrashed()->find($id)){
+									$item->setPerm();
+									//$item->touchUpdateAt();
+								}
+							}
+							
+						}
+					}
+				}
+			}
+		}
+		return true;
 	}
 
 }

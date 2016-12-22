@@ -239,11 +239,6 @@ class ControllerUser extends Controller {
 				}
 			}
 
-			$user_code = false;
-			if(isset($form->user_code) && !empty($form->user_code)){
-				$user_code = Datassl::decrypt($form->user_code, 'invitation');
-			}
-
 			/*
 			Those lines were used for closed beta
 			if(!$invitation){
@@ -714,49 +709,12 @@ class ControllerUser extends Controller {
 				}
 			} else if($form->exists && isset($form->users_id)){
 				if($guest = Users::find($form->users_id)){
-					$user = Users::getUser();
-					$username = $user->username;
-					$username_guest = $guest->username;
-					$pivot = new \stdClass;
-					$pivot->{'usersLinked>invitation'} = new \stdClass;
-					$pivot->{'usersLinked>invitation'}->{$form->users_id} = true;
-					$pivot->{'usersLinked>access'} = new \stdClass;
-					$pivot->{'usersLinked>access'}->{$form->users_id} = false;
-					if(isset($form->invite_access)){
-						$pivot->{'usersLinked>models'} = new \stdClass;
-						$pivot->{'usersLinked>models'}->{$form->users_id} = $form->invite_access;
-					}
-					$user->pivots_format($pivot);
-					$user->save();
-					$link = 'https://'.$app->lincko->domain;
-					$mail = new Email();
-
-					$mail_subject = $app->trans->getBRUT('api', 1002, 1); //New Lincko collaboration request
-					$mail_body_array = array(
-						'mail_username_guest' => $username_guest,
-						'mail_username' => $username,
-						'mail_link' => $link,
-					);
-					$mail_body = $app->trans->getBRUT('api', 1002, 2, $mail_body_array); //You have a new collaboration request!<br><br>@@mail_username~~ has invited you to collaborate together using Lincko.
-
-					$mail_template_array = array(
-						'mail_head' => $mail_subject,
-						'mail_body' => $mail_body,
-						'mail_foot' => '',
-					);
-					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-					$mail->addAddress($guest->email);
-					$mail->setSubject($mail_subject);
-					if($mail->sendLater($mail_template)){
+					if(Users::inviteSomeone($guest, $form)){
 						$data = true;
 						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
 						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
 						return true;
 					}
-
-					//Send mobile notification
-					(new Notif)->push($mail_subject, $mail_body, $guest, $guest->getSha());
 				}
 				
 			}
@@ -768,6 +726,23 @@ class ControllerUser extends Controller {
 
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
 		return false;
+	}
+
+	public function inviteqrcode_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
+
+		if(Users::inviteSomeoneCode($form)){
+			$data = true;
+			$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+			$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+			return true;
+		}
+		$msg = $app->trans->getBRUT('api', 15, 25); //Invitation failed to send.
+		$app->render(200, array('msg' => array('msg' => $msg, 'data' => false)));
+		return true;
 	}
 
 	public function my_user_get(){

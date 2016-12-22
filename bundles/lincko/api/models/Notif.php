@@ -87,7 +87,11 @@ class Notif {
 				'url' => $url,
 			);
 		}
-		return $this->send($msg, $notif, $aliases);
+		$this->send($msg, $notif, $aliases);
+
+		//Send email here (if the user has email)
+
+		return true;
 	}
 
 }

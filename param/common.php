@@ -169,7 +169,6 @@ $app->lincko->data['create_user'] = false; //True if we want to be able to autho
 $app->lincko->data['allow_create_user'] = false; //True if we want to be able to authorize the user creation (this is set to true by the developper, upper level)
 $app->lincko->data['invitation_beta'] = true; //At true, we force new user to be invited by someone, at false anyone get register
 $app->lincko->data['invitation_code'] = ''; //The code grab by the link
-$app->lincko->data['user_code'] = ''; //The fix user sha code encrypted
 
 $app->lincko->data['lastvisit'] = time()-1; //Less one second to avoid missing timestamp at the same time
 

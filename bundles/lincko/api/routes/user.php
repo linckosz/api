@@ -84,4 +84,10 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_reset'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/inviteqrcode',
+		'\bundles\lincko\api\controllers\ControllerUser:inviteqrcode'.$app->lincko->method_suffix
+	)
+	->name('user_inviteqrcode'.$app->lincko->method_suffix);
+
 });
