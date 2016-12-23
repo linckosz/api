@@ -259,16 +259,6 @@ class CheckAccess extends \Slim\Middleware {
 		return $workspace;
 	}
 
-	protected function flashKeys(){
-		$app = $this->app;
-		$data = $this->data;
-		if(isset($data->data) && isset($data->data->set_shangzai) && $data->data->set_shangzai===true){
-			foreach ($this->authorization as $key => $value) {
-				$app->lincko->flash[$key] = $value;
-			}
-		}
-	}
-
 	protected function checkFields(){
 		$data = $this->data;
 		if(!isset($data->checksum)){
@@ -329,25 +319,21 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorizeAccess = true;
 			$valid = true;
 		}
-		/*
-		} else if($this->route == 'integration_connect_post' && $log_id = UsersLog::check($data)){
-			if($this->checksum()){ //We check earlier because private_key and data will change
-				$this->nochecksum = true;
-			}
-			if($this->authorization = Authorization::find_finger($this->autoSign($log_id), $data->fingerprint)){
-				//Must overwrite by standard keys because the checksum has been calculated with the standard one
-				$this->authorization->private_key = $app->lincko->security['private_key'];
-				$this->authorizeAccess = true;
-				$valid = true;
-			}
-		}
-		*/
 
 		if($valid){
 			$this->setUserId();
 			$this->inviteSomeone();
 			$this->setUserLanguage();
-			$this->flashKeys();
+			if(
+				   isset($data->data)
+				&& isset($data->data->set_shangzai)
+				&& $data->data->set_shangzai===true
+				&& !isset($app->lincko->flash['pukpic'])
+				&& isset($this->authorization->sha)
+				&& $users_log = UsersLog::Where('username_sha1', $this->authorization->sha)->first(array('log'))
+			){
+				$app->lincko->flash['pukpic'] = $users_log->getPukpic();
+			}
 		}
 
 		return $valid;
@@ -464,7 +450,6 @@ class CheckAccess extends \Slim\Middleware {
 		){
 			return $this->next->call();
 		}
-
 		//For file uploading, make a specific process
 		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $resourceUri)){
 			$file_error = true;

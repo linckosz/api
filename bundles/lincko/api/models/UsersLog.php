@@ -74,13 +74,13 @@ class UsersLog extends Model {
 		return Datassl::encrypt($expiration.':'.$this->log, self::SALT);
 	}
 
-	public static function pukpicToSha($encrypted_pukpic=false){
+	public static function pukpicToSha($shangzai_puk=false){
 		$log = false;
 		$pukpic = false;
 		if(!$pukpic && isset($_COOKIE) && isset($_COOKIE['pukpic']) && !empty($_COOKIE['pukpic'])){
 			$pukpic = $_COOKIE['pukpic'];
-		} else if($encrypted_pukpic){
-			$pukpic = Datassl::decrypt($encrypted_pukpic);
+		} else if($shangzai_puk){
+			$pukpic = Datassl::decrypt($shangzai_puk);
 		}
 		if($pukpic){
 			$pukpic = Datassl::decrypt($pukpic, self::SALT);
@@ -157,7 +157,7 @@ class UsersLog extends Model {
 					'refresh' => $refresh,
 				);
 				//If it's a new login we send back users_log ID encrypted for cookies (make sure the cookie is refreshed)
-				if($new_log || (isset($data->data) && isset($data->data->set_shangzai) && $data->data->set_shangzai===true)){
+				if($new_log){
 					$arr['log_id'] = Datassl::encrypt($users_log->log, 'log_id');
 				}
 				foreach ($arr as $key => $value) {
