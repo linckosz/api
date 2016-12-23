@@ -20,9 +20,6 @@ class JsonApiView extends \JsonApiView {
 
 		foreach ($app->lincko->flash as $key => $value) {
 			$app->flashNow($key, $value);
-			if($key=='public_key'){
-				$app->flashNow('pukpic', Datassl::encrypt($value, 'public_key_file'));
-			}
 		}
 
 		parent::render($status, $data);

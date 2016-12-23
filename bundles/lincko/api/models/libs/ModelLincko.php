@@ -2130,6 +2130,7 @@ abstract class ModelLincko extends Model {
 		if(!$msg){
 			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		}
+		//$trace = getTraceAsString((new Exception), 30);
 		\libs\Watch::php($detail, $msg, __FILE__, __LINE__, true);
 		if(!self::$debugMode){
 			$json = new Json($msg, true, 406, $resignin);

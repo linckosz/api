@@ -4,13 +4,14 @@ namespace bundles\lincko\api\models;
 
 use \libs\Datassl;
 use \libs\Translation;
-use \config\Handler;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\controllers\ControllerUser;
 
 class UsersLog extends Model {
+
+	const SALT = 'ayTgh49pW09w';
 
 	protected $connection = 'api';
 
@@ -22,7 +23,9 @@ class UsersLog extends Model {
 
 	public $timestamps = true;
 
-	protected $visible = array();
+	protected $visible = array(
+		'username_sha1',
+	);
 
 	protected static $data = null;
 
@@ -63,6 +66,34 @@ class UsersLog extends Model {
 		}
 
 		return $item;
+	}
+
+	public function getPukpic(){
+		$app = \Slim\Slim::getInstance();
+		$expiration = $app->lincko->cookies_lifetime;
+		return Datassl::encrypt($expiration.':'.$this->log, self::SALT);
+	}
+
+	public static function pukpicToSha($encrypted_pukpic=false){
+		$log = false;
+		$pukpic = false;
+		if(!$pukpic && isset($_COOKIE) && isset($_COOKIE['pukpic']) && !empty($_COOKIE['pukpic'])){
+			$pukpic = $_COOKIE['pukpic'];
+		} else if($encrypted_pukpic){
+			$pukpic = Datassl::decrypt($encrypted_pukpic);
+		}
+		if($pukpic){
+			$pukpic = Datassl::decrypt($pukpic, self::SALT);
+			if(preg_match("/^(\d+):(\w+)$/ui", $pukpic, $matches)){
+				if(time() < $matches[1]){ //not expired
+					$log = $matches[2];
+				}
+			}
+		}
+		if($log && $users_log = self::Where('log', $log)->first(array('username_sha1'))){
+			return $users_log->username_sha1;
+		}
+		return false;
 	}
 
 	public function getAuthorize($data){
@@ -118,7 +149,7 @@ class UsersLog extends Model {
 				$app->lincko->translation['user_username'] = $user->username;
 				$arr = array(
 					'public_key' => $public_key,
-					'pukpic' => Datassl::encrypt($public_key, 'public_key_file'),
+					'pukpic' => $users_log->getPukpic(),
 					'private_key' => $private_key,
 					'username_sha1' => substr($users_log->username_sha1, 0, 20), //Truncate to 20 character because phone alias notification limitation
 					'uid' => $user->id,
@@ -126,7 +157,7 @@ class UsersLog extends Model {
 					'refresh' => $refresh,
 				);
 				//If it's a new login we send back users_log ID encrypted for cookies (make sure the cookie is refreshed)
-				if($new_log){
+				if($new_log || (isset($data->data) && isset($data->data->set_shangzai) && $data->data->set_shangzai===true)){
 					$arr['log_id'] = Datassl::encrypt($users_log->log, 'log_id');
 				}
 				foreach ($arr as $key => $value) {
@@ -162,6 +193,8 @@ class UsersLog extends Model {
 				$users_log->party_id = $data->data->party_id;
 				$users_log->party_json = json_encode($data->data->data);
 
+				$file = false;
+
 				$user = new Users;
 				$user->username = 'Lincko user';
 				$user->internal_email = $data->data->party.'.'.$data->data->party_id;
@@ -174,6 +207,7 @@ class UsersLog extends Model {
 					if($language = $translation->setLanguage($json->language)){
 						$user->language = $language;
 					}
+					
 				}
 
 				$limit = 0;

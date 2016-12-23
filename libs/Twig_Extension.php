@@ -59,7 +59,7 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 
 	public function get_Language(){
 		$app = \Slim\Slim::getInstance();
-		return $app->trans->getClientLanguage();
+		return $app->trans->getDefaultLanguage();
 	}
 
 	public function get_Language_full(){

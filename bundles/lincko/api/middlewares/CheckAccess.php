@@ -2,7 +2,6 @@
 
 namespace bundles\lincko\api\middlewares;
 
-use \config\Handler;
 use \libs\Json;
 use \libs\Datassl;
 use \libs\OneSeventySeven;
@@ -63,14 +62,6 @@ class CheckAccess extends \Slim\Middleware {
 		} else {
 			return null;
 		}
-	}
-
-	//Convert pukpic into user ID
-	protected function getPukpic(){
-		if(isset($_COOKIE) && isset($_COOKIE['pukpic']) && !empty($_COOKIE['pukpic'])){
-			return Datassl::decrypt($_COOKIE['pukpic'], 'public_key_file');
-		}
-		return false;
 	}
 
 	protected function inviteSomeone(){
@@ -271,7 +262,7 @@ class CheckAccess extends \Slim\Middleware {
 	protected function flashKeys(){
 		$app = $this->app;
 		$data = $this->data;
-		if(isset($data->data->set_shangzai) && $data->data->set_shangzai===true ){
+		if(isset($data->data) && isset($data->data->set_shangzai) && $data->data->set_shangzai===true){
 			foreach ($this->authorization as $key => $value) {
 				$app->lincko->flash[$key] = $value;
 			}
@@ -476,9 +467,9 @@ class CheckAccess extends \Slim\Middleware {
 
 		//For file uploading, make a specific process
 		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $resourceUri)){
-			Handler::session_initialize(true);
+			$file_error = true;
 			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $resourceUri) ){ //Video conversion
-				//Security is not important here since we do not use POSt as variable to be injected somewhere
+				//Security is not important here since we do not use POST as variable to be injected somewhere
 				$post = $this->data;
 				$w_id = $post->workspace_id;
 				$app->lincko->data['uid'] = $post->uid;
@@ -493,9 +484,8 @@ class CheckAccess extends \Slim\Middleware {
 						return $this->next->call();
 					}
 				}
-				$file_error = true;
+				
 			} else if($app->lincko->method_suffix == '_post'){ //File uploading
-				$file_error = true;
 				if($this->checkRoute()!==false){
 					$post = $app->request->post();
 					if(
@@ -503,23 +493,24 @@ class CheckAccess extends \Slim\Middleware {
 						&& isset($post['parent_type'])
 						&& isset($post['parent_id'])
 						&& isset($post['workspace'])
-						&& isset($post['fingerprint'])
 						&& isset($post['temp_id'])
+						&& $username_sha1 = UsersLog::pukpicToSha($post['shangzai_puk'])
 					){
-						$data = new \stdClass;
-						$post = $app->request->post();
-						$data->public_key = Datassl::decrypt($post['shangzai_puk'], $app->lincko->security['private_key']);
-						$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
-						$data->workspace = $post['workspace'];
-						$data->fingerprint = $post['fingerprint'];
-						$data->checksum = 0;
 						if(isset($post['http_code_ok']) && $post['http_code_ok']){
 							$data->http_code_ok = (bool) $post['http_code_ok'];
 						}
-						$data->data = new \stdClass;
-						$this->data = $data;
-						$file_error = false;
-						$this->nochecksum = true;
+						if($user = Users::Where('username_sha1', $username_sha1)->first(array('id'))){
+							$app->lincko->data['uid'] = $user->id;
+							$workspace = $post['workspace'];
+							if(empty($workspace)){ //Shared
+								return $this->next->call();
+							} else if($workspace = Workspaces::where('url', $workspace)->first()){
+								$app->lincko->data['workspace'] = $workspace->url;
+								$app->lincko->data['workspace_id'] = $workspace->id;
+								$workspace = $this->setWorkspaceConnection($workspace);
+								return $this->next->call();
+							}
+						}
 					}
 				}
 			} else if(
@@ -527,42 +518,22 @@ class CheckAccess extends \Slim\Middleware {
 				&& preg_match("/^\/file\/(\d+)\/([=\d\w]+?)\/(link|thumbnail|download|qrcode)\/(\d+)\/.+$/ui", $resourceUri, $matches)
 				&& $this->checkRoute()!==false
 			){ //File reading
-
-				$data = new \stdClass;
-				$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
-				$data->workspace = $matches[1];
-				$data->checksum = 0;
-				$file_error = false;
-				$this->nochecksum = true;
-				$data->public_key = $this->getPukpic();
-				$data->fingerprint = false;
-				$username_sha1 = false;
-				if($data->public_key && $this->authorization = Authorization::find($data->public_key)){ //No need to care about expiration date
-					$data->fingerprint = $this->authorization->fingerprint;
-					$username_sha1 = $this->authorization->sha;
-				} else {
-					$file_error = true;
-				}
-				$data->data = new \stdClass;
-				$this->data = $data;
-
-				if(!$file_error){
+				if($username_sha1 = UsersLog::pukpicToSha()){
+					$w_id = $matches[1];
 					//We can skip lot of step since it's only for read, this also allow to display unavailable picture if necessary
 					$app->lincko->data['uid'] = false; //Force to signin if the file is not available
-					if($user = Users::Where('username_sha1', $username_sha1)->first()){
+					if($user = Users::Where('username_sha1', $username_sha1)->first(array('id'))){
 						$app->lincko->data['uid'] = $user->id;
-					}
-					if($data->workspace==0){ //Shared
-						return $this->next->call();
-					} else if($workspace = Workspaces::where('id', $data->workspace)->first()){
-						$app->lincko->data['workspace'] = $workspace->url;
-						$app->lincko->data['workspace_id'] = $workspace->id;
-						//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
-						$workspace = $this->setWorkspaceConnection($workspace);
-						return $this->next->call();
+						if($w_id==0){ //Shared
+							return $this->next->call();
+						} else if($workspace = Workspaces::where('id', $w_id)->first()){
+							$app->lincko->data['workspace'] = $workspace->url;
+							$app->lincko->data['workspace_id'] = $workspace->id;
+							$workspace = $this->setWorkspaceConnection($workspace);
+							return $this->next->call();
+						}
 					}
 				}
-				
 			} else if($app->lincko->method_suffix == '_options'){ //Check if can upload file
 				if($this->checkRoute()!==false){
 					$app->lincko->http_code_ok = true;
