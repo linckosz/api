@@ -64,6 +64,8 @@ class Chats extends ModelLincko {
 		'fav',
 	);
 
+	protected static $allow_role = true;
+
 	protected static $permission_sheet = array(
 		2, //[RCU] owner
 		3, //[RCUD] max allow || super

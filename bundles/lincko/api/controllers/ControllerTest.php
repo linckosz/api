@@ -579,41 +579,9 @@ class ControllerTest extends Controller {
 		$user->save();
 		*/
 
-		$arr = array();
-		$arr['db_host'] = '/zPmx6DExSFBmbw7qQCoSG4X65L7280G95/vHfavjP0=';
-		$arr['db_port'] = 'eH8AuNBOU7ZuuA5rikE4YXSJGIS+S9nfzWKQ0+1Wz/g=';
-		$arr['db_pwd'] = 'DD1TbckBp95SwnXOZ6RM2A8wUz4qoaPexslr+tRO+k0=';
-		$arr['sftp_host'] = '/zPmx6DExSFBmbw7qQCoSG4X65L7280G95/vHfavjP0=';
-		$arr['sftp_port'] = 'hgZVk5W45Vwv/bb3qslLaOIQ2VoQA77ARg/H4RnnVqg=';
-		$arr['sftp_pwd'] = 'Eg7b6perxEBs31Rj9Kq/s1GWrhssb6Zgnwxo8CoUqjc=';
-
-		
-		function encrypt_old($text){
-			$salt = '7dujjbs&%9b=#nk!2v8v*1|1';
-			return trim(base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, $salt, $text, MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND))));
-		}
-
-		function decrypt_old($text){
-			$salt = '7dujjbs&%9b=#nk!2v8v*1|1';
-			return trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, $salt, base64_decode($text), MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND)));
-		}
-
-		function encrypt_smp($text, $password = ''){
-			$salt = '7dujjbs&%9b=#nk!2v8v*1|1';
-			return trim(base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_256, md5($salt.$password), $text, MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND))));
-		}
-
-		function decrypt_smp($text, $password = ''){
-			$salt = '7dujjbs&%9b=#nk!2v8v*1|1';
-			return trim(mcrypt_decrypt(MCRYPT_RIJNDAEL_256, md5($salt.$password), base64_decode($text), MCRYPT_MODE_ECB, mcrypt_create_iv(mcrypt_get_iv_size(MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB), MCRYPT_RAND)));
-		}
-
-		foreach ($arr as $key => $value) {
-			$decode = decrypt_old($value);
-			\libs\Watch::php( $decode, '[old] '.$key, __FILE__, __LINE__, false, false, true);
-			$encode = encrypt_smp($decode);
-			\libs\Watch::php( $encode, '[old] '.$key, __FILE__, __LINE__, false, false, true);
-		}
+		$tp = Chats::find(1066);
+		$tp->setPerm();
+		$tp->checkAccess();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

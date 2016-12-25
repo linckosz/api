@@ -301,11 +301,12 @@ class Files extends ModelLincko {
 	}
 
 	/*
-	public function checkAccess($show_msg=true){ //toto
+	public function checkAccess($show_msg=true){ //toto (buggy for root chats)
 		return true;
 	}
-
-	public function checkPermissionAllow($level, $msg=false){ //toto
+	
+	
+	public function checkPermissionAllow($level, $msg=false){ //toto (buggy for root chats)
 		return true;
 	}
 	*/

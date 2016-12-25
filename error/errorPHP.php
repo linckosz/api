@@ -140,6 +140,7 @@ function sendMsg(){
 }
 
 //http://php.net/manual/fr/function.debug-backtrace.php
+//$trace = \error\getTraceAsString(new \Exception, 30);
 function getTraceAsString($e, $count=0){
 	$trace = explode("\n", $e->getTraceAsString());
 	array_shift($trace); // remove call to this method

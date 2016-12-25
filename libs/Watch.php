@@ -52,11 +52,16 @@ class Watch {
 		}
 		
 		if(is_array($var) || is_object($var)){
-			//$msg = (string)var_export($var,true);
 			$msg = (string)print_r($var,true);
 		} else {
 			$msg = (string)$var;
 		}
+		if($error){
+			$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
+		} else {
+			//$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
+		}
+
 		$comment = (string)$comment;
 		
 		if(is_file($filename)){

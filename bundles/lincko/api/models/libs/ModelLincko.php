@@ -706,9 +706,10 @@ abstract class ModelLincko extends Model {
 				if(isset($all_id['users'] )){
 					foreach ($all_id['users'] as $users_id) {
 						$tree_owner[$table_name][$users_id][$model->id] = $model->getPermissionOwner($users_id);
-						//setup viewer role for root object by default
+						//setup manager role for root object by default
 						if(!isset($tree_roles_id[$table_name][$users_id][$model->id]) && !$model->_parent[0]){
-							$tree_roles_id[$table_name][$users_id][$id] = 0;
+							//Do not set at 0 (viewer), if not chats won't allow file uploading
+							$tree_roles_id[$table_name][$users_id][$model->id] = 2; //Manager
 						}
 					}
 				}
@@ -2004,7 +2005,9 @@ abstract class ModelLincko extends Model {
 			$users_id = $app->lincko->data['uid'];
 		}
 		$super = 0;
-		if(isset(static::$permission_super[$users_id])){
+		if(is_bool(static::$permission_super) && static::$permission_super===true){
+			return true;
+		} else if(isset(static::$permission_super[$users_id])){
 			return static::$permission_super[$users_id];
 		} else if($workspace = Workspaces::find($app->lincko->data['workspace_id'])){ //This insure to return 0 at shared workspace
 			$pivot = $workspace->getUserPivotValue('super', $users_id);
@@ -2130,7 +2133,6 @@ abstract class ModelLincko extends Model {
 		if(!$msg){
 			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		}
-		//$trace = getTraceAsString((new Exception), 30);
 		\libs\Watch::php($detail, $msg, __FILE__, __LINE__, true);
 		if(!self::$debugMode){
 			$json = new Json($msg, true, 406, $resignin);
@@ -2856,7 +2858,7 @@ abstract class ModelLincko extends Model {
 		$app = self::getApp();
 
 		//We don't allow non-administrator to modify user permission
-		if(self::getWorkspaceSuper() == 0){
+		if(static::getWorkspaceSuper() == 0){
 			$this::errorMsg('No super permission');
 			$this->checkPermissionAllow(4);
 			return false;
