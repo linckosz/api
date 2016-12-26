@@ -211,7 +211,7 @@ class Onboarding {
 					$project_new->title = $project_ori->title;
 					$project_new->pivots_format($project_pivot, false);
 					$project_new->save();
-					\libs\Watch::php($links, 'links', __FILE__, __LINE__, false, false, true);
+					//\libs\Watch::php($links, 'links', __FILE__, __LINE__, false, false, true);
 					$this->setOnboarding($project_new, 1);
 					foreach ($links as $table => $list) {
 						foreach ($list as $id) {
@@ -231,7 +231,7 @@ class Onboarding {
 									}
 									//Assign tasks
 									if($table=='tasks'){
-										\libs\Watch::php($id, $table, __FILE__, __LINE__, false, false, true);
+										//\libs\Watch::php($id, $table, __FILE__, __LINE__, false, false, true);
 										$item->pivots_format($task_pivot, false);
 										$item->saveHistory(false);
 										$item->save();

@@ -303,6 +303,7 @@ class Files extends ModelLincko {
 	}
 	
 	public function checkPermissionAllow($level, $msg=false){ //toto (buggy for root chats)
+		$app = self::getApp();
 		if($this->parent_type=='users' && $this->parent_id==$app->lincko->data['uid']){
 			return true; //For profile picture
 		}

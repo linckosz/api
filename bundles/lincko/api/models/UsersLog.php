@@ -7,6 +7,7 @@ use \libs\Translation;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\controllers\ControllerUser;
 
 class UsersLog extends Model {
@@ -259,13 +260,14 @@ class UsersLog extends Model {
 								//Add profile picture
 								if(isset($json->headimgurl)){
 									if($download = file_get_contents($json->headimgurl)){
-										file_put_contents('/tmp/'.$user->internal_email, $download);
+										$tmp_name = '/tmp/'.$user->internal_email;
+										file_put_contents($tmp_name, $download);
 										$profile_pic = new Files;
 										$profile_pic->name = 'Martin';
-										$profile_pic->ori_type = mime_content_type('/tmp/toto');
-										$profile_pic->tmp_name = '/tmp/toto';
+										$profile_pic->ori_type = mime_content_type($tmp_name);
+										$profile_pic->tmp_name = $tmp_name;
 										$profile_pic->error = 0;
-										$profile_pic->size = filesize('/tmp/'.$user->internal_email);
+										$profile_pic->size = filesize($tmp_name);
 										$profile_pic->parent_type = 'users';
 										$profile_pic->parent_id = $app->lincko->data['uid'];
 										if($profile_pic->save()){
