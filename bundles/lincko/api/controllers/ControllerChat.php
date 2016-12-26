@@ -231,7 +231,7 @@ class ControllerChat extends Controller {
 			}
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
-			if($model->single){
+			if($model->single && count($dirty)>0){
 				$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 			} else if(count($dirty)>0 || $pivots){
 				if($model->getParentAccess() && $model->save()){
