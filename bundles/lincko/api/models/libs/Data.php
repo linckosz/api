@@ -37,9 +37,11 @@ class Data {
 	protected $action = NULL;
 	protected static $delete_temp_id = true;
 
+	protected $limit_json = false; //(integer) Indicate the number of items downloaded at a time to avoid browser memory crash
+
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
-		$this->data = json_decode($app->request->getBody());
+		$data = $this->data = json_decode($app->request->getBody());
 		//Get lastvisit field if it's part of form field of upload
 		if(!$this->data && isset($_FILES) && !empty($_FILES)){
 			$this->data = new \stdClass;
@@ -51,6 +53,9 @@ class Data {
 					$this->data->data->lastvisit = (int) $post->lastvisit;
 				}
 			}
+		}
+		if(isset($data->data) && isset($data->data->limit_json) && $data->data->limit_json){
+			$this->limit_json = $data->data->limit_json;
 		}
 		return true;
 	}
@@ -930,6 +935,35 @@ class Data {
 					}
 				}
 			}
+		}
+
+		//toto => this is a temp solution (for iOS) the time we can refactor communciation process with less data
+		//At least need 300 items, cannot be lower (avoid to geenrate too much calls)
+		if($this->limit_json>300 && $this->item_detail){
+			$i = 0;
+			$skip = false;
+			$result_limit = new \stdClass;
+			$result_limit->$uid = new \stdClass;
+			foreach ($result_bis->$uid as $table_name => $models) {
+				$result_limit->$uid->$table_name = new \stdClass;
+				$must = false;
+				if(strpos($table_name, '_')===0){
+					$must = true;
+				}
+				if(!$skip){
+					foreach ($result_bis->$uid->$table_name as $id => $temp) {
+						if(!$skip || $must){
+							$result_limit->$uid->$table_name->$id = $result_bis->$uid->$table_name->$id;
+							$i++;
+						}
+						if(!$must && $i >= $this->limit_json){
+							$result_limit->uncomplete = true;
+							break;
+						}
+					}
+				}
+			}
+			return $result_limit;
 		}
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);
