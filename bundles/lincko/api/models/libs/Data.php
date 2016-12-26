@@ -75,7 +75,7 @@ class Data {
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
 					'partial' => $this->getLatest(),
 					'schema' => $schema,
-					'lastvisit' => $lastvisit,
+					'lastvisit' => $lastvisit, //Make sure that setLastvisit is time()-1
 				),
 				$msg
 			);
@@ -832,7 +832,7 @@ class Data {
 			|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
 		){
 
-			$result_bis->$uid->{'_history'} = new \stdClass;
+			//$result_bis->$uid->_history = new \stdClass;
 			foreach ($result_bis->$uid as $table_name => $models) {
 				if(strpos($table_name, '_')!==0){ //Skip everything which is not a model list
 					foreach ($models as $id => $model) {
@@ -840,20 +840,22 @@ class Data {
 							continue;
 						}
 						$previous_timestamp = 0;
-						$model->_not = false;
+						//$model->_not = false;
 						if(isset($model->history)){
 							foreach ($model->history as $timestamp => $hists) {
 								foreach ($hists as $hist_id => $hist) {
 									$hist->it = $table_name.'-'.$id; //item
 									$hist->rt = false; //root (chats or projects)
 									$hist->not = false;
-									$result_bis->$uid->{'_history'}->$hist_id = $hist;
+									//$result_bis->$uid->_history->$hist_id = $hist;
+									/*
 									if(isset($hist->notid) && $timestamp >= $previous_timestamp){
 										$timestamp = $previous_timestamp;
 										$not = (bool)(strpos($hist->notid, ';'.$uid.';')===false);
 										$model->_not = $not;
 										$hist->not = $not;
 									}
+									*/
 									unset($hist->notid);
 								}
 							}
@@ -898,11 +900,6 @@ class Data {
 			//Delete history if no access
 			if(!isset($app->lincko->api['x__history']) || !$app->lincko->api['x__history']){
 				unset($result_bis->$uid->_history);
-				foreach ($result_bis->$uid as $table_name => $models) {
-					foreach ($models as $id => $model) {
-						unset($result_bis->$uid->$table_name->$id->history);
-					}
-				}
 			}
 		}
 

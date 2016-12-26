@@ -74,6 +74,8 @@ class Users extends ModelLincko {
 
 	protected $name_code = 600;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 601,  //[{un}] joined @@title~~
 		'_' => 602,//[{un}] modified [{hh}] profile

@@ -11,13 +11,6 @@ $app = \Slim\Slim::getInstance();
 
 //Special functions to manage errors
 function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UNK'){
-	/*
-	//To avoid "EXH: Error => Exception: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found" we give enough time to the server to retry teh transaction
-	if($type=='EXH' && mb_strpos($errmsg, 'try restarting transaction')!==false){
-		usleep(300000); //Give 300ms to finish SQL transaction and try again
-		return false;
-	}
-	*/
 	//Hide some warnings of exif_read_data because there is a PHP bug if EXIF are not standard
 	if($errmsg!="" && (mb_strpos($errmsg, 'exif_read_data')===false || mb_strpos($errmsg, 'Illegal')===false)){
 		$app = \Slim\Slim::getInstance();
@@ -79,7 +72,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 		} else {
 			$var = (string)$vars;
 		}
-
+		
 		$url = $app->request->headers->Host.$app->request->getResourceUri();
 		
 		$err  = "DATE: $dt\n";
@@ -108,9 +101,14 @@ $err = str_replace("\n","
 		}
 
 		error_log($err, 3, $fic);
-		//Do not do a return, we cannot send information to InfoDebug
 
-		sendMsg();
+		//To avoid "EXH: Error => Exception: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found" we give enough time to the server to retry teh transaction
+		if($type=='EXH' && mb_strpos($errmsg, 'try restarting transaction')!==false){
+			usleep(300000); //Give 300ms to finish SQL transaction and eventually try again
+		} else {
+			sendMsg();
+		}
+		//Do not do a return, we cannot send information to InfoDebug
 	}
 }
 

@@ -82,6 +82,8 @@ class Files extends ModelLincko {
 
 	protected $name_code = 900;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 901, //[{un}] uploaded a file
 		'_' => 902, //[{un}] modified a file
@@ -299,17 +301,15 @@ class Files extends ModelLincko {
 			return $query;
 		}
 	}
-
-	/*
-	public function checkAccess($show_msg=true){ //toto (buggy for root chats)
-		return true;
-	}
-	
 	
 	public function checkPermissionAllow($level, $msg=false){ //toto (buggy for root chats)
-		return true;
+		if($this->parent_type=='users' && $this->parent_id==$app->lincko->data['uid']){
+			return true; //For profile picture
+		}
+		return parent::checkPermissionAllow($level, $msg);
 	}
-	*/
+
+	
 
 	public function toJson($detail=true, $options = 0){
 		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));

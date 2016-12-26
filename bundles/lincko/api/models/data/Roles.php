@@ -40,6 +40,8 @@ class Roles extends ModelLincko {
 
 	protected $name_code = 700;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 701, //[{un}] created a new role
 		'_' => 702,//[{un}] modified a role

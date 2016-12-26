@@ -52,6 +52,8 @@ class Projects extends ModelLincko {
 
 	protected $name_code = 400;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 401, //[{un}] created a new project
 		'_' => 402,//[{un}] modified a project
@@ -87,12 +89,12 @@ class Projects extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'users' => array('users_x_projects', array('fav', 'silence')),
+		'users' => array('users_x_projects', array('fav', 'silence', 'noticed')),
 	);
 
 	//Many(Projects) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access', 'fav', 'silence');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access', 'fav', 'silence', 'noticed');
 	}
 
 	//One(Projects) to Many(Comments)

@@ -45,6 +45,8 @@ class Comments extends ModelLincko {
 
 	protected $name_code = 200;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 201, //[{un}] sent a new comment
 		'_' => 202,//[{un}] modified a comment

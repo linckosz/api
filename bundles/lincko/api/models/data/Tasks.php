@@ -72,6 +72,8 @@ class Tasks extends ModelLincko {
 
 	protected $name_code = 500;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 501, //[{un}] created a new task
 		'_' => 502,//[{un}] modified a task

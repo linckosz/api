@@ -55,6 +55,8 @@ class Spaces extends ModelLincko {
 
 	protected $name_code = 1000;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 1001, //[{un}] created a new space
 		'_' => 1002,//[{un}] modified a space

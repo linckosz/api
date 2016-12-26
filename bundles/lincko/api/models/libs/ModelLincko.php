@@ -105,7 +105,7 @@ abstract class ModelLincko extends Model {
 	//It helps to recover some iformation on client side
 	protected $historyParameters = array();
 
-	//At fase we block history
+	//At false we block history
 	protected $save_history = false;
 
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.

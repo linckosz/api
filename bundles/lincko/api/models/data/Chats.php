@@ -44,6 +44,8 @@ class Chats extends ModelLincko {
 
 	protected $name_code = 100;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 101, //[{un}] created a new chat group
 		'_' => 102,//[{un}] modified a chat group
@@ -76,13 +78,13 @@ class Chats extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected static $dependencies_visible = array(
-		'users' => array('users_x_chats', array('fav', 'silence', 'hide')),
+		'users' => array('users_x_chats', array('fav', 'silence', 'hide', 'noticed')),
 		'spaces' => array('spaces_x', array('created_at')),
 	);
 
 	//Many(Chats) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access', 'fav', 'silence');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_chats', 'chats_id', 'users_id')->withPivot('access', 'fav', 'silence', 'hide', 'noticed');
 	}
 
 	//Many(Chats) to Many(Workspaces)

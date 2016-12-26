@@ -42,6 +42,8 @@ class Workspaces extends ModelLincko {
 
 	protected $name_code = 300;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 301, //[{un}] created a new workspace
 		'_' => 302,//[{un}] modified the workspace

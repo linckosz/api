@@ -57,6 +57,8 @@ class Notes extends ModelLincko {
 
 	protected $name_code = 800;
 
+	protected $save_history = true;
+
 	protected static $archive = array(
 		'created_at' => 801, //[{un}] created a new note
 		'_' => 802,//[{un}] modified a note

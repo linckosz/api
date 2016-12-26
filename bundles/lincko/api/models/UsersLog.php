@@ -207,7 +207,6 @@ class UsersLog extends Model {
 					if($language = $translation->setLanguage($json->language)){
 						$user->language = $language;
 					}
-					
 				}
 
 				$limit = 0;
@@ -255,6 +254,27 @@ class UsersLog extends Model {
 							$app->lincko->flash['signout'] = false;
 							$app->lincko->flash['resignin'] = false;
 							$log_id = $users_log->id;
+							//Additional account information that need user ID
+							if($data->data->party=='wechat'){ //Wechat
+								//Add profile picture
+								if(isset($json->headimgurl)){
+									if($download = file_get_contents($json->headimgurl)){
+										file_put_contents('/tmp/'.$user->internal_email, $download);
+										$profile_pic = new Files;
+										$profile_pic->name = 'Martin';
+										$profile_pic->ori_type = mime_content_type('/tmp/toto');
+										$profile_pic->tmp_name = '/tmp/toto';
+										$profile_pic->error = 0;
+										$profile_pic->size = filesize('/tmp/'.$user->internal_email);
+										$profile_pic->parent_type = 'users';
+										$profile_pic->parent_id = $app->lincko->data['uid'];
+										if($profile_pic->save()){
+											$user->profile_pic = $profile_pic->id;
+											$user->save();
+										}
+									}
+								}
+							}
 						}
 					}
 				}

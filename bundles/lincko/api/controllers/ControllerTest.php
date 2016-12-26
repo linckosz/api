@@ -561,7 +561,7 @@ class ControllerTest extends Controller {
 		//$tp = Comments::find(46117)->clone(false, array(), $links);
 		//\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
 
-		/*
+		
 		$file = file_get_contents('http://wx.qlogo.cn/mmopen/aTLrM3AwibiaSxjNL5aQHkv1eN524CATjrdHOVwwrFYPCtAV2vADeqeMqfeTdzIQevdUkTYUqefa3hZ0DFlOKPP3YZl2JqEuiba/0');
 		file_put_contents('/tmp/toto', $file);
 		$model = new Files;
@@ -571,17 +571,19 @@ class ControllerTest extends Controller {
 		$model->error = 0;
 		$model->size = filesize('/tmp/toto');
 		$model->parent_type = 'users';
-		$model->parent_id = 3;
+		$model->parent_id = $app->lincko->data['uid'];
 		$model->save();
-
+		
+		
 		$user = Users::getUser();
 		$user->profile_pic = $model->id;
 		$user->save();
-		*/
-
+		
+		/*
 		$tp = Chats::find(1066);
 		$tp->setPerm();
 		$tp->checkAccess();
+		*/
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
