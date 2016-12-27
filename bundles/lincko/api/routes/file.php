@@ -78,6 +78,16 @@ $app->group('/file', function () use ($app) {
 	))
 	->name('file_progress_post');
 
+	$app->get(
+		'/profile/:workspace/:uid',
+		'\bundles\lincko\api\controllers\ControllerFile:profile_get'
+	)
+	->conditions(array(
+		'workspace' => '\d+',
+		'uid' => '\d+',
+	))
+	->name('file_profile_get');
+
 });
 
 //Third party connection (more secured)

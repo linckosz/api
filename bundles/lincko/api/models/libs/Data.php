@@ -278,12 +278,15 @@ class Data {
 				return $tree_desc;
 			}
 
+			/*
+			//toto => don't use models, it generates deadlocks
 			$models = array();
 			if($temp = Models::getItems(array_flip($list_models), true)){
 				foreach ($temp as $value) {
 					$models[$value->type] = array_filter( explode(';', $value->list), 'strlen' );
 				}
 			}
+			*/
 
 			// Get all ID with parent dependencies
 			$loop = true;
@@ -316,7 +319,9 @@ class Data {
 							while($nested){ //$nested is used for element that are linked to each others
 								$nested = false;
 								$break = false;
-								if(false && isset($models[$key]) && count($models[$key])>0){ //toto => Models has an issue when plus a single ID and the row doesn't exists yet, it will ignore previous IDs
+								/*
+								//toto => don't use models, it generates deadlocks
+								if(isset($models[$key]) && count($models[$key])>0){ //toto => Models has an issue when plus a single ID and the row doesn't exists yet, it will ignore previous IDs
 									$result_bis = $class::withTrashed()->whereIn('id', $models[$key])->get(); //toto => It seems that it's slower that the jointure, need to be confirmed with heavy database
 									$break = true; //We force to exit because the list of IDs already contain all IDs
 								} else {
@@ -324,6 +329,10 @@ class Data {
 									$result_bis = $class::getItems($list, true);
 									$class::enableTrashGlobal(false);
 								}
+								*/
+								$class::enableTrashGlobal(true);
+								$result_bis = $class::getItems($list, true);
+								$class::enableTrashGlobal(false);
 								if(isset($result->$key)){
 									$result->$key = $result->$key->merge($result_bis);
 								} else {

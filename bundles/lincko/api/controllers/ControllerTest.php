@@ -570,6 +570,8 @@ class ControllerTest extends Controller {
 		$tp->checkAccess();
 		*/
 
+		$tp = json_decode(null);
+
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);

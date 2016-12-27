@@ -651,6 +651,7 @@ class ControllerUser extends Controller {
 				}
 				$data->id = $user->id;
 				$data->username = $user->username;
+				$data->updated_at = $user->updated_at->getTimestamp();
 				$data->profile_pic = $user->profile_pic;
 				$msg = $app->trans->getBRUT('api', 15, 23); //Account found
 				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));

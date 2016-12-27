@@ -552,28 +552,16 @@ class Users extends ModelLincko {
 							//set models access from host request
 							if(!is_null($pivot->models)){
 								$invitation_models = json_decode($pivot->models);
-								foreach ($invitation_models as $table => $list) {
-									//Don't give access to others users or workspace
-									if($table=='workspaces' || $table=='users'){
-										continue;
-									}
-									if(!isset($this->pivots_var->$table)){ $this->pivots_var->$table = new \stdClass; }
-									//Make sure that the host have access to the original item
-									//toto => to do
-									if(is_numeric($list)){
-										$id = intval($list);
-										if(!isset($this->pivots_var->$table->$id)){ $this->pivots_var->$table->$id = new \stdClass; }
-										$this->pivots_var->$table->$id->access = array(true, true);
-										if($table=='tasks'){
-											$this->pivots_var->$table->$id->in_charge = array(true, false);
-											$this->pivots_var->$table->$id->approver = array(true, false);
+								if(is_object($invitation_models)){
+									foreach ($invitation_models as $table => $list) {
+										//Don't give access to others users or workspace
+										if($table=='workspaces' || $table=='users'){
+											continue;
 										}
-										//After saving, reset item permission to give access to the new user
-										if(!isset(self::$permission_reset[$table])){ self::$permission_reset[$table] = array(); }
-										self::$permission_reset[$table][$id] = $id;
-									} else if(is_array($list) || is_object($list)){
-										foreach ($list as $id) {
-											$id = intval($id);
+										if(!isset($this->pivots_var->$table)){ $this->pivots_var->$table = new \stdClass; }
+										//Make sure that the host have access to the original item
+										if(is_numeric($list)){
+											$id = intval($list);
 											if(!isset($this->pivots_var->$table->$id)){ $this->pivots_var->$table->$id = new \stdClass; }
 											$this->pivots_var->$table->$id->access = array(true, true);
 											if($table=='tasks'){
@@ -583,14 +571,27 @@ class Users extends ModelLincko {
 											//After saving, reset item permission to give access to the new user
 											if(!isset(self::$permission_reset[$table])){ self::$permission_reset[$table] = array(); }
 											self::$permission_reset[$table][$id] = $id;
+										} else if(is_array($list) || is_object($list)){
+											foreach ($list as $id) {
+												$id = intval($id);
+												if(!isset($this->pivots_var->$table->$id)){ $this->pivots_var->$table->$id = new \stdClass; }
+												$this->pivots_var->$table->$id->access = array(true, true);
+												if($table=='tasks'){
+													$this->pivots_var->$table->$id->in_charge = array(true, false);
+													$this->pivots_var->$table->$id->approver = array(true, false);
+												}
+												//After saving, reset item permission to give access to the new user
+												if(!isset(self::$permission_reset[$table])){ self::$permission_reset[$table] = array(); }
+												self::$permission_reset[$table][$id] = $id;
+											}
 										}
 									}
 								}
 							}
 							if(!isset($this->pivots_var->users)){ $this->pivots_var->users = new \stdClass; }
-							if(!isset($this->pivots_var->users->{$app->lincko->data['uid']})){ $this->pivots_var->users->{$app->lincko->data['uid']} = new \stdClass; }
-							$this->pivots_var->users->{$app->lincko->data['uid']}->models = array(null, false);
-							$this->pivots_var->usersLinked->$users_id->models = array(null, false);
+							if(!isset($this->pivots_var->users->$users_id)){ $this->pivots_var->users->$users_id = new \stdClass; }
+							$this->pivots_var->users->$users_id->models = array(false, false);
+							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
 						} else {
 							$this->pivots_var->usersLinked->$users_id->access = array(false, true);
 						}
@@ -632,19 +633,61 @@ class Users extends ModelLincko {
 		$user = Users::getUser();
 		$pivot = (new PivotUsers(array('users')))->withTrashed()->where('users_id', $guest->id)->where('users_id_link', $user->id)->first();
 
+		$pivots_previous = false;
+		if($pivot && $invitation_models = json_decode($pivot->models)){
+			$invitation_models = json_decode($pivot->models);
+			if(is_object($invitation_models) && !empty($invitation_models)){
+				$pivots_previous = $invitation_models;
+			}
+		}
 		if(!$pivot || !$pivot->access){
 			$username = $user->username;
 			$username_guest = $guest->username;
-			$pivot = new \stdClass;
-			$pivot->{'usersLinked>invitation'} = new \stdClass;
-			$pivot->{'usersLinked>invitation'}->{$guest->id} = true;
-			$pivot->{'usersLinked>access'} = new \stdClass;
-			$pivot->{'usersLinked>access'}->{$guest->id} = false;
+			$pivots = new \stdClass;
+			$pivots->{'usersLinked>invitation'} = new \stdClass;
+			$pivots->{'usersLinked>invitation'}->{$guest->id} = true;
+			$pivots->{'usersLinked>access'} = new \stdClass;
+			$pivots->{'usersLinked>access'}->{$guest->id} = false;
 			if($data && isset($data->invite_access)){
-				$pivot->{'usersLinked>models'} = new \stdClass;
-				$pivot->{'usersLinked>models'}->{$guest->id} = $data->invite_access;
+				$invite_access = new \stdClass;
+				if($pivots_previous){
+					foreach ($pivots_previous as $table => $list) {
+						if(!isset($invite_access->$table)){
+							$invite_access->$table = new \stdClass;
+						}
+						if(is_numeric($list)){
+							$id = intval($list);
+							$invite_access->$table->$id = $id;
+						} else if(is_array($list) || is_object($list)){
+							foreach ($list as $id) {
+								$id = intval($id);
+								$invite_access->$table->$id = $id;
+							}
+						} 
+					}
+				}
+				$invitation_models = json_decode($data->invite_access);
+				if($invitation_models){
+					foreach ($invitation_models as $table => $list) {
+						if(!isset($invite_access->$table)){
+							$invite_access->$table = new \stdClass;
+						}
+						if(is_numeric($list)){
+							$id = intval($list);
+							$invite_access->$table->$id = $id;
+						} else if(is_array($list) || is_object($list)){
+							foreach ($list as $id) {
+								$id = intval($id);
+								$invite_access->$table->$id = $id;
+							}
+						} 
+					}
+				}
+				$pivots->{'usersLinked>models'} = new \stdClass;
+				$pivots->{'usersLinked>models'}->{$guest->id} = json_encode($invite_access);
 			}
-			$user->pivots_format($pivot);
+			$user->pivots_format($pivots);
+			//$user->pivots_save();
 			$user->save();
 			$link = 'https://'.$app->lincko->domain;
 			$mail = new Email();
@@ -672,7 +715,7 @@ class Users extends ModelLincko {
 				$mail->setSubject($mail_subject);
 				$mail->sendLater($mail_template);
 			}
-		} else if($pivot && $pivot->access){
+		} else if($pivot && $pivot->access){ //toto => to test 
 			//we directly give access to models
 			if($data && isset($data->invite_access)){
 				$invitation_models = json_decode($data->invite_access);

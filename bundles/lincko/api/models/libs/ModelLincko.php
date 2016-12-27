@@ -969,6 +969,8 @@ abstract class ModelLincko extends Model {
 					}
 					$all_perm[$perm_new][$table_name][$id] = $id;
 
+					/*
+					//toto => don't use models, it generates deadlocks
 					$old = json_decode($perm_old, true);
 					if(!is_array($old)){
 						$old = array();
@@ -985,6 +987,7 @@ abstract class ModelLincko extends Model {
 					if(count($less)>0){
 						Models::less($table_name, $id, $less); //This works only if the row exists already
 					}
+					*/
 				}
 			}
 		}
