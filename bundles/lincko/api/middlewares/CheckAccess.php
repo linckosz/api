@@ -481,6 +481,9 @@ class CheckAccess extends \Slim\Middleware {
 						&& isset($post['temp_id'])
 						&& $username_sha1 = UsersLog::pukpicToSha($post['shangzai_puk'])
 					){
+						$data->api_key = 'lknscklb798w98eh9cwde8bc897q09wj';
+						$app->lincko->data['lastvisit_enabled'] = false; //Disable lastvisit because we cannot get all items from uploading (security feature)
+						$this->checkAPI();
 						if(isset($post['http_code_ok']) && $post['http_code_ok']){
 							$data->http_code_ok = (bool) $post['http_code_ok'];
 						}

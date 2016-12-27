@@ -174,6 +174,7 @@ $app->lincko->data['invitation_beta'] = true; //At true, we force new user to be
 $app->lincko->data['invitation_code'] = ''; //The code grab by the link
 
 $app->lincko->data['lastvisit'] = time()-1; //Less one second to avoid missing timestamp at the same time
+$app->lincko->data['lastvisit_enabled'] = true;
 
 $app->lincko->data['remote'] = false; //At true if we connect to remote server
 $app->lincko->data['database_data'] = 'data'; //data is the local, but it can be changed to third party database for more security

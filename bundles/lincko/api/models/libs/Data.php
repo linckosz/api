@@ -74,13 +74,13 @@ class Data {
 	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0, $delete_temp_id=true, $schema=null){
 		$app = $this->app;
 		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
-		if($lastvisit && $this->setLastVisit()){
+		if($app->lincko->data['lastvisit_enabled'] && $lastvisit && $this->setLastVisit()){
 			$msg = array_merge(
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
+					'lastvisit' => $app->lincko->data['lastvisit'], //Make sure that setLastvisit is time()-1
 					'partial' => $this->getLatest(),
 					'schema' => $schema,
-					'lastvisit' => $lastvisit, //Make sure that setLastvisit is time()-1
 				),
 				$msg
 			);
@@ -937,6 +937,7 @@ class Data {
 			}
 		}
 
+		/*
 		//toto => this is a temp solution (for iOS) the time we can refactor communciation process with less data
 		//At least need 300 items, cannot be lower (avoid to geenrate too much calls)
 		if($this->limit_json>300 && $this->item_detail){
@@ -965,6 +966,7 @@ class Data {
 			}
 			return $result_limit;
 		}
+		*/
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);
 		//\libs\Watch::php( $db->getQueryLog() ,'QueryLog', __FILE__, __LINE__, false, false, true);

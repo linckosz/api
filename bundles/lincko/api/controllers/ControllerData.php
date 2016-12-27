@@ -31,7 +31,7 @@ class ControllerData extends Controller {
 		$schema = NULL;
 		$info = NULL;
 		$data_lastvisit = $data->getTimestamp();
-		$lastvisit = time();
+		$lastvisit = $app->lincko->data['lastvisit'];
 
 		if($user->getForceSchema() > $data_lastvisit){
 			$info = 'reset';
