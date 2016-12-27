@@ -163,12 +163,12 @@ class Users extends ModelLincko {
 
 	//Many(Users) to Many(Users)
 	public function users(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_link')->withPivot('access', 'invitation');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id', 'users_id_link')->withPivot('access', 'invitation', 'models');
 	}
 
 	//Many(Users) to Many(Users)
 	public function usersLinked(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id_link', 'users_id')->withPivot('access', 'invitation');
+		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_users', 'users_id_link', 'users_id')->withPivot('access', 'invitation', 'models');
 	}
 
 	//Many(Users) to Many(Roles)
@@ -568,6 +568,9 @@ class Users extends ModelLincko {
 											$this->pivots_var->$table->$id->in_charge = array(true, false);
 											$this->pivots_var->$table->$id->approver = array(true, false);
 										}
+										//After saving, reset item permission to give access to the new user
+										if(!isset(self::$permission_reset[$table])){ self::$permission_reset[$table] = array(); }
+										self::$permission_reset[$table][$id] = $id;
 									} else if(is_array($list) || is_object($list)){
 										foreach ($list as $id) {
 											$id = intval($id);
@@ -577,13 +580,17 @@ class Users extends ModelLincko {
 												$this->pivots_var->$table->$id->in_charge = array(true, false);
 												$this->pivots_var->$table->$id->approver = array(true, false);
 											}
+											//After saving, reset item permission to give access to the new user
+											if(!isset(self::$permission_reset[$table])){ self::$permission_reset[$table] = array(); }
+											self::$permission_reset[$table][$id] = $id;
 										}
 									}
 								}
-								$pivot->models = null;
-								$pivot->save();
 							}
-							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
+							if(!isset($this->pivots_var->users)){ $this->pivots_var->users = new \stdClass; }
+							if(!isset($this->pivots_var->users->{$app->lincko->data['uid']})){ $this->pivots_var->users->{$app->lincko->data['uid']} = new \stdClass; }
+							$this->pivots_var->users->{$app->lincko->data['uid']}->models = array(null, false);
+							$this->pivots_var->usersLinked->$users_id->models = array(null, false);
 						} else {
 							$this->pivots_var->usersLinked->$users_id->access = array(false, true);
 						}
@@ -660,9 +667,11 @@ class Users extends ModelLincko {
 			//Send mobile notification
 			(new Notif)->push($mail_subject, $mail_body, $guest, $guest->getSha());
 
-			$mail->addAddress($guest->email);
-			$mail->setSubject($mail_subject);
-			$mail->sendLater($mail_template);
+			if(Users::validEmail($guest->email)){
+				$mail->addAddress($guest->email);
+				$mail->setSubject($mail_subject);
+				$mail->sendLater($mail_template);
+			}
 		} else if($pivot && $pivot->access){
 			//we directly give access to models
 			if($data && isset($data->invite_access)){

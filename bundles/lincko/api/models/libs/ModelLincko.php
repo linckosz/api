@@ -146,6 +146,9 @@ abstract class ModelLincko extends Model {
 	//Level of perission for the model (0: R, 1: RC, 2: RCU, 3: RCUD)
 	protected static $permission_users = array();
 
+	//List of element we need to reset the permission
+	protected static $permission_reset = array();
+
 	protected $parent_item = null;
 	public $_parent = array(null, -1);
 
@@ -2355,6 +2358,16 @@ abstract class ModelLincko extends Model {
 		}
 
 		//In case it change the parent (project), we move all dependencies (only if admin of the project)
+
+		foreach (self::$permission_reset as $table_name => $list_id) {
+			foreach ($list_id as $id) {
+				$class = $this->getClass($table_name);
+				if($item = $class::withTrashed()->find($id)){
+					$item->setPerm();
+				}
+				unset(self::$permission_reset[$table_name][$id]);
+			}
+		}
 
 		if($this->change_permission){
 			$users_tables_updated = $this->setPerm();

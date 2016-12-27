@@ -328,9 +328,13 @@ class ControllerUser extends Controller {
 					);
 					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
 
-					$mail->addAddress($email, $username);
-					$mail->setSubject($mail_subject);
-					$mail->sendLater($mail_template);
+					(new Notif)->push($mail_subject, $mail_body, false, $model->getSha());
+
+					if(Users::validEmail($email)){
+						$mail->addAddress($email, $username);
+						$mail->setSubject($mail_subject);
+						$mail->sendLater($mail_template);
+					}
 
 					//Invitation
 					if($invitation){
@@ -377,9 +381,12 @@ class ControllerUser extends Controller {
 								'mail_foot' => '',
 							);
 							$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-							$mail->addAddress($user->email);
-							$mail->setSubject($mail_subject);
-							$mail->sendLater($mail_template);
+
+							if(Users::validEmail($user->email)){
+								$mail->addAddress($user->email);
+								$mail->setSubject($mail_subject);
+								$mail->sendLater($mail_template);
+							}
 
 							//Send mobile notification
 							(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
@@ -671,7 +678,8 @@ class ControllerUser extends Controller {
 		if(is_array($form) || is_object($form)){
 			$form = (object) $form;
 			if(!$form->exists && isset($form->email)){
-				if(!Users::where('email', $form->email)->first()){
+				$guest = Users::where('email', $form->email)->first();
+				if(!$guest){
 					$user = Users::getUser();
 					$username = $user->username;
 					$invitation = new Invitation();
@@ -698,14 +706,18 @@ class ControllerUser extends Controller {
 					);
 					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
 
-					$mail->addAddress($form->email);
-					$mail->setSubject($mail_subject);
-					if($mail->sendLater($mail_template)){
-						$data = true;
-						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
-						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
-						return true;
+					//Send mobile notification
+					(new Notif)->push($mail_subject, $mail_body, false, $guest->getSha());
+
+					if(Users::validEmail($form->email)){
+						$mail->addAddress($form->email);
+						$mail->setSubject($mail_subject);
+						$mail->sendLater($mail_template);
 					}
+					$data = true;
+					$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+					$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+					return true;
 				}
 			} else if($form->exists && isset($form->users_id)){
 				if($guest = Users::find($form->users_id)){
@@ -793,9 +805,9 @@ class ControllerUser extends Controller {
 					$mail_body = $app->trans->getBRUT('api', 1004, 2, $mail_body_array); //You have requested a password reset. You need to enter the code below within 10 minutes in the required field to be able to confirm the operation. CODE: <b>@@mail_code~~<b/>
 
 					//Send mobile notification
-					$title = $app->trans->getBRUT('api', 1004, 3); //You have requested a password reset.
-					$msg = $app->trans->getBRUT('api', 1004, 4, $mail_body_array); //CODE: @@mail_code~~
-					(new Notif)->push($title, $msg, false, $user->getSha());
+					$msg = $title = $app->trans->getBRUT('api', 1004, 3); //You have requested a password reset.
+					$content = $app->trans->getBRUT('api', 1004, 4, $mail_body_array); //CODE: @@mail_code~~
+					(new Notif)->push($title, $content, false, $user->getSha());
 
 					$mail_template_array = array(
 						'mail_head' => $mail_subject,
@@ -803,13 +815,15 @@ class ControllerUser extends Controller {
 						'mail_foot' => '',
 					);
 					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-					$mail->addAddress($user->email);
-					$mail->setSubject($mail_subject);
-					if($mail->sendLater($mail_template)){
-						$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
-						$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg, 'email' => $user->email), 'error' => false));
-						return true;
+					if(Users::validEmail($user->email)){
+						$mail->addAddress($user->email);
+						$mail->setSubject($mail_subject);
+						if($mail->sendLater($mail_template)){
+							$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
+						}
 					}
+					$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg, 'email' => $user->email), 'error' => false));
+					return true;
 				}
 			}	
 		}
@@ -869,13 +883,17 @@ class ControllerUser extends Controller {
 								'mail_foot' => '',
 							);
 							$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-							$mail->addAddress($user->email);
-							$mail->setSubject($mail_subject);
-							if($mail->sendLater($mail_template)){
-								$msg = $app->trans->getBRUT('api', 15, 34); //Password successfully reset
-								$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg), 'error' => false));
-								return true;
+
+							(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
+
+							if(Users::validEmail($user->email)){
+								$mail->addAddress($user->email);
+								$mail->setSubject($mail_subject);
+								$mail->sendLater($mail_template);
 							}
+							$msg = $app->trans->getBRUT('api', 15, 34); //Password successfully reset
+							$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg), 'error' => false));
+							return true;
 						}
 					} else {
 						$user_log->code = null;

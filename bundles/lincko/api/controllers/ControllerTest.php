@@ -562,22 +562,7 @@ class ControllerTest extends Controller {
 		//\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
 
 		
-		$file = file_get_contents('http://wx.qlogo.cn/mmopen/aTLrM3AwibiaSxjNL5aQHkv1eN524CATjrdHOVwwrFYPCtAV2vADeqeMqfeTdzIQevdUkTYUqefa3hZ0DFlOKPP3YZl2JqEuiba/0');
-		file_put_contents('/tmp/toto', $file);
-		$model = new Files;
-		$model->name = 'Martin';
-		$model->ori_type = mime_content_type('/tmp/toto');
-		$model->tmp_name = '/tmp/toto';
-		$model->error = 0;
-		$model->size = filesize('/tmp/toto');
-		$model->parent_type = 'users';
-		$model->parent_id = $app->lincko->data['uid'];
-		$model->save();
 		
-		
-		$user = Users::getUser();
-		$user->profile_pic = $model->id;
-		$user->save();
 		
 		/*
 		$tp = Chats::find(1066);
@@ -653,6 +638,7 @@ class ControllerTest extends Controller {
 		\time_checkpoint('end tasks');	
 		*/
 
+		
 		
 		/*
 		//----------------------------------------
