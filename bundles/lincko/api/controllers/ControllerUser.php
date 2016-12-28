@@ -339,13 +339,22 @@ class ControllerUser extends Controller {
 					//Invitation
 					if($invitation){
 						$pivot = new \stdClass;
+						$invitation_models = false;
+						if(!is_null($invitation->models)){
+							$invitation_models = json_decode($invitation->models);
+						}
+						//Record for invitation
+						$invitation->guest = $model->id;
+						$invitation->used = true;
+						$invitation->models = null;
+						$invitation->save();
+
 						if($invitation->created_by>0 && $user = Users::find($invitation->created_by)){
 							//For guest & host
 							$pivot->{'users>access'} = new \stdClass;
 							$pivot->{'users>access'}->{$user->id} = true;
 							//If gave access to some items
-							if(!is_null($invitation->models)){
-								$invitation_models = json_decode($invitation->models);
+							if($invitation_models){
 								foreach ($invitation_models as $table => $list) {
 									//Don't give access to others users or workspace
 									if($table=='workspaces' || $table=='users'){
@@ -391,31 +400,7 @@ class ControllerUser extends Controller {
 							//Send mobile notification
 							(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
 						}
-						//Record for invotation
-						$invitation->guest = $model->id;
-						$invitation->used = true;
-						$invitation->models = null;
-						$invitation->save();
 					}
-
-					/*
-					//User code (used as URL fixed ID) ucode
-					if($invitation){
-						$pivot = new \stdClass;
-						if($invitation->created_by>0 && Users::find($invitation->created_by)){
-							//For guest & host
-							$pivot->{'users>access'} = new \stdClass;
-							$pivot->{'users>access'}->{$invitation->created_by} = true;
-							$model->pivots_format($pivot);
-							$model->forceSaving();
-							$model->save();
-						}
-						//Record for invitation
-						$invitation->guest = $model->id;
-						$invitation->used = true;
-						$invitation->save();
-					}
-					*/
 
 					$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)),)); //Account created.
 					return true;
@@ -668,6 +653,49 @@ class ControllerUser extends Controller {
 		return false;
 	}
 
+	public function find_qrcode_post(){
+		$app = $this->app;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		$form = $this->form;
+		if(is_array($form) || is_object($form)){
+			\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
+			foreach ($form as $key => $value) {
+				$id = Datassl::decrypt($value, 'invitation');
+				break; //Insure to take the first one only
+			}
+			if($id>1 && $user = Users::find($id)){ //Account found
+				$data = new \stdClass;
+				$data->myself = false;
+				if($user->id == $app->lincko->data['uid']){
+					$data->myself = true;
+				}
+				$data->contact = false;
+				if(Users::getModel($user->id)){
+					$data->contact = true;
+				}
+				$data->id = $user->id;
+				$data->username = $user->username;
+				$data->updated_at = $user->updated_at->getTimestamp();
+				$data->profile_pic = $user->profile_pic;
+				$msg = $app->trans->getBRUT('api', 15, 23); //Account found
+				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+				return true;
+			} else {
+				$data = true;
+				$msg = $app->trans->getBRUT('api', 15, 24); //Account not found
+				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 	public function invite_post(){
 		$app = $this->app;
 
@@ -706,9 +734,6 @@ class ControllerUser extends Controller {
 						'mail_foot' => $mail_foot,
 					);
 					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-					//Send mobile notification
-					(new Notif)->push($mail_subject, $mail_body, false, $guest->getSha());
 
 					if(Users::validEmail($form->email)){
 						$mail->addAddress($form->email);

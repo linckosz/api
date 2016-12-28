@@ -539,7 +539,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				->setSize(160)
 				->setPadding(5)
 				->setErrorCorrection('high')
-				->setForegroundColor(array('r' => 251, 'g' => 160, 'b' => 38, 'a' => 0))
+				//->setForegroundColor(array('r' => 251, 'g' => 160, 'b' => 38, 'a' => 0)) //Orange is not working very well
+				->setForegroundColor(array('r' => 0, 'g' => 0, 'b' => 0, 'a' => 0))
 				->setBackgroundColor(array('r' => 255, 'g' => 255, 'b' => 255, 'a' => 0))
 				->setImageType(QrCode::IMAGE_TYPE_PNG)
 			;

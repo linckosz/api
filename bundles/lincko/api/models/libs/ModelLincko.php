@@ -2768,7 +2768,7 @@ abstract class ModelLincko extends Model {
 												}
 												//We excluse default modification
 												if(isset($this::$archive['pivot_'.$column]) || isset($this::$archive['pivot_'.$column.'_'.$value])){
-													$this->setHistory($column, $value, $value_old, $parameters, $type, $type_id);
+													$this->setHistory('pivot_'.$column, $value, $value_old, $parameters, $type, $type_id);
 												}
 											}
 										} else {
@@ -2802,7 +2802,7 @@ abstract class ModelLincko extends Model {
 										}
 										//We excluse default modification
 										if(isset($this::$archive['pivot_'.$column]) || isset($this::$archive['pivot_'.$column.'_'.$value])){
-											$this->setHistory($column, $value, null, $parameters, $type, $type_id);
+											$this->setHistory('pivot_'.$column, $value, null, $parameters, $type, $type_id);
 										}
 									}
 									continue;

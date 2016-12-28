@@ -715,7 +715,7 @@ class Users extends ModelLincko {
 				$mail->setSubject($mail_subject);
 				$mail->sendLater($mail_template);
 			}
-		} else if($pivot && $pivot->access){ //toto => to test 
+		} else if($pivot && $pivot->access){ //toto => I am not sure why it's here, we should never match that condition (inviting someone that is already in the contact list)
 			//we directly give access to models
 			if($data && isset($data->invite_access)){
 				$invitation_models = json_decode($data->invite_access);

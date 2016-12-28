@@ -61,6 +61,12 @@ $app->group('/user', function () use ($app) {
 	->name('user_find'.$app->lincko->method_suffix);
 
 	$app->post(
+		'/find_qrcode',
+		'\bundles\lincko\api\controllers\ControllerUser:find_qrcode'.$app->lincko->method_suffix
+	)
+	->name('user_find'.$app->lincko->method_suffix);
+
+	$app->post(
 		'/invite',
 		'\bundles\lincko\api\controllers\ControllerUser:invite'.$app->lincko->method_suffix
 	)

@@ -322,8 +322,8 @@ class CheckAccess extends \Slim\Middleware {
 
 		if($valid){
 			$this->setUserId();
-			$this->inviteSomeone();
 			$this->setUserLanguage();
+			$this->inviteSomeone();
 			if(
 				   isset($data->data)
 				&& isset($data->data->set_shangzai)
