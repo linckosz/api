@@ -65,6 +65,15 @@ class STR {
 		return preg_replace("/<br\s*?\/?>/", "\n", $text);
 	}
 
+	//Convert BR to LN
+	public static function HTMLwithReturnLine($text) {
+		$text = str_replace("\]n", '', $text);
+		$text = preg_replace("/<br\s*?\/?>/", "<br>\n", $text);
+		$text = str_replace('<p>', "\n<p>", $text);
+		$text = str_replace('<div>', "\n<div>", $text);
+		return $text;
+	}
+
 	private static function name_to_numerical($string) {
 		$tab = Ord_table::singleton();
 		return strtr($string, $tab);

@@ -298,6 +298,7 @@ class Spaces extends ModelLincko {
 		}
 		$clone->pivots_format($pivots, false);
 
+		$clone->saveHistory(false);
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
 

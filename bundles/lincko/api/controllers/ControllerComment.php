@@ -82,6 +82,7 @@ class ControllerComment extends Controller {
 		}
 		if(isset($form->comment) && is_string($form->comment)){
 			$form->comment = STR::br2ln(trim($form->comment));
+			$form->comment = STR::HTMLwithReturnLine($form->comment);
 		}
 		return $this->form = $form;
 	}

@@ -59,7 +59,7 @@ class Watch {
 		if($error){
 			$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
 		} else {
-			$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
+			//$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
 		}
 
 		$comment = (string)$comment;

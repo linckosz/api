@@ -110,6 +110,8 @@ class Tasks extends ModelLincko {
 		
 	);
 
+	protected static $history_xdiff = array('comment');
+
 	protected static $parent_list = 'projects';
 
 	protected $model_timestamp = array(
@@ -531,6 +533,7 @@ class Tasks extends ModelLincko {
 		}
 		$clone->pivots_format($pivots, false);
 
+		$clone->saveHistory(false);
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
 

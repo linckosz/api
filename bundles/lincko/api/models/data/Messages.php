@@ -52,6 +52,8 @@ class Messages extends ModelLincko {
 		'created_at' => 201, //[{un}] sent a new message
 	);
 
+	protected static $history_xdiff = array('comment');
+
 	protected static $parent_list = 'chats';
 
 	protected $model_integer = array(

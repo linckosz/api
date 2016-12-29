@@ -233,6 +233,7 @@ class ControllerUser extends Controller {
 			$invitation = false;
 			$invitation_used = false;
 			if(isset($form->invitation_code)){
+				$app->lincko->flash['unset_invitation_code'] = true;
 				$invitation_code = $form->invitation_code;
 				if($invitation = Invitation::withTrashed()->where('code', '=', $invitation_code)->first()){
 					$invitation_used = $invitation->used;
@@ -383,7 +384,7 @@ class ControllerUser extends Controller {
 							$mail_body_array = array(
 								'mail_username' => $user->username,
 							);
-							$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_code~~ accepted your invitation.
+							$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
 							$mail_template_array = array(
 								'mail_head' => $mail_subject,
 								'mail_body' => $mail_body,

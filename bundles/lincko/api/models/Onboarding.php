@@ -192,9 +192,10 @@ class Onboarding {
 			$this->resetOnboarding();
 
 			//initialze project pivot
-			$project_pivot = new \stdClass;
-			$project_pivot->{'users>access'} = new \stdClass;
-			$project_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
+			$all_pivot = new \stdClass;
+			$all_pivot->{'users>access'} = new \stdClass;
+			$all_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
+			$all_pivot->{'users>access'}->{$app->lincko->data['uid']} = true; //Make sure the user itself is attached
 
 			//Assign tasks to the user
 			$task_pivot = new \stdClass;
@@ -209,7 +210,8 @@ class Onboarding {
 					$links = array();
 					$project_new = $project_ori->clone(false, array(), $links);
 					$project_new->title = $project_ori->title;
-					$project_new->pivots_format($project_pivot, false);
+					$project_new->pivots_format($all_pivot, false);
+					$project_new->saveHistory(false);
 					$project_new->save();
 					//\libs\Watch::php($links, 'links', __FILE__, __LINE__, false, false, true);
 					$this->setOnboarding($project_new, 1);
@@ -229,13 +231,15 @@ class Onboarding {
 									if(isset($item->approved_by)){
 										$item->approved_by = 1; //Monkey King
 									}
+									$item->pivots_format($all_pivot, false);
 									//Assign tasks
 									if($table=='tasks'){
 										//\libs\Watch::php($id, $table, __FILE__, __LINE__, false, false, true);
 										$item->pivots_format($task_pivot, false);
-										$item->saveHistory(false);
-										$item->save();
 									}
+									$item->saveHistory(false);
+									$item->changePermission(false);
+									$item->save();
 								}
 							}
 						}

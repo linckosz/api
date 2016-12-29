@@ -79,6 +79,9 @@ class ControllerNote extends Controller {
 		if(isset($form->parent_id) && is_numeric($form->parent_id)){
 			$form->parent_id = (int) $form->parent_id;
 		}
+		if(isset($form->comment) && is_string($form->comment)){
+			$form->comment = STR::HTMLwithReturnLine($form->comment);
+		}
 		if(isset($form->title) && is_string($form->title)){
 			$form->title = trim(STR::break_line_conv(STR::br2space($form->title),' '));
 			if(strlen($form->title)==0){

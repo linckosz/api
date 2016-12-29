@@ -71,6 +71,8 @@ class Notes extends ModelLincko {
 		'_delete' => 899,//[{un}] deleted a note
 	);
 
+	protected static $history_xdiff = array('comment');
+
 	protected static $parent_list = 'projects';
 
 	protected $model_integer = array(
@@ -270,6 +272,7 @@ class Notes extends ModelLincko {
 		}
 		$clone->pivots_format($pivots, false);
 
+		$clone->saveHistory(false);
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
 

@@ -69,6 +69,8 @@ class Projects extends ModelLincko {
 		'_delete' => 499,//[{un}] deleted a project
 	);
 
+	protected static $history_xdiff = array('description');
+
 	protected static $parent_list = 'workspaces';
 
 	protected $model_integer = array(
@@ -365,6 +367,7 @@ class Projects extends ModelLincko {
 		}
 		*/
 
+		$clone->saveHistory(false);
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
 

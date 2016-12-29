@@ -73,6 +73,9 @@ abstract class ModelLincko extends Model {
 		'_delete' => 99,//[{un}] deleted an item
 	);
 
+	//Tell we do a patch for some attrobutes
+	protected static $history_xdiff = array();
+
 	//When call toJson, convert fields to timestamp format if the field exists only
 	protected static $class_timestamp = array(
 		'created_at',
@@ -1782,7 +1785,14 @@ abstract class ModelLincko extends Model {
 		$history->pivot_id = $pivot_id;
 		$history->code = $this->getArchiveCode($key, $new);
 		$history->attribute = $key;
-		if(!is_null($old)){ $history->old = $old; }
+		if(!is_null($old)){
+			if(in_array($key, static::$history_xdiff)){
+				$history->old = xdiff_string_diff($old, $new, 0, true);
+				$history->patch = true;
+			} else {
+				$history->old = $old;
+			}
+		}
 		if(!empty($parameters)){
 			$history->parameters = json_encode($parameters, JSON_FORCE_OBJECT);
 		}
@@ -2149,6 +2159,10 @@ abstract class ModelLincko extends Model {
 
 	public function forceSaving($force=true){
 		$this->force_save = (boolean) $force;
+	}
+
+	public function changePermission($change=true){
+		$this->change_permission = (boolean) $change;
 	}
 
 	public function getDirty(){

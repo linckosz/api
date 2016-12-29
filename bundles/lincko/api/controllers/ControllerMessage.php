@@ -82,6 +82,7 @@ class ControllerMessage extends Controller {
 		}
 		if(isset($form->comment) && is_string($form->comment)){
 			$form->comment = STR::br2ln(trim($form->comment));
+			$form->comment = STR::HTMLwithReturnLine($form->comment);
 		}
 		if(isset($form->id_max) && is_numeric($form->id_max)){
 			$form->id_max = (int) $form->id_max;

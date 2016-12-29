@@ -766,6 +766,7 @@ class Files extends ModelLincko {
 		}
 		$clone->pivots_format($pivots, false);
 
+		$clone->saveHistory(false);
 		$clone->parentSave(); //Specific to Files to skip file copy
 		$links[$this->getTable()][$this->id] = $clone->id;
 

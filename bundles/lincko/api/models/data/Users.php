@@ -591,6 +591,7 @@ class Users extends ModelLincko {
 							if(!isset($this->pivots_var->users)){ $this->pivots_var->users = new \stdClass; }
 							if(!isset($this->pivots_var->users->$users_id)){ $this->pivots_var->users->$users_id = new \stdClass; }
 							$this->pivots_var->users->$users_id->models = array(false, false);
+							$this->pivots_var->users->$users_id->access = array(true, false);
 							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
 						} else {
 							$this->pivots_var->usersLinked->$users_id->access = array(false, true);

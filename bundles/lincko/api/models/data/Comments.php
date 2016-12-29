@@ -67,6 +67,8 @@ class Comments extends ModelLincko {
 		'_delete' => 299,//[{un}] deleted a comment
 	);
 
+	protected static $history_xdiff = array('comment');
+
 	protected static $parent_list = array('users', 'comments', 'workspaces', 'projects', 'tasks', 'notes', 'files');
 
 	protected $model_integer = array(
@@ -308,6 +310,7 @@ class Comments extends ModelLincko {
 		}
 		$clone->pivots_format($pivots, false);
 
+		$clone->saveHistory(false);
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
 
