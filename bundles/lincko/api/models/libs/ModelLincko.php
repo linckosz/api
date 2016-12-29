@@ -2781,8 +2781,8 @@ abstract class ModelLincko extends Model {
 													$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 												}
 												//We excluse default modification
-												if(isset($this::$archive['pivot_'.$column]) || isset($this::$archive['pivot_'.$column.'_'.$value])){
-													$this->setHistory('pivot_'.$column, $value, $value_old, $parameters, $type, $type_id);
+												if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
+													$this->setHistory('pivot_'.$type.'_'.$column, $value, $value_old, $parameters, $type, $type_id);
 												}
 											}
 										} else {
@@ -2815,8 +2815,8 @@ abstract class ModelLincko extends Model {
 											$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
 										}
 										//We excluse default modification
-										if(isset($this::$archive['pivot_'.$column]) || isset($this::$archive['pivot_'.$column.'_'.$value])){
-											$this->setHistory('pivot_'.$column, $value, null, $parameters, $type, $type_id);
+										if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
+											$this->setHistory('pivot_'.$type.'_'.$column, $value, null, $parameters, $type, $type_id);
 										}
 									}
 									continue;

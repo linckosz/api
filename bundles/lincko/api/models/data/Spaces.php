@@ -62,8 +62,8 @@ class Spaces extends ModelLincko {
 		'_' => 1002,//[{un}] modified a space
 		'title' => 1003,//[{un}] changed a space name
 		'parent_id' => 1005, //[{un}] moved a space to the project "[{pj|ucfirst}]"
-		'pivot_access_0' => 1096, //[{un}] blocked [{cun}]'s access to a space
-		'pivot_access_1' => 1097, //[{un}] authorized [{cun}]'s access to a space
+		'pivot_users_access_0' => 1096, //[{un}] blocked [{cun}]'s access to a space
+		'pivot_users_access_1' => 1097, //[{un}] authorized [{cun}]'s access to a space
 		'_restore' => 1098,//[{un}] restored a space
 		'_delete' => 1099,//[{un}] deleted a space
 	);

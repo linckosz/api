@@ -63,8 +63,8 @@ class Projects extends ModelLincko {
 		'_tasks_0' => 405,//[{un}] moved the task "[{tt}]" from this project to another one
 		'_tasks_1' => 406,//[{un}] moved the task "[{tt}]" to this project
 		'diy' => 402,//[{un}] modified a project
-		'pivot_access_0' => 496, //[{un}] blocked [{cun}]'s access to a project
-		'pivot_access_1' => 497, //[{un}] authorized [{cun}]'s access to a project
+		'pivot_users_access_0' => 496, //[{un}] blocked [{cun}]'s access to a project
+		'pivot_users_access_1' => 497, //[{un}] authorized [{cun}]'s access to a project
 		'_restore' => 498,//[{un}] restored a project
 		'_delete' => 499,//[{un}] deleted a project
 	);
