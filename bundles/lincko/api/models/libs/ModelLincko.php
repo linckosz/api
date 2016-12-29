@@ -2662,6 +2662,7 @@ abstract class ModelLincko extends Model {
 					}
 				}
 				if($extra = json_encode($bindings)){
+					usleep(30000); //Give 30ms before anyking of update
 					$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
 					usleep(30000); //Give 30ms after anyking of update
 					return true;
