@@ -88,10 +88,10 @@ class Tasks extends ModelLincko {
 		'parent_id' => 505, //[{un}] moved a task to the project "[{pj|ucfirst}]"
 		'pivot_tasksup_delay' => 550, //[{un}] modified a task delay
 		'pivot_tasksdown_delay' => 550, //[{un}] modified a task delay
-		'pivot_users_in_charge_0' => 551, //[{cun}] is in charge of a task
-		'pivot_users_in_charge_1' => 552, //[{cun}] is unassigned from a task
-		'pivot_users_approver_0' => 553, //[{cun}] becomes an approver to a task
-		'pivot_users_approver_1' => 554, //[{cun}] is no longer an approver to a task
+		'pivot_users_in_charge_0' => 551, //[{cun}] is unassigned from a task
+		'pivot_users_in_charge_1' => 552, //[{cun}] is in charge of a task
+		'pivot_users_approver_0' => 553, //[{cun}] is no longer an approver to a task
+		'pivot_users_approver_1' => 554, //[{cun}] becomes an approver to a task
 		'approved_0' => 555, //[{un}] reopened a task
 		'approved_1' => 556, //[{un}] completed a task
 		'pivot_users_access_0' => 596, //[{un}] blocked [{cun}]'s access to a task
