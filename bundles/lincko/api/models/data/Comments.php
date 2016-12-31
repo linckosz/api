@@ -3,6 +3,7 @@
 
 namespace bundles\lincko\api\models\data;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;

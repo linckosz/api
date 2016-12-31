@@ -66,4 +66,11 @@ class PivotUsers extends ModelLincko {
 
 ////////////////////////////////////////////
 
+	public function getNoticed(){
+		if(isset($this->noticed)){
+			return $this->noticed;
+		}
+		return false;
+	}
+
 }

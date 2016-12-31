@@ -3,6 +3,7 @@
 
 namespace bundles\lincko\api\models\data;
 
+use Carbon\Carbon;
 use \libs\Datassl;
 use \libs\Email;
 use \bundles\lincko\api\models\libs\ModelLincko;

@@ -3,6 +3,7 @@
 
 namespace bundles\lincko\api\models\data;
 
+use Carbon\Carbon;
 use \bundles\lincko\api\models\libs\ModelLincko;
 
 class Settings extends ModelLincko {

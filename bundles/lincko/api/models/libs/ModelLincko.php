@@ -2371,7 +2371,7 @@ abstract class ModelLincko extends Model {
 
 		//$parent
 		if($parent){
-			$users_tables = $parent->touchUpdateAt($users_tables, false);
+			$users_tables = $parent->touchUpdateAt($users_tables, false, true);
 		}
 
 		//In case it change the parent (project), we move all dependencies (only if admin of the project)
@@ -2437,7 +2437,8 @@ abstract class ModelLincko extends Model {
 	}
 
 	//This will update updated_at, even if the user doesn't have write permission
-	public function touchUpdateAt($users_tables=array(), $inform=true){
+	//$inform at true force $return_list at true
+	public function touchUpdateAt($users_tables=array(), $inform=true, $return_list=false){
 		$app = self::getApp();
 		if (!$this->timestamps || !isset($this->updated_at) || !isset($this->id)) {
 			return false;
@@ -2447,10 +2448,11 @@ abstract class ModelLincko extends Model {
 		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time, 'extra' => null]);
 		usleep(30000); //30ms
 
-		$users_tables = $this->getUsersTable($users_tables);
-
-		if($inform){ //We do by default
-			Updates::informUsers($users_tables);
+		if($inform || $return_list){
+			$users_tables = $this->getUsersTable($users_tables);
+			if($inform){ //We do by default
+				Updates::informUsers($users_tables);
+			}
 		}
 
 		return $users_tables;
@@ -2774,7 +2776,7 @@ abstract class ModelLincko extends Model {
 											$touch = true;
 											$class = $this::getClass($type);
 											if($model = $class::withTrashed()->find($type_id)){
-												$users_tables = $model->touchUpdateAt($users_tables, false);
+												$users_tables = $model->touchUpdateAt($users_tables, false, true);
 											}
 											if($history_save){
 												$parameters = array();
@@ -2809,7 +2811,7 @@ abstract class ModelLincko extends Model {
 									$touch = true;
 									$class = $this::getClass($type);
 									if($class && $model = $class::withTrashed()->find($type_id)){
-										$users_tables = $model->touchUpdateAt($users_tables, false);
+										$users_tables = $model->touchUpdateAt($users_tables, false, true);
 									}
 									if($history_save){
 										$parameters = array();
@@ -2834,10 +2836,13 @@ abstract class ModelLincko extends Model {
 				}
 			}
 		}
-		Updates::informUsers($users_tables);
+		
 		if($touch){
-			$this->touchUpdateAt();
+			usleep(30000);
+			$users_tables = $this->touchUpdateAt($users_tables, false, true);
 		}
+		Updates::informUsers($users_tables);
+		
 		//Force some users to recheck the schema
 		if(!empty($users_schema)){
 			$this->setForceSchema(false, $users_schema);

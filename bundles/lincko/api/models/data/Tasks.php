@@ -4,6 +4,8 @@
 namespace bundles\lincko\api\models\data;
 
 use Carbon\Carbon;
+use \libs\Datassl;
+use \libs\STR;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\Notif;
@@ -538,6 +540,7 @@ class Tasks extends ModelLincko {
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
 
+		/*
 		//Modify any link (toto => update this part the day the new tag spec is ready)
 		$text = $clone->comment;
 		if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $text, $matches)){
@@ -557,6 +560,48 @@ class Tasks extends ModelLincko {
 			$clone->comment = $text;
 			$clone->brutSave();
 			$clone->touchUpdateAt();
+		}
+		*/
+
+		$text = $this->comment;
+		$parent_id = $this->parent_id;
+		if(preg_match_all("/src=\".+?\/file\/(\d+)\/(.+?)\/(thumbnail|link|download)\/(\d+)\/(.+?)\?.*?\"/ui", $text, $matches,  PREG_SET_ORDER)){
+			foreach ($matches as $match) {
+				$ori = $match[0];
+				$w = $match[1];
+				$shaold = $match[2];
+				$type = $match[3];
+				$fileid = $match[4];
+				$filename = $match[5];
+				usleep(10000);
+				$new = false;
+				if($file = Files::withTrashed()->find($fileid)){
+					$shanew = base64_encode(Datassl::encrypt_smp($file->link));
+					$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileid/", $ori);
+				} else if($file = Files::withTrashed()->where('parent_type', 'projects')->where('parent_id', $this->parent_id)->where('name', $filename)->first()){ //Correct errors
+					//If no puid we try to grab it from another similar file
+					$puid = $file->puid;
+					if(!$puid && $file_puid = Files::withTrashed()->where('link', $file->link)->whereNotNull('puid')->first()){
+						$puid = $file_puid->puid;
+					}
+					if($puid){
+						$fileidbis = $file->id;
+						$shanew = base64_encode(Datassl::encrypt_smp($file->link));
+						$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileidbis/", $ori);
+					}
+				}
+				if($new){
+					//Use https by default
+					$new = str_replace("http://", "https://", $new);
+					$new = str_replace(":8080/", ":8443/", $new);
+					$text = str_replace($ori, $new, $text);
+				} else {
+					continue; //Do not convert if any issue
+				}
+			}
+			$text = STR::HTMLwithReturnLine($text);
+			$time = $this->freshTimestamp();
+			$clone::withTrashed()->where('id', $clone->id)->getQuery()->update(['comment' => $text, 'updated_at' => $time, 'extra' => null]);
 		}
 
 		//Clone comments (files)
