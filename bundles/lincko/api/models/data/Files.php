@@ -732,13 +732,16 @@ class Files extends ModelLincko {
 		$clone->_perm = '';
 		$clone->extra = null;
 		$clone->puid = $this->created_by;
+		if(!is_null($this->puid)){
+			$clone->puid = $this->puid;
+		}
 
 		//Pivots
 		$pivots = new \stdClass;
 		$dependencies_visible = $clone::getDependenciesVisible();
 		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
-			if(isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+			if(!isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
 				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
 					continue;
 				}
@@ -750,6 +753,7 @@ class Files extends ModelLincko {
 						$pivots->{$dep.'>access'}->{$links[$table][$item->id]} = true;
 						foreach ($dependencies_visible[$dep][1] as $field) {
 							if(isset($item->pivot->$field)){
+								if(!isset($pivots->{$dep.'>'.$field})){ $pivots->{$dep.'>'.$field} = new \stdClass; }
 								$pivots->{ $dep.'>'.$field}->{$links[$table][$item->id]} = $item->pivot->$field;
 								//If it's a Carbon object, we add the offset
 								if($offset!=0){

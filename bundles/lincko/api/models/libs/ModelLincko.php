@@ -2467,10 +2467,18 @@ abstract class ModelLincko extends Model {
 			return true;
 		}
 		if(!isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
+			$save = false;
 			if(array_key_exists('deleted_by', $this->attributes)){
 				$app = self::getApp();
 				$this->deleted_by = $app->lincko->data['uid'];
 				$this->setHistory('_delete');
+				$save = true;
+			}
+			if(array_key_exists('extra', $this->attributes)){
+				$this->extra = null;
+				$save = true;
+			}
+			if($save){
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->delete();
@@ -2492,9 +2500,17 @@ abstract class ModelLincko extends Model {
 			return true;
 		}
 		if(isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
+			$save = false;
 			if(array_key_exists('deleted_by', $this->attributes)){
 				$this->deleted_at = null;
 				$this->setHistory('_restore');
+				$save = true;
+			}
+			if(array_key_exists('extra', $this->attributes)){
+				$this->extra = null;
+				$save = true;
+			}
+			if($save){
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->restore();

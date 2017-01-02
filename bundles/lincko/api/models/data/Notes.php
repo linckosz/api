@@ -246,7 +246,7 @@ class Notes extends ModelLincko {
 		$dependencies_visible = $clone::getDependenciesVisible();
 		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
-			if(isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+			if(!isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
 				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
 					continue;
 				}
@@ -258,6 +258,7 @@ class Notes extends ModelLincko {
 						$pivots->{$dep.'>access'}->{$links[$table][$item->id]} = true;
 						foreach ($dependencies_visible[$dep][1] as $field) {
 							if(isset($item->pivot->$field)){
+								if(!isset($pivots->{$dep.'>'.$field})){ $pivots->{$dep.'>'.$field} = new \stdClass; }
 								$pivots->{ $dep.'>'.$field}->{$links[$table][$item->id]} = $item->pivot->$field;
 								//If it's a Carbon object, we add the offset
 								if($offset!=0){
@@ -278,29 +279,6 @@ class Notes extends ModelLincko {
 		$clone->saveHistory(false);
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
-
-/*
-		//Modify any link (toto => update this part the day the new tag spec is ready)
-		$text = $clone->comment;
-		if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $text, $matches)){
-			foreach ($matches[0] as $key => $value) {
-				$sha = $matches[1][$key];
-				$type = $matches[2][$key];
-				$id = $matches[3][$key];
-				if(isset($links['files'][$id])){
-					$sha_new = $sha;
-					$id_new = $links['files'][$id];
-				} else {
-					$sha_new = '0'; //broken link
-					$id_new = '0'; //broken link
-				}
-				$text = str_replace("/$sha/$type/$id/", "/$sha_new/$type/$id_new/", $text);
-			}
-			$clone->comment = $text;
-			$clone->brutSave();
-			$clone->touchUpdateAt();
-		}
-*/
 
 		$text = $this->comment;
 		$parent_id = $this->parent_id;

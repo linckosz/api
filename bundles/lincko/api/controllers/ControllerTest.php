@@ -558,134 +558,14 @@ class ControllerTest extends Controller {
 		//$tp = Files::find(1034);
 		//$tp = $tp->getPermissionMax();
 
-		//$tp = Comments::find(46117)->clone(false, array(), $links);
-		//\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
+		//$tp = Projects::find(2845)->clone(false, array(), $links); //Clone 2
+		$tp = Projects::find(324)->clone(false, array(), $links); //test to clone
+		\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
 
-		
-		
-		
-		/*
-		$tp = Chats::find(1066);
-		$tp->setPerm();
-		$tp->checkAccess();
-		*/
-
-		/*
-
-		<img data-cke-saved-src="http://master.file.lincko.cafe:8080/file/0/SG1tcmROa1ZlTUtmY093SW5hWmpNTXA5bU1kRDR1dmd3dVNFTVlTWnBaMD0=/link/12166/Lincko-Capture-Main-Menu.png?1481550238" src="http://master.file.lincko.cafe:8080/file/0/SG1tcmROa1ZlTUtmY093SW5hWmpNTXA5bU1kRDR1dmd3dVNFTVlTWnBaMD0=/link/12166/Lincko-Capture-Main-Menu.png?1481550238" class="submenu_taskdetail_description_img">
-
-		*/
-
-		//Modify the links
-		set_time_limit(3600); //Set to 1 hour workload at the most
-
-		\time_checkpoint('start notes');
-		$items = Notes::withTrashed()->get(array('id', 'comment', 'parent_id'));
-		foreach ($items as $item) {
-			$comment = $item->comment;
-			$parent_id = $item->parent_id;
-			if(preg_match_all("/src=\".+?\/file\/(\d+)\/(.+?)\/(thumbnail|link|download)\/(\d+)\/(.+?)\?.*?\"/ui", $comment, $matches,  PREG_SET_ORDER)){
-				foreach ($matches as $match) {
-					$ori = $match[0];
-					$w = $match[1];
-					$shaold = $match[2];
-					$type = $match[3];
-					$fileid = $match[4];
-					$filename = $match[5];
-					usleep(10000);
-					$new = false;
-					if($file = Files::withTrashed()->find($fileid)){
-						$shanew = base64_encode(Datassl::encrypt_smp($file->link));
-						$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileid/", $ori);
-						//\libs\Watch::php( $ori."\n".$new, 'OK', __FILE__, __LINE__, false, false, true);
-					} else if($file = Files::withTrashed()->where('parent_type', 'projects')->where('parent_id', $parent_id)->where('name', $filename)->first()){ //Correct errors
-						//If no puid we try to grab it from another similar file
-						$puid = $file->puid;
-						if(!$puid && $file_puid = Files::withTrashed()->where('link', $file->link)->whereNotNull('puid')->first()){
-							//\libs\Watch::php( $file_puid->puid, 'puid', __FILE__, __LINE__, false, false, true);
-							$puid = $file_puid->puid;
-							Files::withTrashed()->where('link', $file->link)->whereNull('puid')->getQuery()->update(['puid' => $file_puid->puid, 'extra' => null]);
-						}
-						if($puid){
-							$fileidbis = $file->id;
-							$shanew = base64_encode(Datassl::encrypt_smp($file->link));
-							$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileidbis/", $ori);
-							//\libs\Watch::php( $ori."\n".$new, 'CORRECTION', __FILE__, __LINE__, false, false, true);
-						}
-					}
-					if($new){
-						//Use https by default
-						$new = str_replace("http://", "https://", $new);
-						$new = str_replace(":8080/", ":8443/", $new);
-						//\libs\Watch::php( $ori."\n".$new, 'file', __FILE__, __LINE__, false, false, true);
-						$comment = str_replace($ori, $new, $comment);
-					}
-				}
-				$comment = STR::HTMLwithReturnLine($comment);
-				if($comment !== $item->comment){
-					//\libs\Watch::php( $item->comment."\n\n".$comment, '$notes', __FILE__, __LINE__, false, false, true);
-					Notes::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
-				}
-			}
-		}
-		Users::getUser()->setForceReset();
-		\time_checkpoint('end notes');
-
-		\time_checkpoint('start tasks');
-		$items = Tasks::withTrashed()->get(array('id', 'comment', 'parent_id'));
-		foreach ($items as $item) {
-			$comment = $item->comment;
-			$parent_id = $item->parent_id;
-			if(preg_match_all("/src=\".+?\/file\/(\d+)\/(.+?)\/(thumbnail|link|download)\/(\d+)\/(.+?)\?.*?\"/ui", $comment, $matches,  PREG_SET_ORDER)){
-				//\libs\Watch::php( $matches, '$matches', __FILE__, __LINE__, false, false, true);
-				foreach ($matches as $match) {
-					$ori = $match[0];
-					$w = $match[1];
-					$shaold = $match[2];
-					$type = $match[3];
-					$fileid = $match[4];
-					$filename = $match[5];
-					usleep(10000);
-					if($file = Files::withTrashed()->find($fileid)){
-						$shanew = base64_encode(Datassl::encrypt_smp($file->link));
-						$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileid/", $ori);
-						//\libs\Watch::php( $ori."\n".$new, 'OK', __FILE__, __LINE__, false, false, true);
-					} else if($file = Files::withTrashed()->where('parent_type', 'projects')->where('parent_id', $parent_id)->where('name', $filename)->first()){ //Correct errors
-						//If no puid we try to grab it from another similar file
-						$puid = $file->puid;
-						if(!$puid && $file_puid = Files::withTrashed()->where('link', $file->link)->whereNotNull('puid')->first()){
-							//\libs\Watch::php( $file_puid->puid, 'puid', __FILE__, __LINE__, false, false, true);
-							$puid = $file_puid->puid;
-							Files::withTrashed()->where('link', $file->link)->whereNull('puid')->getQuery()->update(['puid' => $file_puid->puid, 'extra' => null]);
-						}
-						if($puid){
-							$fileidbis = $file->id;
-							$shanew = base64_encode(Datassl::encrypt_smp($file->link));
-							$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileidbis/", $ori);
-							//\libs\Watch::php( $ori."\n".$new, 'CORRECTION', __FILE__, __LINE__, false, false, true);
-						}
-					}
-					if($new){
-						//Use https by default
-						$new = str_replace("http://", "https://", $new);
-						$new = str_replace(":8080/", ":8443/", $new);
-						//\libs\Watch::php( $ori."\n".$new, 'file', __FILE__, __LINE__, false, false, true);
-						$comment = str_replace($ori, $new, $comment);
-					}
-				}
-				$comment = STR::HTMLwithReturnLine($comment);
-				if($comment !== $item->comment){
-					//\libs\Watch::php( $item->comment."\n\n".$comment, '$tasks', __FILE__, __LINE__, false, false, true);
-					Tasks::withTrashed()->where('id', $item->id)->getQuery()->update(['comment' => $comment, 'extra' => null]);
-				}
-			}
-		}
-		Users::getUser()->setForceReset();
-		\time_checkpoint('end tasks');
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
 		/*

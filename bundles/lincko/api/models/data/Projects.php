@@ -372,6 +372,48 @@ class Projects extends ModelLincko {
 		$clone->save();
 		$links[$this->getTable()][$this->id] = $clone->id;
 
+		$text = $this->description;
+		$parent_id = $this->parent_id;
+		if(preg_match_all("/src=\".+?\/file\/(\d+)\/(.+?)\/(thumbnail|link|download)\/(\d+)\/(.+?)\?.*?\"/ui", $text, $matches,  PREG_SET_ORDER)){
+			foreach ($matches as $match) {
+				$ori = $match[0];
+				$w = $match[1];
+				$shaold = $match[2];
+				$type = $match[3];
+				$fileid = $match[4];
+				$filename = $match[5];
+				usleep(10000);
+				$new = false;
+				if($file = Files::withTrashed()->find($fileid)){
+					$shanew = base64_encode(Datassl::encrypt_smp($file->link));
+					$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileid/", $ori);
+				} else if($file = Files::withTrashed()->where('parent_type', 'projects')->where('parent_id', $this->parent_id)->where('name', $filename)->first()){ //Correct errors
+					//If no puid we try to grab it from another similar file
+					$puid = $file->puid;
+					if(!$puid && $file_puid = Files::withTrashed()->where('link', $file->link)->whereNotNull('puid')->first()){
+						$puid = $file_puid->puid;
+					}
+					if($puid){
+						$fileidbis = $file->id;
+						$shanew = base64_encode(Datassl::encrypt_smp($file->link));
+						$new = str_replace("/file/$w/$shaold/$type/$fileid/", "/file/$w/$shanew/$type/$fileidbis/", $ori);
+					}
+				}
+				if($new){
+					//Use https by default
+					$new = str_replace("http://", "https://", $new);
+					$new = str_replace(":8080/", ":8443/", $new);
+					$text = str_replace($ori, $new, $text);
+				} else {
+					continue; //Do not convert if any issue
+				}
+			}
+			$text = STR::HTMLwithReturnLine($text);
+			$time = $this->freshTimestamp();
+			$clone::withTrashed()->where('id', $clone->id)->getQuery()->update(['description' => $text, 'updated_at' => $time, 'extra' => null]);
+		}
+
+
 		//Clone spaces (no dependencies)
 		if(!isset($exclude_links['spaces'])){
 			$attributes = array(
@@ -435,8 +477,7 @@ class Projects extends ModelLincko {
 			}
 		}
 		
-
-		//Clone comments (files)
+		//Clone comments (projects)
 		if(!isset($exclude_links['comments'])){
 			$attributes = array(
 				'parent_type' => 'projects',
@@ -447,27 +488,6 @@ class Projects extends ModelLincko {
 					$comment->clone($offset, $attributes, $links);
 				}
 			}
-		}
-
-		//Modify any link (toto => update this part the day the new tag spec is ready)
-		$text = $clone->description;
-		if(preg_match_all("/<img.*?\/([=\d\w]+?)\/(thumbnail|link|download)\/(\d+)\/.*?>/ui", $text, $matches)){
-			foreach ($matches[0] as $key => $value) {
-				$sha = $matches[1][$key];
-				$type = $matches[2][$key];
-				$id = $matches[3][$key];
-				if(isset($links['files'][$id])){
-					$sha_new = $sha;
-					$id_new = $links['files'][$id];
-				} else {
-					$sha_new = '0'; //broken link
-					$id_new = '0'; //broken link
-				}
-				$text = str_replace("/$sha/$type/$id/", "/$sha_new/$type/$id_new/", $text);
-			}
-			$clone->description = $text;
-			$clone->brutSave();
-			$clone->touchUpdateAt();
 		}
 
 		return $clone; //$link is directly modified as parameter &$link
