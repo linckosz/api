@@ -70,7 +70,7 @@ class Onboarding {
 		$this->loadOnboarding();
 		$settings = self::$settings;
 		self::$onboarding = new \stdClass;
-		$settings->onboarding = json_encode(new \stdClass);
+		$settings->onboarding = json_encode(new \stdClass, JSON_UNESCAPED_UNICODE);
 		$settings->save();
 	}
 
@@ -93,7 +93,7 @@ class Onboarding {
 		
 		//save Onboarding settings
 		if(is_object(self::$onboarding)){
-			$settings->onboarding = json_encode(self::$onboarding);
+			$settings->onboarding = json_encode(self::$onboarding, JSON_UNESCAPED_UNICODE);
 			$settings->save();
 		}
 	}
@@ -134,7 +134,7 @@ class Onboarding {
 					foreach ($onboarding->ob as $key => $value) {
 						$onboarding->ob->$key = new \stdClass; //Clear all answer to only display the question
 					}
-					$item->comment = json_encode($onboarding);
+					$item->comment = json_encode($onboarding, JSON_UNESCAPED_UNICODE);
 					$item->brutSave();
 					$item->touchUpdateAt();
 				}

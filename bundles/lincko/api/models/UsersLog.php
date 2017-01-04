@@ -192,7 +192,7 @@ class UsersLog extends Model {
 				$users_log->log = $log;
 				$users_log->party = $data->data->party;
 				$users_log->party_id = $data->data->party_id;
-				$users_log->party_json = json_encode($data->data->data);
+				$users_log->party_json = json_encode($data->data->data, JSON_UNESCAPED_UNICODE);
 
 				$file = false;
 

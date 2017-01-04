@@ -50,7 +50,7 @@ class Json {
 		ob_clean();
 		header("Content-type: application/json; charset=UTF-8");
 		http_response_code($status);
-		echo json_encode($this->json);
+		echo json_encode($this->json, JSON_UNESCAPED_UNICODE);
 		return exit(0);
 	}
 	

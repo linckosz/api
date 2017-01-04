@@ -1794,7 +1794,7 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		if(!empty($parameters)){
-			$history->parameters = json_encode($parameters, JSON_FORCE_OBJECT);
+			$history->parameters = json_encode($parameters, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE);
 		}
 		$history->save();
 	}
@@ -2541,7 +2541,7 @@ abstract class ModelLincko extends Model {
 			- _perm
 			- history
 	*/
-	public function toJson($detail=true, $options = 0){
+	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
 		$app = self::getApp();
 		$this->setParentAttributes();
@@ -2669,7 +2669,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function extraEncode($bindings){
-		$bindings = json_decode(json_encode($bindings)); //Clone (if not will delete proporties on object itself)
+		$bindings = json_decode(json_encode($bindings, JSON_UNESCAPED_UNICODE)); //Clone (if not will delete proporties on object itself)
 		if(is_object($bindings) && !empty($bindings)){
 			if(isset($this->extra) || in_array('extra', self::getColumns())){
 				unset($bindings->extra); //Do not reencode own field
@@ -2679,7 +2679,7 @@ abstract class ModelLincko extends Model {
 						unset($bindings->{static::$prefix_fields[$field]});
 					}
 				}
-				if($extra = json_encode($bindings)){
+				if($extra = json_encode($bindings, JSON_UNESCAPED_UNICODE)){
 					usleep(30000); //Give 30ms before anyking of update
 					$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
 					usleep(30000); //Give 30ms after anyking of update

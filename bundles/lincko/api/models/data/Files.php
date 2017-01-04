@@ -313,7 +313,7 @@ class Files extends ModelLincko {
 
 	
 
-	public function toJson($detail=true, $options = 0){
+	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		$this->sha = base64_encode(Datassl::encrypt_smp($this->link));
 		return parent::toJson($detail, $options);
 	}

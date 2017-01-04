@@ -559,13 +559,47 @@ class ControllerTest extends Controller {
 		//$tp = $tp->getPermissionMax();
 
 		//$tp = Projects::find(2845)->clone(false, array(), $links); //Clone 2
-		$tp = Projects::find(324)->clone(false, array(), $links); //test to clone
-		\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
+		//$tp = Projects::find(324)->clone(false, array(), $links); //test to clone
+		//\libs\Watch::php( $links, '$links', __FILE__, __LINE__, false, false, true);
 
+		/*
+		$cookie = "pukpic=H4PZTi+v82/bdtTy5c39H+/thUAFGGOgX8i/dc6pSEiaM+mS2P/tJW516mR4dql/;toto=H4PZTi+v82/bdtTy5c39H+/thUAFGGOgX8i/dc6pSEiaM+mS2P/tJW516mR4dql/";
+		if(preg_match("/pukpic=(.+?);/ui", $cookie, $matches)){
+			\libs\Watch::php( $matches, '$matches', __FILE__, __LINE__, false, false, true);
+		}
+
+		$cookie = "tata=123;pukpic=H4PZTi+v82/bdtTy5c39H+/thUAFGGOgX8i/dc6pSEiaM+mS2P/tJW516mR4dql/;toto=H4PZTi+v82/bdtTy5c39H+/thUAFGGOgX8i/dc6pSEiaM+mS2P/tJW516mR4dql/";
+		if(preg_match("/pukpic=(.+?);/ui", $cookie, $matches)){
+			\libs\Watch::php( $matches, '$matches', __FILE__, __LINE__, false, false, true);
+		}
+
+		$cookie = "pukpic=H4PZTi+v82/bdtTy5c39H+/thUAFGGOgX8i/dc6pSEiaM+mS2P/tJW516mR4dql/";
+		if(preg_match("/pukpic=(.+?)/ui", $cookie, $matches)){
+			\libs\Watch::php( $matches, '$matches', __FILE__, __LINE__, false, false, true);
+		}
+
+		$cookie = "toto=H4PZTi+v82/bdtTy5c39H+/thUAFGGOgX8i/dc6pSEiaM+mS2P/tJW516mR4dql/;pukpic=H4PZTi+v82/bdtTy5c39H+/thUAFGGOgX8i/dc6pSEiaM+mS2P/tJW516mR4dql/";
+
+		if(preg_match("/pukpic=(.+?);?/ui", $cookie, $matches)){
+			\libs\Watch::php( $matches, '$matches', __FILE__, __LINE__, false, false, true);
+		}
+		*/
+
+		//$tp = $app->response->headers->cookies;
+		//$tp = $app;
+
+		//$tp = '{"msg":"{\"id\":162,\"temp_id\":\"ffa6fe02fbe264492da163768efef3b2\",\"updated_at\":1483439500,\"gender\":0,\"profile_pic\":12273,\"timeoffset\":16,\"resume\":10,\"_lock\":true,\"_visible\":false,\"_invitation\":false,\"-username\":\"liaoXY\",\"-firstname\":\"\\u5fd7\\u8f89\",\"-lastname\":\"\\u5ed6\",\"email\":\"liao@lincko.cafe\"}","error":false,"status":200}';
+
+		//$tp = utf8_decode($tp);
+		$tp = "你好";
+		//$tp = utf8_encode($tp);
+
+		//$tp = json_decode($tp);
+		$tp = json_encode($tp, JSON_UNESCAPED_UNICODE);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
-		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
 		/*
@@ -806,7 +840,7 @@ class ControllerTest extends Controller {
 
 	public function _post(){
 		$app = $this->app;
-		$msg = $app->trans->getBRUT('api', 8888, 1).' => '.json_encode($this->data->data); //The application is saving data.
+		$msg = $app->trans->getBRUT('api', 8888, 1).' => '.json_encode($this->data->data, JSON_UNESCAPED_UNICODE); //The application is saving data.
 		$app->render(200, array('msg' => $msg,));
 		return true;
 	}

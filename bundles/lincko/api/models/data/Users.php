@@ -481,7 +481,7 @@ class Users extends ModelLincko {
 		return parent::checkPermissionAllow($level, $msg);
 	}
 
-	public function toJson($detail=true, $options = 0){
+	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		$app = self::getApp();
 		$this->updateContactAttributes();
 		//the play with accessibility allow Data.php to gather information about some other users that are not in the user contact list

@@ -32,7 +32,9 @@ class JsonApi extends \Slim\Middleware {
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
-		$app->view(new JsonApiView());
+		$JsonApiView = new JsonApiView();
+		$JsonApiView->encodingOptions = 256; //JSON_UNESCAPED_UNICODE
+		$app->view($JsonApiView);
 		//Warning: The Middleware JsonApiMiddleware can send error message by Json to the final user (security issue). We must rewrite error handling after the load of this middleware.
 		$app->add(new \JsonApiMiddleware());
 		return true;

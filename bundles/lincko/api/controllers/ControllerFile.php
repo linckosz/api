@@ -704,7 +704,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				$scale = true;
 			}
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
-			\libs\Watch::php("Files :\n".json_encode($file->toArray()), $msg, __FILE__, __LINE__, true);
+			\libs\Watch::php("Files :\n".json_encode($file->toArray(), JSON_UNESCAPED_UNICODE), $msg, __FILE__, __LINE__, true);
 		} else {
 			$msg = $app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
 			\libs\Watch::php("No file\nworkspace: $workspace\nsha: $sha\ntype: $type\nid: $id", $msg, __FILE__, __LINE__, true);

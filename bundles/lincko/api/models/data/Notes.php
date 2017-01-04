@@ -202,7 +202,7 @@ class Notes extends ModelLincko {
 		}
 	}
 
-	public function toJson($detail=true, $options = 0){
+	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		$this->locked_by = $this->checkLock()[0];
 		return parent::toJson($detail, $options);
 	}

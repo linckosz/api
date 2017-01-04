@@ -233,7 +233,7 @@ class Comments extends ModelLincko {
 		return false;
 	}
 
-	public function toJson($detail=true, $options = 0){
+	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		if(!empty($this->recalled_by)){
 			$this->comment = '...';
 		}
