@@ -9,6 +9,7 @@ use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Comments;
 use \bundles\lincko\api\models\data\Settings;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
+use \bundles\lincko\api\models\libs\Updates;
 use Carbon\Carbon;
 use \libs\Translation;
 
@@ -19,6 +20,8 @@ class Onboarding {
 	protected static $settings = NULL;
 
 	protected static $onboarding = NULL;
+
+	protected static $monkey_king = array();
 
 	public function __construct(){
 		return true;
@@ -142,6 +145,70 @@ class Onboarding {
 		}
 	}
 
+	//This code is run after display to insure the user will go inside the account before everything is done
+	public static function hookAddMonkeyKing(){
+		$app = self::getApp();
+
+		if(!isset(self::$monkey_king['project_new']) || !isset(self::$monkey_king['links'])){
+			return false;
+		}
+
+		$project_new = self::$monkey_king['project_new'];
+		$links = self::$monkey_king['links'];
+
+		//initialize project pivot
+		$all_pivot = new \stdClass;
+		$all_pivot->{'users>access'} = new \stdClass;
+		$all_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
+		$all_pivot->{'users>access'}->{$app->lincko->data['uid']} = true; //Make sure the user itself is attached
+
+		//Assign tasks to the user
+		$task_pivot = new \stdClass;
+		$task_pivot->{'users>in_charge'} = new \stdClass;
+		$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
+		$task_pivot->{'users>approver'} = new \stdClass;
+		$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
+
+		Projects::saveSkipper(true);
+
+		$users_tables = array();
+		$users_tables[$app->lincko->data['uid']] = array();
+		foreach ($links as $table => $list) {
+			foreach ($list as $item) {
+				if($item){
+					if(isset($item->created_by)){
+						$item->created_by = 1; //Monkey King
+					}
+					if(isset($item->updated_by)){
+						$item->updated_by = 1; //Monkey King
+					}
+					if(isset($item->deleted_by)){
+						$item->deleted_by = 1; //Monkey King
+					}
+					if(isset($item->approved_by)){
+						$item->approved_by = 1; //Monkey King
+					}
+					$item->pivots_format($all_pivot, false);
+					//Assign tasks
+					if($table=='tasks'){
+						$item->pivots_format($task_pivot, false);
+					}
+					$item->saveHistory(false);
+					$item->save();
+					$users_tables[$app->lincko->data['uid']][$table] = true;
+				}
+			}
+		}
+		Projects::saveSkipper(false);
+		$project_new->setPerm();
+		if($parent = $project_new->getParent()){
+			$users_tables = $parent->touchUpdateAt($users_tables, false, true);
+		}
+		Updates::informUsers($users_tables);
+
+		return true;
+	}
+
 	//Launch the next onboarding
 	public function next($next, $answer=false, $temp_id=''){
 		$app = self::getApp();
@@ -186,65 +253,34 @@ class Onboarding {
 				$this->runOnboarding(1, false);
 			}
 
-			$project_id = $this->getOnboarding('projects', 1);
-
 			//Reset onboarding
 			$this->resetOnboarding();
 
-			//initialze project pivot
+			//initialize project pivot
 			$all_pivot = new \stdClass;
 			$all_pivot->{'users>access'} = new \stdClass;
 			$all_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
 			$all_pivot->{'users>access'}->{$app->lincko->data['uid']} = true; //Make sure the user itself is attached
 
-			//Assign tasks to the user
-			$task_pivot = new \stdClass;
-			$task_pivot->{'users>in_charge'} = new \stdClass;
-			$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
-			$task_pivot->{'users>approver'} = new \stdClass;
-			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
-
 			//Create a project
 			if(!$this->getOnboarding('projects', 1)){
 				if($project_ori = Projects::find($clone_id)){
+					Projects::saveSkipper(true);
 					$links = array();
 					$project_new = $project_ori->clone(false, array(), $links);
 					$project_new->title = $project_ori->title;
 					$project_new->pivots_format($all_pivot, false);
 					$project_new->saveHistory(false);
 					$project_new->save();
-					//\libs\Watch::php($links, 'links', __FILE__, __LINE__, false, false, true);
 					$this->setOnboarding($project_new, 1);
-					foreach ($links as $table => $list) {
-						foreach ($list as $id) {
-							if($class = Projects::getClass($table)){
-								if($item = $class::withTrashed()->find($id)){
-									if(isset($item->created_by)){
-										$item->created_by = 1; //Monkey King
-									}
-									if(isset($item->updated_by)){
-										$item->updated_by = 1; //Monkey King
-									}
-									if(isset($item->deleted_by)){
-										$item->deleted_by = 1; //Monkey King
-									}
-									if(isset($item->approved_by)){
-										$item->approved_by = 1; //Monkey King
-									}
-									$item->pivots_format($all_pivot, false);
-									//Assign tasks
-									if($table=='tasks'){
-										//\libs\Watch::php($id, $table, __FILE__, __LINE__, false, false, true);
-										$item->pivots_format($task_pivot, false);
-									}
-									$item->saveHistory(false);
-									$item->changePermission(false);
-									$item->save();
-								}
-							}
-						}
-					}
-					$project_new->setPerm();
+					Projects::saveSkipper(false);
+
+					self::$monkey_king['project_new'] = $project_new;
+					self::$monkey_king['links'] = $links;
+
+					//toto => find a way to run this code in separate thread or after rendering
+					self::hookAddMonkeyKing();
+
 					//Insure the sequence is running
 					$this->runOnboarding(1, true);
 				}
@@ -261,7 +297,5 @@ class Onboarding {
 		$this->saveOnboarding(); //Save if we have any new item to keep track
 
 	}
-
-	
 
 }

@@ -337,6 +337,7 @@ class Projects extends ModelLincko {
 			$offset = $this->created_at->diffInSeconds();
 		}
 		$clone = $this->replicate();
+		$clone->forceGiveAccess();
 
 		foreach ($attributes as $key => $value) {
 			$clone->$key = $value;
@@ -370,7 +371,10 @@ class Projects extends ModelLincko {
 
 		$clone->saveHistory(false);
 		$clone->save();
-		$links[$this->getTable()][$this->id] = $clone->id;
+		$links[$this->getTable()][$this->id] = $clone;
+		if(static::$permission_sheet[0]){ //Permission of owner
+			self::$permission_users[$uid][$clone->getTable()][$clone->id] = static::$permission_sheet[0];
+		}
 
 		$text = $this->description;
 		$parent_id = $this->parent_id;

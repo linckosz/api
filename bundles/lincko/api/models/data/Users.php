@@ -772,4 +772,8 @@ class Users extends ModelLincko {
 		return true;
 	}
 
+	public static function importGhost($uid, $code){
+		
+	}
+
 }

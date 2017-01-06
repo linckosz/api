@@ -590,12 +590,21 @@ class ControllerTest extends Controller {
 
 		//$tp = '{"msg":"{\"id\":162,\"temp_id\":\"ffa6fe02fbe264492da163768efef3b2\",\"updated_at\":1483439500,\"gender\":0,\"profile_pic\":12273,\"timeoffset\":16,\"resume\":10,\"_lock\":true,\"_visible\":false,\"_invitation\":false,\"-username\":\"liaoXY\",\"-firstname\":\"\\u5fd7\\u8f89\",\"-lastname\":\"\\u5ed6\",\"email\":\"liao@lincko.cafe\"}","error":false,"status":200}';
 
-		//$tp = utf8_decode($tp);
-		$tp = "你好";
-		//$tp = utf8_encode($tp);
+		/*
+		$tp = Tasks::find(19210);
+		\time_checkpoint('11');
+		$tp->title = ''.time();
+		$tp->forceGiveAccess();
+		$tp->saveHistory(false);
+		$tp->saveSkipper(true);
+		$tp->save();
+		\time_checkpoint('12');
+		$tp->setPerm();
+		\time_checkpoint('13');
+		*/
 
-		//$tp = json_decode($tp);
-		$tp = json_encode($tp, JSON_UNESCAPED_UNICODE);
+		$tp = Files::find(14147);
+		$tp->checkAccess();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

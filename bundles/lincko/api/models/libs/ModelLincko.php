@@ -52,6 +52,9 @@ abstract class ModelLincko extends Model {
 	//It forces to recalculate the permission field of all children
 	protected $change_permission = false;
 
+	//If at true, we skip some operation, but CAUTION we need to make sure they are run later because it can generate permission access issues
+	protected static $save_skipper = false;
+
 	//It forces to check the schema for all users concerned
 	protected $change_schema = false;
 
@@ -1910,7 +1913,7 @@ abstract class ModelLincko extends Model {
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
 		}
-		if(  isset(self::$permission_users[$users_id][$this->getTable()][$this->id]) ){
+		if( isset(self::$permission_users[$users_id][$this->getTable()][$this->id]) ){
 			return self::$permission_users[$users_id][$this->getTable()][$this->id];
 		}
 		
@@ -2050,6 +2053,10 @@ abstract class ModelLincko extends Model {
 		return $perm;
 	}
 
+	public function forceGiveAccess(){
+		$this->accessibility = true;
+	}
+
 	//It checks if the user has access to it
 	public function checkAccess($show_msg=true){
 		$app = self::getApp();
@@ -2161,8 +2168,8 @@ abstract class ModelLincko extends Model {
 		$this->force_save = (boolean) $force;
 	}
 
-	public function changePermission($change=true){
-		$this->change_permission = (boolean) $change;
+	public static function saveSkipper($change=true){
+		self::$save_skipper = (boolean) $change;
 	}
 
 	public function getDirty(){
@@ -2370,7 +2377,7 @@ abstract class ModelLincko extends Model {
 		$users_tables = $this->getUsersTable();
 
 		//$parent
-		if($parent){
+		if(!self::$save_skipper && $parent){
 			$users_tables = $parent->touchUpdateAt($users_tables, false, true);
 		}
 
@@ -2386,7 +2393,7 @@ abstract class ModelLincko extends Model {
 			}
 		}
 
-		if($this->change_permission){
+		if($this->change_permission && !self::$save_skipper){
 			$users_tables_updated = $this->setPerm();
 			foreach ($users_tables_updated as $key => $value) {
 				foreach ($value as $table_name => $value) {
@@ -2399,7 +2406,9 @@ abstract class ModelLincko extends Model {
 			$this->setForceSchema();
 		}
 
-		Updates::informUsers($users_tables);
+		if(!self::$save_skipper){
+			Updates::informUsers($users_tables);
+		}
 
 		//We do not record any setup for new model, but only change for existing model
 		if(!$new && $this->save_history){
@@ -2419,7 +2428,9 @@ abstract class ModelLincko extends Model {
 		}
 		$this->save_history = true; //Reenable the history record
 
-		$this->pushNotif($new);
+		if(!self::$save_skipper){
+			$this->pushNotif($new);
+		}
 
 		return $return;
 		

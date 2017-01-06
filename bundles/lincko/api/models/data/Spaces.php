@@ -251,6 +251,7 @@ class Spaces extends ModelLincko {
 		}
 
 		$clone = $this->replicate();
+		$clone->forceGiveAccess();
 
 		$clone->created_by = $uid;
 		if(!is_null($clone->deleted_by)){ $clone->deleted_by = $uid; }
@@ -279,11 +280,11 @@ class Spaces extends ModelLincko {
 					$table = $item->getTable();
 					if(isset($links[$table][$item->id])){
 						if(!isset($pivots->{$dep.'>access'})){ $pivots->{$dep.'>access'} = new \stdClass; }
-						$pivots->{$dep.'>access'}->{$links[$table][$item->id]} = true;
+						$pivots->{$dep.'>access'}->{$links[$table][$item->id]->id} = true;
 						foreach ($dependencies_visible[$dep][1] as $field) {
 							if(isset($item->pivot->$field)){
 								if(!isset($pivots->{$dep.'>'.$field})){ $pivots->{$dep.'>'.$field} = new \stdClass; }
-								$pivots->{ $dep.'>'.$field}->{$links[$table][$item->id]} = $item->pivot->$field;
+								$pivots->{ $dep.'>'.$field}->{$links[$table][$item->id]->id} = $item->pivot->$field;
 								//If it's a Carbon object, we add the offset
 								if($offset!=0){
 									if(preg_match("/^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d/ui", $item->pivot->$field)){
@@ -302,7 +303,10 @@ class Spaces extends ModelLincko {
 
 		$clone->saveHistory(false);
 		$clone->save();
-		$links[$this->getTable()][$this->id] = $clone->id;
+		$links[$this->getTable()][$this->id] = $clone;
+		if(static::$permission_sheet[0]){ //Permission of owner
+			self::$permission_users[$uid][$clone->getTable()][$clone->id] = static::$permission_sheet[0];
+		}
 
 		return $clone; //$link is directly modified as parameter &$link
 	}
