@@ -11,7 +11,9 @@ use \libs\Email;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\Invitation;
 use \bundles\lincko\api\models\data\Workspaces;
@@ -281,6 +283,7 @@ class ControllerUser extends Controller {
 					try {
 						$model->save();
 						$users_log->save();
+						Projects::setPersonal();
 						//$db_data->commit();
 						//$db_api->commit();
 						$committed = true;
@@ -295,11 +298,11 @@ class ControllerUser extends Controller {
 							$model->internal_email = null;
 							$model->brutSave();
 						}
-						if(isset($users_log->id)){
+						if(isset($users_log->log)){
 							$users_log->username_sha1 = null;
 							$users_log->party = null;
 							$users_log->party_id = null;
-							$users_log->brutSave();
+							$users_log->save();
 						}
 					}
 				}
@@ -310,6 +313,9 @@ class ControllerUser extends Controller {
 					$app->lincko->flash['resignin'] = false;
 					//Setup public and private key
 					$authorize = $users_log->getAuthorize($this->data);
+
+					$onboarding = new Onboarding;
+					$onboarding->next(10101); //initialize the onboarding process
 
 					//Send congrat email
 					$link = 'https://'.$app->lincko->domain;

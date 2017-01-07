@@ -485,7 +485,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$timestamp = $user->created_at->timestamp; 
 		$gmt_mtime = gmdate('r', $timestamp);
 		header('Last-Modified: '.$gmt_mtime);
-		header('Expires: '.gmdate(DATE_RFC1123,time()+16)); //About 6 months cached
+		header('Expires: '.gmdate(DATE_RFC1123, time()+16000000)); //About 6 months cached
 		header('ETag: "'.md5($uid.'-'.$timestamp).'"');
 		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
 			if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmt_mtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($uid.'-'.$timestamp)) {

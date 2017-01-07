@@ -2,6 +2,7 @@
 
 namespace bundles\lincko\api\models;
 
+use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Tasks;
 use \bundles\lincko\api\models\data\Notes;
@@ -21,9 +22,29 @@ class Onboarding {
 
 	protected static $onboarding = NULL;
 
-	protected static $monkey_king = array();
+	protected $data = NULL;
+
+	protected $json = array();
 
 	public function __construct(){
+		$app = self::getApp();
+		$data = json_decode($app->request->getBody());
+		if(!$data && $post = (object) $app->request->post()){
+			if(isset($post->data) && is_string($post->data)){
+				$post->data = json_decode($post->data);
+			}
+			$data = $post;
+		}
+		$this->json = array(
+			'api_key' => $data->api_key, //Software authorization key
+			'public_key' => $app->lincko->security['public_key'], //User public key
+			'data' => array(),
+			'method' => 'POST', //Record the type of request (GET, POST, DELETE, etc.)
+			'language' => $data->language, //By default use English
+			'fingerprint' => $data->fingerprint, //A way to identify which browser the user is using, help to avoid cookies copy/paste fraud
+			'workspace' => $data->workspace, //the url (=ID unique string) of the workspace, by default use "Shared workspace"
+		);
+		$this->data = $data;
 		return true;
 	}
 
@@ -145,37 +166,23 @@ class Onboarding {
 		}
 	}
 
-	//This code is run after display to insure the user will go inside the account before everything is done
-	public static function hookAddMonkeyKing(){
+	public function asyncMonkeyKing($project_new, $links){
 		$app = self::getApp();
-
-		if(!isset(self::$monkey_king['project_new']) || !isset(self::$monkey_king['links'])){
-			return false;
-		}
-
-		$project_new = self::$monkey_king['project_new'];
-		$links = self::$monkey_king['links'];
-
-		//initialize project pivot
-		$all_pivot = new \stdClass;
-		$all_pivot->{'users>access'} = new \stdClass;
-		$all_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
-		$all_pivot->{'users>access'}->{$app->lincko->data['uid']} = true; //Make sure the user itself is attached
-
-		//Assign tasks to the user
-		$task_pivot = new \stdClass;
-		$task_pivot->{'users>in_charge'} = new \stdClass;
-		$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
-		$task_pivot->{'users>approver'} = new \stdClass;
-		$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
-
-		Projects::saveSkipper(true);
-
-		$users_tables = array();
-		$users_tables[$app->lincko->data['uid']] = array();
-		foreach ($links as $table => $list) {
-			foreach ($list as $item) {
-				if($item){
+		if(isset($project_new->id) && isset($this->json['data'])){
+			$this->json['data']['pid'] = $project_new->id;
+			$this->json['public_key'] = Authorization::getPublicKey($this->data->fingerprint);
+			\libs\Watch::php($this->json, '$var', __FILE__, __LINE__, false, false, true);
+			$users_tables = array();
+			$users_tables[$app->lincko->data['uid']] = array();
+			foreach ($links as $table => $list) {
+				$users_tables[$app->lincko->data['uid']][$table] = true;
+				if(!isset($this->json['data']['links'])){
+					$this->json['data']['links'] = array();
+				}
+				$this->json['data']['links'][$table] = array();
+				foreach ($list as $item) {
+					$id = $item->id;
+					$this->json['data']['links'][$table][$id] = $id;
 					if(isset($item->created_by)){
 						$item->created_by = 1; //Monkey King
 					}
@@ -188,25 +195,95 @@ class Onboarding {
 					if(isset($item->approved_by)){
 						$item->approved_by = 1; //Monkey King
 					}
-					$item->pivots_format($all_pivot, false);
-					//Assign tasks
-					if($table=='tasks'){
-						$item->pivots_format($task_pivot, false);
-					}
 					$item->saveHistory(false);
-					$item->save();
-					$users_tables[$app->lincko->data['uid']][$table] = true;
+					$item->brutSave();
 				}
 			}
-		}
-		Projects::saveSkipper(false);
-		$project_new->setPerm();
-		if($parent = $project_new->getParent()){
-			$users_tables = $parent->touchUpdateAt($users_tables, false, true);
-		}
-		Updates::informUsers($users_tables);
+			Updates::informUsers($users_tables);
+			$url = $app->environment['slim.url_scheme'].'://'.$app->request->headers->Host.'/onboarding/monkeyking';
+			$data = json_encode($this->json);
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+			curl_setopt($ch, CURLOPT_POST, true);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 1); //Cannot use MS, it will crash the request
+			curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+			curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+			curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
+			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+					'Content-Type: application/json; charset=UTF-8',
+					'Content-Length: ' . mb_strlen($data),
+				)
+			);
 
+			$verbose_show = false;
+			if($verbose_show){
+				$verbose = fopen('php://temp', 'w+');
+				curl_setopt($ch, CURLOPT_VERBOSE, true);
+				curl_setopt($ch, CURLOPT_STDERR, $verbose);
+				curl_setopt($ch, CURLOPT_TIMEOUT, 60); //Increase the time to make sure we can display the result
+			}
+
+			$result = curl_exec($ch);
+
+			if($verbose_show){
+				\libs\Watch::php(json_decode($data), $url, __FILE__, __LINE__, false, false, true);
+				\libs\Watch::php(curl_getinfo($ch), '$ch', __FILE__, __LINE__, false, false, true);
+				rewind($verbose);
+				\libs\Watch::php(stream_get_contents($verbose), '$verbose', __FILE__, __LINE__, false, false, true);
+				fclose($verbose);
+				\libs\Watch::php($result, '$result', __FILE__, __LINE__, false, false, true);
+			}
+
+			@curl_close($ch);
+		}
 		return true;
+	}
+
+	//This code is run after display to insure the user will go inside the account before everything is done
+	public function changeMonkeyKing(){
+		$app = self::getApp();
+		if(isset($this->data->data->pid) && isset($this->data->data->links) && $project_new = Projects::withTrashed()->find($this->data->data->pid)){
+			$links = $this->data->data->links;
+
+			//Assign tasks to the user
+			$task_pivot = new \stdClass;
+			$task_pivot->{'users>in_charge'} = new \stdClass;
+			$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
+			$task_pivot->{'users>approver'} = new \stdClass;
+			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
+
+			Projects::saveSkipper(true);
+
+			$users_tables = array();
+			$users_tables[$app->lincko->data['uid']] = array();
+			foreach ($links as $table => $list) {
+				if($table=='tasks'){
+					$users_tables[$app->lincko->data['uid']][$table] = true;
+					foreach ($list as $id) {
+						if($class = Projects::getClass($table)){
+							if($item = $class::withTrashed()->find($id)){
+								//Assign tasks
+								$item->pivots_format($task_pivot, false);
+								$item->saveHistory(false);
+								$item->save();
+							}
+						}
+					}
+				}
+			}
+			Projects::saveSkipper(false);
+			$users_tables = $project_new->touchUpdateAt($users_tables, false, true);
+			Updates::informUsers($users_tables);
+			echo 'ok';
+			return exit(0);
+		} else {
+			echo 'error';
+			return exit(0);
+		}
 	}
 
 	//Launch the next onboarding
@@ -256,30 +333,28 @@ class Onboarding {
 			//Reset onboarding
 			$this->resetOnboarding();
 
-			//initialize project pivot
-			$all_pivot = new \stdClass;
-			$all_pivot->{'users>access'} = new \stdClass;
-			$all_pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
-			$all_pivot->{'users>access'}->{$app->lincko->data['uid']} = true; //Make sure the user itself is attached
-
 			//Create a project
 			if(!$this->getOnboarding('projects', 1)){
 				if($project_ori = Projects::find($clone_id)){
+
+					//initialize project pivot
+					$pivot = new \stdClass;
+					$pivot->{'users>access'} = new \stdClass;
+					$pivot->{'users>access'}->{'1'} = true; //Attach the Monkey King
+					$pivot->{'users>access'}->{$app->lincko->data['uid']} = true; //Make sure the user itself is attached
+
 					Projects::saveSkipper(true);
 					$links = array();
 					$project_new = $project_ori->clone(false, array(), $links);
+					Projects::saveSkipper(false);
 					$project_new->title = $project_ori->title;
-					$project_new->pivots_format($all_pivot, false);
+					$project_new->pivots_format($pivot, false);
 					$project_new->saveHistory(false);
 					$project_new->save();
 					$this->setOnboarding($project_new, 1);
-					Projects::saveSkipper(false);
 
-					self::$monkey_king['project_new'] = $project_new;
-					self::$monkey_king['links'] = $links;
-
-					//toto => find a way to run this code in separate thread or after rendering
-					self::hookAddMonkeyKing();
+					//Send the request in another thread
+					$this->asyncMonkeyKing($project_new, $links);
 
 					//Insure the sequence is running
 					$this->runOnboarding(1, true);

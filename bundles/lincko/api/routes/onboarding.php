@@ -12,4 +12,10 @@ $app->group('/onboarding', function () use ($app) {
 	)
 	->name('onboarding_next'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/monkeyking',
+		'\bundles\lincko\api\controllers\ControllerOnboarding:monkeyking'.$app->lincko->method_suffix
+	)
+	->name('onboarding_monkeyking'.$app->lincko->method_suffix);
+
 });

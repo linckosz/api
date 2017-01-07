@@ -430,10 +430,10 @@ class CheckAccess extends \Slim\Middleware {
 
 		$resourceUri = $app->request->getResourceUri();
 
-		//Wechat integration
+		//Code integration
 		if(
-			   $app->lincko->method_suffix == '_post'
-			&& preg_match("/^\/integration\/wechat\/connect$/ui", $resourceUri)
+			   $app->lincko->method_suffix == '_get'
+			&& preg_match("/^\/integration\/qrcode/ui", $resourceUri)
 			&& $this->checkRoute()!==false
 		){
 			return $this->next->call();

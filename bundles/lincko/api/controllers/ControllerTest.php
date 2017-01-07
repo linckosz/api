@@ -603,12 +603,25 @@ class ControllerTest extends Controller {
 		\time_checkpoint('13');
 		*/
 
-		$tp = Files::find(14147);
-		$tp->checkAccess();
+		
+		$task = Tasks::find(20347);
+		$project = Projects::find($task->parent_id);
+		$id = $task->id;
+		$links = array(
+			'tasks' => array(
+				$id = $task,
+			),
+		);
+
+		$onboarding = new Onboarding;
+		$onboarding->asyncMonkeyKing($project, $links);
+
+		//$tp = $project;
+		
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
 		/*

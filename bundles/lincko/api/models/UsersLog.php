@@ -243,11 +243,11 @@ class UsersLog extends Model {
 								$user->internal_email = null;
 								$user->brutSave();
 							}
-							if(isset($users_log->id)){
+							if(isset($users_log->log)){
 								$users_log->username_sha1 = null;
 								$users_log->party = null;
 								$users_log->party_id = null;
-								$users_log->brutSave();
+								$users_log->save();
 							}
 						}
 						if($committed){

@@ -8,8 +8,6 @@ use \libs\Datassl;
 use \libs\Email;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\PivotUsers;
-use \bundles\lincko\api\models\data\Projects;
-use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\Notif;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
@@ -431,18 +429,11 @@ class Users extends ModelLincko {
 			//$db->beginTransaction();
 			try {
 				$return = parent::save($options);
-
 				$app->lincko->data['uid'] = $this->id;
 				$app->lincko->data['username'] = $this->username;
-
 				//We first login to shared worksace, which does not need to set a role permission, since everyone is an administrator (but not super)
 				$app->lincko->data['workspace'] = '';
 				$app->lincko->data['workspace_id'] = 0;
-				
-				$project = Projects::setPersonal();
-
-				$onboarding = new Onboarding;
-				$onboarding->next(10101); //initialize the onboarding process
 				//$db->commit();
 			} catch(\Exception $e){
 				\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);

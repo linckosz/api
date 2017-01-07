@@ -60,4 +60,15 @@ class ControllerOnboarding extends Controller {
 		return true;
 	}
 
+	//Asynchrone operation
+	public function monkeyking_post(){
+		$app = $this->app;
+
+		$onboarding = new Onboarding;
+		$onboarding->changeMonkeyKing();
+
+		echo 'ok';
+		return exit(0);
+	}
+
 }

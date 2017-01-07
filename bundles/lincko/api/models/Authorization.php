@@ -2,6 +2,7 @@
 
 namespace bundles\lincko\api\models;
 
+use \bundles\lincko\api\models\data\Users;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
@@ -29,6 +30,14 @@ class Authorization extends Model {
 
 	public static function find_finger($public_key, $fingerprint){
 		return self::where('public_key', $public_key)->where('fingerprint', $fingerprint)->first();
+	}
+
+	public static function getPublicKey($fingerprint){
+		$app = \Slim\Slim::getInstance();
+		if($authorization = self::where('sha', Users::getUser()->username_sha1)->where('fingerprint', $fingerprint)->first()){
+			return $authorization->public_key;
+		}
+		return $app->lincko->security['public_key'];
 	}
 
 }
