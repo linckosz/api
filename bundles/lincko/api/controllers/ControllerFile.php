@@ -517,13 +517,13 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				//Generate the qrcode picture
 				$mini = $folder->getPath().$basename.$user->profile_pic.'_mini.png';
 				$src = WideImage::load($thumbnail);
-				$src = $src->resize(36, 36, 'outside', 'any');
-				$src = $src->crop("center", "middle", 36, 36);
-				$src = $src->roundCorners(6, null, 2);
+				$src = $src->resize(144, 144, 'outside', 'any');
+				$src = $src->crop("center", "middle", 144, 144);
+				$src = $src->roundCorners(24, null, 2);
 				$src = $src->saveToFile($mini, 9, PNG_NO_FILTER);
 				$qrCode
 					->setLogo($mini)
-					->setLogoSize(36)
+					->setLogoSize(144)
 				;
 			}
 		} else {
@@ -536,9 +536,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if(!$exists){
 			$qrCode
 				->setText($url)
-				->setSize(160)
-				->setPadding(5)
-				->setErrorCorrection('high')
+				->setSize(640)
+				->setPadding(20)
+				->setErrorCorrection('medium')
 				//->setForegroundColor(array('r' => 251, 'g' => 160, 'b' => 38, 'a' => 0)) //Orange is not working very well
 				->setForegroundColor(array('r' => 0, 'g' => 0, 'b' => 0, 'a' => 0))
 				->setBackgroundColor(array('r' => 255, 'g' => 255, 'b' => 255, 'a' => 0))

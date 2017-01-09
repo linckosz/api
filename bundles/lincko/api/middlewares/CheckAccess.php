@@ -432,8 +432,11 @@ class CheckAccess extends \Slim\Middleware {
 
 		//Code integration
 		if(
-			   $app->lincko->method_suffix == '_get'
-			&& preg_match("/^\/integration\/qrcode/ui", $resourceUri)
+			$app->lincko->method_suffix == '_get'   
+			&& (
+				   (preg_match("/^\/integration\/qrcode/ui", $resourceUri) && preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host))
+				|| preg_match("/^\/integration\/code$/ui", $resourceUri)
+			)
 			&& $this->checkRoute()!==false
 		){
 			return $this->next->call();
@@ -441,17 +444,17 @@ class CheckAccess extends \Slim\Middleware {
 
 		if(
 			   $app->lincko->method_suffix == '_get'
-			&& preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host)
 			&& (
 				   preg_match("/^\/data\/resume\/hourly$/ui", $resourceUri)
 				|| preg_match("/^\/data\/unlock$/ui", $resourceUri)
 			)
+			&& preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host)
 			&& $this->checkRoute()!==false
 		){
 			return $this->next->call();
 		}
 		//For file uploading, make a specific process
-		if(preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host) && preg_match("/^\/file\/.+$/ui", $resourceUri)){
+		if(preg_match("/^\/file\/.+$/ui", $resourceUri) && preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host)){
 			$file_error = true;
 			if($app->lincko->method_suffix == '_post' && preg_match("/^\/file\/progress\/\d+$/ui", $resourceUri) ){ //Video conversion
 				//Security is not important here since we do not use POST as variable to be injected somewhere

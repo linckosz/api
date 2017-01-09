@@ -6,6 +6,7 @@ use \bundles\lincko\api\models\Integration;
 use \libs\Controller;
 use \libs\Json;
 use Endroid\QrCode\QrCode;
+use \config\Handler;
 
 class ControllerIntegration extends Controller {
 
@@ -23,6 +24,17 @@ class ControllerIntegration extends Controller {
 		return true;
 	}
 
+	public function code_get(){
+		Handler::session_initialize(true);
+		\libs\Watch::php($_SESSION, '$_SESSION', __FILE__, __LINE__, false, false, true);
+		if(isset($_SESSION['integration_code'])){
+			echo $_SESSION['integration_code'];
+		} else {
+			echo false;
+		}
+		return exit(0);
+	}
+
 	public function qrcode_get($mini=false){
 		$app = $this->app;
 		Integration::clean();
@@ -33,9 +45,15 @@ class ControllerIntegration extends Controller {
 			usleep(10000);
 			$code = substr(md5(uniqid()), 0, 8);
 		}
+
+		/*
 		$integration = new Integration;
 		$integration->code = $code;
 		$integration->save();
+		*/
+		Handler::session_initialize(true);
+		$_SESSION['integration_code'] = $code;
+
 
 		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/integration/code/'.$code;
 		header('Expires: 0');
@@ -48,15 +66,15 @@ class ControllerIntegration extends Controller {
 			if(is_file($mini_path)){
 				$qrCode
 					->setLogo($mini_path)
-					->setLogoSize(36)
+					->setLogoSize(144)
 				;
 			}
 		}
 
 		$qrCode
 			->setText($url)
-			->setSize(160)
-			->setPadding(5)
+			->setSize(800)
+			->setPadding(40)
 			->setErrorCorrection('medium')
 			//->setForegroundColor(array('r' => 251, 'g' => 160, 'b' => 38, 'a' => 0)) //Orange is not working very well
 			->setForegroundColor(array('r' => 0, 'g' => 0, 'b' => 0, 'a' => 0))

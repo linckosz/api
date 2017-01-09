@@ -171,7 +171,6 @@ class Onboarding {
 		if(isset($project_new->id) && isset($this->json['data'])){
 			$this->json['data']['pid'] = $project_new->id;
 			$this->json['public_key'] = Authorization::getPublicKey($this->data->fingerprint);
-			\libs\Watch::php($this->json, '$var', __FILE__, __LINE__, false, false, true);
 			$users_tables = array();
 			$users_tables[$app->lincko->data['uid']] = array();
 			foreach ($links as $table => $list) {
