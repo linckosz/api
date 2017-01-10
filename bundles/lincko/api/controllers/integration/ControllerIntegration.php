@@ -3,6 +3,9 @@
 namespace bundles\lincko\api\controllers\integration;
 
 use \bundles\lincko\api\models\Integration;
+use \bundles\lincko\api\models\UsersLog;
+use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\middlewares\CheckAccess;
 use \libs\Controller;
 use \libs\Json;
 use Endroid\QrCode\QrCode;
@@ -11,23 +14,46 @@ use \config\Handler;
 class ControllerIntegration extends Controller {
 
 	protected $app = NULL;
+	protected $data = NULL;
 
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
+		$this->data = json_decode($app->request->getBody());
+		if(!$this->data && $post = (object) $app->request->post()){
+			if(isset($post->data) && is_string($post->data)){
+				$post->data = json_decode($post->data);
+			}
+			$this->data = $post;
+		}
 		return true;
 	}
 
 	public function connect_post(){
 		$app = $this->app;
-		$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
-		$json->render(200);
+		if(
+			   !isset($app->lincko->flash['public_key'])
+			|| !isset($app->lincko->flash['pukpic'])
+			|| !isset($app->lincko->flash['private_key'])
+			|| !isset($app->lincko->flash['username_sha1'])
+			|| !isset($app->lincko->flash['uid'])
+		){
+			$json = new Json('Third party failed to connect!', false, 401, false, false, array(), false);
+			$json->render(401);
+		} else {
+			$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
+			$json->render(200);
+		}
 		return true;
 	}
 
 	public function code_get(){
 		Handler::session_initialize(true);
+		\libs\Watch::php($_SESSION, '$_SESSION', __FILE__, __LINE__, false, false, true);
 		if(isset($_SESSION['integration_code'])){
 			echo $_SESSION['integration_code'];
+			$data = $this->data;
+			\libs\Watch::php($data, '$data', __FILE__, __LINE__, false, false, true);
+			Authorization::find_finger($this->autoSign(UsersLog::check($data)), $data->fingerprint);
 		} else {
 			echo false;
 		}
@@ -45,14 +71,12 @@ class ControllerIntegration extends Controller {
 			$code = substr(md5(uniqid()), 0, 8);
 		}
 
-		/*
 		$integration = new Integration;
 		$integration->code = $code;
 		$integration->save();
-		*/
+		
 		Handler::session_initialize(true);
 		$_SESSION['integration_code'] = $code;
-
 
 		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/integration/code/'.$code;
 		header('Expires: 0');

@@ -325,6 +325,18 @@ class CheckAccess extends \Slim\Middleware {
 			$this->setUserLanguage();
 			$this->inviteSomeone();
 			if(
+				   isset($data->integration_code)
+				&& strlen($data->integration_code)==8
+				&& isset($this->authorization->sha)
+				&& $integration = Integration::find($data->integration_code)
+				&& $users_log = UsersLog::Where('username_sha1', $this->authorization->sha)->first(array('log'))
+			){
+				$app->lincko->flash['pukpic'] = $users_log->getPukpic();
+				$app->lincko->flash['unset_integration_code'] = true;
+				Integration::clean();
+				$integration->log = $users_log->log;
+				$integration->save();
+			} else if(
 				   isset($data->data)
 				&& isset($data->data->set_shangzai)
 				&& $data->data->set_shangzai===true
@@ -334,6 +346,7 @@ class CheckAccess extends \Slim\Middleware {
 			){
 				$app->lincko->flash['pukpic'] = $users_log->getPukpic();
 			}
+			
 		}
 
 		return $valid;

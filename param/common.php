@@ -148,7 +148,7 @@ $app->lincko->translation = array(
 	'title' => $app->lincko->title,
 );
 
-//Some generic data for translation word conversion
+//Some generic data for twig
 $app->lincko->data = array(
 	'domain' => $app->lincko->domain,
 	'lincko_back' => '',
