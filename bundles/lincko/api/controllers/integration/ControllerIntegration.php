@@ -28,6 +28,28 @@ class ControllerIntegration extends Controller {
 		return true;
 	}
 
+	protected function autoSign($log_id){
+		$app = $this->app;
+		$data = $this->data;
+		$user_log = false;
+		if($log_id){
+			$user_log = UsersLog::find($log_id); //the coloumn must be primary
+		}
+		if(!$user_log){
+			$user_log = new UsersLog;
+		}
+		$authorize = $user_log->getAuthorize($data);
+		if(is_array($authorize) && isset($authorize['public_key'])){
+			return $authorize['public_key'];
+		}
+		if(isset($data->public_key)){
+			Authorization::clean();
+			return $data->public_key;
+		} else {
+			return null;
+		}
+	}
+
 	public function connect_post(){
 		$app = $this->app;
 		if(
@@ -49,17 +71,18 @@ class ControllerIntegration extends Controller {
 	public function code_get(){
 		Handler::session_initialize(true);
 		\libs\Watch::php($_SESSION, '$_SESSION', __FILE__, __LINE__, false, false, true);
-		if(isset($_SESSION['integration_code'])){
-			if($integration = Integration::find($data->data->integration_code)){
+		if(isset($_SESSION['integration_code']) && isset($data->fingerprint)){
+			$data = $this->data;
+			if($integration = Integration::find($_SESSION['integration_code'])){
 				if(Authorization::find_finger($this->autoSign($integration->log), $data->fingerprint)){
 					$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
 					$json->render(200);
+					return exit(0);
 				}
 			}
-		} else {
-			$json = new Json('Third party failed to connect!', false, 401, false, false, array(), false);
-			$json->render(401);
 		}
+		$json = new Json('Third party failed to connect!', false, 401, false, false, array(), false);
+		$json->render(401);
 		return exit(0);
 	}
 
