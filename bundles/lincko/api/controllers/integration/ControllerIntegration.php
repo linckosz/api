@@ -42,12 +42,7 @@ class ControllerIntegration extends Controller {
 		if(is_array($authorize) && isset($authorize['public_key'])){
 			return $authorize['public_key'];
 		}
-		if(isset($data->public_key)){
-			Authorization::clean();
-			return $data->public_key;
-		} else {
-			return null;
-		}
+		return null;
 	}
 
 	public function connect_post(){
@@ -69,10 +64,9 @@ class ControllerIntegration extends Controller {
 	}
 
 	public function code_get(){
+		$data = $this->data;
 		Handler::session_initialize(true);
-		\libs\Watch::php($_SESSION, '$_SESSION', __FILE__, __LINE__, false, false, true);
 		if(isset($_SESSION['integration_code']) && isset($data->fingerprint)){
-			$data = $this->data;
 			if($integration = Integration::find($_SESSION['integration_code'])){
 				if(Authorization::find_finger($this->autoSign($integration->log), $data->fingerprint)){
 					$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
