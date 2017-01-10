@@ -50,12 +50,15 @@ class ControllerIntegration extends Controller {
 		Handler::session_initialize(true);
 		\libs\Watch::php($_SESSION, '$_SESSION', __FILE__, __LINE__, false, false, true);
 		if(isset($_SESSION['integration_code'])){
-			echo $_SESSION['integration_code'];
-			$data = $this->data;
-			\libs\Watch::php($data, '$data', __FILE__, __LINE__, false, false, true);
-			Authorization::find_finger($this->autoSign(UsersLog::check($data)), $data->fingerprint);
+			if($integration = Integration::find($data->data->integration_code)){
+				if(Authorization::find_finger($this->autoSign($integration->log), $data->fingerprint)){
+					$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
+					$json->render(200);
+				}
+			}
 		} else {
-			echo false;
+			$json = new Json('Third party failed to connect!', false, 401, false, false, array(), false);
+			$json->render(401);
 		}
 		return exit(0);
 	}
