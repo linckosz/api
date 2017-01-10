@@ -9,6 +9,7 @@ use \libs\Json;
 use \libs\STR;
 use \libs\Network;
 use \libs\Datassl;
+use \bundles\lincko\api\models\Integration;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
@@ -604,24 +605,14 @@ class ControllerTest extends Controller {
 		*/
 
 		
-		$task = Tasks::find(20347);
-		$project = Projects::find($task->parent_id);
-		$id = $task->id;
-		$links = array(
-			'tasks' => array(
-				$id = $task,
-			),
-		);
-
-		$onboarding = new Onboarding;
-		$onboarding->asyncMonkeyKing($project, $links);
-
-		//$tp = $project;
+		$tp = Integration::find('e6f0d71d');
+		$tp->log = 'abc';
+		$tp->save();
 		
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
-		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
 		/*

@@ -325,10 +325,11 @@ class CheckAccess extends \Slim\Middleware {
 			$this->setUserLanguage();
 			$this->inviteSomeone();
 			if(
-				   isset($data->integration_code)
-				&& strlen($data->integration_code)==8
+				   isset($data->data)
+				&& isset($data->data->integration_code)
+				&& strlen($data->data->integration_code)==8
 				&& isset($this->authorization->sha)
-				&& $integration = Integration::find($data->integration_code)
+				&& $integration = Integration::find($data->data->integration_code)
 				&& $users_log = UsersLog::Where('username_sha1', $this->authorization->sha)->first(array('log'))
 			){
 				$app->lincko->flash['pukpic'] = $users_log->getPukpic();
