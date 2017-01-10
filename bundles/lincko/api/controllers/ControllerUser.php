@@ -166,7 +166,7 @@ class ControllerUser extends Controller {
 		else if(!$app->lincko->data['create_user']){
 			$errmsg = $app->trans->getBRUT('api', 15, 19); //You need to sign out from the application before being able to create a new user account.
 		}
-		else if(!isset($form->party_id) || !Users::validChar($form->party_id)){ //Required
+		else if(!isset($form->party_id) || empty($form->party_id) || !Users::validChar($form->party_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
 			$errfield = 'party_id';
 		}
@@ -874,7 +874,7 @@ class ControllerUser extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
-		if(!isset($form->party_id) || !Users::validEmail($form->party_id)){ //Required
+		if(!isset($form->party_id) || empty($form->party_id) || !Users::validEmail($form->party_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 35); //E-mail address format incorrect
 			$errfield = 'email';
 		}

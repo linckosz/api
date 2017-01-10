@@ -53,8 +53,8 @@ class UsersLog extends Model {
 		if(isset($data->data->party) && !empty($data->data->party)){
 			$party = $data->data->party;
 		}
-		if(isset($data->data->party_id)){
-			$item = self::Where('party', $party)->where('party_id', $data->data->party_id)->first();
+		if(isset($data->data->party_id) && !empty($data->data->party_id)){
+			$item = self::Where('party', $party)->whereNotNull('party_id')->where('party_id', $data->data->party_id)->first();
 			if(is_null($party) && $item){
 				//If it's by email/speudo, we double check the password
 				if(!isset($data->data->password) || !password_verify(Datassl::decrypt($data->data->password, $data->data->party_id), $item->password)){
@@ -175,10 +175,10 @@ class UsersLog extends Model {
 		//\libs\Watch::php($data, '$users_log', __FILE__, __LINE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
 		$log_id = false;
-		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && isset($data->data->data)){
+		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If users_log exists
-			if($users_log = self::Where('party', $data->data->party)->where('party_id', $data->data->party_id)->first()){
+			if($users_log = self::Where('party', $data->data->party)->whereNotNull('party_id')->where('party_id', $data->data->party_id)->first()){
 				return $users_log->id;
 			}
 			//If new users_log, we create a user account

@@ -26,7 +26,6 @@ class ControllerIntegration extends Controller {
 
 	public function code_get(){
 		Handler::session_initialize(true);
-		\libs\Watch::php($_SESSION, '$_SESSION', __FILE__, __LINE__, false, false, true);
 		if(isset($_SESSION['integration_code'])){
 			echo $_SESSION['integration_code'];
 		} else {
