@@ -329,15 +329,17 @@ class CheckAccess extends \Slim\Middleware {
 				&& isset($data->data->integration_code)
 				&& strlen($data->data->integration_code)==8
 				&& isset($this->authorization->sha)
-				&& $integration = Integration::find($data->data->integration_code)
 				&& $users_log = UsersLog::Where('username_sha1', $this->authorization->sha)->first(array('log'))
 			){
-				$app->lincko->flash['pukpic'] = $users_log->getPukpic();
-				$app->lincko->flash['unset_integration_code'] = true;
-				Integration::clean();
-				$integration->log = $users_log->log;
-				$integration->save();
-			} else if(
+				if($integration = Integration::find($data->data->integration_code)){
+					$app->lincko->flash['pukpic'] = $users_log->getPukpic();
+					$app->lincko->flash['unset_integration_code'] = true;
+					Integration::clean();
+					$integration->log = $users_log->log;
+					$integration->save();
+				}
+			}
+			if(
 				   isset($data->data)
 				&& isset($data->data->set_shangzai)
 				&& $data->data->set_shangzai===true
