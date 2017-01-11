@@ -246,6 +246,7 @@ class UsersLog extends Model {
 						try {
 							$user->save();
 							$users_log->save();
+							Projects::setPersonal();
 							$committed = true;
 						} catch(\Exception $e){
 							$committed = false;
@@ -268,6 +269,8 @@ class UsersLog extends Model {
 							$app->lincko->flash['signout'] = false;
 							$app->lincko->flash['resignin'] = false;
 							$log_id = $users_log->id;
+							$onboarding = new Onboarding;
+							$onboarding->next(10101); //initialize the onboarding process
 							//Additional account information that need user ID
 							if($data->data->party=='wechat'){ //Wechat
 								//Add profile picture
@@ -288,6 +291,61 @@ class UsersLog extends Model {
 											$user->save();
 										}
 									}
+								}
+							}
+
+							$model = $user;
+							//Invitation
+							if($invitation){
+								$pivot = new \stdClass;
+								$invitation_models = false;
+								if(!is_null($invitation->models)){
+									$invitation_models = json_decode($invitation->models);
+								}
+								//Record for invitation
+								$invitation->guest = $model->id;
+								$invitation->used = true;
+								$invitation->models = null;
+								$invitation->save();
+
+								if($invitation->created_by>0 && $user = Users::find($invitation->created_by)){
+									//For guest & host
+									$pivot->{'users>access'} = new \stdClass;
+									$pivot->{'users>access'}->{$user->id} = true;
+									//If gave access to some items
+									if($invitation_models){
+										foreach ($invitation_models as $table => $list) {
+											//Don't give access to others users or workspace
+											if($table=='workspaces' || $table=='users'){
+												continue;
+											}
+											$pivot->{$table.'>access'} = new \stdClass;
+											//Make sure that the host have access to the original item
+											//toto => to do
+											if(is_numeric($list)){
+												$id = intval($list);
+												$pivot->{$table.'>access'}->$id = true;
+											} else if(is_array($list) || is_object($list)){
+												foreach ($list as $id) {
+													$id = intval($id);
+													$pivot->{$table.'>access'}->$id = true;
+												}
+											}
+										}
+									}
+									$model->pivots_format($pivot);
+									$model->forceSaving();
+									$model->save();
+
+									$mail = new Email();
+									$mail_subject = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
+									$mail_body_array = array(
+										'mail_username' => $user->username,
+									);
+									$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
+
+									//Send mobile notification
+									(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
 								}
 							}
 						}
