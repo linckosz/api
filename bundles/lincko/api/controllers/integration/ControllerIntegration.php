@@ -69,6 +69,7 @@ class ControllerIntegration extends Controller {
 	}
 
 	public function code_get(){
+		$app = $this->app;
 		$data = $this->data;
 		$status = 0; //[0]failed [1]pending [2]processing [3]done
 		$msg = 'Third party failed to connect!'; //toto
@@ -89,7 +90,7 @@ class ControllerIntegration extends Controller {
 			}
 		}
 		
-		$app->render(200, array('show' => false, 'msg' => array('msg' => $errmsg, 'status' => $status)));
+		$app->render(200, array('show' => false, 'msg' => array('msg' => $msg, 'status' => $status)));
 		return exit(0);
 	}
 	public function qrcode_get($mini=false){
