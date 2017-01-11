@@ -178,6 +178,7 @@ class UsersLog extends Model {
 	public static function check($data){
 		$app = \Slim\Slim::getInstance();
 		$log_id = false;
+		$invitation = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If users_log exists
@@ -297,6 +298,7 @@ class UsersLog extends Model {
 								}
 							}
 
+							/*
 							$model = $user;
 							//Invitation
 							if($invitation){
@@ -350,6 +352,7 @@ class UsersLog extends Model {
 									(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
 								}
 							}
+							*/
 						}
 					}
 				}
