@@ -7,7 +7,10 @@ use \libs\Translation;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\Integration;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\controllers\ControllerUser;
 
@@ -337,7 +340,6 @@ class UsersLog extends Model {
 									$model->forceSaving();
 									$model->save();
 
-									$mail = new Email();
 									$mail_subject = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
 									$mail_body_array = array(
 										'mail_username' => $user->username,
