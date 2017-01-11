@@ -59,10 +59,10 @@ class ControllerIntegration extends Controller {
 			|| !isset($app->lincko->flash['username_sha1'])
 			|| !isset($app->lincko->flash['uid'])
 		){
-			$msg = 'Third party failed to connect!'; //toto
+			$msg = $app->trans->getBRUT('api', 20, 1); //Software connection failed.
 			$app->render(401, array('show' => true, 'msg' => $msg, 'error' => true));
 		} else {
-			$msg = 'Third party connection succeed!'; //toto
+			$msg = $app->trans->getBRUT('api', 20, 2); //Software connection succeed.
 			$app->render(200, array('show' => false, 'msg' => $msg));
 		}
 		return exit(0);
@@ -72,19 +72,19 @@ class ControllerIntegration extends Controller {
 		$app = $this->app;
 		$data = $this->data;
 		$status = 0; //[0]failed [1]pending [2]processing [3]done
-		$msg = 'Third party failed to connect!'; //toto
+		$msg = $app->trans->getBRUT('api', 20, 1); //Software connection failed.
 		Handler::session_initialize(true);
 		if(isset($_SESSION['integration_code']) && isset($data->fingerprint)){
 			if($integration = Integration::find($_SESSION['integration_code'])){
 				if(is_null($integration->log)){
-					$msg = 'Third party connection pending...'; //toto
+					$msg = $app->trans->getBRUT('api', 20, 3); //Software connection pending...
 					$status = 1;
 					if($integration->processing){
-						$msg = 'Third party connection processing...'; //toto
+						$msg = $app->trans->getBRUT('api', 20, 4); //Software connection processing...
 						$status = 2;
 					}
 				} else if(Authorization::find_finger($this->autoSign($integration->log), $data->fingerprint)){
-					$msg = 'Third party connection succeed!'; //toto
+					$msg = $app->trans->getBRUT('api', 20, 2); //Software connection succeed.
 					$status = 3;
 				}
 			}

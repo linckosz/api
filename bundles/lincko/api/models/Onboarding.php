@@ -324,7 +324,7 @@ class Onboarding {
 					$clone_id = 1605;
 				}
 			} else if($app->lincko->domain=='lincko.co'){
-				$clone_id = 86;
+				$clone_id = 980;
 			} else if($app->lincko->domain=='lincko.cafe'){
 				$clone_id = 1973;
 			} else {
