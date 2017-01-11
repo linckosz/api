@@ -59,32 +59,39 @@ class ControllerIntegration extends Controller {
 			|| !isset($app->lincko->flash['username_sha1'])
 			|| !isset($app->lincko->flash['uid'])
 		){
-			$json = new Json('Third party failed to connect!', false, 401, false, false, array(), false);
-			$json->render(401);
+			$msg = 'Third party failed to connect!'; //toto
+			$app->render(401, array('show' => true, 'msg' => $msg, 'error' => true));
 		} else {
-			$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
-			$json->render(200);
+			$msg = 'Third party connection succeed!'; //toto
+			$app->render(200, array('show' => false, 'msg' => $msg));
 		}
-		return true;
+		return exit(0);
 	}
 
 	public function code_get(){
 		$data = $this->data;
+		$status = 0; //[0]failed [1]pending [2]processing [3]done
+		$msg = 'Third party failed to connect!'; //toto
 		Handler::session_initialize(true);
 		if(isset($_SESSION['integration_code']) && isset($data->fingerprint)){
 			if($integration = Integration::find($_SESSION['integration_code'])){
-				if(Authorization::find_finger($this->autoSign($integration->log), $data->fingerprint)){
-					$json = new Json('Third party connection succeed!', false, 200, false, false, array(), false);
-					$json->render(200);
-					return exit(0);
+				if(is_null($integration->log)){
+					$msg = 'Third party connection pending...'; //toto
+					$status = 1;
+					if($integration->processing){
+						$msg = 'Third party connection processing...'; //toto
+						$status = 2;
+					}
+				} else if(Authorization::find_finger($this->autoSign($integration->log), $data->fingerprint)){
+					$msg = 'Third party connection succeed!'; //toto
+					$status = 3;
 				}
 			}
 		}
-		$json = new Json('Third party failed to connect!', false, 401, false, false, array(), false);
-		$json->render(401);
+		
+		$app->render(200, array('show' => false, 'msg' => array('msg' => $errmsg, 'status' => $status)));
 		return exit(0);
 	}
-
 	public function qrcode_get($mini=false){
 		$app = $this->app;
 		Integration::clean();
