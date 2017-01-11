@@ -54,6 +54,9 @@ class ControllerTest extends Controller {
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		return true;
 	}
 
@@ -605,9 +608,9 @@ class ControllerTest extends Controller {
 		*/
 
 		
-		$tp = Integration::find('e6f0d71d');
-		$tp->log = 'abc';
-		$tp->save();
+		$tp = Projects::find(3);
+		$aaa = $tp->checkPermissionAllow('edit');
+		\libs\Watch::php( $aaa, '$tp', __FILE__, __LINE__, false, false, true);
 		
 
 		//Display mysql requests

@@ -42,6 +42,9 @@ class ControllerWorkspace extends Controller {
 	public function __construct(){
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		$this->form = new \stdClass;
 		$this->setFields();
 		return true;

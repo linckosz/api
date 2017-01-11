@@ -25,6 +25,9 @@ class ControllerIntegration extends Controller {
 			}
 			$this->data = $post;
 		}
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		return true;
 	}
 
@@ -34,13 +37,15 @@ class ControllerIntegration extends Controller {
 		$user_log = false;
 		if($log_id){
 			$user_log = UsersLog::find($log_id); //the coloumn must be primary
-		}
-		if(!$user_log){
-			$user_log = new UsersLog;
-		}
-		$authorize = $user_log->getAuthorize($data);
-		if(is_array($authorize) && isset($authorize['public_key'])){
-			return $authorize['public_key'];
+			if(!isset($data->data)){
+				$data->data = new \stdClass;
+			}
+			$data->data->party = $user_log->party;
+			$data->data->party_id = $user_log->party_id;
+			$authorize = $user_log->getAuthorize($data);
+			if(is_array($authorize) && isset($authorize['public_key'])){
+				return $authorize['public_key'];
+			}
 		}
 		return null;
 	}

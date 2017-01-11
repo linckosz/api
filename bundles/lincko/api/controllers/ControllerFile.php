@@ -78,6 +78,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		} else {
 			$form = $this->data->data;
 		}
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		//Convert to object
 		$form = (object)$form;
 		//Convert NULL to empty string to help isset returning true

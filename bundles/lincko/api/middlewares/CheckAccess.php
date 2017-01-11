@@ -35,6 +35,9 @@ class CheckAccess extends \Slim\Middleware {
 			}
 			$this->data = $post;
 		}
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		return true;
 	}
 
@@ -427,7 +430,7 @@ class CheckAccess extends \Slim\Middleware {
 		}
 		$authorization = $this->authorization;
 		if($authorization){
-			$checksum = md5($authorization->private_key.json_encode($data->data, JSON_UNESCAPED_UNICODE));
+			$checksum = md5($authorization->private_key.json_encode($data->data, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE));
 			return $checksum === $data->checksum;
 		}
 		return false;

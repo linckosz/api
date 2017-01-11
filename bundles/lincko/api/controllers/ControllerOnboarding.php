@@ -18,6 +18,9 @@ class ControllerOnboarding extends Controller {
 		if(isset($data->data)){
 			$this->data = $data->data;
 		}
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		return true;
 	}
 

@@ -57,6 +57,9 @@ class Data {
 		if(isset($data->data) && isset($data->data->limit_json) && $data->data->limit_json){
 			$this->limit_json = $data->data->limit_json;
 		}
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		return true;
 	}
 

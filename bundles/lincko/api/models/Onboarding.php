@@ -45,6 +45,9 @@ class Onboarding {
 			'workspace' => $data->workspace, //the url (=ID unique string) of the workspace, by default use "Shared workspace"
 		);
 		$this->data = $data;
+		if(isset($this->data->data) && !is_object($this->data->data)){
+			$this->data->data = (object) $this->data->data;
+		}
 		return true;
 	}
 

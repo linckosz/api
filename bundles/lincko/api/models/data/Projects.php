@@ -249,6 +249,35 @@ class Projects extends ModelLincko {
 				\libs\Watch::php($msg, 'Projects->save()', __FILE__, __LINE__, true);
 				return parent::checkPermissionAllow(4, $msg); //this will only launch error, since $level = 4
 			}
+			if($level==2){ //Edit
+				//Only if no project attached for the user itself
+				if(isset($this->id) && $this->personal_private==$app->lincko->data['uid']){
+					//Insure that we don't modify attribute but only few pivots
+					if(count($this->getDirty())<=0){
+						foreach ($this->pivots_var as $type => $type_list) {
+							if($type=='users'){
+								foreach ($type_list as $users_id => $list) {
+									if($users_id != $app->lincko->data['uid']){
+										unset($this->pivots_var->$type->$users_id);
+									} else {
+										foreach ($list as $pivot => $value) {
+											if($pivot=='access'){
+												if(is_array($value)){
+													unset($this->pivots_var->$type->$users_id[$pivot]);
+												} else if(is_object($value)){
+													unset($this->pivots_var->$type->$users_id->$pivot);
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						return true;
+					}
+					
+				}
+			}
 			return false;
 		}
 		return parent::checkPermissionAllow($level);
