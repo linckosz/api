@@ -175,20 +175,15 @@ class UsersLog extends Model {
 	public static function check($data){
 		$app = \Slim\Slim::getInstance();
 		$log_id = false;
-		if(
-			   isset($data->data)
-			&& isset($data->data->integration_code)
-			&& strlen($data->data->integration_code)==8
-			&& $integration = Integration::find($data->data->integration_code)
-		){
-			$integration->processing = true;
-			$integration->save();
-		}
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If users_log exists
 			if($users_log = self::Where('party', $data->data->party)->whereNotNull('party_id')->where('party_id', $data->data->party_id)->first()){
 				return $users_log->id;
+			}
+			//We exit if we are only on base mode and no user logged
+			else if($data->data->party=='wechat' && !isset($json->nickname)){
+				return false;
 			}
 			//If new users_log, we create a user account
 			else {
@@ -209,9 +204,6 @@ class UsersLog extends Model {
 				$user->username = 'Lincko user';
 				$user->internal_email = $data->data->party.'.'.$data->data->party_id;
 				if($data->data->party=='wechat'){ //Wechat
-					if(!isset($json->nickname)){ //Need to check if wechat really sent user information
-						return false;
-					}
 					$user->username = $json->nickname;
 					$user->gender = 0; //Male
 					if($json->sex==2){ $user->gender = 1; } //Female
@@ -242,6 +234,15 @@ class UsersLog extends Model {
 				if($accept){
 					$committed = false;
 					if($user->getParentAccess()){
+						if(
+							   isset($data->data)
+							&& isset($data->data->integration_code)
+							&& strlen($data->data->integration_code)==8
+							&& $integration = Integration::find($data->data->integration_code)
+						){
+							$integration->processing = true;
+							$integration->save();
+						}
 						try {
 							$user->save();
 							$users_log->save();
