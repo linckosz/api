@@ -298,6 +298,17 @@ class CheckAccess extends \Slim\Middleware {
 		$data = $this->data;
 		$valid = false;
 
+		//Inform the browser that the third party connection is processing
+		if(
+			   isset($data->data)
+			&& isset($data->data->integration_code)
+			&& strlen($data->data->integration_code)==8
+			&& $integration = Integration::find($data->data->integration_code)
+		){
+			$integration->processing = true;
+			$integration->save();
+		}
+
 		if($this->authorizeAccess && !is_null($this->authorization)){
 			//Do nothing, we already agree and set object authorization
 		} else if($data->public_key === $app->lincko->security['public_key'] && in_array($this->route, $app->lincko->routeFilter)){
@@ -338,6 +349,7 @@ class CheckAccess extends \Slim\Middleware {
 					$app->lincko->flash['pukpic'] = $users_log->getPukpic();
 					$app->lincko->flash['unset_integration_code'] = true;
 					Integration::clean();
+					$integration->processing = false;
 					$integration->log = $users_log->log;
 					$integration->save();
 				}

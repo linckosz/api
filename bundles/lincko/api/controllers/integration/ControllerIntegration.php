@@ -105,6 +105,7 @@ class ControllerIntegration extends Controller {
 
 		$integration = new Integration;
 		$integration->code = $code;
+		$integration->processing = false;
 		$integration->save();
 		
 		Handler::session_initialize(true);
