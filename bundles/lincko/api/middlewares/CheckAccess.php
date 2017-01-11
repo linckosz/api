@@ -336,7 +336,7 @@ class CheckAccess extends \Slim\Middleware {
 				&& strlen($data->data->integration_code)==8
 				&& $integration = Integration::find($data->data->integration_code)
 			){
-				if($users_log = UsersLog::Where('username_sha1', $this->authorization->sha)->first(array('log')){
+				if(isset($this->authorization->sha) && $users_log = UsersLog::Where('username_sha1', $this->authorization->sha)->first(array('log'))){
 					$app->lincko->flash['pukpic'] = $users_log->getPukpic();
 					$app->lincko->flash['unset_integration_code'] = true;
 					Integration::clean();

@@ -609,8 +609,6 @@ class ControllerTest extends Controller {
 
 		
 		$tp = Projects::find(3);
-		$aaa = $tp->checkPermissionAllow('edit');
-		\libs\Watch::php( $aaa, '$tp', __FILE__, __LINE__, false, false, true);
 		
 
 		//Display mysql requests

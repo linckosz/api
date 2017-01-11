@@ -173,7 +173,6 @@ class UsersLog extends Model {
 	}
 
 	public static function check($data){
-		//\libs\Watch::php($data, '$users_log', __FILE__, __LINE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
 		$log_id = false;
 		if(
