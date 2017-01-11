@@ -5,6 +5,7 @@ namespace bundles\lincko\api\models;
 use \libs\Datassl;
 use \libs\Translation;
 use Illuminate\Database\Eloquent\Model;
+use \bundles\lincko\api\models\Integration;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
@@ -175,6 +176,15 @@ class UsersLog extends Model {
 		//\libs\Watch::php($data, '$users_log', __FILE__, __LINE__, false, false, true);
 		$app = \Slim\Slim::getInstance();
 		$log_id = false;
+		if(
+			   isset($data->data)
+			&& isset($data->data->integration_code)
+			&& strlen($data->data->integration_code)==8
+			&& $integration = Integration::find($data->data->integration_code)
+		){
+			$integration->processing = true;
+			$integration->save();
+		}
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If users_log exists
@@ -200,6 +210,9 @@ class UsersLog extends Model {
 				$user->username = 'Lincko user';
 				$user->internal_email = $data->data->party.'.'.$data->data->party_id;
 				if($data->data->party=='wechat'){ //Wechat
+					if(!isset($json->nickname)){ //Need to check if wechat really sent user information
+						return false;
+					}
 					$user->username = $json->nickname;
 					$user->gender = 0; //Male
 					if($json->sex==2){ $user->gender = 1; } //Female
