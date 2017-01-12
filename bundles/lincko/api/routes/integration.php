@@ -18,6 +18,12 @@ $app->group('/integration', function () use ($app) {
 	)
 	->name('integration_code'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/setcode',
+		'\bundles\lincko\api\controllers\integration\ControllerIntegration:setcode'.$app->lincko->method_suffix
+	)
+	->name('integration_setcode'.$app->lincko->method_suffix);
+
 //We use get here because we do a direct connection to display the QR code
 	$app->get(
 		'/qrcode(/:mini)',

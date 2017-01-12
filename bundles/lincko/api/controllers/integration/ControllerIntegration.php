@@ -93,6 +93,28 @@ class ControllerIntegration extends Controller {
 		$app->render(200, array('show' => false, 'msg' => array('msg' => $msg, 'status' => $status)));
 		return exit(0);
 	}
+
+	public function setcode_get(){
+		$app = $this->app;
+		Integration::clean();
+		$code = substr(md5(uniqid()), 0, 8);
+		while(Integration::find($code)){
+			usleep(10000);
+			$code = substr(md5(uniqid()), 0, 8);
+		}
+
+		$integration = new Integration;
+		$integration->code = $code;
+		$integration->processing = false;
+		$integration->save();
+		
+		Handler::session_initialize(true);
+		$_SESSION['integration_code'] = $code;
+
+		$app->render(200, array('show' => false, 'msg' => array('msg' => 'integration code', 'code' => $code)));
+		return exit(0);
+	}
+
 	public function qrcode_get($mini=false){
 		$app = $this->app;
 		Integration::clean();
