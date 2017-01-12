@@ -111,6 +111,8 @@ class ControllerIntegration extends Controller {
 		Handler::session_initialize(true);
 		$_SESSION['integration_code'] = $code;
 
+		$app->lincko->flash['integration_code'] = $code;
+
 		$app->render(200, array('show' => false, 'msg' => array('msg' => 'integration code', 'code' => $code)));
 		return exit(0);
 	}

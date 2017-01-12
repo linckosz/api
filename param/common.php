@@ -184,7 +184,7 @@ $app->lincko->filePathPrefix = '';
 //It will set to true some fields if the API key has access to some part of the application
 $app->lincko->api = array();
 
-//List of route names accepted without sigining in
+//List of route names accepted without sigining in (mainly used for credential operation)
 $app->lincko->routeFilter = array(
 	'user_signin_post',
 	'user_create_post',
@@ -192,6 +192,12 @@ $app->lincko->routeFilter = array(
 	'user_signout_post',
 	'user_forgot_post',
 	'user_reset_post',
+);
+
+//List of route names accepted without sigining in and do the call immediatly (faster)
+$app->lincko->routeSkip = array(
+	'integration_code_get',
+	'integration_setcode_get',
 );
 
 //The hook ModifyRequest will redirect to the right class method according to the method requested in the body, it's not HTTP request which is always POST expect for file uploading (GET to get form, or POST to upload file)

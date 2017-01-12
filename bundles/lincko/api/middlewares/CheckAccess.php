@@ -280,6 +280,9 @@ class CheckAccess extends \Slim\Middleware {
 
 	protected function checkRoute(){
 		$app = $this->app;
+		if(!is_null($this->route)){
+			return $this->route;
+		}
 
 		$route = $app->router->getMatchedRoutes($app->request->getMethod(), $app->request->getResourceUri());
 		if (is_array($route) && count($route) > 0) {
@@ -288,7 +291,7 @@ class CheckAccess extends \Slim\Middleware {
 		
 		if($route){
 			$this->route = $route->getName();
-			return true;
+			return $this->route;
 		}
 		return false;
 	}
@@ -454,30 +457,18 @@ class CheckAccess extends \Slim\Middleware {
 		$resignin = false;
 
 		$resourceUri = $app->request->getResourceUri();
+		$route = $this->checkRoute();
 
 		//Code integration
 		if(
-			$app->lincko->method_suffix == '_get'   
-			&& (
-				   (preg_match("/^\/integration\/qrcode/ui", $resourceUri) && preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host))
-				|| preg_match("/^\/integration\/code$/ui", $resourceUri)
-			)
-			&& $this->checkRoute()!==false
+			    in_array($route, $app->lincko->routeSkip)
+			|| ($route == 'integration_qrcode_get' && preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host))
+			|| ($route == 'data_resume_hourly_get' && preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host))
+			|| ($route == 'data_unlock_get' && preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host))
 		){
 			return $this->next->call();
 		}
 
-		if(
-			   $app->lincko->method_suffix == '_get'
-			&& (
-				   preg_match("/^\/data\/resume\/hourly$/ui", $resourceUri)
-				|| preg_match("/^\/data\/unlock$/ui", $resourceUri)
-			)
-			&& preg_match("/^([a-z]+\.){0,1}cron\..*:(8443|8080)$/ui", $app->request->headers->Host)
-			&& $this->checkRoute()!==false
-		){
-			return $this->next->call();
-		}
 		//For file uploading, make a specific process
 		if(preg_match("/^\/file\/.+$/ui", $resourceUri) && preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host)){
 			$file_error = true;
