@@ -239,10 +239,9 @@ class UsersLog extends Model {
 						}
 						$users_log_bis->log = $log_bis;
 						$users_log_bis->party = $data->data->party;
-						$users_log_bis->party_id = 'oid'.$json->openid;
+						$users_log_bis->party_id = 'oid.'.$json->openid;
 						$users_log_bis->party_json = $users_log->party_json;
 						$users_log_bis->username_sha1 = $username_sha1; //Same username_sha1 to allow 2 kind of connection on same account
-						$users_log_bis->save();
 					}
 				}
 				$app->lincko->data['create_user'] = true; //Authorize user account creation
@@ -261,6 +260,9 @@ class UsersLog extends Model {
 						try {
 							$user->save();
 							$users_log->save();
+							if(isset($users_log_bis)){
+								$users_log_bis->save();
+							}
 							Projects::setPersonal();
 							$committed = true;
 						} catch(\Exception $e){
