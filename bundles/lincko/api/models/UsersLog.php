@@ -191,33 +191,10 @@ class UsersLog extends Model {
 			}
 			//If new users_log, we create a user account
 			else {
-				$users_log = new UsersLog;
-				$log = md5(uniqid());
-				while(UsersLog::Where('log', $log)->first(array('log'))){
-					usleep(10000);
-					$log = md5(uniqid());
-				}
-				$users_log->log = $log;
-				$users_log->party = $data->data->party;
-				$users_log->party_id = $data->data->party_id;
-				$users_log->party_json = json_encode($data->data->data, JSON_UNESCAPED_UNICODE);
-
 				$file = false;
-
 				$user = new Users;
 				$user->username = 'Lincko user';
 				$user->internal_email = $data->data->party.'.'.$data->data->party_id;
-				if($data->data->party=='wechat'){ //Wechat
-					$user->username = $json->nickname;
-					$user->gender = 0; //Male
-					if($json->sex==2){ $user->gender = 1; } //Female
-					$translation = new Translation;
-					$translation->getList('default');
-					if($language = $translation->setLanguage($json->language)){
-						$user->language = $language;
-					}
-				}
-
 				$limit = 0;
 				$username_sha1 = sha1($user->internal_email);
 				$username_sha1 = substr($username_sha1, 0, 20);
@@ -233,7 +210,41 @@ class UsersLog extends Model {
 					$accept = true;
 				}
 				$user->username_sha1 = $username_sha1;
+				$users_log = new UsersLog;
+				$log = md5(uniqid());
+				while(UsersLog::Where('log', $log)->first(array('log'))){
+					usleep(10000);
+					$log = md5(uniqid());
+				}
+				$users_log->log = $log;
+				$users_log->party = $data->data->party;
+				$users_log->party_id = $data->data->party_id;
+				$users_log->party_json = json_encode($data->data->data, JSON_UNESCAPED_UNICODE);
 				$users_log->username_sha1 = $username_sha1;
+				if($data->data->party=='wechat'){ //Wechat
+					$user->username = $json->nickname;
+					$user->gender = 0; //Male
+					if($json->sex==2){ $user->gender = 1; } //Female
+					$translation = new Translation;
+					$translation->getList('default');
+					if($language = $translation->setLanguage($json->language)){
+						$user->language = $language;
+					}
+					if($json->openid){
+						$users_log_bis = new UsersLog;
+						$log_bis = md5(uniqid());
+						while($log_bis != $log && UsersLog::Where('log', $log_bis)->first(array('log'))){
+							usleep(10000);
+							$log_bis = md5(uniqid());
+						}
+						$users_log_bis->log = $log_bis;
+						$users_log_bis->party = $data->data->party;
+						$users_log_bis->party_id = 'oid'.$json->openid;
+						$users_log_bis->party_json = $users_log->party_json;
+						$users_log_bis->username_sha1 = $username_sha1; //Same username_sha1 to allow 2 kind of connection on same account
+						$users_log_bis->save();
+					}
+				}
 				$app->lincko->data['create_user'] = true; //Authorize user account creation
 				if($accept){
 					$committed = false;
@@ -266,6 +277,12 @@ class UsersLog extends Model {
 								$users_log->party = null;
 								$users_log->party_id = null;
 								$users_log->save();
+							}
+							if(isset($users_log_bis) && isset($log_bis) && isset($users_log_bis->log_bis)){
+								$users_log_bis->username_sha1 = null;
+								$users_log_bis->party = null;
+								$users_log_bis->party_id = null;
+								$users_log_bis->save();
 							}
 						}
 						if($committed){
