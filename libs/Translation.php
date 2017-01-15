@@ -86,7 +86,7 @@ class Translation {
 				if($category===true){
 					$result = TranslationModel::on($bundle)->get(array('category', 'phrase', $lang));
 				} else if(is_integer($category)){
-					$result = TranslationModel::on($bundle)->where('category', '=', $category)->get(array('category', 'phrase', $lang));
+					$result = TranslationModel::on($bundle)->where('category', $category)->get(array('category', 'phrase', $lang));
 				}
 				if($result){
 					foreach ($result as $key => $value) {
@@ -222,7 +222,7 @@ class Translation {
 		}
 		if(isset($app->lincko->databases[$bundle])){
 			if(!empty($force_lang)){
-				if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first()){
+				if($value = TranslationModel::on($bundle)->where('category', $category)->where('phrase', $phrase)->first()){
 					$value = $value->getAttribute($force_lang);
 				}
 			} else if(isset($this->translation[$bundle][$category][$phrase])){
@@ -235,7 +235,7 @@ class Translation {
 					$value = $this->translation[$bundle][$category][$phrase];
 				} else if(isset($this->lang[$bundle])){
 					$lang = $this->lang[$bundle];
-					if($value = TranslationModel::on($bundle)->where('category', '=', $category)->where('phrase', '=', $phrase)->first(array($lang))){
+					if($value = TranslationModel::on($bundle)->where('category', $category)->where('phrase', $phrase)->first(array($lang))){
 						$value = $value->getAttribute($lang);
 					}
 				}

@@ -8,6 +8,7 @@ use \libs\Controller;
 use \libs\Datassl;
 use \libs\STR;
 use \libs\Email;
+use \libs\Translation;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\Notif;
@@ -163,11 +164,16 @@ class ControllerUser extends Controller {
 		if(!$app->lincko->data['allow_create_user']){
 			$errmsg = $app->trans->getBRUT('api', 15, 2); //Because of server maintenance, we temporarily do not allow the creation of new user account, please try later.
 		}
-		else if(isset($form->invitation_beta) && ($form->invitation_beta=='' || Invitation::withTrashed()->where('code', '=', $form->invitation_beta)->first())){ //optional
+		else if($app->lincko->data['need_invitation'] && isset($form->invitation_code) && ($form->invitation_code=='' || Invitation::withTrashed()->where('code', $form->invitation_code)->first())){ //optional
 			$errmsg = $app->trans->getBRUT('api', 15, 27); //You need an invitation link unused to be able to join us.
 		}
 		else if(!$app->lincko->data['create_user']){
 			$errmsg = $app->trans->getBRUT('api', 15, 19); //You need to sign out from the application before being able to create a new user account.
+		}
+		//By direct operation, we only allow email account creation, not any integration
+		else if(isset($form->party) && !empty($form->party)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
+			$errfield = 'party';
 		}
 		else if(!isset($form->party_id) || empty($form->party_id) || !Users::validChar($form->party_id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
@@ -208,221 +214,311 @@ class ControllerUser extends Controller {
 			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
-			$app->lincko->flash['signout'] = true;
-			$accept = false;
-			$email = mb_strtolower($model->email);
-			if(isset($model->username)){
-				$username = $model->username;
-			} else {
-				$username = mb_strstr($email,'@',true);
-			}
-			$username_sha1 = sha1(mb_strtolower($email));
-			$username_sha1 = substr($username_sha1, 0, 20); //Truncate to 20 characters because of phone notification alias isue (limited to 64bits = 20 characters in Hex)
-			$internal_email = $username;
-			$limit = 1; //Limit while loop to 1000 iterations to avoid infinite loop
-			if(Users::where('email', '=', $email)->first()){
-				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 10); //Email address already in use.
-				$errfield = 'email';
-			} else {
-				while( $limit <= 1000 && Users::where('internal_email', '=', $internal_email)->orWhere('username_sha1', '=', $username_sha1)->first() ){
-					$internal_email = $username.mt_rand(1, 9999);
-					$username_sha1 = sha1(uniqid());
-					$username_sha1 = substr($username_sha1, 0, 20);
-					$limit++;
-				}
-				if($limit < 1000){
-					$accept = true;
-				}
-			}
-
-			$invitation = false;
-			$invitation_used = false;
-			if(isset($form->invitation_code)){
-				$app->lincko->flash['unset_invitation_code'] = true;
-				$invitation_code = $form->invitation_code;
-				if($invitation = Invitation::withTrashed()->where('code', '=', $invitation_code)->first()){
-					$invitation_used = $invitation->used;
-				}
-			}
-
-			/*
-			Those lines were used for closed beta
-			if(!$invitation){
-				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
-			} else if($invitation_used){
-				$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
-			}
-			*/
-			if($accept){
-				$users_log = new UsersLog;
-				$log_id = md5(uniqid());
-				while(UsersLog::Where('log', $log_id)->first(array('log'))){
-					usleep(10000);
-					$log_id = md5(uniqid());
-				}
-				$users_log->log = $log_id;
-				$users_log->party = $form->party;
-				$users_log->party_id = $form->party_id;
-				$users_log->username_sha1 = $username_sha1;
-				if(isset($form->password) && !empty($form->password)){
-					$password = Datassl::decrypt($form->password, $form->party_id);
-					$users_log->password = password_hash($password, PASSWORD_BCRYPT);
-				}
-				
-				$model->username = $username;
-				$model->username_sha1 = $username_sha1;
-				$model->internal_email = $internal_email;
-				$model->pivots_format($form, false);
-
-					
-
-				$committed = false;
-				if($model->getParentAccess()){
-					//Transaction is slowing down a lot the database
-					//$db_data = Capsule::connection($app->lincko->data['database_data']);
-					//$db_data->beginTransaction();
-					//$db_api = Capsule::connection('api');
-					//$db_api->beginTransaction();
-					try {
-						$model->save();
-						$users_log->save();
-						Projects::setPersonal();
-						//$db_data->commit();
-						//$db_api->commit();
-						$committed = true;
-					} catch(\Exception $e){
-						$committed = false;
-						//$db_api->rollback();
-						//$db_data->rollback();
-						if(isset($model->id)){
-							$model->username = 'failed';
-							$model->username_sha1 = null;
-							$model->email = null;
-							$model->internal_email = null;
-							$model->brutSave();
-						}
-						if(isset($users_log->log)){
-							$users_log->username_sha1 = null;
-							$users_log->party = null;
-							$users_log->party_id = null;
-							$users_log->save();
-						}
-					}
-				}
-
-				if($committed){
-					$app->lincko->data['uid'] = $model->id;
-					$app->lincko->flash['signout'] = false;
-					$app->lincko->flash['resignin'] = false;
-					//Setup public and private key
-					$authorize = $users_log->getAuthorize($this->data);
-
-					$onboarding = new Onboarding;
-					$onboarding->next(10101); //initialize the onboarding process
-
-					//Send congrat email
-					$link = 'https://'.$app->lincko->domain;
-					$mail = new Email();
-
-					$mail_subject = $app->trans->getBRUT('api', 1003, 1); //Congratulations on joining Lincko!
-					$mail_body_array = array(
-						'mail_username' => $username,
-						'mail_link' => $link,
-					);
-					$mail_body = $app->trans->getBRUT('api', 1003, 2, $mail_body_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
-
-					$mail_template_array = array(
-						'mail_head' => $mail_subject,
-						'mail_body' => $mail_body,
-						'mail_foot' => '',
-					);
-					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-					(new Notif)->push($mail_subject, $mail_body, false, $model->getSha());
-
-					if(Users::validEmail($email)){
-						$mail->addAddress($email, $username);
-						$mail->setSubject($mail_subject);
-						$mail->sendLater($mail_template);
-					}
-
-					//Invitation
-					if($invitation){
-						$pivot = new \stdClass;
-						$invitation_models = false;
-						if(!is_null($invitation->models)){
-							$invitation_models = json_decode($invitation->models);
-						}
-						//Record for invitation
-						$invitation->guest = $model->id;
-						$invitation->used = true;
-						$invitation->models = null;
-						$invitation->save();
-
-						if($invitation->created_by>0 && $user = Users::find($invitation->created_by)){
-							//For guest & host
-							$pivot->{'users>access'} = new \stdClass;
-							$pivot->{'users>access'}->{$user->id} = true;
-							//If gave access to some items
-							if($invitation_models){
-								foreach ($invitation_models as $table => $list) {
-									//Don't give access to others users or workspace
-									if($table=='workspaces' || $table=='users'){
-										continue;
-									}
-									$pivot->{$table.'>access'} = new \stdClass;
-									//Make sure that the host have access to the original item
-									//toto => to do
-									if(is_numeric($list)){
-										$id = intval($list);
-										$pivot->{$table.'>access'}->$id = true;
-									} else if(is_array($list) || is_object($list)){
-										foreach ($list as $id) {
-											$id = intval($id);
-											$pivot->{$table.'>access'}->$id = true;
-										}
-									}
-								}
-							}
-							$model->pivots_format($pivot);
-							$model->forceSaving();
-							$model->save();
-
-							$mail = new Email();
-							$mail_subject = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
-							$mail_body_array = array(
-								'mail_username' => $user->username,
-							);
-							$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
-							$mail_template_array = array(
-								'mail_head' => $mail_subject,
-								'mail_body' => $mail_body,
-								'mail_foot' => '',
-							);
-							$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-							if(Users::validEmail($user->email)){
-								$mail->addAddress($user->email);
-								$mail->setSubject($mail_subject);
-								$mail->sendLater($mail_template);
-							}
-
-							//Send mobile notification
-							(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
-						}
-					}
-
-					$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)),)); //Account created.
-					return true;
-				}
+			if($this->createAccount($form, $model, $errmsg, $errfield)){
+				$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)),)); //Account created.
+				return true;
 			}
 		}
 		//Hide the password to avoid hacking
 		if(isset($form->password)){
 			$form->password = '******';
 		}
-		\libs\Watch::php(array($errmsg, $form),'Account creation failed', __FILE__, __LINE__, true);
+		\libs\Watch::php(array($errmsg, $form), 'Account creation failed', __FILE__, __LINE__, true);
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function createAccount($data, $user=false, &$errmsg=false, &$errfield=false){
+		$app = $this->app;
+		$app->lincko->flash['signout'] = true;
+		$failmsg = $app->trans->getBRUT('api', 15, 1)."\n"; //Account creation failed.
+		if(!$errmsg){
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		}
+		if(!$errfield){
+			$errfield = 'undefined';
+		}
+		if(!$user){
+			$user = new Users;
+		}
+		if(!isset($data->party) || !isset($data->party_id)){
+
+			//Help the frontend to display a waiting
+			if(
+				   !empty($data->party)
+				&& isset($data->integration_code)
+				&& strlen($data->integration_code)==8
+				&& $integration = Integration::find($data->integration_code)
+			){
+				$integration->processing = true;
+				$integration->save();
+			}
+
+			$invitation = false;
+			$invitation_used = false;
+			if(isset($data->invitation_code)){
+				$app->lincko->flash['unset_invitation_code'] = true;
+				$invitation_code = $data->invitation_code;
+				if($invitation = Invitation::withTrashed()->where('code', $invitation_code)->first()){
+					$invitation_used = $invitation->used;
+				}
+			}
+
+			//Used for closed invitation
+			if($app->lincko->data['need_invitation']){
+				if(!$invitation){
+					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
+					goto failed;
+				} else if($invitation_used){
+					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
+					goto failed;
+				}
+			}
+
+			$json = null;
+			if(empty($data->party)){ //Email
+				$email = mb_strtolower($user->email);
+				if(Users::where('email', $email)->first()){
+					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 10); //Email address already in use.
+					$errfield = 'email';
+					goto failed;
+				}
+				if(!isset($user->username) || empty($user->username)){
+					$user->username = mb_strstr($email, '@', true);
+				}
+			} else if($data->party=='wechat'){ //Wechat
+				$json = $data->data;
+				if(!isset($json->nickname)){ //We exit if we are only on base mode and no user logged
+					goto failed;
+				}
+				$user->username = $json->nickname;
+				$user->gender = 0; //Male
+				if($json->sex==2){ $user->gender = 1; } //Female
+				$translation = new Translation;
+				$translation->getList('default');
+				if($language = $translation->setLanguage($json->language)){
+					$user->language = $language;
+				}
+			}
+
+			if(!isset($user->username)){
+				$user->username = $app->trans->getBRUT('api', 15, 36); //User
+			}
+
+			$prefix = '';
+			if(!empty($data->party)){
+				$prefix = $data->party.'.';
+			}
+			$user->internal_email = $prefix.md5(uniqid());
+			$username_sha1 = sha1($user->internal_email);
+			$username_sha1 = substr($username_sha1, 0, 20);
+			while(Users::Where('internal_email', $user->internal_email)->orWhere('username_sha1', $username_sha1)->first()){
+				usleep(10000);
+				$user->internal_email = $prefix.md5(uniqid());
+				$username_sha1 = sha1($user->internal_email);
+				$username_sha1 = substr($username_sha1, 0, 20);
+			}
+			$user->username_sha1 = $username_sha1;
+			$user->pivots_format($data, false);
+
+
+			$users_log = new UsersLog;
+			$log = md5(uniqid());
+			while(UsersLog::Where('log', $log)->first(array('log'))){
+				usleep(10000);
+				$log = md5(uniqid());
+			}
+			$users_log->log = $log;
+			$users_log->party = $data->party;
+			$users_log->party_id = $data->party_id;
+			$users_log->username_sha1 = $username_sha1;
+			if(isset($data->password) && !empty($data->password)){
+				$users_log->password = password_hash(Datassl::decrypt($data->password, $data->party_id), PASSWORD_BCRYPT);
+			}
+			if(is_object($json)){
+				$users_log->party_json = json_encode($json, JSON_UNESCAPED_UNICODE);
+			}
+
+			$app->lincko->data['create_user'] = true; //Authorize user account creation
+			$committed = false;
+			if($user->getParentAccess()){
+				//Transaction is slowing down a lot the database
+				//$db_data = Capsule::connection($app->lincko->data['database_data']);
+				//$db_data->beginTransaction();
+				//$db_api = Capsule::connection('api');
+				//$db_api->beginTransaction();
+				try {
+					$user->saveHistory(false);
+					$user->save();
+					$users_log->save();
+					Projects::setPersonal();
+					if($data->party=='wechat'){
+						if(isset($json->openid) && !empty($json->openid)){ //Wechat
+							$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false);
+						}
+						//Add profile picture
+						if(isset($json->headimgurl)){
+							if($download = file_get_contents($json->headimgurl)){
+								$tmp_name = '/tmp/'.$user->internal_email;
+								file_put_contents($tmp_name, $download);
+								$profile_pic = new Files;
+								$profile_pic->name = $user->username;
+								$profile_pic->ori_type = mime_content_type($tmp_name);
+								$profile_pic->tmp_name = $tmp_name;
+								$profile_pic->error = 0;
+								$profile_pic->size = filesize($tmp_name);
+								$profile_pic->parent_type = 'users';
+								$profile_pic->parent_id = $app->lincko->data['uid'];
+								if($profile_pic->save()){
+									$user->profile_pic = $profile_pic->id;
+									$user->saveHistory(false);
+									$user->save();
+								}
+							}
+						}
+					}
+					//$db_data->commit();
+					//$db_api->commit();
+					$committed = true;
+				} catch(\Exception $e){
+					$committed = false;
+					//$db_api->rollback();
+					//$db_data->rollback();
+					if(isset($user->id)){
+						$user->username = 'failed';
+						$user->username_sha1 = null;
+						$user->email = null;
+						$user->internal_email = null;
+						$user->brutSave();
+					}
+					if(isset($users_log->log)){
+						$users_log->username_sha1 = null;
+						$users_log->party = null;
+						$users_log->party_id = null;
+						$users_log->save();
+					}
+					\libs\Watch::php($e, 'Account creation failed', __FILE__, __LINE__, true);
+				}
+			}
+
+			if($committed){
+
+				$app->lincko->data['uid'] = $user->id;
+				$app->lincko->flash['signout'] = false;
+				$app->lincko->flash['resignin'] = false;
+
+				//Setup public and private key
+				$authorize = $users_log->getAuthorize($this->data);
+
+				$onboarding = new Onboarding;
+				$onboarding->next(10101); //initialize the onboarding process
+
+				//Send congrat email
+				$link = 'https://'.$app->lincko->domain;
+				$title = $app->trans->getBRUT('api', 1003, 1); //Congratulations on joining Lincko!
+				$mail_body_array = array(
+					'mail_username' => $user->username,
+					'mail_link' => $link,
+				);
+				$mail_body = $app->trans->getBRUT('api', 1003, 2, $mail_body_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
+
+				$mail_template_array = array(
+					'mail_head' => $title,
+					'mail_body' => $mail_body,
+					'mail_foot' => '',
+				);
+				$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
+				if(empty($users_log->party) && Users::validEmail($users_log->party_id)){
+					$mail = new Email();
+					$mail->addAddress($email, $user->username);
+					$mail->setSubject($title);
+					$mail->sendLater($mail_template);
+				}
+
+				$notif_body = $app->trans->getBRUT('api', 1003, 3); //We are currently in Beta and are hoping to get a lot of feedback to make...
+				(new Notif)->push($title, $notif_body, false, $user->getSha());
+
+				//Invitation
+				if($invitation){
+					$pivot = new \stdClass;
+					$invitation_models = false;
+					if(!is_null($invitation->models)){
+						$invitation_models = json_decode($invitation->models);
+					}
+					//Record for invitation
+					$invitation->guest = $user->id;
+					$invitation->used = true;
+					$invitation->models = null;
+					$invitation->save();
+
+					if($invitation->created_by>0 && $host = Users::find($invitation->created_by)){
+						//For guest & host
+						$pivot->{'users>access'} = new \stdClass;
+						$pivot->{'users>access'}->{$host->id} = true;
+						//If gave access to some items
+						if($invitation_models){
+							foreach ($invitation_models as $table => $list) {
+								//Don't give access to others users or workspace
+								if($table=='workspaces' || $table=='users'){
+									continue;
+								}
+								$pivot->{$table.'>access'} = new \stdClass;
+								//Make sure that the host have access to the original item
+								//toto => to do
+								if(is_numeric($list)){
+									$id = intval($list);
+									$pivot->{$table.'>access'}->$id = true;
+								} else if(is_array($list) || is_object($list)){
+									foreach ($list as $id) {
+										$id = intval($id);
+										$pivot->{$table.'>access'}->$id = true;
+									}
+								}
+							}
+						}
+						$user->pivots_format($pivot);
+						$user->forceSaving();
+						$user->save();
+						
+						$title = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
+						$mail_body_array = array(
+							'mail_username' => $host->username,
+						);
+						$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
+						$mail_template_array = array(
+							'mail_head' => $title,
+							'mail_body' => $mail_body,
+							'mail_foot' => '',
+						);
+						$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
+						if(Users::validEmail($host->email)){
+							$mail = new Email();
+							$mail->addAddress($host->email);
+							$mail->setSubject($title);
+							$mail->sendLater($mail_template);
+						}
+
+						//Send mobile notification
+						$notif_body = $mail_body;
+						(new Notif)->push($title, $notif_body, false, $host->getSha());
+					}
+				}
+
+				return array(
+					$user,
+					$users_log,
+				);
+			}
+		}
+		failed:
+		//Hide the password to avoid hacking
+		if(isset($data->password)){
+			$data->password = '******';
+			unset($data->password);
+		}
+		\libs\Watch::php(array($errmsg, $data), 'Account creation failed', __FILE__, __LINE__, true);
 		return false;
 	}
 
@@ -824,11 +920,11 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 35); //E-mail address format incorrect
 			$errfield = 'email';
 		}
-		else if($user = Users::where('email', '=', mb_strtolower($form->party_id))->first()){
-			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->first()){
+		else if($user = Users::where('email', mb_strtolower($form->party_id))->first()){
+			if($user_log = UsersLog::where('username_sha1', $user->username_sha1)->first()){
 				$user_log->code = substr(str_shuffle("123456789"), 0, 6);
 				$limit = Carbon::now();
-				$limit->second = $limit->second + 610; //We give 10 minutes to enter the code (including 10 more seconds to cover communication latency)
+				$limit->second = $limit->second + 1210; //We give 20 minutes to enter the code (including 10 more seconds to cover communication latency)
 				$user_log->code_limit = $limit;
 				$user_log->code_try = 3; //We give 3 shots to success
 				if($user_log->save()){
@@ -889,8 +985,8 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters
 			$errfield = 'password';
 		}
-		else if($user = Users::where('email', '=', mb_strtolower($form->party_id))->first()){
-			if($user_log = UsersLog::where('username_sha1', '=', $user->username_sha1)->Where('code', '!=', null)->first()){
+		else if($user = Users::where('email', mb_strtolower($form->party_id))->first()){
+			if($user_log = UsersLog::where('username_sha1', $user->username_sha1)->Where('code', '!=', null)->first()){
 				if($user_log->code == $form->code){
 					$now = time();
 					$code_limit = (new \DateTime($user_log->code_limit))->getTimestamp();

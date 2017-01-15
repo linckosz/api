@@ -55,7 +55,7 @@ class Invitation extends ModelLincko {
 		$app = self::getApp();
 		if(!isset($this->id)){ //set code for new
 			$this->code = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyz"), 0, 8);
-			while( self::withTrashed()->where('code', '=', $this->code)->first() ){
+			while( self::withTrashed()->where('code', $this->code)->first() ){
 				$this->code = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyz"), 0, 8);
 			}
 			$this->created_by = $app->lincko->data['uid'];

@@ -73,7 +73,7 @@ class ControllerTest extends Controller {
 
 		//\libs\Watch::php(Users::getUser()->toJson(),'$user', __FILE__, __LINE__);
 		
-		//$tp = Users::where('email', '=', mb_strtolower('bruno@lincko.net'))->first()->usersLog;
+		//$tp = Users::where('email', mb_strtolower('bruno@lincko.net'))->first()->usersLog;
 		//$user = 1;
 		//$user = Users::find(1)->users_log;
 		//$user = UsersLog::find(1)->users;
@@ -95,7 +95,7 @@ class ControllerTest extends Controller {
 
 		//\libs\Watch::php( json_decode($tp->toJson()) ,'tp', __FILE__, __LINE__, false, false, true);
 
-		//$user_log = UsersLog::where('email', '=', mb_strtolower($form->email))->first()
+		//$user_log = UsersLog::where('email', mb_strtolower($form->email))->first()
 
 		//OK
 		//$tp = Users::getUser()->chats
@@ -245,7 +245,7 @@ class ControllerTest extends Controller {
 		//$tp->update(array('force_schema' => 0));
 		//$tp->saveMany();
 
-		//$tp = Users::where('force_schema', '=', 1)->update(['force_schema' => '0']);
+		//$tp = Users::where('force_schema', 1)->update(['force_schema' => '0']);
 		//$tp = Users::whereIn('id', [1, 3])->update(['force_schema' => '1']);
 		//$tp = Users::whereIn('id', [1, 2, 3, 4]);
 		//$tp->getQuery()->update(['force_schema' => '1']);
@@ -608,7 +608,11 @@ class ControllerTest extends Controller {
 		*/
 
 		
-		$tp = Projects::find(3);
+		\libs\Watch::php( 111, '$tp', __FILE__, __LINE__, false, false, true);
+		goto a;
+		\libs\Watch::php( 222, '$tp', __FILE__, __LINE__, false, false, true);
+		a:
+		\libs\Watch::php( 333, '$tp', __FILE__, __LINE__, false, false, true);
 		
 
 		//Display mysql requests

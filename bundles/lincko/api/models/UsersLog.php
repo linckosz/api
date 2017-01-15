@@ -141,14 +141,14 @@ class UsersLog extends Model {
 
 		if($users_log && $authorization){
 			$sha1 = sha1(uniqid());
-			while(!is_null(Authorization::where('public_key', '=', $sha1)->first(array('public_key')))){
+			while(!is_null(Authorization::where('public_key', $sha1)->first(array('public_key')))){
 				$sha1 = sha1(uniqid());
 			}
 			//Warning: $authorization->public_key will reset to empty value after save because it's a primary value
 			$public_key = $authorization->public_key = $sha1;
 			$private_key = $authorization->private_key = md5(uniqid());
 			$authorization->fingerprint = $data->fingerprint;
-			$user = Users::where('username_sha1', '=', $users_log->username_sha1)->first(array('id', 'username'));
+			$user = Users::where('username_sha1', $users_log->username_sha1)->first(array('id', 'username'));
 			$authorization->sha = $users_log->username_sha1;
 			if($user &&	$authorization->save()){
 				$app->lincko->translation['user_username'] = $user->username;
@@ -175,205 +175,87 @@ class UsersLog extends Model {
 		return false;
 	}
 
+	public function subAccount($party, $party_id, $password=false, $merge=false){
+		$result = false;
+		if(empty($password) || !empty($party)){ //Make sure we convert false and null
+			$password = ''; //Password exists only for email login
+		} else {
+			$password = password_hash(Datassl::decrypt($data->password, $data->party_id), PASSWORD_BCRYPT);
+		}
+		if($party == $this->party){
+			return false; //We do not allow 2 similar methods of connection
+		} else if(empty($party_id)){
+			return false; //We reject all kind of empty party_id
+		} else if(empty($party) && (!Users::validEmail($party_id) || !Users::validPassword(Datassl::decrypt($password, $party_id)))){
+			return false; //We reject Lincko credential of the party_id is not an email format or the password is missing
+		}
+		$model = self::Where('party', $party)->whereNotNull('party_id')->where('party_id', $party_id)->first(array('log'));
+		
+		//If the second credential information does not exists, we attach a new one
+		if(!$model){
+			$model = $this->replicate();
+			$log = md5(uniqid());
+			while($log != $this->log && UsersLog::Where('log', $log)->first(array('log'))){
+				usleep(10000);
+				$log = md5(uniqid());
+			}
+			$model->log = $log;
+			$model->party_id = $party_id;
+			$model->password = $password;
+			if($model->save()){
+				$result = $model;
+			}
+		}
+		//If the user wants to merge two accounts, we import all links from 
+		else if($merge && $model->username_sha1 != $this->username_sha1){
+			//check if the importation is possible
+			$list_from = array();
+			$list = self::Where('username_sha1', $model->username_sha1)->get(array('party'));
+			foreach ($list as $value) {
+				$list_from[] = $value->party;
+			}
+			$list = self::Where('username_sha1', $this->username_sha1)->get(array('party'));
+			foreach ($list as $value) {
+				if(in_array($value->party, $list_from)){
+					return false; //We reject if one of both group has similar party since we don't allow 2 similar party to the same account ( user_1 [email_1] wants wechat_1, but it's already attached by user_2 [email_2, wechat_1] which already has an email account )
+				}
+			}
+
+			$user = Users::WhereNotNull('username_sha1')->where('username_sha1', $this->username_sha1)->first();
+			$import_user = Users::WhereNotNull('username_sha1')->where('username_sha1', $model->username_sha1)->first();
+			if($user && $import_user && $user->import($import)){
+				$model = $this->username_sha1;
+				$model->password = $password;
+				if($model->save()){
+					$result = $model;
+				}
+			}
+		} else {
+			$result = $model;
+		}
+		return $result;
+	}
+
 	public static function check($data){
 		$app = \Slim\Slim::getInstance();
 		$log_id = false;
-		$invitation = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If users_log exists
 			if($users_log = self::Where('party', $data->data->party)->whereNotNull('party_id')->where('party_id', $data->data->party_id)->first()){
-				return $users_log->id;
-			}
-			//We exit if we are only on base mode and no user logged
-			else if($data->data->party=='wechat' && !isset($json->nickname)){
-				return false;
+				//For Wechat, if we log with union id, double check that the openid is registered too
+				if($data->data->party=='wechat' && substr($data->data->party_id, 0, 4)=='uid.' && $json = json_decode($users_log->json)){ //Wechat
+					if(isset($json->openid) && !empty($json->openid)){
+						$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false);
+					}
+				}
+				return $users_log->log;
 			}
 			//If new users_log, we create a user account
 			else {
-				$file = false;
-				$user = new Users;
-				$user->username = 'Lincko user';
-				$user->internal_email = $data->data->party.'.'.$data->data->party_id;
-				$limit = 0;
-				$username_sha1 = sha1($user->internal_email);
-				$username_sha1 = substr($username_sha1, 0, 20);
-				$accept = false;
-				while( $limit <= 1000 && Users::Where('internal_email', $user->internal_email)->orWhere('username_sha1', $username_sha1)->first() ){
-					usleep(10000);
-					$user->internal_email = $data->data->party.'.'.md5(uniqid());
-					$username_sha1 = sha1(uniqid());
-					$username_sha1 = substr($username_sha1, 0, 20);
-					$limit++;
-				}
-				if($limit < 1000){
-					$accept = true;
-				}
-				$user->username_sha1 = $username_sha1;
-				$users_log = new UsersLog;
-				$log = md5(uniqid());
-				while(UsersLog::Where('log', $log)->first(array('log'))){
-					usleep(10000);
-					$log = md5(uniqid());
-				}
-				$users_log->log = $log;
-				$users_log->party = $data->data->party;
-				$users_log->party_id = $data->data->party_id;
-				$users_log->party_json = json_encode($data->data->data, JSON_UNESCAPED_UNICODE);
-				$users_log->username_sha1 = $username_sha1;
-				if($data->data->party=='wechat'){ //Wechat
-					$user->username = $json->nickname;
-					$user->gender = 0; //Male
-					if($json->sex==2){ $user->gender = 1; } //Female
-					$translation = new Translation;
-					$translation->getList('default');
-					if($language = $translation->setLanguage($json->language)){
-						$user->language = $language;
-					}
-					if($json->openid){
-						$users_log_bis = new UsersLog;
-						$log_bis = md5(uniqid());
-						while($log_bis != $log && UsersLog::Where('log', $log_bis)->first(array('log'))){
-							usleep(10000);
-							$log_bis = md5(uniqid());
-						}
-						$users_log_bis->log = $log_bis;
-						$users_log_bis->party = $data->data->party;
-						$users_log_bis->party_id = 'oid.'.$json->openid;
-						$users_log_bis->party_json = $users_log->party_json;
-						$users_log_bis->username_sha1 = $username_sha1; //Same username_sha1 to allow 2 kind of connection on same account
-					}
-				}
-				$app->lincko->data['create_user'] = true; //Authorize user account creation
-				if($accept){
-					$committed = false;
-					if($user->getParentAccess()){
-						if(
-							   isset($data->data)
-							&& isset($data->data->integration_code)
-							&& strlen($data->data->integration_code)==8
-							&& $integration = Integration::find($data->data->integration_code)
-						){
-							$integration->processing = true;
-							$integration->save();
-						}
-						try {
-							$user->save();
-							$users_log->save();
-							if(isset($users_log_bis)){
-								$users_log_bis->save();
-							}
-							Projects::setPersonal();
-							$committed = true;
-						} catch(\Exception $e){
-							$committed = false;
-							if(isset($user->id)){
-								$user->username = 'failed';
-								$user->username_sha1 = null;
-								$user->email = null;
-								$user->internal_email = null;
-								$user->brutSave();
-							}
-							if(isset($users_log->log)){
-								$users_log->username_sha1 = null;
-								$users_log->party = null;
-								$users_log->party_id = null;
-								$users_log->save();
-							}
-							if(isset($users_log_bis) && isset($log_bis) && isset($users_log_bis->log_bis)){
-								$users_log_bis->username_sha1 = null;
-								$users_log_bis->party = null;
-								$users_log_bis->party_id = null;
-								$users_log_bis->save();
-							}
-						}
-						if($committed){
-							$app->lincko->data['uid'] = $user->id;
-							$app->lincko->flash['signout'] = false;
-							$app->lincko->flash['resignin'] = false;
-							$log_id = $users_log->id;
-							$onboarding = new Onboarding;
-							$onboarding->next(10101); //initialize the onboarding process
-							//Additional account information that need user ID
-							if($data->data->party=='wechat'){ //Wechat
-								//Add profile picture
-								if(isset($json->headimgurl)){
-									if($download = file_get_contents($json->headimgurl)){
-										$tmp_name = '/tmp/'.$user->internal_email;
-										file_put_contents($tmp_name, $download);
-										$profile_pic = new Files;
-										$profile_pic->name = 'Martin';
-										$profile_pic->ori_type = mime_content_type($tmp_name);
-										$profile_pic->tmp_name = $tmp_name;
-										$profile_pic->error = 0;
-										$profile_pic->size = filesize($tmp_name);
-										$profile_pic->parent_type = 'users';
-										$profile_pic->parent_id = $app->lincko->data['uid'];
-										if($profile_pic->save()){
-											$user->profile_pic = $profile_pic->id;
-											$user->save();
-										}
-									}
-								}
-							}
-
-							/*
-							$model = $user;
-							//Invitation
-							if($invitation){
-								$pivot = new \stdClass;
-								$invitation_models = false;
-								if(!is_null($invitation->models)){
-									$invitation_models = json_decode($invitation->models);
-								}
-								//Record for invitation
-								$invitation->guest = $model->id;
-								$invitation->used = true;
-								$invitation->models = null;
-								$invitation->save();
-
-								if($invitation->created_by>0 && $user = Users::find($invitation->created_by)){
-									//For guest & host
-									$pivot->{'users>access'} = new \stdClass;
-									$pivot->{'users>access'}->{$user->id} = true;
-									//If gave access to some items
-									if($invitation_models){
-										foreach ($invitation_models as $table => $list) {
-											//Don't give access to others users or workspace
-											if($table=='workspaces' || $table=='users'){
-												continue;
-											}
-											$pivot->{$table.'>access'} = new \stdClass;
-											//Make sure that the host have access to the original item
-											//toto => to do
-											if(is_numeric($list)){
-												$id = intval($list);
-												$pivot->{$table.'>access'}->$id = true;
-											} else if(is_array($list) || is_object($list)){
-												foreach ($list as $id) {
-													$id = intval($id);
-													$pivot->{$table.'>access'}->$id = true;
-												}
-											}
-										}
-									}
-									$model->pivots_format($pivot);
-									$model->forceSaving();
-									$model->save();
-
-									$mail_subject = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
-									$mail_body_array = array(
-										'mail_username' => $user->username,
-									);
-									$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
-
-									//Send mobile notification
-									(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
-								}
-							}
-							*/
-						}
-					}
+				$controller_user = new ControllerUser;
+				if($result = $controller_user->createAccount($data->data)){
+					$log_id = $result[1]->log;
 				}
 					
 			}

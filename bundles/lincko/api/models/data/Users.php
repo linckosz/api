@@ -445,6 +445,10 @@ class Users extends ModelLincko {
 		return $return;
 	}
 
+	public function import($user){
+		return true;
+	}
+
 	//Unsafe method
 	public function giveEditAccess(){
 		$app = self::getApp();

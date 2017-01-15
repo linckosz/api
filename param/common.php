@@ -56,7 +56,7 @@ if(isset($_SERVER['SERVER_HOST'])){
 	$app->lincko->domain = $_SERVER['HTTP_HOST'];
 }
 
-$app->lincko->domain_restriction = "/^(?:.{1,3}|(?:api|cloud|cron|dc|file|info|lincko|mail|mx|ns|pop|smtp|tp|debug|www)\d*)$/ui";
+$app->lincko->domain_restriction = "/^(?:.{1,3}|(?:api|cloud|cron|dc|file|files|info|lincko|mail|mx|ns|pop|smtp|tp|debug|www)\d*)$/ui";
 
 $app->lincko->cookies_lifetime = time()+(3600*24*90); //Valid 3 months
 
@@ -169,8 +169,8 @@ if(isset($_SERVER['LINCKO_BACK']) && !empty($_SERVER['LINCKO_BACK'])){
 
 $app->lincko->data['workspace_id'] = 0; //Share workspace by default
 $app->lincko->data['create_user'] = false; //True if we want to be able to authorize the user creation (this is set to true by the framework)
-$app->lincko->data['allow_create_user'] = false; //True if we want to be able to authorize the user creation (this is set to true by the developper, upper level)
-$app->lincko->data['invitation_beta'] = true; //At true, we force new user to be invited by someone, at false anyone get register
+$app->lincko->data['allow_create_user'] = true; //True if we want to be able to authorize the user creation (this is set to true by the developper, upper level)
+$app->lincko->data['need_invitation'] = false; //At true, we force new user to be invited by someone, at false anyone get register
 $app->lincko->data['invitation_code'] = ''; //The code grab by the link
 
 $app->lincko->data['lastvisit'] = time()-1; //Less one second to avoid missing timestamp at the same time
