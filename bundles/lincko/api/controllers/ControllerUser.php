@@ -19,6 +19,7 @@ use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\Invitation;
+use \bundles\lincko\api\models\libs\Integration;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 /*
