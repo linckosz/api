@@ -13,13 +13,13 @@ use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\Onboarding;
+use \bundles\lincko\api\models\Integration;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\Invitation;
-use \bundles\lincko\api\models\libs\Integration;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 /*
