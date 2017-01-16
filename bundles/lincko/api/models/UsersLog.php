@@ -238,7 +238,6 @@ class UsersLog extends Model {
 
 	public static function check_integration($data){
 		$app = \Slim\Slim::getInstance();
-		$log_id = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If users_log exists
@@ -249,18 +248,18 @@ class UsersLog extends Model {
 						$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false, true);
 					}
 				}
-				return $users_log->log;
+				return $users_log;
 			}
 			//If new users_log, we create a user account
 			else {
 				$controller_user = new ControllerUser;
 				if($result = $controller_user->createAccount($data->data)){
-					$log_id = $result[1];
+					return $result[1];
 				}
 					
 			}
 		}
-		return $log_id;
+		return false;
 	}
 
 }
