@@ -41,18 +41,20 @@ class CheckAccess extends \Slim\Middleware {
 		return true;
 	}
 
-	protected function autoSign($log_id=false){
+	protected function autoSign(){
 		$app = $this->app;
 		$data = $this->data;
 		$form = $data->data;
-		if(!$log_id && isset($form->log_id)){
-			$log_id = Datassl::decrypt($form->log_id, 'log_id');
-		}
 		$user_log = false;
-		if($log_id){
-			$user_log = UsersLog::find($log_id); //the coloumn must be primary
+
+		if($this->route == 'integration_connect_post'){
+			$user_log = UsersLog::check_integration($data);
 		}
-		if(!$user_log){
+
+		if(!$user_log && isset($form->log_id)){
+			$log_id = Datassl::decrypt($form->log_id, 'log_id');
+			$user_log = UsersLog::find($log_id); //the coloumn must be primary
+		} else {
 			$user_log = new UsersLog;
 		}
 		$authorize = $user_log->getAuthorize($data);
@@ -319,20 +321,13 @@ class CheckAccess extends \Slim\Middleware {
 			$this->authorization->private_key = $app->lincko->security['private_key'];
 			$this->authorizeAccess = true;
 			$valid = true;
-		} else if($this->route == 'integration_connect_post' && $this->authorization = Authorization::find_finger($this->autoSign(UsersLog::check($data)), $data->fingerprint)){
-			//Must overwrite by standard keys because the checksum has been calculated with the standard one
-			$this->authorization->private_key = $app->lincko->security['private_key'];
-			$this->authorizeAccess = true;
-			$valid = true;
-		}
-
-		//Inform the browser that the third party connection is processing
-			
+		}	
 
 		if($valid){
 			$this->setUserId();
 			$this->setUserLanguage();
 			$this->inviteSomeone();
+			//Inform the browser that the third party connection is processing
 			if(
 				   isset($data->data)
 				&& isset($data->data->integration_code)

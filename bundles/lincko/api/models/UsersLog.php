@@ -175,14 +175,14 @@ class UsersLog extends Model {
 		return false;
 	}
 
-	public function subAccount($party, $party_id, $password=false, $merge=false){
+	public function subAccount($party, $party_id, $password=false, $merge=false, $force=false){
 		$result = false;
 		if(empty($password) || !empty($party)){ //Make sure we convert false and null
 			$password = ''; //Password exists only for email login
 		} else {
 			$password = password_hash(Datassl::decrypt($data->password, $data->party_id), PASSWORD_BCRYPT);
 		}
-		if($party == $this->party){
+		if(!$force && $party == $this->party){
 			return false; //We do not allow 2 similar methods of connection
 		} else if(empty($party_id)){
 			return false; //We reject all kind of empty party_id
@@ -236,7 +236,7 @@ class UsersLog extends Model {
 		return $result;
 	}
 
-	public static function check($data){
+	public static function check_integration($data){
 		$app = \Slim\Slim::getInstance();
 		$log_id = false;
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
@@ -244,9 +244,9 @@ class UsersLog extends Model {
 			//If users_log exists
 			if($users_log = self::Where('party', $data->data->party)->whereNotNull('party_id')->where('party_id', $data->data->party_id)->first()){
 				//For Wechat, if we log with union id, double check that the openid is registered too
-				if($data->data->party=='wechat' && substr($data->data->party_id, 0, 4)=='uid.' && $json = json_decode($users_log->json)){ //Wechat
+				if($data->data->party=='wechat' && substr($data->data->party_id, 0, 4)=='uid.'){ //Wechat
 					if(isset($json->openid) && !empty($json->openid)){
-						$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false);
+						$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false, true);
 					}
 				}
 				return $users_log->log;
@@ -255,7 +255,7 @@ class UsersLog extends Model {
 			else {
 				$controller_user = new ControllerUser;
 				if($result = $controller_user->createAccount($data->data)){
-					$log_id = $result[1]->log;
+					$log_id = $result[1];
 				}
 					
 			}

@@ -241,7 +241,7 @@ class ControllerUser extends Controller {
 		if(!$user){
 			$user = new Users;
 		}
-		if(!isset($data->party) || !isset($data->party_id)){
+		if(isset($data->party_id)){
 
 			//Help the frontend to display a waiting
 			if(
