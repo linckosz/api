@@ -355,7 +355,7 @@ class ControllerUser extends Controller {
 					Projects::setPersonal();
 					if($data->party=='wechat'){
 						if(isset($json->openid) && !empty($json->openid)){ //Wechat
-							$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false);
+							$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false, true);
 						}
 						//Add profile picture
 						if(isset($json->headimgurl)){
