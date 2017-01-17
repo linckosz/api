@@ -94,9 +94,10 @@ class CheckAccess extends \Slim\Middleware {
 				}
 				//Record for invitation
 				$invitation->guest = $user->id;
+				$invitation->code = null;
 				$invitation->used = true;
 				$invitation->models = null;
-				$invitation->save();
+				//$invitation->save();
 
 				if($invitation->created_by>0 && $host = Users::find($invitation->created_by)){
 					//For guest
@@ -105,21 +106,25 @@ class CheckAccess extends \Slim\Middleware {
 					$pivot->{'users>access'}->{$host->id} = true;
 					$app->lincko->data['invitation_code'] = true;
 					//If gave access to some items
+					$items = new \stdClass;
 					if($invitation_models){
 						foreach ($invitation_models as $table => $list) {
 							//Don't give access to others users or workspace
 							if($table=='workspaces' || $table=='users'){
 								continue;
 							}
+							$items->$table = new \stdClass;
 							$pivot->{$table.'>access'} = new \stdClass;
 							//Make sure that the host have access to the original item
 							if(is_numeric($list)){
 								$id = intval($list);
 								$pivot->{$table.'>access'}->$id = true;
+								$items->$table->$id = $id;
 							} else if(is_array($list) || is_object($list)){
 								foreach ($list as $id) {
 									$id = intval($id);
 									$pivot->{$table.'>access'}->$id = true;
+									$items->$table->$id = $id;
 								}
 							}
 						}
@@ -127,6 +132,17 @@ class CheckAccess extends \Slim\Middleware {
 					$user->pivots_format($pivot);
 					$user->forceSaving();
 					$user->save();
+
+					//Once the user has the rights, we refresh the permissions
+					foreach ($items as $table => $list) {
+						$class = Users::getClass($table);
+						foreach ($list as $id) {
+							if($item = $class::withTrashed()->find($id)){
+								$item->forceGiveAccess();
+								$item->setPerm();
+							}
+						}
+					}
 					
 					$title = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
 					$mail_body_array = array(
