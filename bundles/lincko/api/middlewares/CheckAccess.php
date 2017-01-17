@@ -97,7 +97,7 @@ class CheckAccess extends \Slim\Middleware {
 				$invitation->code = null;
 				$invitation->used = true;
 				$invitation->models = null;
-				//$invitation->save();
+				$invitation->save();
 
 				if($invitation->created_by>0 && $host = Users::find($invitation->created_by)){
 					//For guest
