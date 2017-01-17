@@ -443,8 +443,446 @@ class ControllerUser extends Controller {
 
 				//Invitation
 				if($invitation){
+					$pivot = new \stdClass;
+					$invitation_models = false;
+					if(!is_null($invitation->models)){
+						$invitation_models = json_decode($invitation->models);
+					}
+					//Record for invitation
+					$invitation->guest = $user->id;
+					$invitation->used = true;
+					$invitation->models = null;
+					$invitation->save();
+
+					if($invitation->created_by>0 && $host = Users::find($invitation->created_by)){
+						//For guest & host
+						$pivot->{'users>access'} = new \stdClass;
+						$pivot->{'users>access'}->{$host->id} = true;
+						//If gave access to some items
+						if($invitation_models){
+							foreach ($invitation_models as $table => $list) {
+								//Don't give access to others users or workspace
+								if($table=='workspaces' || $table=='users'){
+									continue;
+								}
+								$pivot->{$table.'>access'} = new \stdClass;
+								//Make sure that the host have access to the original item
+								//toto => to do
+								if(is_numeric($list)){
+									$id = intval($list);
+									$pivot->{$table.'>access'}->$id = true;
+								} else if(is_array($list) || is_object($list)){
+									foreach ($list as $id) {
+										$id = intval($id);
+										$pivot->{$table.'>access'}->$id = true;
+									}
+								}
+							}
+						}
+						$user->pivots_format($pivot);
+						$user->forceSaving();
+						$user->save();
+						
+						$title = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
+						$mail_body_array = array(
+							'mail_username' => $host->username,
+						);
+						$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
+						$mail_template_array = array(
+							'mail_head' => $title,
+							'mail_body' => $mail_body,
+							'mail_foot' => '',
+						);
+						$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
+						if(Users::validEmail($host->email)){
+							$mail = new Email();
+							$mail->addAddress($host->email);
+							$mail->setSubject($title);
+							$mail->sendLater($mail_template);
+						}
+
+						//Send mobile notification
+						$notif_body = $mail_body;
+						(new Notif)->push($title, $notif_body, false, $host->getSha());
+					}
+				}
+
+				return array(
+					$user,
+					$users_log,
+				);
+			}
+		}
+		failed:
+		//Hide the password to avoid hacking
+		if(isset($data->password)){
+			$data->password = '******';
+			unset($data->password);
+		}
+		\libs\Watch::php(array($errmsg, $data), 'Account creation failed', __FILE__, __LINE__, true);
+		return false;
+	}
+
+	public function read_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Users::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+			$errfield = 'id';
+		}
+		else if($model = Users::find($form->id)){
+			if($model->checkAccess(false)){
+				$uid = $app->lincko->data['uid'];
+				$key = $model->getTable();
+				$msg = $app->trans->getBRUT('api', 15, 4); //Account accessed.
+				$data = new Data();
+				$force_partial = new \stdClass;
+				$force_partial->$uid = new \stdClass;
+				$force_partial->$uid->$key = new \stdClass;
+				$force_partial->$uid->$key->{$form->id} = new \stdClass;
+				$partial = $data->getMissing($force_partial);
+				if(isset($partial) && isset($partial->$uid) && !empty($partial->$uid)){
+					$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial, 'info' => 'reading')));
+					return true;
 				}
 			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function update_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 15, 5)."\n"; //Account update failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Users::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 27); //We could not validate the user account ID.
+			$errfield = 'id';
+		}
+		//"email" and "password" are treated differently for security reason
+		else if(isset($form->username) && (!Users::validChar($form->username, true) || !Users::validTextNotEmpty($form->username, true))){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 10); //We could not validate the username format: - 104 characters max - Without space
+			$errfield = 'username';
+		}
+		else if(isset($form->firstname) && !Users::validChar($form->firstname, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 8); //We could not validate the first name format: - 104 characters max
+			$errfield = 'firstname';
+		}
+		else if(isset($form->lastname) && !Users::validChar($form->lastname, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 9); //We could not validate the last name format: - 104 characters max
+			$errfield = 'lastname';
+		}
+		else if(isset($form->gender) && !Users::validBoolean($form->gender, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 21); //We could not validate the gender.
+			$errfield = 'gender';
+		}
+		else if($model = Users::find($form->id)){
+			if(isset($form->username)){ $model->username = $form->username; } //Optional
+			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
+			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
+			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
+			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
+			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
+			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
+			$dirty = $model->getDirty();
+			$pivots = $model->pivots_format($form);
+			if(count($dirty)>0 || $pivots){
+				if($model->getParentAccess() && $model->save()){
+					$model->enableTrash(false);
+					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account information updated.
+					$data = new Data();
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
+					return true;
+				}
+			} else {
+				$errmsg = $app->trans->getBRUT('api', 8, 29); //Already up to date.
+				$app->render(200, array('show' => false, 'msg' => array('msg' => $errmsg)));
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function delete_post(){
+		$app = $this->app;
+		$errmsg = $app->trans->getBRUT('api', 15, 7)."\n".$app->trans->getBRUT('api', 0, 6); //Account deletion failed. You are not allowed to delete the server data.
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg), 'error' => true));
+		return false;
+	}
+
+	public function restore_post(){
+		$app = $this->app;
+		$errmsg = $app->trans->getBRUT('api', 15, 20)."\n".$app->trans->getBRUT('api', 0, 9); //Account restoration failed. You are not allowed to restore the server data.
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg), 'error' => true));
+		return false;
+	}
+
+	public function signin_post(){
+		$app = $this->app;
+		$data = $this->data;
+		if(!isset($data->data)){
+			$app->render(400, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 0, 4)), 'error' => true,)); //No data form received.
+			return false;
+		}
+		$form = $data->data;
+
+		$errmsg = $app->trans->getBRUT('api', 15, 12)."\n".$app->trans->getBRUT('api', 0, 7); //Sign in failed. Please try again.
+		$errfield = 'undefined';
+
+		if($authorize = (new UsersLog)->getAuthorize($data)){
+			$msg = $app->trans->getBRUT('api', 15, 13); //You are already signed in.
+			if(isset($authorize['private_key'])){
+				$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
+			}
+			if(isset($authorize['public_key'])){
+				$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
+			}
+			if(isset($authorize['refresh'])){
+				if($authorize['refresh']){
+					$msg = $app->trans->getBRUT('api', 15, 14); //Your session has been extended.
+				} else {
+					$msg = $app->trans->getBRUT('api', 15, 15); //Hello @@user_username~~, you are signed in to your account.
+				}
+			}
+			$app->render(200, array('msg' => array('msg' => $msg)));
+			return true;
+		} else {
+			if(!isset($form->party) || empty($form->party)){ //Email/speudo
+				if(isset($form->party_id) && UsersLog::Where('party', null)->where('party_id', $form->party_id)->first(array('log'))){
+					$errmsg = $app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
+				} else {
+					$errmsg = $app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
+				}
+			} else if(isset($form->party_id) && !UsersLog::Where('party', $dform->party)->where('party_id', $form->party_id)->first(array('log'))){ //Integration
+				$errmsg = $app->trans->getBRUT('api', 15, 35); //Your user id or password is incorrect
+			}
+		}
+
+		//Hide the password to avoid hacking
+		if(isset($form->password)){
+			$form->password = '******';
+		}
+		\libs\Watch::php(array($errmsg, $form), 'Sign in failed', __FILE__, __LINE__, true);
+		$app->lincko->flash['signout'] = true;
+		$app->render(401, array('msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true,));
+		return false;
+	}
+
+	public function resign_get(){
+		return $this->resign_post();
+	}
+
+	public function resign_post(){
+		$app = $this->app;
+		//Do nothing, the middleware CheckAccess will handle automatically the resigning action
+		$app->render(201, array('msg' => array('msg' => $app->trans->getBRUT('api', 15, 14)),)); //Your session has been extended.
+		return true;
+	}
+
+	public function signout_get(){
+		$this->signout_post();
+	}
+
+	public function signout_post(){
+		$app = $this->app;
+		$data = $this->data;
+		if(!isset($data->data)){
+			$msg = $app->trans->getBRUT('api', 0, 4); //No data form received.
+			$app->render(400, array('msg' => $msg, 'error' => true,));
+			return true;
+		}
+		$form = $data->data;
+
+		$msg = $app->trans->getBRUT('api', 15, 16); //You are already signed out.
+
+		if($authorization = Authorization::find_finger($data->public_key, $data->fingerprint)){
+			$authorization->delete();
+			$msg = $app->trans->getBRUT('api', 15, 17); //You have signed out of your account.
+		}
+
+		$app->lincko->flash['signout'] = true;
+		$app->render(200, array('msg' => $msg,));
+		return true;
+	}
+
+	public function find_post(){
+		$app = $this->app;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		$form = $this->form;
+		if(is_array($form) || is_object($form)){
+			foreach ($form as $key => $value) {
+				$email = mb_strtolower($value);
+				break; //Insure to take the first one only
+			}
+			if($user = Users::where('email', $email)->first()){ //Account found
+				$data = new \stdClass;
+				$data->myself = false;
+				if($user->id == $app->lincko->data['uid']){
+					$data->myself = true;
+				}
+				$data->contact = false;
+				if(Users::getModel($user->id)){
+					$data->contact = true;
+				}
+				$data->id = $user->id;
+				$data->username = $user->username;
+				$data->updated_at = $user->updated_at->getTimestamp();
+				$data->profile_pic = $user->profile_pic;
+				$msg = $app->trans->getBRUT('api', 15, 23); //Account found
+				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+				return true;
+			} else {
+				$data = true;
+				$msg = $app->trans->getBRUT('api', 15, 24); //Account not found
+				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function find_qrcode_post(){
+		$app = $this->app;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		$form = $this->form;
+		if(is_array($form) || is_object($form)){
+			\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
+			foreach ($form as $key => $value) {
+				$id = Datassl::decrypt($value, 'invitation');
+				break; //Insure to take the first one only
+			}
+			if($id>1 && $user = Users::find($id)){ //Account found
+				$data = new \stdClass;
+				$data->myself = false;
+				if($user->id == $app->lincko->data['uid']){
+					$data->myself = true;
+				}
+				$data->contact = false;
+				if(Users::getModel($user->id)){
+					$data->contact = true;
+				}
+				$data->id = $user->id;
+				$data->username = $user->username;
+				$data->updated_at = $user->updated_at->getTimestamp();
+				$data->profile_pic = $user->profile_pic;
+				$msg = $app->trans->getBRUT('api', 15, 23); //Account found
+				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+				return true;
+			} else {
+				$data = true;
+				$msg = $app->trans->getBRUT('api', 15, 24); //Account not found
+				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function invite_post(){
+		$app = $this->app;
+
+		$failmsg = $app->trans->getBRUT('api', 15, 3)."\n"; //Account access failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 0); //You are not allowed to access the server data.
+		$errfield = 'undefined';
+
+		$form = $this->form;
+		if(is_array($form) || is_object($form)){
+			$form = (object) $form;
+			if(!$form->exists && isset($form->email)){
+				$guest = Users::where('email', $form->email)->first();
+				if(!$guest){
+					$user = Users::getUser();
+					$username = $user->username;
+					$invitation = new Invitation();
+					if(isset($form->invite_access)){
+						$invitation->models = $form->invite_access;
+					}
+					$invitation->save();
+					$code = $invitation->code;
+					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
+					$mail = new Email();
+
+					$mail_subject = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
+					$mail_body_array = array(
+						'mail_username' => $username,
+						'mail_link' => $link,
+					);
+					$mail_body = $app->trans->getBRUT('api', 1001, 2, $mail_body_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
+					$mail_foot = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
+
+					$mail_template_array = array(
+						'mail_head' => $mail_subject,
+						'mail_body' => $mail_body,
+						'mail_foot' => $mail_foot,
+					);
+					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
+					if(Users::validEmail($form->email)){
+						$mail->addAddress($form->email);
+						$mail->setSubject($mail_subject);
+						$mail->sendLater($mail_template);
+					}
+					$data = true;
+					$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+					$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+					return true;
+				}
+			} else if($form->exists && isset($form->users_id)){
+				if($guest = Users::find($form->users_id)){
+					if(Users::inviteSomeone($guest, $form)){
+						$data = true;
+						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+						return true;
+					}
+				}
+				
+			}
+			$data = false;
+			$msg = $app->trans->getBRUT('api', 15, 25); //Invitation failed to send.
+			$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+			return true;
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function inviteqrcode_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
+
+		if(Users::inviteSomeoneCode($form)){
+			$data = true;
+			$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
 			$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
 			return true;
 		}
