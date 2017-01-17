@@ -592,7 +592,6 @@ class Users extends ModelLincko {
 	public function pivots_format($form, $history_save=true){
 		$app = self::getApp();
 		$save = parent::pivots_format($form, $history_save);
-
 		if(isset($this->pivots_var->users)){
 			if(!isset($this->pivots_var->usersLinked)){ $this->pivots_var->usersLinked = new \stdClass; }
 			foreach ($this->pivots_var->users as $users_id => $column_list) {
@@ -652,6 +651,9 @@ class Users extends ModelLincko {
 							$this->pivots_var->users->$users_id->models = array(false, false);
 							$this->pivots_var->users->$users_id->access = array(true, false);
 							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
+						} else if($access && isset($app->lincko->data['invitation_code']) && $app->lincko->data['invitation_code']){
+							$this->pivots_var->users->$users_id->access = array(true, true); //Need to trigger a notification for URL invitation
+							$this->pivots_var->usersLinked->$users_id->access = array(true, true);
 						} else {
 							$this->pivots_var->usersLinked->$users_id->access = array(false, true);
 						}

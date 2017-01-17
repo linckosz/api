@@ -5,7 +5,9 @@ namespace bundles\lincko\api\middlewares;
 use \libs\Json;
 use \libs\Datassl;
 use \libs\OneSeventySeven;
+use \libs\Email;
 use \bundles\lincko\api\models\Api;
+use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\Integration;
@@ -15,6 +17,7 @@ use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
+use \bundles\lincko\api\models\libs\Invitation;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class CheckAccess extends \Slim\Middleware {
@@ -74,6 +77,81 @@ class CheckAccess extends \Slim\Middleware {
 		$data = $this->data;
 		if(isset($data->user_code) && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			Users::inviteSomeoneCode($data);
+		}
+	}
+
+	protected function checkInvitation(){
+		$app = $this->app;
+		$data = $this->data;
+		if(isset($data->data->invitation_code) && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
+			$app->lincko->flash['unset_invitation_code'] = true;
+			$invitation_code = $data->data->invitation_code;
+			if($invitation = Invitation::withTrashed()->where('code', $invitation_code)->first()){
+				$user = Users::getUser();
+				$invitation_models = false;
+				if(!is_null($invitation->models)){
+					$invitation_models = json_decode($invitation->models);
+				}
+				//Record for invitation
+				$invitation->guest = $user->id;
+				$invitation->used = true;
+				$invitation->models = null;
+				$invitation->save();
+
+				if($invitation->created_by>0 && $host = Users::find($invitation->created_by)){
+					//For guest
+					$pivot = new \stdClass;
+					$pivot->{'users>access'} = new \stdClass;
+					$pivot->{'users>access'}->{$host->id} = true;
+					$app->lincko->data['invitation_code'] = true;
+					//If gave access to some items
+					if($invitation_models){
+						foreach ($invitation_models as $table => $list) {
+							//Don't give access to others users or workspace
+							if($table=='workspaces' || $table=='users'){
+								continue;
+							}
+							$pivot->{$table.'>access'} = new \stdClass;
+							//Make sure that the host have access to the original item
+							if(is_numeric($list)){
+								$id = intval($list);
+								$pivot->{$table.'>access'}->$id = true;
+							} else if(is_array($list) || is_object($list)){
+								foreach ($list as $id) {
+									$id = intval($id);
+									$pivot->{$table.'>access'}->$id = true;
+								}
+							}
+						}
+					}
+					$user->pivots_format($pivot);
+					$user->forceSaving();
+					$user->save();
+					
+					$title = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
+					$mail_body_array = array(
+						'mail_username' => $host->username,
+					);
+					$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
+					$mail_template_array = array(
+						'mail_head' => $title,
+						'mail_body' => $mail_body,
+						'mail_foot' => '',
+					);
+					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+
+					if(Users::validEmail($host->email)){
+						$mail = new Email();
+						$mail->addAddress($host->email);
+						$mail->setSubject($title);
+						$mail->sendLater($mail_template);
+					}
+
+					//Send mobile notification
+					$notif_body = $mail_body;
+					(new Notif)->push($title, $notif_body, false, $host->getSha());
+				}
+			}
 		}
 	}
 
@@ -327,6 +405,7 @@ class CheckAccess extends \Slim\Middleware {
 			$this->setUserId();
 			$this->setUserLanguage();
 			$this->inviteSomeone();
+			$this->checkInvitation();
 			//Inform the browser that the third party connection is processing
 			if(
 				   isset($data->data)

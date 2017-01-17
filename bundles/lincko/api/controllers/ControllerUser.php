@@ -256,22 +256,15 @@ class ControllerUser extends Controller {
 				$integration->save();
 			}
 
-			$invitation = false;
-			$invitation_used = false;
-			if(isset($data->invitation_code)){
-				$app->lincko->flash['unset_invitation_code'] = true;
-				$invitation_code = $data->invitation_code;
-				if($invitation = Invitation::withTrashed()->where('code', $invitation_code)->first()){
-					$invitation_used = $invitation->used;
-				}
-			}
-
 			//Used for closed invitation
-			if($app->lincko->data['need_invitation']){
-				if(!$invitation){
-					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
-					goto failed;
-				} else if($invitation_used){
+			if($app->lincko->data['need_invitation'] && isset($data->invitation_code)){
+				$app->lincko->flash['unset_invitation_code'] = true;
+				if($invitation = Invitation::withTrashed()->where('code', $data->invitation_code)->first()){
+					if($invitation->used){
+						$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
+						goto failed;
+					}
+				} else {
 					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
 					goto failed;
 				}
@@ -441,79 +434,13 @@ class ControllerUser extends Controller {
 				$notif_body = $app->trans->getBRUT('api', 1003, 3); //We are currently in Beta and are hoping to get a lot of feedback to make...
 				(new Notif)->push($title, $notif_body, false, $user->getSha());
 
-				//Invitation
-				if($invitation){
-					$pivot = new \stdClass;
-					$invitation_models = false;
-					if(!is_null($invitation->models)){
-						$invitation_models = json_decode($invitation->models);
-					}
-					//Record for invitation
-					$invitation->guest = $user->id;
-					$invitation->used = true;
-					$invitation->models = null;
-					$invitation->save();
-
-					if($invitation->created_by>0 && $host = Users::find($invitation->created_by)){
-						//For guest & host
-						$pivot->{'users>access'} = new \stdClass;
-						$pivot->{'users>access'}->{$host->id} = true;
-						//If gave access to some items
-						if($invitation_models){
-							foreach ($invitation_models as $table => $list) {
-								//Don't give access to others users or workspace
-								if($table=='workspaces' || $table=='users'){
-									continue;
-								}
-								$pivot->{$table.'>access'} = new \stdClass;
-								//Make sure that the host have access to the original item
-								//toto => to do
-								if(is_numeric($list)){
-									$id = intval($list);
-									$pivot->{$table.'>access'}->$id = true;
-								} else if(is_array($list) || is_object($list)){
-									foreach ($list as $id) {
-										$id = intval($id);
-										$pivot->{$table.'>access'}->$id = true;
-									}
-								}
-							}
-						}
-						$user->pivots_format($pivot);
-						$user->forceSaving();
-						$user->save();
-						
-						$title = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
-						$mail_body_array = array(
-							'mail_username' => $host->username,
-						);
-						$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
-						$mail_template_array = array(
-							'mail_head' => $title,
-							'mail_body' => $mail_body,
-							'mail_foot' => '',
-						);
-						$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-						if(Users::validEmail($host->email)){
-							$mail = new Email();
-							$mail->addAddress($host->email);
-							$mail->setSubject($title);
-							$mail->sendLater($mail_template);
-						}
-
-						//Send mobile notification
-						$notif_body = $mail_body;
-						(new Notif)->push($title, $notif_body, false, $host->getSha());
-					}
-				}
-
 				return array(
 					$user,
 					$users_log,
 				);
 			}
 		}
+
 		failed:
 		//Hide the password to avoid hacking
 		if(isset($data->password)){

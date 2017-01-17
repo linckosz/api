@@ -1666,7 +1666,6 @@ abstract class ModelLincko extends Model {
 		if(!is_null($data)){
 			try { //In case access in not available for the model
 				$data = $data->get();
-				\libs\Watch::php($data->toArray(), '$var', __FILE__, __LINE__, false, false, true);
 				foreach ($data as $key => $value) {
 					try { //In case access in not available for the model
 						if(isset($classes[$value->parent_type])){
