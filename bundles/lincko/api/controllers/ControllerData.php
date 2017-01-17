@@ -126,31 +126,6 @@ class ControllerData extends Controller {
 		return true;
 	}
 
-	public function noticed_post(){
-		$app = $this->app;
-		$msg = $app->trans->getBRUT('api', 8888, 16); //Notifications updated.
-
-		if(isset($this->data->data)){
-			$list = array();
-			foreach ($this->data->data as $string => $timestamp) {
-				if(preg_match("/^([a-z_]+)_(\d+)$/ui", $string, $matches)){
-					$type = $matches[1];
-					$id = $matches[2];
-					$list[$type][$id] = $timestamp;
-				}
-			}
-			$force_partial = History::historyNoticed($list);
-			$data = new Data();
-			$partial = $data->getMissing($force_partial);
-			$info = 'noticed';
-			$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial, 'info' => $info),));
-		} else {
-			$app->render(200, array('msg' => array('msg' => $msg,)));
-		}
-		
-		return true;
-	}
-
 	public function viewed_post(){
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 17); //Elements viewed.

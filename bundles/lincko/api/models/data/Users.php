@@ -9,10 +9,77 @@ use \libs\Email;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\libs\Data;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class Users extends ModelLincko {
+
+	//Warning => We cannot handle local (HK) and remote (3rd party) at the same time, so we do local (HK) only
+	public function import($user){
+		//(toto) Do not make it work for remote servers
+		if(empty($user) || $app->lincko->data['remote']){
+			return false;
+		}
+		$from_id = $user->id;
+		$to_id = $this->id;
+		if($from_id==$to_id){
+			return false;
+		}
+
+		$users_tables = array();
+
+		$models = Data::getModels();
+		//\libs\Watch::php($models, '$models', __FILE__, __LINE__, false, false, true);
+		foreach ($models as $table => $class) {
+			/*
+			if($table=='users'){
+				continue;
+			}
+			$instance = new $class;
+			$columns = $class::getColumns();
+			//\libs\Watch::php($columns, 'table: '.$table, __FILE__, __LINE__, false, false, true);
+
+			$inform = array();
+			if(in_array('_perm', $columns)){
+				$ask = false;
+				$model = $class::withTrashed();
+				foreach ($columns as $column) {
+					if(substr($column, -3)=='_by'){
+						$ask = true;
+						$model = $model->orWhere($column, $from_id);
+					}
+				}
+				if($ask && $list = $model->get(array('_perm'))){
+					foreach ($list as $item) {
+						if($perm = json_decode($item->_perm)){
+							foreach ($perm as $users_id => $value) {
+								$users_tables[$table][$users_id] = $users_id;
+							}
+						}
+					}
+				}
+				//\libs\Watch::php($users_tables, 'users_tables '.$table, __FILE__, __LINE__, false, false, true);
+			}
+
+			//\libs\Watch::php($instance->freshTimestamp(), 'freshTimestamp '.$table, __FILE__, __LINE__, false, false, true);
+
+			foreach ($columns as $column) {
+				if(substr($column, -3)=='_by'){
+					$time = $instance->freshTimestamp();
+					//$class::withTrashed()->Where($column, $from_id)->getQuery()->update([$column => $to_id, 'updated_at' => $time, 'extra' => null]);
+					$temp = $class::withTrashed()->Where($column, $from_id)->get(array('id'));
+					\libs\Watch::php($temp->toArray(), 'temp '.$table, __FILE__, __LINE__, false, false, true);
+					usleep(30000);
+				}
+			}
+			*/
+
+			//$pivots = PivotUsers(array($table)))->withTrashed()
+		}
+
+		return true;
+	}
 
 	protected $connection = 'data';
 
@@ -443,10 +510,6 @@ class Users extends ModelLincko {
 			}
 		}	
 		return $return;
-	}
-
-	public function import($user){
-		return true;
 	}
 
 	//Unsafe method

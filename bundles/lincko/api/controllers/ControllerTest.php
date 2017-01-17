@@ -608,15 +608,24 @@ class ControllerTest extends Controller {
 		*/
 
 		
-		\libs\Watch::php( 111, '$tp', __FILE__, __LINE__, false, false, true);
-		goto a;
-		\libs\Watch::php( 222, '$tp', __FILE__, __LINE__, false, false, true);
-		a:
-		\libs\Watch::php( 333, '$tp', __FILE__, __LINE__, false, false, true);
+		$from = Users::find(1036);
+		$to = Users::getUser(); //1033
+		//$to->import($from);
 		
+		//$pivot = new PivotUsers(array('projects'));
+		//$tp = $pivot->find(1036);
+
+		$tp1 = (new PivotUsers(array('projects')))->withTrashed()->where('users_id', 1036)->where('projects_id', 3196)->first();
+
+		$tp = $tp1->replicate();
+		$tp->users_id = 2000;
+		$tp->save();
+
+		//$tp = $pivot->duplicate();
+		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
@@ -693,7 +702,7 @@ class ControllerTest extends Controller {
 		\time_checkpoint('start Comments to Messages');
 		//First copy/paste Comments_Chats to Messages_Chats
 		$sql = 'SELECT
-		temp_id, created_at, updated_at, created_by, recalled_by, noticed_by, viewed_by, parent_id, comment
+		temp_id, created_at, updated_at, created_by, recalled_by, viewed_by, parent_id, comment
 		FROM `comments` WHERE `parent_type` LIKE "chats" ORDER BY `comments`.`id` ASC;';
 		if($data = $db->select( $db->raw($sql) )){
 			foreach ($data as $item) {

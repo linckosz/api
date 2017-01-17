@@ -386,7 +386,6 @@ class Projects extends ModelLincko {
 			$clone->deleted_at = Carbon::createFromFormat('Y-m-d H:i:s', $clone->deleted_at)->addSeconds($offset);
 		}
 		$clone->personal_private = null;
-		$clone->noticed_by = '';
 		$clone->viewed_by = '';
 		$clone->_perm = '';
 		$clone->title = trim($this->title).' ['.$app->trans->getBRUT('api', 5, 3).']'; //copy

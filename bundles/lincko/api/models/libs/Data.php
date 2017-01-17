@@ -857,23 +857,11 @@ class Data {
 							continue;
 						}
 						$previous_timestamp = 0;
-						//$model->_not = false;
 						if(isset($model->history)){
 							foreach ($model->history as $timestamp => $hists) {
 								foreach ($hists as $hist_id => $hist) {
 									$hist->it = $table_name.'-'.$id; //item
 									$hist->rt = false; //root (chats or projects)
-									$hist->not = false;
-									//$result_bis->$uid->_history->$hist_id = $hist;
-									/*
-									if(isset($hist->notid) && $timestamp >= $previous_timestamp){
-										$timestamp = $previous_timestamp;
-										$not = (bool)(strpos($hist->notid, ';'.$uid.';')===false);
-										$model->_not = $not;
-										$hist->not = $not;
-									}
-									*/
-									unset($hist->notid);
 								}
 							}
 							//unset($model->history);

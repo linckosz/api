@@ -319,9 +319,13 @@ class Onboarding {
 
 			$clone_id = -1;
 			if($app->lincko->domain=='lincko.com'){
-				$clone_id = 1589;
+				$clone_id = 1589; //English
 				if($default_lang == 'zh-chs' || $default_lang == 'zh-chs'){
-					$clone_id = 1605;
+					$clone_id = 1605; //Chinese
+				} else if($default_lang == 'fr'){
+					$clone_id = 1844; //French
+				} else if($default_lang == 'ko'){
+					$clone_id = 1823; //French
 				}
 			} else if($app->lincko->domain=='lincko.co'){
 				$clone_id = 980;

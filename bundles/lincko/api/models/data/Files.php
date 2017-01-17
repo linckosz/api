@@ -728,7 +728,6 @@ class Files extends ModelLincko {
 		if(!is_null($clone->deleted_at)){
 			$clone->deleted_at = Carbon::createFromFormat('Y-m-d H:i:s', $clone->deleted_at)->addSeconds($offset);
 		}
-		$clone->noticed_by = '';
 		$clone->viewed_by = '';
 		$clone->_perm = '';
 		$clone->extra = null;

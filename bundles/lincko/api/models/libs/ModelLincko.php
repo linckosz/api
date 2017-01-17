@@ -1649,7 +1649,7 @@ abstract class ModelLincko extends Model {
 			$model = new $class;
 			if(isset($list_id[$table]) && count($model::$archive)>0){
 				if(is_null($data)){
-					$data = History::withTrashed()->orWhere(function ($query) use ($list_id, $table) {
+					$data = History::Where(function ($query) use ($list_id, $table) {
 						$query
 						->whereParentType($table)
 						->whereIn('history.parent_id', $list_id[$table]);
@@ -1666,6 +1666,7 @@ abstract class ModelLincko extends Model {
 		if(!is_null($data)){
 			try { //In case access in not available for the model
 				$data = $data->get();
+				\libs\Watch::php($data->toArray(), '$var', __FILE__, __LINE__, false, false, true);
 				foreach ($data as $key => $value) {
 					try { //In case access in not available for the model
 						if(isset($classes[$value->parent_type])){
@@ -1676,21 +1677,15 @@ abstract class ModelLincko extends Model {
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id})){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = new \stdClass; }
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (integer)$value->createdBy();
-							if(isset($value->noticed_by)){
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->notid = (string)$value->noticed_by;
-							} else {
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->not = false; //by default it's noticed already
-							}
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (integer)$value->created_by;
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->cod = (integer)$value->code;
 							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$value->attribute;
 							if(!empty($value->parameters)){
 								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
 							}
 							if($history_detail){
-								if(strlen($value->old)<500){
-									$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
-								}
+								//Be careful, this can be a very heavy data
+								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
 							}
 						}
 					} catch (Exception $obj_exception) {
@@ -1717,11 +1712,6 @@ abstract class ModelLincko extends Model {
 				if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
 				$history->$created_at->{$value->id}->att = (string)$value->attribute;
 				$history->$created_at->{$value->id}->by = (integer)$value->createdBy();
-				if(isset($value->noticed_by)){
-					$history->$created_at->{$value->id}->notid = (string)$value->noticed_by;
-				} else {
-					$history->$created_at->{$value->id}->not = false; //by default it's noticed already
-				}
 				$history->$created_at->{$value->id}->cod = (integer)$value->code;
 				if(!empty($value->parameters)){
 					$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
@@ -1755,12 +1745,6 @@ abstract class ModelLincko extends Model {
 		}
 		$history->$created_at->$key->att = 'created_at';
 		$history->$created_at->$key->by = (integer)$created_by;
-		if(isset($this->noticed_by)){
-			$history->$created_at->$key->notid = (string)$this->noticed_by;
-		} else {
-			$history->$created_at->$key->not = false; //by default it's noticed already
-		}
-		
 		$history->$created_at->$key->cod = (integer)$code;
 		if(!empty($parameters)){
 			$history->$created_at->$key->par = (object)$parameters;
@@ -1866,7 +1850,6 @@ abstract class ModelLincko extends Model {
 	//It also place at false all notifications since the user aknowledge the latest information by viewing the element
 	public function viewed(){
 		$app = self::getApp();
-		//$this->noticed($category, $id, true); //We place at false all notifications (considerate as viewed) => after brainstorming, we keep up notification, even if the tasks as been opened
 		if (isset($this->id) && isset($this->viewed_by)) {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
@@ -1878,13 +1861,6 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		return false;
-	}
-
-	public function noticed(){
-		$app = self::getApp();
-		$list = array();
-		$list[$this->getTable()] = array( $this->id => true, );
-		History::historyNoticed($list);
 	}
 
 	//In case the developer change the user ID, we reset all access
@@ -2228,6 +2204,10 @@ abstract class ModelLincko extends Model {
 		return array(null, $links);
 	}
 
+	public function import($user){
+		return false;
+	}
+
 	//When save, it helps to keep track of history
 	public function save(array $options = array()){
 		if(!$this->checkAccess()){
@@ -2259,15 +2239,6 @@ abstract class ModelLincko extends Model {
 			//On front end, if the developper wants to know if it's a new or updated element, he can compare created_at and updated_at
 			$viewed_by = ';'.$app->lincko->data['uid'].';';
 			$this->viewed_by = $viewed_by; //Reset
-		}
-
-		//Indicate that the user aknowledge the creation notification
-		if(in_array('noticed_by', $columns)){
-			$noticed_by = ';'.$app->lincko->data['uid'].';';
-			if(strpos($this->noticed_by, $noticed_by) === false){
-				$noticed_by .= $this->noticed_by;
-			}
-			$this->noticed_by = $noticed_by;
 		}
 
 		$dirty = $this->getDirty();
@@ -2346,7 +2317,6 @@ abstract class ModelLincko extends Model {
 		if($new && isset($options['uid']) && $options['uid']<=1){
 			$this->created_by = $options['uid'];
 			$this->updated_by = $options['uid'];
-			$this->noticed_by = '';
 			$this->viewed_by = '';
 		}
 
