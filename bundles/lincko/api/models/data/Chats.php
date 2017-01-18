@@ -158,7 +158,7 @@ class Chats extends ModelLincko {
 		->where(function ($query) use ($list) {
 			$query
 			->where(function ($query) {
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$query
 				->where('chats.parent_type', '')
 				->orWhere('chats.parent_type', null);
@@ -185,7 +185,7 @@ class Chats extends ModelLincko {
 			});
 		})
 		->whereHas('users', function ($query) {
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$query
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 1)
@@ -207,7 +207,7 @@ class Chats extends ModelLincko {
 	}
 
 	public function checkPermissionAllow($level, $msg=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		$level = $this->formatLevel($level);
 		if($level==1 && is_null($this->parent) && $this->parent_id<=0){
@@ -250,7 +250,7 @@ class Chats extends ModelLincko {
 		if(isset($links[$this->getTable()][$this->id])){
 			return array(null, $links);
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
 			$offset = $this->created_at->diffInSeconds();

@@ -4,6 +4,7 @@
 namespace bundles\lincko\api\models\libs;
 
 use Illuminate\Database\Eloquent\Model;
+use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;
 
 class History extends Model {
@@ -20,6 +21,12 @@ class History extends Model {
 	protected $visible = array('id');
 	
 ////////////////////////////////////////////
+
+	public function __construct(array $attributes = array()){
+		$app = ModelLincko::getApp();
+		$this->connection = $app->lincko->data['database_data'];
+		parent::__construct($attributes);
+	}
 
 	//Add these functions to insure that nobody can make them disappear
 	public function delete(){ return false; }

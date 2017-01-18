@@ -273,14 +273,14 @@ class Users extends ModelLincko {
 	public function restore(){ return false; }
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$query = $query
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$query
 			//->with('usersLinked') //It affects heavily speed performance
 			->whereHas('usersLinked', function ($query) {
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$query
 				->where('users_id', $app->lincko->data['uid'])
 				->where(function ($query) {
@@ -332,7 +332,7 @@ class Users extends ModelLincko {
 	}
 
 	public static function getUsersContacts($list=array(), $visible=array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$users = self::whereIn('id', $list)->get();
 		foreach($users as $key => $value) {
 			$users[$key]->accessibility = true; //Because getLinked() only return all with Access allowed
@@ -346,7 +346,7 @@ class Users extends ModelLincko {
 	}
 
 	public function getContactsLock(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->id == $app->lincko->data['uid']){
 			$this->contactsLock = true; //Do not allow to delete the user itself on client side
 		}
@@ -354,7 +354,7 @@ class Users extends ModelLincko {
 	}
 
 	public function getContactsVisibility(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->id == $app->lincko->data['uid']){
 			$this->contactsVisibility = false; //Do not allow the user to talk to himself (technicaly, cannot attached comment to yourself, use MyPlaceholder instead)
 		}
@@ -369,7 +369,7 @@ class Users extends ModelLincko {
 	}
 
 	public function setInvitation(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->_invitation = false;
 		if(self::$invitation_list===false){
 			self::$invitation_list = array();
@@ -407,7 +407,7 @@ class Users extends ModelLincko {
 	}
 
 	public function getForceSchema(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->id == $app->lincko->data['uid']){
 			return $this->force_schema;
 		}
@@ -415,7 +415,7 @@ class Users extends ModelLincko {
 	}
 
 	public function getCheckSchema(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->id == $app->lincko->data['uid']){
 			return $this->check_schema;
 		}
@@ -434,7 +434,7 @@ class Users extends ModelLincko {
 ////////////////////////////////////////////
 
 	public function scopetheUser($query){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			return $query->where('users.id', $app->lincko->data['uid']);
 		}
@@ -449,7 +449,7 @@ class Users extends ModelLincko {
 	}
 
 	protected function get_HisHer(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->gender == 0){
 			return $app->trans->getBRUT('api', 7, 1); //his
 		} else {
@@ -476,7 +476,7 @@ class Users extends ModelLincko {
 	}
 
 	public function save(array $options = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$return = null;
 		if(isset($this->id)){
 			$return = parent::save($options);
@@ -514,14 +514,14 @@ class Users extends ModelLincko {
 
 	//Unsafe method
 	public function giveEditAccess(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->accessibility = (bool) true;
 		self::$permission_users[$app->lincko->data['uid']][$this->getTable()][$this->id] = 2;
 	}
 
 	//It checks if the user has access to it
 	public function checkAccess($show_msg=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->accessibility){
 			return true;
 		} else if(!isset($this->id) || (isset($this->id) && $this->id == $app->lincko->data['uid'])){ //Always allow for the user itself
@@ -531,7 +531,7 @@ class Users extends ModelLincko {
 	}
 
 	public function checkPermissionAllow($level, $msg=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$level = $this->formatLevel($level);
 		if($level==1 && !isset($this->id) && $app->lincko->data['create_user'] && !Users::getUser()){ //Allow creation for new user and out of the application only
 			return true;
@@ -540,7 +540,7 @@ class Users extends ModelLincko {
 	}
 
 	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->updateContactAttributes();
 		//the play with accessibility allow Data.php to gather information about some other users that are not in the user contact list
 		$accessibility = $this->accessibility;
@@ -559,7 +559,7 @@ class Users extends ModelLincko {
 	}
 
 	public function toVisible(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->updateContactAttributes();
 		//the play with accessibility allow Data.php to gather information about some other users that are not in the user contact list
 		$accessibility = $this->accessibility;
@@ -576,7 +576,7 @@ class Users extends ModelLincko {
 	}
 
 	public function extraDecode(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->updateContactAttributes();
 		//Do not show email for all other users
 		if($this->id != $app->lincko->data['uid']){
@@ -590,7 +590,7 @@ class Users extends ModelLincko {
 	}
 
 	public function pivots_format($form, $history_save=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$save = parent::pivots_format($form, $history_save);
 		if(isset($this->pivots_var->users)){
 			if(!isset($this->pivots_var->usersLinked)){ $this->pivots_var->usersLinked = new \stdClass; }
@@ -605,7 +605,7 @@ class Users extends ModelLincko {
 						$this->pivots_var->users->$users_id->invitation = array(false, false);
 						$this->pivots_var->usersLinked->$users_id->invitation = array(false, false);
 						//this should be secure enough since we allow access at true only if there is an invitation pending
-						if($access && $pivot = (new PivotUsers(array('users')))->withTrashed()->where('invitation', 1)->where('users_id', $app->lincko->data['uid'])->where('users_id_link', $users_id)->first()){
+						if($access && $pivot = (new PivotUsers(array('users')))->where('invitation', 1)->where('users_id', $app->lincko->data['uid'])->where('users_id_link', $users_id)->first()){
 							$this->pivots_var->usersLinked->$users_id->access = array(true, true);
 							//set models access from host request
 							if(!is_null($pivot->models)){
@@ -666,7 +666,7 @@ class Users extends ModelLincko {
 	}
 
 	public function setLanguage(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$language = $app->trans->getClientLanguage();
 		if(!empty($language) && $language!=$this->language){
 			$this->language = strtolower($language);
@@ -679,7 +679,7 @@ class Users extends ModelLincko {
 	}
 
 	public static function inviteSomeoneCode($data){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$invite = false;
 		if(isset($data->user_code) && $user_code = Datassl::decrypt($data->user_code, 'invitation')){
 			if($guest = Users::find($user_code)){
@@ -691,9 +691,9 @@ class Users extends ModelLincko {
 	}
 
 	public static function inviteSomeone($guest, $data){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$user = Users::getUser();
-		$pivot = (new PivotUsers(array('users')))->withTrashed()->where('users_id', $guest->id)->where('users_id_link', $user->id)->first();
+		$pivot = (new PivotUsers(array('users')))->where('users_id', $guest->id)->where('users_id_link', $user->id)->first();
 
 		$pivots_previous = false;
 		if($pivot && $invitation_models = json_decode($pivot->models)){

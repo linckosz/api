@@ -267,7 +267,7 @@ class Files extends ModelLincko {
 			}
 		})
 		->whereHas("users", function($query) {
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$query
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 0);
@@ -304,7 +304,7 @@ class Files extends ModelLincko {
 	}
 	
 	public function checkPermissionAllow($level, $msg=false){ //toto (buggy for root chats)
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->parent_type=='users' && $this->parent_id==$app->lincko->data['uid']){
 			return true; //For profile picture
 		}
@@ -378,7 +378,7 @@ class Files extends ModelLincko {
 	}
 
 	public function pushNotif($new=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$parent = $this->getParent();
 		$table = $parent->getTable();
 		if($this->progress>=100 && $table=='chats'){ //Do only alert for files in chats
@@ -415,7 +415,7 @@ class Files extends ModelLincko {
 	}
 	
 	public function save(array $options = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$new = false;
 		if(!$this->id){ //Only copy a file for new items
 			if($this->error!=0 || !$this->fileformat()){
@@ -566,7 +566,7 @@ class Files extends ModelLincko {
 
 	public function checkProgress(){
 		if($this->category=='video' && $this->progress<100 && !$this->error && isset($this->id)){
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			
 			$puid = $this->created_by;
 			if(!is_null($this->puid)){
@@ -608,7 +608,7 @@ class Files extends ModelLincko {
 
 	public function setProgress(){
 		if($this->category == 'video' && $this->progress < 100 && !$this->error){
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			Workspaces::getSFTP();
 			set_time_limit(24*3600); //Set to 1 day workload at the most
 			$puid = $this->created_by;
@@ -704,7 +704,7 @@ class Files extends ModelLincko {
 		if(isset($links[$this->getTable()][$this->id])){
 			return array(null, $links);
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
 			$offset = $this->created_at->diffInSeconds();

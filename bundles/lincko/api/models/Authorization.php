@@ -4,6 +4,7 @@ namespace bundles\lincko\api\models;
 
 use \bundles\lincko\api\models\data\Users;
 use Illuminate\Database\Eloquent\Model;
+use \bundles\lincko\api\models\libs\ModelLincko;
 use Carbon\Carbon;
 
 class Authorization extends Model {
@@ -22,7 +23,7 @@ class Authorization extends Model {
 	/////////////////////////////////////
 
 	public static function clean(){
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		$limit = Carbon::now();
 		$limit->second = $limit->second - intval($app->lincko->security['expired']);
 		return self::where('updated_at', '<', $limit)->delete();
@@ -33,7 +34,7 @@ class Authorization extends Model {
 	}
 
 	public static function getPublicKey($fingerprint){
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		if($authorization = self::where('sha', Users::getUser()->username_sha1)->where('fingerprint', $fingerprint)->first()){
 			return $authorization->public_key;
 		}

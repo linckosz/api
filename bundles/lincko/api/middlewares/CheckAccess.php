@@ -249,7 +249,7 @@ class CheckAccess extends \Slim\Middleware {
 			$app->lincko->data['database_data'] = 'client';
 
 			//Check if the user has access
-			$pivot = (new PivotUsers(array('workspaces')))->where('users_id', $app->lincko->data['uid'])->where('workspaces_id', $home['workspaces']->id)->where('access', 1)->withTrashed()->first();
+			$pivot = (new PivotUsers(array('workspaces')))->where('users_id', $app->lincko->data['uid'])->where('workspaces_id', $home['workspaces']->id)->where('access', 1)->first();
 			//Reject access to workspace
 			if(!$pivot){
 				$app->lincko->data['database_data'] = 'data';

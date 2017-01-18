@@ -91,7 +91,7 @@ class Tree extends ModelLincko {
 
 	protected static function getDB(){
 		if(!self::$db){
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			self::$db = Capsule::connection($app->lincko->data['database_data']);
 		}
 		return self::$db;

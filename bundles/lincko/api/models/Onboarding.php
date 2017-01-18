@@ -9,14 +9,12 @@ use \bundles\lincko\api\models\data\Notes;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Comments;
 use \bundles\lincko\api\models\data\Settings;
-use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\libs\Updates;
+use \bundles\lincko\api\models\libs\ModelLincko;
 use Carbon\Carbon;
 use \libs\Translation;
 
 class Onboarding {
-
-	protected static $app = NULL;
 
 	protected static $settings = NULL;
 
@@ -27,7 +25,7 @@ class Onboarding {
 	protected $json = array();
 
 	public function __construct(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$data = json_decode($app->request->getBody());
 		if(!$data && $post = (object) $app->request->post()){
 			if(isset($post->data) && is_string($post->data)){
@@ -49,13 +47,6 @@ class Onboarding {
 			$this->data->data = (object) $this->data->data;
 		}
 		return true;
-	}
-
-	public static function getApp(){
-		if(is_null(self::$app)){
-			self::$app = \Slim\Slim::getInstance();
-		}
-		return self::$app;
 	}
 
 	protected function loadOnboarding(){
@@ -170,7 +161,7 @@ class Onboarding {
 	}
 
 	public function asyncMonkeyKing($project_new, $links){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(isset($project_new->id) && isset($this->json['data'])){
 			$this->json['data']['pid'] = $project_new->id;
 			$this->json['public_key'] = Authorization::getPublicKey($this->data->fingerprint);
@@ -247,7 +238,7 @@ class Onboarding {
 
 	//This code is run after display to insure the user will go inside the account before everything is done
 	public function changeMonkeyKing(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(isset($this->data->data->pid) && isset($this->data->data->links) && $project_new = Projects::withTrashed()->find($this->data->data->pid)){
 			$links = $this->data->data->links;
 
@@ -290,7 +281,7 @@ class Onboarding {
 
 	//Launch the next onboarding
 	public function next($next, $answer=false, $temp_id=''){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 
 		//the user answered the question
 		if($answer){

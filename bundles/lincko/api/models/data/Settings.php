@@ -81,7 +81,7 @@ class Settings extends ModelLincko {
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$query = $query
 		->where('id', $app->lincko->data['uid']);
 		if(self::$with_trash_global){
@@ -99,7 +99,7 @@ class Settings extends ModelLincko {
 	}
 
 	public function checkAccess($show_msg=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!isset($this->id) || $this->id == $app->lincko->data['uid']){
 			return true;
 		}
@@ -117,7 +117,7 @@ class Settings extends ModelLincko {
 	}
 
 	public static function getMySettings(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		$settings = Settings::find($uid);
 		if(!$settings){

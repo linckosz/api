@@ -3,22 +3,18 @@
 
 namespace bundles\lincko\api\models\libs;
 
+use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Users;
 
-class PivotUsers extends ModelLincko {
+class PivotUsers extends Model {
 
 	protected $connection = 'data';
 
 	protected $table = 'users_x_';
 	protected $morphClass = 'users_x_';
 
-	protected $dates = array();
-
-	protected static $permission_sheet = array(
-		0, //[R] owner
-		0, //[R] max allow || super
-	);
+	public $timestamps = false;
 	
 ////////////////////////////////////////////
 
@@ -28,16 +24,12 @@ class PivotUsers extends ModelLincko {
 	}
 
 	public function __construct(array $attributes = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->connection = $app->lincko->data['database_data'];
 		$model = new Users;
 		foreach ($attributes as $key => $value) {
 			if($key=='table'){
-				if($model->tableExists($this->table.$value)){
-					$this->table = $this->morphClass = $this->table.$value; //Pivot relation
-				} else if($this->tableExists($this->table.$value.'_x')){
-					$this->table = $this->morphClass = $this->table.$value.'_x'; //Morph relation
-				}
+				$this->setTable($value);
 			}
 		}
 		parent::__construct(array());
@@ -49,19 +41,21 @@ class PivotUsers extends ModelLincko {
 	public function delete(){ return false; }
 	public function restore(){ return false; }
 
-	//Because deleted_at does not exist
-	public static function find($id, $columns = ['*']){
-		return parent::withTrashed()->find($id, $columns);
-	}
-
-	//We do not record history
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		return true;
+	//We do not attach
+	public function setTable($table){
+		$model = new Users;
+		if($model->tableExists($table)){
+			$this->table = $this->morphClass = $this->table.$table; //Pivot relation
+		} else if($model->tableExists($table.'_x')){
+			$this->table = $this->morphClass = $this->table.$table.'_x'; //Morph relation
+		}
+		return $this->table;
 	}
 
 	//We do not attach
-	public function pivots_save(array $parameters = array()){
-		return true;
+	public function modelSave($table){
+		$this->setTable($table);
+		return Model::save();
 	}
 
 ////////////////////////////////////////////

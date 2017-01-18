@@ -125,7 +125,7 @@ class Roles extends ModelLincko {
 	public function scopegetItems($query, $list=array(), $get=false){
 		$query = $query
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$query
 			->where('roles.parent_id', $app->lincko->data['workspace_id'])
 			->orWhere('shared', 1);
@@ -165,7 +165,7 @@ class Roles extends ModelLincko {
 	}
 
 	public function save(array $options = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$new = !isset($this->id);
 		if(isset($this->shared) && $this->shared==1){
 			//We disallow any modification of shared Roles

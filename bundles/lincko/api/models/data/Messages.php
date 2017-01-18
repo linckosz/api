@@ -112,7 +112,7 @@ class Messages extends ModelLincko {
 
 	protected static function getDB(){
 		if(!self::$db){
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			self::$db = Capsule::connection($app->lincko->data['database_data']);
 		}
 		return self::$db;
@@ -178,7 +178,7 @@ class Messages extends ModelLincko {
 	}
 
 	public static function getCollection($chats=array(), $hydrate=true, $fields_arr=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$db = static::getDB();
 		if(count($chats)<=0){
 			$chats=array(-1);
@@ -223,7 +223,7 @@ class Messages extends ModelLincko {
 	}
 
 	public function checkPermissionAllow($level, $msg=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		if(!$this->checkAccess()){
 			return false;
@@ -267,7 +267,7 @@ class Messages extends ModelLincko {
 	*/
 
 	public function pushNotif($new=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$parent = $this->getParent();
 		$users = $parent->users()
 			->where('users_x_chats.access', 1)

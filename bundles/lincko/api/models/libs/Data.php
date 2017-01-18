@@ -23,7 +23,6 @@ use \bundles\lincko\api\models\data\Messages;
 
 class Data {
 
-	protected $app = NULL;
 	protected $data = NULL;
 	protected static $models = NULL;
 	protected $lastvisit = false; //Format 'Y-m-d H:i:s'
@@ -40,7 +39,7 @@ class Data {
 	protected $limit_json = false; //(integer) Indicate the number of items downloaded at a time to avoid browser memory crash
 
 	public function __construct(){
-		$app = $this->app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		$data = $this->data = json_decode($app->request->getBody());
 		//Get lastvisit field if it's part of form field of upload
 		if(!$this->data && isset($_FILES) && !empty($_FILES)){
@@ -75,7 +74,7 @@ class Data {
 	}
 
 	public function dataUpdateConfirmation($msg, $status=200, $show=false, $lastvisit=0, $delete_temp_id=true, $schema=null){
-		$app = $this->app;
+		$app = ModelLincko::getApp();
 		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
 		if($app->lincko->data['lastvisit_enabled'] && $lastvisit && $this->setLastVisit()){
 			$msg = array_merge(
@@ -136,7 +135,7 @@ class Data {
 
 	//Rebuild all _perm (can be a very long operation)
 	public static function setForcePerm(){
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		$time_record = $app->lincko->time_record;
 		$app->lincko->time_record = true;
 		//The permission purge
@@ -166,7 +165,7 @@ class Data {
 	}
 
 	protected function setPartial($force_partial=false){
-		$app = $this->app;
+		$app = ModelLincko::getApp();
 		if($force_partial){
 			$this->partial = $force_partial;
 		} else if(isset($this->data->data->partial)){
@@ -183,7 +182,7 @@ class Data {
 
 	public static function getModels(){
 		if(is_null(self::$models)){
-			$app = \Slim\Slim::getInstance();
+			$app = ModelLincko::getApp();
 			$sql = 'SHOW TABLES;';
 			$db = Capsule::connection($app->lincko->data['database_data']);
 			$data = $db->select( $db->raw($sql) );
@@ -393,7 +392,7 @@ class Data {
 
 	public static function getAccesses($tree_id){
 		//\libs\Watch::php($tree_id, '$tree_id', __FILE__, __LINE__, false, false, true);
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		$tree_access = array();
 		if(isset($tree_id['users'])){
 			$list_models = self::getModels();
@@ -469,7 +468,7 @@ class Data {
 	}
 
 	protected function getList(){
-		$app = $this->app;
+		$app = ModelLincko::getApp();
 		//$db = Capsule::connection($app->lincko->data['database_data']);
 		//$db->enableQueryLog();
 		$uid = $app->lincko->data['uid'];
@@ -977,7 +976,7 @@ class Data {
 	
 	public static function unLockAll(){
 		if(function_exists('proc_nice')){proc_nice(20);}
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		$time = (new Users)->freshTimestamp();
 		$users = array();
 
@@ -1025,7 +1024,7 @@ class Data {
 
 	//$period (string) => 'daily', 'weekly'
 	public static function getResume(){ //Default is 24H (daily is 86,400s), weekly is 604,800s.
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		//Capsule::connection($app->lincko->data['database_data'])->enableQueryLog();
 		if(function_exists('proc_nice')){proc_nice(20);}
 		$db = Capsule::connection($app->lincko->data['database_data']);

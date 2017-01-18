@@ -2,8 +2,9 @@
 
 namespace bundles\lincko\api\models;
 
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
+use \bundles\lincko\api\models\libs\ModelLincko;
 
 class Integration extends Model {
 
@@ -21,7 +22,7 @@ class Integration extends Model {
 	/////////////////////////////////////
 
 	public static function clean(){
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		$limit = Carbon::now();
 		$limit->second = $limit->second - intval($app->lincko->security['expired']);
 		return self::where('updated_at', '<', $limit)->delete();

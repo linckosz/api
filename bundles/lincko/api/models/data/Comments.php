@@ -160,19 +160,19 @@ class Comments extends ModelLincko {
 	public function restore(){ return false; }
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$query = $query
 		->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$query
 			//Insure to only get comments that the user is concerned
 			->where(function ($query) {
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$query
 				->where('comments.parent_type', 'users')
 				->where('comments.created_by', $app->lincko->data['uid']);
 			})
 			->orWhere(function ($query) {
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$query
 				->where('comments.parent_type', 'users')
 				->where('comments.parent_id', $app->lincko->data['uid']);
@@ -214,7 +214,7 @@ class Comments extends ModelLincko {
 	}
 
 	public function checkPermissionAllow($level, $msg=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		if(!$this->checkAccess()){
 			return false;
@@ -254,7 +254,7 @@ class Comments extends ModelLincko {
 		if(isset($links[$this->getTable()][$this->id])){
 			return array(null, $links);
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
 			$offset = $this->created_at->diffInSeconds();
@@ -344,7 +344,7 @@ class Comments extends ModelLincko {
 	}
 
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$history = parent::getHistoryCreation($history_detail, $parameters);
 
 		//This helps to avoid to have "Bob commented on a message", but instead "Bob commented on a Tasks"
@@ -388,7 +388,7 @@ class Comments extends ModelLincko {
 	}
 
 	public function pushNotif($new=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$parent = $this->getParent();
 		$table = $parent->getTable();
 		if($table=='projects' || $table=='chats'){

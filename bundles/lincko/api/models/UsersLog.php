@@ -13,6 +13,7 @@ use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\controllers\ControllerUser;
+use \bundles\lincko\api\models\libs\ModelLincko;
 
 class UsersLog extends Model {
 
@@ -74,7 +75,7 @@ class UsersLog extends Model {
 	}
 
 	public function getPukpic(){
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		$expiration = $app->lincko->cookies_lifetime;
 		return Datassl::encrypt($expiration.':'.$this->log, self::SALT);
 	}
@@ -102,7 +103,7 @@ class UsersLog extends Model {
 	}
 
 	public function getAuthorize($data){
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 
 		$refresh = false;
 		$authorization = false;
@@ -237,7 +238,7 @@ class UsersLog extends Model {
 	}
 
 	public static function check_integration($data){
-		$app = \Slim\Slim::getInstance();
+		$app = ModelLincko::getApp();
 		if(isset($data->data) && isset($data->data->party) && isset($data->data->party_id) && !empty($data->data->party) && !empty($data->data->party_id) && isset($data->data->data)){
 			$json = $data->data->data;
 			//If users_log exists

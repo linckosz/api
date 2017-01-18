@@ -134,8 +134,8 @@ class ControllerChat extends Controller {
 			if(isset($form->single)){ //Optional, create single user chat
 				$exits = false;
 				$pivot = new PivotUsers(array('chats'));
-				if($pivot->tableExists($pivot->getTable())){
-					$list = $pivot->where('users_id', $app->lincko->data['uid'])->where('single', $form->single)->withTrashed()->get();
+				if($model->tableExists($pivot->getTable())){
+					$list = $pivot->where('users_id', $app->lincko->data['uid'])->where('single', $form->single)->get();
 					if($list->count()>0){
 						$save = false;
 					}

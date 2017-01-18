@@ -3,26 +3,18 @@
 
 namespace bundles\lincko\api\models\libs;
 
+use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Workspaces;
 
-class PivotUsersRoles extends ModelLincko {
+class PivotUsersRoles extends Model {
 
 	protected $connection = 'data';
 
 	protected $table = 'users_x_roles_x';
 	protected $morphClass = 'users_x_roles_x';
 
-	protected $primaryKey = 'id';
-
 	public $timestamps = false;
-
-	protected $visible = array();
-
-	protected static $permission_sheet = array(
-		0, //[R] owner
-		0, //[R] max allow || super
-	);
 
 	protected static $parent_list = array('users', 'comments', 'chats', 'workspaces', 'projects', 'tasks', 'notes', 'files');
 	
@@ -34,6 +26,16 @@ class PivotUsersRoles extends ModelLincko {
 	}
 
 ////////////////////////////////////////////
+
+	public function __construct(array $attributes = array()){
+		$app = ModelLincko::getApp();
+		$this->connection = $app->lincko->data['database_data'];
+		parent::__construct($attributes);
+	}
+
+	//Add these functions to insure that nobody can make them disappear
+	public function delete(){ return false; }
+	public function restore(){ return false; }
 
 	//Only delete the access at false
 	public static function getRoles($tree_id){
@@ -73,34 +75,13 @@ class PivotUsersRoles extends ModelLincko {
 		return $result;
 	}
 
-	//Add these functions to insure that nobody can make them disappear
-	public function delete(){ return false; }
-	public function restore(){ return false; }
-
-	//Because deleted_at does not exist
-	public static function find($id, $columns = ['*']){
-		return parent::withTrashed()->find($id, $columns);
-	}
-
-	//We do not record history
-	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		return true;
-	}
-
-	//We do not attach
-	public function pivots_save(array $parameters = array()){
-		return true;
-	}
-
-////////////////////////////////////////////
-
 	public function scopesameWorkspace($query){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		return $query->where('users_x_roles_x.parent_type', 'workspaces')->where('users_x_roles_x.parent_id', $app->lincko->data['workspace_id'])->where('access', 1);
 	}
 
 	public static function getWorkspaceRoles(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($workspace = Workspaces::find($app->lincko->data['workspace_id'])){
 			$work_users = $workspace->users()->get();
 			$users_list = array();
@@ -115,9 +96,9 @@ class PivotUsersRoles extends ModelLincko {
 		return null;
 	}
 
-	//Be careful, a user can lock himself y this command, and noone else can unlock him if none previously with higher role
+	//Be careful, a user can lock himself by this command, and noone else can unlock him if none previously with higher role
 	public static function setMyRole($item, $roles_id=null, $single=null, $access=1){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$role = self::Where('users_id', $app->lincko->data['uid'])->where('parent_type', $item->getTable())->where('parent_id', $item->id)->first();
 		if(!$role){
 			$role = new self;
@@ -138,7 +119,7 @@ class PivotUsersRoles extends ModelLincko {
 		$role->access = $access;
 		$role->roles_id = $roles_id;
 		$role->single = $single;
-		return $role->brutSave();
+		return $role->save();
 	}
 
 }

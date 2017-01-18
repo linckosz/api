@@ -266,7 +266,7 @@ class Tasks extends ModelLincko {
 		}
 		$query = $query
 		->whereHas("users", function($query) {
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$query
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 0);
@@ -293,7 +293,7 @@ class Tasks extends ModelLincko {
 	}
 
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($key == 'parent_id'){
 			$parameters['tt'] = $this->title;
 			$parameters['tid'] = $this->id;
@@ -326,7 +326,7 @@ class Tasks extends ModelLincko {
 	}
 
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$history = new \stdClass;
 
 		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
@@ -345,7 +345,7 @@ class Tasks extends ModelLincko {
 
 
 	public function pushNotif($new=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$users = $this->users()
 		->where('users_x_tasks.access', 1)
 		->where(function ($query){
@@ -383,7 +383,7 @@ class Tasks extends ModelLincko {
 	
 
 	public function save(array $options = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$new = !isset($this->id);
 		$dirty = $this->getDirty();
 		foreach($dirty as $key => $value) {
@@ -474,7 +474,7 @@ class Tasks extends ModelLincko {
 		if(isset($links[$this->getTable()][$this->id])){
 			return array(null, $links);
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
 			$offset = $this->created_at->diffInSeconds();

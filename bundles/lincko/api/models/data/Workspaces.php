@@ -117,7 +117,7 @@ class Workspaces extends ModelLincko {
 	public function restore(){ return false; }
 
 	public function save(array $options = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$new = !isset($this->id);
 		$return = parent::save($options);
 		if($new){
@@ -128,7 +128,7 @@ class Workspaces extends ModelLincko {
 	}
 
 	public function checkAccess($show_msg=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!is_bool($this->accessibility)){
 			if(!isset($this->id)){ //Allow access for new workspace with authorization
 				$this->accessibility = (bool) false;
@@ -143,7 +143,7 @@ class Workspaces extends ModelLincko {
 	public function scopegetItems($query, $list=array(), $get=false){
 		$query = $query
 		->whereHas('users', function ($query) {
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$query
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 1);
@@ -161,7 +161,7 @@ class Workspaces extends ModelLincko {
 	}
 
 	public function checkPermissionAllow($level, $msg=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		if(!$this->checkAccess()){
 			return false;
@@ -199,7 +199,7 @@ class Workspaces extends ModelLincko {
 	}
 
 	public static function getWorkspace($force=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($force || !static::$workspace){
 			if($app->lincko->data['workspace_id']>0 && $workspace = Workspaces::where('id', $app->lincko->data['workspace_id'])->first()){
 				static::$workspace = $workspace;
@@ -225,7 +225,7 @@ class Workspaces extends ModelLincko {
 	public static function getSFTP(){
 		$sftp = false;
 		if(self::$server_path!=null && self::$remote_sftp && !isset(self::$remote_sftp['sftp'])){
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$conn = ssh2_connect(Datassl::decrypt_smp(self::$remote_sftp['host']), Datassl::decrypt_smp(self::$remote_sftp['port']));
 			ssh2_auth_password($conn, 'sftp', Datassl::decrypt_smp(self::$remote_sftp['pwd']));
 			self::$remote_sftp['conn'] = $conn;

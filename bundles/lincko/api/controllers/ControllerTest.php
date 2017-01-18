@@ -615,17 +615,19 @@ class ControllerTest extends Controller {
 		//$pivot = new PivotUsers(array('projects'));
 		//$tp = $pivot->find(1036);
 
-		$tp1 = (new PivotUsers(array('projects')))->withTrashed()->where('users_id', 1036)->where('projects_id', 3196)->first();
+		//$tp1 = (new PivotUsers(array('projects')))->where('users_id', 1036)->where('projects_id', 3196)->first();
 
-		$tp = $tp1->replicate();
-		$tp->users_id = 2000;
-		$tp->save();
+		//$tp = $tp1->replicate();
+		//$tp->users_id = 2000;
+		//$tp->modelSave('projects');
 
 		//$tp = $pivot->duplicate();
-		//\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $tp1, '$tp', __FILE__, __LINE__, false, false, true);
+
+		$tp = Data::getTrees(false, 1);
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 

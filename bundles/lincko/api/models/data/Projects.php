@@ -160,7 +160,7 @@ class Projects extends ModelLincko {
 
 	//Insure that we only record 1 personal_private project for each user
 	public function save(array $options = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$new = !isset($this->id);
 		if($this->personal_private == $app->lincko->data['uid']){
 			$this->parent_id = 0;
@@ -185,13 +185,13 @@ class Projects extends ModelLincko {
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$query = $query
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 			$query
 			->where(function ($query) {
 				//Get personal project
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$query
 				->orderBy('created_by', 'asc') //By security, always take the ealiest created private project
 				->where('personal_private', $app->lincko->data['uid'])
@@ -199,10 +199,10 @@ class Projects extends ModelLincko {
 			})
 			->orWhere(function ($query) {
 				//Exclude private project, and be sure to have access to the project (because the user whom created the project does not necessary have access to it)
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$query
 				->whereHas('users', function ($query){
-					$app = self::getApp();
+					$app = ModelLincko::getApp();
 					$query
 					->where('users_id', $app->lincko->data['uid'])
 					->where('access', 1);
@@ -229,7 +229,7 @@ class Projects extends ModelLincko {
 	}
 
 	public function checkPermissionAllow($level, $msg=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		if(!$this->checkAccess()){
 			return false;
@@ -290,7 +290,7 @@ class Projects extends ModelLincko {
 	}
 
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if($this->personal_private==$app->lincko->data['uid']){
 			//Do not record the private project creation since it's created by the framework while user signing
 			return new \stdClass;
@@ -300,7 +300,7 @@ class Projects extends ModelLincko {
 	}
 
 	public static function setPersonal(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(self::where('personal_private', $app->lincko->data['uid'])->take(1)->count() <= 0){
 			$project = new self();
 			$project->title = 'Personal Space';
@@ -315,12 +315,12 @@ class Projects extends ModelLincko {
 	}
 
 	public static function getPersonal(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		return self::where('personal_private', $app->lincko->data['uid'])->first();
 	}
 
 	public function pivots_format($form, $history_save=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		$save = parent::pivots_format($form, $history_save);
 		//Disallow any access to personal project from outside users
@@ -366,7 +366,7 @@ class Projects extends ModelLincko {
 		if(isset($links[$this->getTable()][$this->id])){
 			return array(null, $links);
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
 			$offset = $this->created_at->diffInSeconds();

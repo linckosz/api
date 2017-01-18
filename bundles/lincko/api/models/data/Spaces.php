@@ -198,7 +198,7 @@ class Spaces extends ModelLincko {
 			});
 		})
 		->whereHas("users", function($query) {
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$query
 			->where('users_id', $app->lincko->data['uid'])
 			->where('access', 0);
@@ -244,7 +244,7 @@ class Spaces extends ModelLincko {
 		if(isset($links[$this->getTable()][$this->id])){
 			return array(null, $links);
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
 		if($offset===false){
 			$offset = $this->created_at->diffInSeconds();

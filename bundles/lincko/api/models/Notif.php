@@ -4,17 +4,17 @@ namespace bundles\lincko\api\models;
 
 use Carbon\Carbon;
 use JPush\Client as JPush;
+use \bundles\lincko\api\models\libs\ModelLincko;
 
 class Notif {
 
-	protected static $app = NULL;
 	protected static $client = NULL;
 
 	const APP = '38e30d8c93c0ef79d9dc5cc4';
 	const MASTER = '063defc2edb491bf32aff53f'; 
 
 	public function __construct(){
-		$app = $this->getApp();
+		$app = ModelLincko::getApp();
 		if(is_null(self::$client)){
 			$app_code = self::APP;
 			$mas_code = self::APP;
@@ -31,13 +31,6 @@ class Notif {
 			self::$client = new JPush($app_code, $mas_code, '/tmp/toto');
 		}
 		return true;
-	}
-
-	public static function getApp(){
-		if(is_null(self::$app)){
-			self::$app = \Slim\Slim::getInstance();
-		}
-		return self::$app;
 	}
 
 	public function send($msg, $notif=array(), $aliases=array(), $tag=array()){
@@ -68,7 +61,7 @@ class Notif {
 	}
 
 	public function push($title, $msg, $item=false, $aliases=array()){
-		$app = $this->getApp();
+		$app = ModelLincko::getApp();
 		$title = (new \Html2Text\Html2Text($title))->getText();
 		$msg = (new \Html2Text\Html2Text($msg))->getText();
 		$notif = array(

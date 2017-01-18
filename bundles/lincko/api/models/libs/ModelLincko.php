@@ -204,7 +204,7 @@ abstract class ModelLincko extends Model {
 
 	//Many(Roles) to Many Poly (Users)
 	public function perm($users_id=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
 		}
@@ -218,12 +218,12 @@ abstract class ModelLincko extends Model {
 
 	//Many(Roles) to Many Poly (Users)
 	public function rolesUsers(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		return $this->morphToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'parent', 'users_x_roles_x', 'parent_id', 'users_id')->withPivot('access', 'single', 'roles_id', 'parent_id', 'parent_type')->take(1);
 	}
 
 	public function __construct(array $attributes = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->connection = $app->lincko->data['database_data'];
 		parent::__construct($attributes);
 		//$db = Capsule::connection($this->connection);
@@ -242,7 +242,7 @@ abstract class ModelLincko extends Model {
 
 	public static function noValidMessage($return, $function=__FUNCTION__){
 		if(!$return){
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			$app->lincko->data['fields_not_valid'][] = preg_replace('/^valid/ui', '', $function, 1);
 		}
 		return $return;
@@ -564,7 +564,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function setPerm(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!isset($app->lincko->data['uid']) || $app->lincko->data['uid']===false){
 			return array();
 		}
@@ -1038,8 +1038,8 @@ abstract class ModelLincko extends Model {
 		$table = (new static)->getTable();
 		$attributes = array( 'table' => $table, );
 		$pivot = new PivotUsers($attributes);
-		if($pivot->tableExists($pivot->getTable())){
-			$pivot = $pivot->whereIn($table.$suffix, $list)->withTrashed()->get();
+		if((new static)->tableExists($pivot->getTable())){
+			$pivot = $pivot->whereIn($table.$suffix, $list)->get();
 			foreach ($pivot as $key => $value) {
 				if($all || $value->access){
 					$uid = (integer) $value->users_id;
@@ -1099,7 +1099,7 @@ abstract class ModelLincko extends Model {
 
 
 	public function tableExists($table){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$connection = $this->getConnectionName();
 		if(!isset(self::$schema_table[$connection])){
 			self::$schema_table[$connection] = array();
@@ -1154,7 +1154,7 @@ abstract class ModelLincko extends Model {
 			// user() must be defined has a relation, if not it will crash
 			$query = $query
 			->whereHas('users', function ($query) {
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$query
 				->where('users_id', $app->lincko->data['uid'])
 				->where('access', 1);
@@ -1208,7 +1208,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function scopegetKids($query, $list=array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->var['condition'] = false; //this insire that there is at least one condition to avoid to list all table
 		$table = $this->getTable();
 		$query = $query
@@ -1298,7 +1298,7 @@ abstract class ModelLincko extends Model {
 		if(!is_null($this->parent_item)){
 			return $this->_parent;
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(is_array($this::$parent_list) && isset($this->parent_type) && in_array($this->parent_type, $this::$parent_list)){
 			$this->_parent[0] = (string) $this->parent_type;
 		} else if(is_string($this::$parent_list)){
@@ -1349,7 +1349,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getParentAccess(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$parent = $this->getParent();
 		if(!$parent && (empty($this->parent_type) || ($this->_parent[0]=='workspaces' && $this->_parent[1]==0)) ){ //We allow shared workspace
 			return true; //Accept any model attached to root
@@ -1414,7 +1414,7 @@ abstract class ModelLincko extends Model {
 
 	//Force to redownload the whole database
 	public static function setForceReset($only_workspace=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$timestamp = time();
 		if($only_workspace){
 			$list = array(
@@ -1461,7 +1461,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function startLock($save=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$result = false;
 		$lastvisit = (new Data())->getTimestamp();
 		if(in_array('locked_by', $this->visible) && $this->checkAccess() && $this->checkPermissionAllow('edit')){
@@ -1505,7 +1505,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function unLock($save=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$result = true;
 		$lastvisit = (new Data())->getTimestamp();
 		if(in_array('locked_by', $this->visible) && $this->locked_by == $app->lincko->data['uid']){
@@ -1521,7 +1521,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function checkLock(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$result = null; //Return null to match database default value (null) for nobody
 		if(in_array('locked_by', $this->visible)){
 			$lastvisit = (new Data())->getTimestamp();
@@ -1642,7 +1642,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public static function getHistories(array $list_id, array $classes, $history_detail=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$history = new \stdClass;
 		$data = null;
 		foreach ($classes as $table => $class) {
@@ -1700,7 +1700,7 @@ abstract class ModelLincko extends Model {
 
 	//detail help to get history detail of an item, we do not allow it at the normal use avoiding over quota memory
 	public function getHistory($history_detail=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$history = new \stdClass;
 		$parameters = array();
 		if(count($this::$archive)>0 && isset($this->id)){
@@ -1727,7 +1727,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$history = new \stdClass;
 		$created_at = (new \DateTime($this->created_at))->getTimestamp();
 		$code = 1; //Default created_at comment
@@ -1758,7 +1758,7 @@ abstract class ModelLincko extends Model {
 		$parameters should be a array of [key1:val1, key2:val2, etc]
 	*/
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$namespace = (new \ReflectionClass($this))->getNamespaceName();
 		if(count($this::$archive)==0 || $this->getTable()=='history' || $namespace!='bundles\lincko\api\models\data'){ //We exclude history itself to avoid looping
 			return true;
@@ -1786,7 +1786,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getHistoryTitles(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$connectionName = $this->getConnectionName();
 		$titles = new \stdClass;
 		foreach ($this::$archive as $key => $value) {
@@ -1848,7 +1848,7 @@ abstract class ModelLincko extends Model {
 	//This function helps to delete the indicator as new for an item, it means we already saw it once
 	//It also place at false all notifications since the user aknowledge the latest information by viewing the element
 	public function viewed(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if (isset($this->id) && isset($this->viewed_by)) {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
@@ -1864,7 +1864,7 @@ abstract class ModelLincko extends Model {
 
 	//In case the developer change the user ID, we reset all access
 	public function checkUser(){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!isset($app->lincko->data['uid']) || $app->lincko->data['uid']===false){
 			$errmsg = $app->trans->getBRUT('api', 0, 2); //Please sign in.
 			$this::errorMsg('No user logged', $errmsg, true);
@@ -1883,7 +1883,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getPermissionMax($users_id = false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
@@ -1936,7 +1936,7 @@ abstract class ModelLincko extends Model {
 
 	//It checks if the user has access to edit it
 	public function getPermissionRole($users_id=false, $suffix=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
@@ -1994,7 +1994,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public static function getWorkspaceSuper($users_id=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
 		}
@@ -2018,7 +2018,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getPermissionOwner($users_id = false, $perm = 0){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
 		}
@@ -2034,7 +2034,7 @@ abstract class ModelLincko extends Model {
 
 	//It checks if the user has access to it
 	public function checkAccess($show_msg=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		$uid = $app->lincko->data['uid'];
 		if(!is_bool($this->accessibility)){
@@ -2103,7 +2103,7 @@ abstract class ModelLincko extends Model {
 
 	//It checks if the user has access to edit it
 	public function checkPermissionAllow($level, $msg=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->checkUser();
 		if(!$this->checkAccess()){
 			return false;
@@ -2127,7 +2127,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	protected static function errorMsg($detail='', $msg=false, $resignin=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!$msg){
 			$msg = $app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
 		}
@@ -2159,7 +2159,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getUsersTable($users_tables=array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!isset($app->lincko->data['uid']) || $app->lincko->data['uid']===false){
 			return $users_tables;
 		}
@@ -2216,7 +2216,7 @@ abstract class ModelLincko extends Model {
 		} else if(isset($this->id) && !$this->checkPermissionAllow('edit')){
 			return false;
 		}
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 
 		if(isset($this->locked)){
 			if($this->locked){
@@ -2419,7 +2419,7 @@ abstract class ModelLincko extends Model {
 	//This will update updated_at, even if the user doesn't have write permission
 	//$inform at true force $return_list at true
 	public function touchUpdateAt($users_tables=array(), $inform=true, $return_list=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if (!$this->timestamps || !isset($this->updated_at) || !isset($this->id)) {
 			return false;
 		}
@@ -2449,7 +2449,7 @@ abstract class ModelLincko extends Model {
 		if(!isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
 			$save = false;
 			if(array_key_exists('deleted_by', $this->attributes)){
-				$app = self::getApp();
+				$app = ModelLincko::getApp();
 				$this->deleted_by = $app->lincko->data['uid'];
 				$this->setHistory('_delete');
 				$save = true;
@@ -2523,7 +2523,7 @@ abstract class ModelLincko extends Model {
 	*/
 	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->setParentAttributes();
 
 		$temp = json_decode(parent::toJson($options));
@@ -2572,7 +2572,7 @@ abstract class ModelLincko extends Model {
 
 	public function toVisible(){
 		//$this->checkAccess(); //To avoid too many mysql connection, we can set the protected attribute "accessibility" to true if getLinked is used using getItems()
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$this->setParentAttributes();
 		$model = new \stdClass;
 
@@ -2683,7 +2683,7 @@ abstract class ModelLincko extends Model {
 
 	public function pivots_format($form, $history_save=true){
 		//toto => if the value saved is default or unchanged, we do not record history
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$save = false;
 		foreach ($form as $key => $list) {
 			if( preg_match("/^([a-z0-9_]+)>([a-z0-9_]+)$/ui", $key, $match) && is_object($list) && count((array)$list)>0 ){
@@ -2715,7 +2715,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function pivots_save(array $parameters = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		$namespace = (new \ReflectionClass($this))->getNamespaceName();
 		if($namespace!='bundles\lincko\api\models\data'){ //We exclude users_x_roles_x itself to avoid looping
 			return true;
@@ -2849,7 +2849,7 @@ abstract class ModelLincko extends Model {
 	//By preference, keep it protected
 	public function getUserPivotValue($column, $users_id=false){
 	//protected function getUserPivotValue($column, $users_id=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!$users_id){
 			$users_id = $app->lincko->data['uid'];
 		}
@@ -2889,7 +2889,7 @@ abstract class ModelLincko extends Model {
 
 	//By preference, keep it protected, public is only for test
 	public function setRolePivotValue($users_id, $roles_id=null, $single=null, $history=true){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 
 		//We don't allow non-administrator to modify user permission
 		if(static::getWorkspaceSuper() == 0){

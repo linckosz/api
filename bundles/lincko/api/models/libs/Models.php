@@ -70,7 +70,7 @@ class Models extends ModelLincko {
 
 	protected static function getDB(){
 		if(!self::$db){
-			$app = self::getApp();
+			$app = ModelLincko::getApp();
 			self::$db = Capsule::connection($app->lincko->data['database_data']);
 		}
 		return self::$db;
@@ -82,7 +82,7 @@ class Models extends ModelLincko {
 	}
 
 	public static function plus($type, $id, $users_id = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!in_array($type, self::$type_exclude) && count($users_id)>0 && array_key_exists($type, Data::getModels())){
 			$id = intval($id); //make sure $id is an integer
 			$type = self::quote($type);
@@ -108,7 +108,7 @@ class Models extends ModelLincko {
 	}
 
 	public static function less($type, $id, $users_id = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!in_array($type, self::$type_exclude) && count($users_id)>0 && array_key_exists($type, Data::getModels())){
 			$id = intval($id); //make sure $id is an integer
 			$type = self::quote($type);
@@ -134,7 +134,7 @@ class Models extends ModelLincko {
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		//Exclude all unused data
 		if(!is_array($list)){
 			$list = array();

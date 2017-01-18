@@ -52,7 +52,7 @@ class Invitation extends ModelLincko {
 	}
 
 	public function save(array $options = array()){
-		$app = self::getApp();
+		$app = ModelLincko::getApp();
 		if(!isset($this->id)){ //set code for new
 			$this->code = substr(str_shuffle("0123456789abcdefghijklmnopqrstuvwxyz"), 0, 8);
 			while( self::withTrashed()->where('code', $this->code)->first() ){
