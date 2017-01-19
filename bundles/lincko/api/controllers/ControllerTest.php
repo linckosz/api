@@ -608,26 +608,25 @@ class ControllerTest extends Controller {
 		*/
 
 		
-		$from = Users::find(1036);
-		$to = Users::getUser(); //1033
-		//$to->import($from);
-		
-		//$pivot = new PivotUsers(array('projects'));
-		//$tp = $pivot->find(1036);
+		//$from = Users::find(1067);
+		//$to = Users::getUser(); //1033 ( test2017011301@lincko.cafe )
+		//$tp = $to->import($from);
 
-		//$tp1 = (new PivotUsers(array('projects')))->where('users_id', 1036)->where('projects_id', 3196)->first();
+		//$tp = Data::getTrees(false, 0);
 
-		//$tp = $tp1->replicate();
-		//$tp->users_id = 2000;
-		//$tp->modelSave('projects');
+		//$tp = Projects::WhereNotNull('personal_private')->Where('personal_private', $from->id)->first();
+		//$tp = $tp->getChildren()[3];
+		//$tp = $tp->getKids()->get();
+		//$tp = $tp->tasks;
 
-		//$tp = $pivot->duplicate();
-		//\libs\Watch::php( $tp1, '$tp', __FILE__, __LINE__, false, false, true);
+		//$tp = (new PivotUsers(array('projects')))->where('users_id', 1036)->where('projects_id', '!=', 3193)->get();
 
-		$tp = Data::getTrees(false, 1);
+		//$tp = (new PivotUsers(array('projects')))->where('users_id', 1036)->get();
+
+		$tp = UsersLog::WhereNull('party')->where('username_sha1', '660609b171607ff3dcd2')->first();
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 

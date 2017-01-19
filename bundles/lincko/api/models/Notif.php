@@ -45,7 +45,10 @@ class Notif {
 		}
 
 		$response->iosNotification($msg, $notif);
-		$response->androidNotification($msg, $notif);
+		$response->options(array(
+			'apns_production' => true,
+		));
+		$response->androidNotification($msg, $notif, 2);
 		//Setup default for winPhone
 		if(!isset($notif['title'])){ $notif['title'] = null; }
 		if(!isset($notif['_open_page'])){ $notif['_open_page'] = null; }
@@ -81,8 +84,6 @@ class Notif {
 			);
 		}
 		$this->send($msg, $notif, $aliases);
-
-		//Send email here (if the user has email)
 
 		return true;
 	}

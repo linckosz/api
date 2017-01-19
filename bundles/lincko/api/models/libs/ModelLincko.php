@@ -1209,10 +1209,11 @@ abstract class ModelLincko extends Model {
 
 	public function scopegetKids($query, $list=array()){
 		$app = ModelLincko::getApp();
-		$this->var['condition'] = false; //this insire that there is at least one condition to avoid to list all table
+		$this->var['condition'] = false; //this insure that there is at least one condition to avoid to list all table
 		$table = $this->getTable();
 		$query = $query
 		->where(function ($query) use ($list, $table) {
+			$ask = false;
 			foreach ($list as $table_name => $list_id) {
 				if(is_array($this::$parent_list) && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
 					$this->var['condition'] = true;
@@ -1222,6 +1223,7 @@ abstract class ModelLincko extends Model {
 						->where($table.'.parent_type', $table_name)
 						->whereIn($table.'.parent_id', $list_id);
 					});
+					$ask = true;
 				} else if($table_name == $this::$parent_list && $this::getClass($table_name)){
 					$this->var['condition'] = true;
 					$query = $query
@@ -1229,7 +1231,12 @@ abstract class ModelLincko extends Model {
 						$query
 						->whereIn($table.'.parent_id', $list_id);
 					});
+					$ask = true;
 				}
+			}
+			if(!$ask){
+				$query = $query
+				->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
 			}
 		});
 		if(!$this->var['condition']){
@@ -1397,6 +1404,9 @@ abstract class ModelLincko extends Model {
 				foreach ($list as $users_id => $perm) {
 					$users[$users_id] = $users_id;
 				}
+			}
+			if($this->getTable()=='users'){
+				$users[$this->id] = $this->id;
 			}
 			if(!empty($users)){
 				Users::getQuery()->whereIn('id', $users)->update(['check_schema' => $timestamp]);
@@ -2354,7 +2364,7 @@ abstract class ModelLincko extends Model {
 
 		foreach (self::$permission_reset as $table_name => $list_id) {
 			foreach ($list_id as $id) {
-				$class = $this->getClass($table_name);
+				$class = $this::getClass($table_name);
 				if($item = $class::withTrashed()->find($id)){
 					$item->setPerm();
 				}

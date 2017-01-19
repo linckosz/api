@@ -580,7 +580,7 @@ class CheckAccess extends \Slim\Middleware {
 				}
 				
 			} else if($app->lincko->method_suffix == '_post'){ //File uploading
-				if($this->checkRoute()!==false){
+				if($route!==false){
 					$post = $app->request->post();
 					if(
 						   isset($post['shangzai_puk'])
@@ -613,10 +613,12 @@ class CheckAccess extends \Slim\Middleware {
 			} else if(
 				   $app->lincko->method_suffix == '_get'
 				&& (
-					   preg_match("/^\/file\/(\d+)\/([=\d\w]+?)\/(link|thumbnail|download|qrcode)\/(\d+)\/.+$/ui", $resourceUri, $matches)
-					|| preg_match("/^\/file\/profile\/(\d+)\/(\d+)$/ui", $resourceUri, $matches)
-					)
-				&& $this->checkRoute()!==false
+					   $route == 'file_open_get' && preg_match("/^\/file\/(\d+)\/([=\d\w]+?)\/(link|thumbnail|download)\/(\d+)\/.+$/ui", $resourceUri, $matches)
+					|| $route == 'file_qrcode_get' && preg_match("/^\/file\/(\d+)\/([\d\w]+?)\/(qrcode)\/(\d+)\/.+$/ui", $resourceUri, $matches)
+					|| $route == 'file_profile_get' && preg_match("/^\/file\/profile\/(\d+)\/(\d+)$/ui", $resourceUri, $matches)
+					|| $route == 'file_link_from_qrcode_get' && preg_match("/^\/file\/link_from_qrcode\/(\d+)\/([\d\w]+?)\/([\d\w]+?)$/ui", $resourceUri, $matches)
+				)
+				&& $route!==false
 			){ //File reading
 				if($username_sha1 = UsersLog::pukpicToSha()){
 					$w_id = $matches[1];

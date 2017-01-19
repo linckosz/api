@@ -198,4 +198,14 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function error_post(){
+		$app = $this->app;
+		if(isset($this->data->data) && isset($this->data->data->error)){
+			\libs\Watch::php($this->data->data->error, '$error', __FILE__, __LINE__, true);
+			$app->render(200, array('show' => false, 'msg' => 'Error recorded', 'error' => false));
+		}
+		$app->render(200, array('show' => false, 'msg' => 'Error not recorded', 'error' => true));
+		return true;
+	}
+
 }

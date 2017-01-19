@@ -217,7 +217,7 @@ class ControllerUser extends Controller {
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			if($this->createAccount($form, $model, $errmsg, $errfield)){
-				$app->render(201, array('msg' => array('show' => false, 'msg' => $app->trans->getBRUT('api', 15, 2)),)); //Account created.
+				$app->render(201, array('show' => false, 'msg' => array('msg' => $app->trans->getBRUT('api', 15, 2)),)); //Account created.
 				return true;
 			}
 		}
@@ -226,6 +226,50 @@ class ControllerUser extends Controller {
 			$form->password = '******';
 		}
 		\libs\Watch::php(array($errmsg, $form), 'Account creation failed', __FILE__, __LINE__, true);
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
+	public function link_to_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
+
+		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		//By direct operation, we only allow email account creation, not any integration
+		if(isset($form->party) && !empty($form->party)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
+			$errfield = 'party';
+		}
+		else if(!isset($form->party_id) || empty($form->party_id) || !Users::validChar($form->party_id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 34); //We could not validate the format
+			$errfield = 'party_id';
+		}
+		else if(!isset($form->email) || !Users::validEmail($form->email)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
+			$errfield = 'email';
+		}
+		//party must be defined in setForm and is null for default Lincko account login system
+		else if(empty($form->party) && (!isset($form->party_id) || !isset($form->password) || !Users::validPassword(Datassl::decrypt($form->password, $form->party_id)))){ //Required (optional for integration)
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters
+			$errfield = 'password';
+		}
+		else if($model = Users::getUser()){
+			$users_log = UsersLog::WhereNotNull('username_sha1')->Where('username_sha1', $model->username_sha1)->first();
+			if($users_log->subAccount($form->party, $form->party_id, $form->password, true, false)){
+				$app->render(201, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 15, 37)),)); //Accounts successfully linked.
+				return true;
+			}
+		}
+		//Hide the password to avoid hacking
+		if(isset($form->password)){
+			$form->password = '******';
+		}
+		\libs\Watch::php(array($errmsg, $form), 'Account failed to link', __FILE__, __LINE__, true);
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
 		return false;
 	}
@@ -898,7 +942,7 @@ class ControllerUser extends Controller {
 		$form = $this->form;
 		$reset = false;
 
-		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed
+		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
@@ -983,7 +1027,7 @@ class ControllerUser extends Controller {
 		}
 
 		if($reset){
-			$errmsg = $app->trans->getBRUT('api', 0, 10); //Operation failed
+			$errmsg = $app->trans->getBRUT('api', 0, 10); //Operation failed.
 		}
 
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield, 'reset' => $reset), 'error' => true));

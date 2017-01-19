@@ -72,4 +72,10 @@ $app->group('/data', function () use ($app) {
 	)
 	->name('data_unlock_get');
 
+	$app->post(
+		'/error',
+		'\bundles\lincko\api\controllers\ControllerData:error_post'
+	)
+	->name('data_error_post');
+
 });

@@ -181,16 +181,17 @@ class UsersLog extends Model {
 		if(empty($password) || !empty($party)){ //Make sure we convert false and null
 			$password = ''; //Password exists only for email login
 		} else {
-			$password = password_hash(Datassl::decrypt($data->password, $data->party_id), PASSWORD_BCRYPT);
+			$password = Datassl::decrypt($password, $party_id);
 		}
+
 		if(!$force && $party == $this->party){
 			return false; //We do not allow 2 similar methods of connection
 		} else if(empty($party_id)){
 			return false; //We reject all kind of empty party_id
-		} else if(empty($party) && (!Users::validEmail($party_id) || !Users::validPassword(Datassl::decrypt($password, $party_id)))){
+		} else if(empty($party) && (!Users::validEmail($party_id) || !Users::validPassword($password))){
 			return false; //We reject Lincko credential of the party_id is not an email format or the password is missing
 		}
-		$model = self::Where('party', $party)->whereNotNull('party_id')->where('party_id', $party_id)->first(array('log'));
+		$model = self::Where('party', $party)->whereNotNull('party_id')->where('party_id', $party_id)->first(array('log', 'username_sha1', 'password'));
 		
 		//If the second credential information does not exists, we attach a new one
 		if(!$model){
@@ -202,13 +203,19 @@ class UsersLog extends Model {
 			}
 			$model->log = $log;
 			$model->party_id = $party_id;
-			$model->password = $password;
+			$model->password = password_hash($password, PASSWORD_BCRYPT);
 			if($model->save()){
 				$result = $model;
 			}
 		}
 		//If the user wants to merge two accounts, we import all links from 
 		else if($merge && $model->username_sha1 != $this->username_sha1){
+			//If the email exists, check if the password is correct
+			if(empty($party)){
+				if(!password_verify($password, $model->password)){
+					return false;
+				}
+			}
 			//check if the importation is possible
 			$list_from = array();
 			$list = self::Where('username_sha1', $model->username_sha1)->get(array('party'));
@@ -216,20 +223,28 @@ class UsersLog extends Model {
 				$list_from[] = $value->party;
 			}
 			$list = self::Where('username_sha1', $this->username_sha1)->get(array('party'));
-			foreach ($list as $value) {
-				if(in_array($value->party, $list_from)){
-					return false; //We reject if one of both group has similar party since we don't allow 2 similar party to the same account ( user_1 [email_1] wants wechat_1, but it's already attached by user_2 [email_2, wechat_1] which already has an email account )
+			if(!$force){
+				foreach ($list as $value) {
+					if(in_array($value->party, $list_from)){
+						return false; //We reject if one of both group has similar party since we don't allow 2 similar party to the same account ( user_1 [email_1] wants wechat_1, but it's already attached by user_2 [email_2, wechat_1] which already has an email account )
+					}
 				}
 			}
 
 			$user = Users::WhereNotNull('username_sha1')->where('username_sha1', $this->username_sha1)->first();
 			$import_user = Users::WhereNotNull('username_sha1')->where('username_sha1', $model->username_sha1)->first();
-			if($user && $import_user && $user->import($import)){
-				$model = $this->username_sha1;
-				$model->password = $password;
-				if($model->save()){
-					$result = $model;
-				}
+			
+			//Check which one has to be imported, the one with email is the main account
+			if(UsersLog::Where('party', null)->where('username_sha1', $model->username_sha1)->first()){
+				$main_user = Users::WhereNotNull('username_sha1')->where('username_sha1', $model->username_sha1)->first();
+				$user = Users::WhereNotNull('username_sha1')->where('username_sha1', $this->username_sha1)->first();
+			} else {
+				$user = Users::WhereNotNull('username_sha1')->where('username_sha1', $model->username_sha1)->first();
+				$main_user = Users::WhereNotNull('username_sha1')->where('username_sha1', $this->username_sha1)->first();
+			}
+
+			if($user && $import_user && $main_user->import($user)){
+				$result = self::Where('party', $party)->whereNotNull('party_id')->where('party_id', $party_id)->first(array('log'));
 			}
 		} else {
 			$result = $model;

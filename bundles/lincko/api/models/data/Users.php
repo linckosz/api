@@ -6,80 +6,17 @@ namespace bundles\lincko\api\models\data;
 use Carbon\Carbon;
 use \libs\Datassl;
 use \libs\Email;
+use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\UsersLog;
+use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\PivotUsers;
-use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\libs\Data;
+use \bundles\lincko\api\models\libs\Invitation;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class Users extends ModelLincko {
-
-	//Warning => We cannot handle local (HK) and remote (3rd party) at the same time, so we do local (HK) only
-	public function import($user){
-		//(toto) Do not make it work for remote servers
-		if(empty($user) || $app->lincko->data['remote']){
-			return false;
-		}
-		$from_id = $user->id;
-		$to_id = $this->id;
-		if($from_id==$to_id){
-			return false;
-		}
-
-		$users_tables = array();
-
-		$models = Data::getModels();
-		//\libs\Watch::php($models, '$models', __FILE__, __LINE__, false, false, true);
-		foreach ($models as $table => $class) {
-			/*
-			if($table=='users'){
-				continue;
-			}
-			$instance = new $class;
-			$columns = $class::getColumns();
-			//\libs\Watch::php($columns, 'table: '.$table, __FILE__, __LINE__, false, false, true);
-
-			$inform = array();
-			if(in_array('_perm', $columns)){
-				$ask = false;
-				$model = $class::withTrashed();
-				foreach ($columns as $column) {
-					if(substr($column, -3)=='_by'){
-						$ask = true;
-						$model = $model->orWhere($column, $from_id);
-					}
-				}
-				if($ask && $list = $model->get(array('_perm'))){
-					foreach ($list as $item) {
-						if($perm = json_decode($item->_perm)){
-							foreach ($perm as $users_id => $value) {
-								$users_tables[$table][$users_id] = $users_id;
-							}
-						}
-					}
-				}
-				//\libs\Watch::php($users_tables, 'users_tables '.$table, __FILE__, __LINE__, false, false, true);
-			}
-
-			//\libs\Watch::php($instance->freshTimestamp(), 'freshTimestamp '.$table, __FILE__, __LINE__, false, false, true);
-
-			foreach ($columns as $column) {
-				if(substr($column, -3)=='_by'){
-					$time = $instance->freshTimestamp();
-					//$class::withTrashed()->Where($column, $from_id)->getQuery()->update([$column => $to_id, 'updated_at' => $time, 'extra' => null]);
-					$temp = $class::withTrashed()->Where($column, $from_id)->get(array('id'));
-					\libs\Watch::php($temp->toArray(), 'temp '.$table, __FILE__, __LINE__, false, false, true);
-					usleep(30000);
-				}
-			}
-			*/
-
-			//$pivots = PivotUsers(array($table)))->withTrashed()
-		}
-
-		return true;
-	}
 
 	protected $connection = 'data';
 
@@ -512,6 +449,152 @@ class Users extends ModelLincko {
 		return $return;
 	}
 
+	//Warning => We cannot handle local (HK) and remote (3rd party) at the same time, so we do local (HK) only
+	public function import($import_user){
+		$app = ModelLincko::getApp();
+		//(toto) Do not make it work for remote servers
+		if(empty($import_user) || $app->lincko->data['remote']){
+			return false;
+		}
+		if($import_user->id==$this->id){
+			return false;
+		}
+
+		//Grab personal project items to move them to the current user
+		$personal_array = array();
+		$personal = Projects::WhereNotNull('personal_private')->Where('personal_private', $this->id)->first(array('id'));
+		$import_personal = Projects::WhereNotNull('personal_private')->Where('personal_private', $import_user->id)->first();
+		$import_personal->forceGiveAccess();
+		if($import_personal && $personal){
+			$tree = Data::getTrees(false, 0);
+			$class = Users::getClass('projects');
+			foreach ($tree as $table_name => $array) {
+				if(in_array('projects', $array) && method_exists($class, $table_name)){
+					if($items = $import_personal->$table_name){
+						foreach ($items as $item) {
+							$item->parent_id = $personal->id;
+							$personal_array[] = $item;
+						}
+					}
+				}
+			}
+		}
+		unset($list);
+
+		$reset_items = array();
+		$models = Data::getModels();
+		//Start transaction to make sure the user importation is finalized
+		$db_data = Capsule::connection($app->lincko->data['database_data']);
+		$db_data->beginTransaction();
+		$db_api = Capsule::connection('api');
+		$db_api->beginTransaction();
+		$committed = false;
+		try {
+			foreach ($models as $table => $class) {
+				$pivot_users = (new PivotUsers(array($table)));
+				if((new Users)->tableExists($pivot_users->getTable())){
+					if($table=='projects' && $import_personal){
+						//Skip personal project from import user
+						$pivots = $pivot_users->where('users_id', $import_user->id)->where('projects_id', '!=', $import_personal->id)->get();
+					} else if($table=='users'){
+						$pivots = $pivot_users->where('users_id', $import_user->id)->orWhere('users_id_link', $import_user->id)->get();
+					} else {
+						$pivots = $pivot_users->where('users_id', $import_user->id)->get();
+					}
+					$change = false;
+					foreach ($pivots as $pivot) {
+						$field = $table.'_id';
+						if($table=='users'){
+							$field = 'users_id_link';
+						}
+						if(isset($pivot->$field)){
+							$change = true;
+							$reset_items[$table][$pivot->$field] = $pivot->$field;
+							$exists = $pivot_users->where('users_id', $this->id)->where($field, $pivot->$field)->first(array('users_id'));
+							if(!$exists){
+								$clone = $pivot->replicate();
+								$clone->users_id = $this->id;
+								$clone->saveWithTable($table);
+							}
+							if($table=='users'){ //invert user links
+								$exists = $pivot_users->where('users_id', $pivot->$field)->where('users_id_link', $this->id)->first(array('users_id'));
+								if(!$exists){
+									$clone = $pivot->replicate();
+									$clone->users_id = $pivot->$field;
+									$clone->users_id_link = $this->id;
+									$clone->saveWithTable($table);
+								}
+							}
+						}
+					}
+					if($change){
+						if($table=='users'){
+							$pivot_users->where('users_id', $import_user->id)->orWhere('users_id_link', $import_user->id)->getQuery()->update(['access' => '0']);
+						} else {
+							$pivot_users->where('users_id', $import_user->id)->getQuery()->update(['access' => '0']);
+						}
+					}
+				}
+			}
+			//import Personal spaces
+			foreach ($personal_array as $item) {
+				$reset_items[$item->getTable()][$item->id] = $item->id;
+				$item->forceGiveAccess();
+				$item->brutSave();
+			}
+
+			//Import all Invitations
+			Invitation::Where('created_by', $import_user->id)->getQuery()->update(['created_by' => $this->id]);
+			//Change the SHA of UserLog FROM to merge 2 accounts login methods
+			UsersLog::Where('username_sha1', $import_user->username_sha1)->getQuery()->update(['username_sha1' => $this->username_sha1]);
+			//Clean Authorization to force logout of user FROM
+			Authorization::Where('sha', $import_user->username_sha1)->delete();
+
+			//Import fulfilled fields
+			$fulfilled = array('email', 'firstname', 'lastname', 'profile_pic');
+			$save = false;
+			foreach ($fulfilled as $field) {
+				if(empty($this->$field) && !empty($import_user->$field)){
+					$this->$field = $import_user->$field;
+					$save = true;
+				}
+			}
+			//Export admin rights
+			if(!$this->admin && $import_user->admin){
+				$this->admin = true;
+				$save = true;
+			}
+			if($save){
+				$this->save();
+			}
+
+			//Launch the transaction
+			$db_data->commit();
+			$db_api->commit();
+			$committed = true;
+
+			//Reset permission of modified items
+			foreach ($reset_items as $table => $list) {
+				$class = Users::getClass($table);
+				foreach ($list as $id) {
+					if($item = $class::withTrashed()->find($id)){
+						$item->forceGiveAccess();
+						$item->setPerm();
+						$item->setForceSchema();
+					}
+				}
+			}
+			//Force 2 main concerned accounts to reset the schema
+			$this->setForceSchema();
+			$import_user->setForceSchema();
+		} catch (\Exception $e){
+			$db_data->rollback();
+			$db_api->rollback();
+		}
+
+		return $committed;
+	}
+
 	//Unsafe method
 	public function giveEditAccess(){
 		$app = ModelLincko::getApp();
@@ -549,10 +632,21 @@ class Users extends ModelLincko {
 		$this->accessibility = $accessibility;
 		$temp = json_decode($temp);
 		//Do not show email for all other users
+		$temp->email = '';
+		$temp->integration = array();
 		if($this->id == $app->lincko->data['uid']){
-			$temp->email = $this->email;
-		} else {
-			$temp->email = "";
+			$temp->party = $app->lincko->data['party'];
+			//All parties style
+			if($users_log = UsersLog::where('username_sha1', $this->username_sha1)->get(array('party', 'party_id'))){
+				foreach ($users_log as $item) {
+					if(empty($item->party)){
+						$temp->integration[] = 'email';
+						$temp->email = $item->party_id;
+					} else {
+						$temp->integration[] = $item->party;
+					}
+				}
+			}
 		}
 		$temp = json_encode($temp, $options);
 		return $temp;
@@ -567,10 +661,21 @@ class Users extends ModelLincko {
 		$model = parent::toVisible();
 		$this->accessibility = $accessibility;
 		//Do not show email for all other users
+		$model->email = '';
+		$model->integration = array();
 		if($this->id == $app->lincko->data['uid']){
-			$model->email = $this->email;
-		} else {
-			$model->email = "";
+			$model->party = $app->lincko->data['party'];
+			//All parties style
+			if($users_log = UsersLog::where('username_sha1', $this->username_sha1)->get(array('party', 'party_id'))){
+				foreach ($users_log as $item) {
+					if(empty($item->party)){
+						$model->integration[] = 'email';
+						$model->email = $item->party_id;
+					} else {
+						$model->integration[] = $item->party;
+					}
+				}
+			}
 		}
 		return $model;
 	}

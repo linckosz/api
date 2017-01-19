@@ -88,6 +88,17 @@ $app->group('/file', function () use ($app) {
 	))
 	->name('file_profile_get');
 
+	$app->get(
+		'/link_from_qrcode/:workspace/:sha(/:mini)',
+		'\bundles\lincko\api\controllers\ControllerFile:link_from_qrcode_get'
+	)
+	->conditions(array(
+		'workspace' => '\d+',
+		'sha' => '[\d\w]+',
+		'mini' => '[\w\d]+',
+	))
+	->name('file_link_from_qrcode_get');
+
 });
 
 //Third party connection (more secured)

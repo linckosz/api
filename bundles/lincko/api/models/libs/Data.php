@@ -194,7 +194,16 @@ class Data {
 					$classes[$table_name] = $tp;
 				}
 			}
-			self::$models = $classes;
+			//Organize by priority
+			$priority = array('users', 'workspaces', 'settings', 'projects', 'roles', 'chats', 'messages', 'files', 'notes', 'tasks', 'comments', 'spaces');
+			self::$models = array();
+			foreach ($priority as $table_name) {
+				if(isset($classes[$table_name])){
+					self::$models[$table_name] = $classes[$table_name];
+					unset($classes[$table_name]);
+				}
+			}
+			self::$models = array_merge(self::$models, $classes);
 		}
 		return self::$models;
 	}

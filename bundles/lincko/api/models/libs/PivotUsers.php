@@ -52,10 +52,14 @@ class PivotUsers extends Model {
 		return $this->table;
 	}
 
-	//We do not attach
-	public function modelSave($table){
+	public function saveWithTable($table){
 		$this->setTable($table);
 		return Model::save();
+	}
+
+	public function existsWithTable($table){
+		$this->setTable($table);
+		return Model::exists();
 	}
 
 ////////////////////////////////////////////

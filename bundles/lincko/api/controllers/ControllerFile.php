@@ -10,6 +10,7 @@ use \libs\SimpleImage;
 use \libs\File;
 use \libs\STR;
 use \libs\Folders;
+use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Projects;
@@ -613,6 +614,49 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$white = $src->allocateColor(255, 255, 255);
 		$src = $src->resizeCanvas($width, $height, 'center', 'center', $white);
 		$src->output('png');
+		
+		return exit(0);
+	}
+
+	public function link_from_qrcode_get($workspace, $sha, $mini=false){
+		$app = $this->app;
+		ob_clean();
+		flush();
+		$email = '';
+		if(!empty($sha) && $users_log = UsersLog::WhereNull('party')->where('username_sha1', $sha)->first(array('party_id'))){
+			if(Users::validEmail($users_log->party_id)){
+				$email = $users_log->party_id;
+			}
+		}
+
+		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/#submenu-personal_lincko%false%false%'.$email;
+		header('Expires: 0');
+		header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+
+		//https://packagist.org/packages/endroid/qrcode
+		$qrCode = new QrCode();
+
+		if($mini && $mini_path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/integration/'.$mini.'.png'){
+			if(is_file($mini_path)){
+				$qrCode
+					->setLogo($mini_path)
+					->setLogoSize(144)
+				;
+			}
+		}
+
+		$qrCode
+			->setText($url)
+			->setSize(800)
+			->setPadding(40)
+			->setErrorCorrection('medium')
+			//->setForegroundColor(array('r' => 251, 'g' => 160, 'b' => 38, 'a' => 0)) //Orange is not working very well
+			->setForegroundColor(array('r' => 0, 'g' => 0, 'b' => 0, 'a' => 0))
+			->setBackgroundColor(array('r' => 255, 'g' => 255, 'b' => 255, 'a' => 0))
+			->setImageType(QrCode::IMAGE_TYPE_PNG)
+		;
+		header('Content-Type: '.$qrCode->getContentType());
+		$qrCode->render();
 		
 		return exit(0);
 	}
