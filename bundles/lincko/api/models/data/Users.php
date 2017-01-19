@@ -639,11 +639,10 @@ class Users extends ModelLincko {
 			//All parties style
 			if($users_log = UsersLog::where('username_sha1', $this->username_sha1)->get(array('party', 'party_id'))){
 				foreach ($users_log as $item) {
+					$temp->integration[] = $item->party;
 					if(empty($item->party)){
-						$temp->integration[] = 'email';
+						$temp->party = null; //Make sure we give null as value
 						$temp->email = $item->party_id;
-					} else {
-						$temp->integration[] = $item->party;
 					}
 				}
 			}
@@ -668,11 +667,10 @@ class Users extends ModelLincko {
 			//All parties style
 			if($users_log = UsersLog::where('username_sha1', $this->username_sha1)->get(array('party', 'party_id'))){
 				foreach ($users_log as $item) {
+					$model->integration[] = $item->party;
 					if(empty($item->party)){
-						$model->integration[] = 'email';
+						$model->party = null; //Make sure we give null as value
 						$model->email = $item->party_id;
-					} else {
-						$model->integration[] = $item->party;
 					}
 				}
 			}
