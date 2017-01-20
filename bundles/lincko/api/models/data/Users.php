@@ -588,6 +588,9 @@ class Users extends ModelLincko {
 					}
 				}
 			}
+			//Update updated_at to make sure both users are redownloaded with neww fields
+			$this->touchUpdateAt();
+			$import_user->touchUpdateAt();
 			//Force 2 main concerned accounts to reset the schema
 			$this->setForceSchema();
 			$import_user->setForceSchema();
@@ -635,21 +638,12 @@ class Users extends ModelLincko {
 		$temp = parent::toJson($detail, $options);
 		$this->accessibility = $accessibility;
 		$temp = json_decode($temp);
-		//Do not show email for all other users
-		$temp->email = '';
-		$temp->integration = array();
+		$temp->integration = $this->setIntegration();
 		if($this->id == $app->lincko->data['uid']){
 			$temp->party = $app->lincko->data['party'];
-			//All parties style
-			if($users_log = UsersLog::where('username_sha1', $this->username_sha1)->get(array('party', 'party_id'))){
-				foreach ($users_log as $item) {
-					$temp->integration[] = $item->party;
-					if(empty($item->party)){
-						$temp->party = null; //Make sure we give null as value
-						$temp->email = $item->party_id;
-					}
-				}
-			}
+		} else {
+			//Do not show email for all other users
+			$temp->email = '';
 		}
 		$temp = json_encode($temp, $options);
 		return $temp;
@@ -663,23 +657,40 @@ class Users extends ModelLincko {
 		$this->accessibility = true;
 		$model = parent::toVisible();
 		$this->accessibility = $accessibility;
-		//Do not show email for all other users
-		$model->email = '';
-		$model->integration = array();
+		$model->integration = $this->setIntegration();
 		if($this->id == $app->lincko->data['uid']){
 			$model->party = $app->lincko->data['party'];
+		} else {
+			//Do not show email for all other users
+			$model->email = '';
+		}
+		return $model;
+	}
+
+	public function setIntegration(){
+		$app = ModelLincko::getApp();
+		$integration = null;
+		if($this->id == $app->lincko->data['uid']){
+			$integration = new \stdClass;
 			//All parties style
-			if($users_log = UsersLog::where('username_sha1', $this->username_sha1)->get(array('party', 'party_id'))){
+			if($users_log = UsersLog::where('username_sha1', $this->username_sha1)->get(array('party', 'party_id', 'party_json'))){
 				foreach ($users_log as $item) {
-					$model->integration[] = $item->party;
 					if(empty($item->party)){
-						$model->party = null; //Make sure we give null as value
-						$model->email = $item->party_id;
+						$integration->lincko = $item->party_id; //Email address
+					} else {
+						$integration->{$item->party} = ucfirst($item->party); //Integration name
+					}
+					if($item->party=='wechat'){
+						if($json = json_decode($item->party_json)){
+							if(isset($json->nickname) && !empty($json->nickname)){
+								$integration->{$item->party} = $json->nickname;
+							}
+						}
 					}
 				}
 			}
 		}
-		return $model;
+		return $integration;
 	}
 
 	public function extraDecode(){
