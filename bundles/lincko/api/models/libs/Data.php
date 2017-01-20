@@ -930,6 +930,14 @@ class Data {
 			}
 		}
 
+		foreach ($result_bis->$uid as $table_name => $models) {
+			foreach ($models as $id => $model) {
+				if(is_object($model)){
+					unset($model->history);
+				}
+			}
+		}
+
 		//Delete the items that are hidden by spaces
 		if($block = Spaces::blockItems()){
 			foreach ($block as $model) {
