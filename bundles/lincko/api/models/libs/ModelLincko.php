@@ -1178,6 +1178,23 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function scopegetLinked($query, $with=false, $trash=false){
+		$arr = array();
+		if($with){
+			$parentType = $this::getParentList();
+			if(count($parentType)>0){
+				if(is_string($parentType)){
+					if(method_exists(get_called_class(), $parentType)){
+						$arr[$parentType] = $parentType;
+					}
+				} else if(is_array($parentType)){
+					foreach ($parentType as $type) {
+						if(method_exists(get_called_class(), $type)){
+							$arr[$type] = $type;
+						}
+					}
+				}
+			}
+		}
 		$list = Data::getTrees($arr, 2);
 		if($trash || $this->with_trash){
 			$query = $query->withTrashed();
