@@ -38,6 +38,9 @@ class Users extends ModelLincko {
 		'profile_pic',
 		'timeoffset',
 		'resume',
+		'email',
+		'integration',
+		'party',
 		'_parent',
 		'_lock',
 		'_visible',
@@ -68,6 +71,7 @@ class Users extends ModelLincko {
 		'lastname',
 		'email',
 		'integration',
+		'party',
 	);
 
 	protected $contactsLock = false; //By default do not lock the user
