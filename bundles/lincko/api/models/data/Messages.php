@@ -143,22 +143,27 @@ class Messages extends ModelLincko {
 			}
 			return $result;
 		} else {
-			//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
-			$query = $query
-			->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-				$query
-				->where(function ($query) use ($list) {
-					if(isset($list['chats']) && count($list['chats'])>0){
-						$query = $query
-						->whereIn('messages.parent_id', $list['chats']);
-					} else {
-						$query = $query
-						->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
-					}
+			$app = ModelLincko::getApp();
+			if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+				//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
+				$query = $query
+				->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+					$query
+					->where(function ($query) use ($list) {
+						if(isset($list['chats']) && count($list['chats'])>0){
+							$query = $query
+							->whereIn('messages.parent_id', $list['chats']);
+						} else {
+							$query = $query
+							->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
+						}
+					});
 				});
-			});
-			//Also include trashed because we don't have deleted_at
-			$query = $query->withTrashed();
+				//Also include trashed because we don't have deleted_at
+				$query = $query->withTrashed();
+			} else {
+				$query = $query->whereId(-1); //We reject if no specific access
+			}
 			return $query;
 		}
 	}

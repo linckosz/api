@@ -235,45 +235,50 @@ class Files extends ModelLincko {
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
+		$app = ModelLincko::getApp();
 		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
 		unset($list['users']); //Excluse user profile picture (this record also old useless pictures), but we will have to add them later manually on Data.php
-		$query = $query
-		->where(function ($query) use ($list) {
-			$ask = false;
-			foreach ($list as $table_name => $list_id) {
-				if(in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
-					if($table_name=='users'){ //unused
-						$query = $query
-						->orWhereHas('profile', function ($query) use ($list){
+		if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+			$query = $query
+			->where(function ($query) use ($list) {
+				$ask = false;
+				foreach ($list as $table_name => $list_id) {
+					if(in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
+						if($table_name=='users'){ //unused
 							$query = $query
-							->whereIn('users.id', $list['users']);
-						});
-					} else {
-						$this->var['parent_type'] = $table_name;
-						$this->var['parent_id_array'] = $list_id;
-						$query = $query
-						->orWhere(function ($query) {
-							$query
-							->where('files.parent_type', $this->var['parent_type'])
-							->whereIn('files.parent_id', $this->var['parent_id_array']);
-						});
-						$ask = true;
+							->orWhereHas('profile', function ($query) use ($list){
+								$query = $query
+								->whereIn('users.id', $list['users']);
+							});
+						} else {
+							$this->var['parent_type'] = $table_name;
+							$this->var['parent_id_array'] = $list_id;
+							$query = $query
+							->orWhere(function ($query) {
+								$query
+								->where('files.parent_type', $this->var['parent_type'])
+								->whereIn('files.parent_id', $this->var['parent_id_array']);
+							});
+							$ask = true;
+						}
 					}
 				}
+				if(!$ask){
+					$query = $query
+					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
+				}
+			})
+			->whereHas("users", function($query) {
+				$app = ModelLincko::getApp();
+				$query
+				->where('users_id', $app->lincko->data['uid'])
+				->where('access', 0);
+			}, '<', 1);
+			if(self::$with_trash_global){
+				$query = $query->withTrashed();
 			}
-			if(!$ask){
-				$query = $query
-				->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
-			}
-		})
-		->whereHas("users", function($query) {
-			$app = ModelLincko::getApp();
-			$query
-			->where('users_id', $app->lincko->data['uid'])
-			->where('access', 0);
-		}, '<', 1);
-		if(self::$with_trash_global){
-			$query = $query->withTrashed();
+		} else {
+			$query = $query->whereId(-1); //We reject if no specific access
 		}
 		if($get){
 			$result = $query->get();

@@ -256,30 +256,35 @@ class Tasks extends ModelLincko {
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		//It will get all tasks with access 1, and all tasks which are not in the relation table, but the second has to be in conjonction with projects
-		if(isset($list['projects']) && count($list['projects'])>0){
+		$app = ModelLincko::getApp();
+		if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+			//It will get all tasks with access 1, and all tasks which are not in the relation table, but the second has to be in conjonction with projects
+			if(isset($list['projects']) && count($list['projects'])>0){
+				$query = $query
+				->whereIn('tasks.parent_id', $list['projects']);
+			} else {
+				$query = $query
+				->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
+			}
 			$query = $query
-			->whereIn('tasks.parent_id', $list['projects']);
+			->whereHas("users", function($query) {
+				$app = ModelLincko::getApp();
+				$query
+				->where('users_id', $app->lincko->data['uid'])
+				->where('access', 0);
+			}, '<', 1)
+			//This exclude subtask from tasks deleted
+			->whereHas("tasksup", function($query) {
+				$table_alias = $query->getModel()->getTable();
+				$query
+				->withTrashed()
+				->whereNotNull($table_alias.'.deleted_at');
+			}, '<', 1);
+			if(self::$with_trash_global){
+				$query = $query->withTrashed();
+			}
 		} else {
-			$query = $query
-			->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
-		}
-		$query = $query
-		->whereHas("users", function($query) {
-			$app = ModelLincko::getApp();
-			$query
-			->where('users_id', $app->lincko->data['uid'])
-			->where('access', 0);
-		}, '<', 1)
-		//This exclude subtask from tasks deleted
-		->whereHas("tasksup", function($query) {
-			$table_alias = $query->getModel()->getTable();
-			$query
-			->withTrashed()
-			->whereNotNull($table_alias.'.deleted_at');
-		}, '<', 1);
-		if(self::$with_trash_global){
-			$query = $query->withTrashed();
+			$query = $query->whereId(-1); //We reject if no specific access
 		}
 		if($get){
 			$result = $query->get();

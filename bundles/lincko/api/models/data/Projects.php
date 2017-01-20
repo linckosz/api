@@ -198,17 +198,22 @@ class Projects extends ModelLincko {
 				->take(1);
 			})
 			->orWhere(function ($query) {
-				//Exclude private project, and be sure to have access to the project (because the user whom created the project does not necessary have access to it)
 				$app = ModelLincko::getApp();
-				$query
-				->whereHas('users', function ($query){
+				if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+					//Exclude private project, and be sure to have access to the project (because the user whom created the project does not necessary have access to it)
 					$app = ModelLincko::getApp();
 					$query
-					->where('users_id', $app->lincko->data['uid'])
-					->where('access', 1);
-				})
-				->where('projects.parent_id', $app->lincko->data['workspace_id']) //Insure to get only the company information
-				->where('personal_private', null);
+					->whereHas('users', function ($query){
+						$app = ModelLincko::getApp();
+						$query
+						->where('users_id', $app->lincko->data['uid'])
+						->where('access', 1);
+					})
+					->where('projects.parent_id', $app->lincko->data['workspace_id']) //Insure to get only the company information
+					->where('personal_private', null);
+				} else {
+					$query = $query->whereId(-1); //We reject if no specific access
+				}
 			});
 		});
 		if(self::$with_trash_global){

@@ -214,19 +214,23 @@ class Users extends ModelLincko {
 		$query = $query
 		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
 			$app = ModelLincko::getApp();
-			$query
-			//->with('usersLinked') //It affects heavily speed performance
-			->whereHas('usersLinked', function ($query) {
-				$app = ModelLincko::getApp();
+			if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
 				$query
-				->where('users_id', $app->lincko->data['uid'])
-				->where(function ($query) {
+				//->with('usersLinked') //It affects heavily speed performance
+				->whereHas('usersLinked', function ($query) {
+					$app = ModelLincko::getApp();
 					$query
-					->where('access', 1)
-					->orWhere('invitation', 1);
-				});
-			})
-			->orWhere('users.id', $app->lincko->data['uid']);
+					->where('users_id', $app->lincko->data['uid'])
+					->where(function ($query) {
+						$query
+						->where('access', 1)
+						->orWhere('invitation', 1);
+					});
+				})
+				->orWhere('users.id', $app->lincko->data['uid']);
+			} else {
+				$query->where('users.id', $app->lincko->data['uid']);
+			}
 		});
 		//We do not allow to gather deleted users
 		if($get){

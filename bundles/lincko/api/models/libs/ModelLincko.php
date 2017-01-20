@@ -1178,28 +1178,6 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function scopegetLinked($query, $with=false, $trash=false){
-		//Why did I use getTree with parents to get ID? It seems useless since getItems() should return the same list
-		//If no issue over the time, just delete the code below
-		$arr = array();
-		if($with){
-			$parentType = $this::getParentList();
-			if(count($parentType)>0){
-				if(is_string($parentType)){
-					if(method_exists(get_called_class(), $parentType)){
-						$arr[$parentType] = $parentType;
-					}
-				} else if(is_array($parentType)){
-					foreach ($parentType as $type) {
-						if(method_exists(get_called_class(), $type)){
-							$arr[$type] = $type;
-						}
-					}
-				}
-			}
-			foreach ($arr as $type) {
-				//$query = $query->with($type);
-			}
-		}
 		$list = Data::getTrees($arr, 2);
 		if($trash || $this->with_trash){
 			$query = $query->withTrashed();
@@ -2520,6 +2498,10 @@ abstract class ModelLincko extends Model {
 	//True: will display with trashed
 	//False (default): will display only not deleted
 	public static function enableTrashGlobal($trash=false){
+		$app = ModelLincko::getApp();
+		if(!isset($app->lincko->api['x_i_am_god']) || !$app->lincko->api['x_i_am_god']){
+			$trash = false; //Don't allow to see trashed if not a god user
+		}
 		$trash = (boolean) $trash;
 		self::$with_trash_global = $trash;
 	}
@@ -2659,21 +2641,24 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function extraEncode($bindings){
-		$bindings = json_decode(json_encode($bindings, JSON_UNESCAPED_UNICODE)); //Clone (if not will delete proporties on object itself)
-		if(is_object($bindings) && !empty($bindings)){
-			if(isset($this->extra) || in_array('extra', self::getColumns())){
-				unset($bindings->extra); //Do not reencode own field
-				foreach (static::$hide_extra as $field) {
-					unset($bindings->$field);
-					if(isset(static::$prefix_fields[$field])){
-						unset($bindings->{static::$prefix_fields[$field]});
+		$app = ModelLincko::getApp();
+		if(isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
+			$bindings = json_decode(json_encode($bindings, JSON_UNESCAPED_UNICODE)); //Clone (if not will delete proporties on object itself)
+			if(is_object($bindings) && !empty($bindings)){
+				if(isset($this->extra) || in_array('extra', self::getColumns())){
+					unset($bindings->extra); //Do not reencode own field
+					foreach (static::$hide_extra as $field) {
+						unset($bindings->$field);
+						if(isset(static::$prefix_fields[$field])){
+							unset($bindings->{static::$prefix_fields[$field]});
+						}
 					}
-				}
-				if($extra = json_encode($bindings, JSON_UNESCAPED_UNICODE)){
-					usleep(30000); //Give 30ms before anyking of update
-					$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
-					usleep(30000); //Give 30ms after anyking of update
-					return true;
+					if($extra = json_encode($bindings, JSON_UNESCAPED_UNICODE)){
+						usleep(30000); //Give 30ms before anyking of update
+						$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
+						usleep(30000); //Give 30ms after anyking of update
+						return true;
+					}
 				}
 			}
 		}

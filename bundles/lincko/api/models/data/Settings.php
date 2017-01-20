@@ -82,11 +82,13 @@ class Settings extends ModelLincko {
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		$app = ModelLincko::getApp();
-		$query = $query
-		->where('id', $app->lincko->data['uid']);
-		if(self::$with_trash_global){
-			$query = $query->withTrashed();
+		if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+			$query = $query
+			->where('id', $app->lincko->data['uid']);
+		} else {
+			$query = $query->whereId(-1); //We reject if no specific access
 		}
+		$query = $query->withTrashed(); //Because no deleted_at
 		if($get){
 			$result = $query->get();
 			foreach($result as $key => $value) {

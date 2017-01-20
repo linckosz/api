@@ -123,15 +123,20 @@ class Roles extends ModelLincko {
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		$query = $query
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-			$app = ModelLincko::getApp();
-			$query
-			->where('roles.parent_id', $app->lincko->data['workspace_id'])
-			->orWhere('shared', 1);
-		});
-		if(self::$with_trash_global){
-			$query = $query->withTrashed();
+		$app = ModelLincko::getApp();
+		if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+			$query = $query
+			->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+				$app = ModelLincko::getApp();
+				$query
+				->where('roles.parent_id', $app->lincko->data['workspace_id'])
+				->orWhere('shared', 1);
+			});
+			if(self::$with_trash_global){
+				$query = $query->withTrashed();
+			}
+		} else {
+			$query = $query->whereId(-1); //We reject if no specific access
 		}
 		if($get){
 			$result = $query->get();

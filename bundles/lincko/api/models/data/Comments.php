@@ -161,46 +161,50 @@ class Comments extends ModelLincko {
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		$app = ModelLincko::getApp();
-		$query = $query
-		->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-			$query
-			//Insure to only get comments that the user is concerned
-			->where(function ($query) {
-				$app = ModelLincko::getApp();
+		if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+			$query = $query
+			->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 				$query
-				->where('comments.parent_type', 'users')
-				->where('comments.created_by', $app->lincko->data['uid']);
-			})
-			->orWhere(function ($query) {
-				$app = ModelLincko::getApp();
-				$query
-				->where('comments.parent_type', 'users')
-				->where('comments.parent_id', $app->lincko->data['uid']);
-			})
-			//Get any other comments but exclude users' ones 
-			->orWhere(function ($query) use ($list) {
-				$ask = false;
-				foreach ($list as $table_name => $list_id) {
-					if($table_name != 'users' && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
-						$this->var['parent_type'] = $table_name;
-						$this->var['parent_id_array'] = $list_id;
-						$query = $query
-						->orWhere(function ($query) {
-							$query
-							->where('comments.parent_type', $this->var['parent_type'])
-							->whereIn('comments.parent_id', $this->var['parent_id_array']);
-						});
-						$ask = true;
+				//Insure to only get comments that the user is concerned
+				->where(function ($query) {
+					$app = ModelLincko::getApp();
+					$query
+					->where('comments.parent_type', 'users')
+					->where('comments.created_by', $app->lincko->data['uid']);
+				})
+				->orWhere(function ($query) {
+					$app = ModelLincko::getApp();
+					$query
+					->where('comments.parent_type', 'users')
+					->where('comments.parent_id', $app->lincko->data['uid']);
+				})
+				//Get any other comments but exclude users' ones 
+				->orWhere(function ($query) use ($list) {
+					$ask = false;
+					foreach ($list as $table_name => $list_id) {
+						if($table_name != 'users' && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
+							$this->var['parent_type'] = $table_name;
+							$this->var['parent_id_array'] = $list_id;
+							$query = $query
+							->orWhere(function ($query) {
+								$query
+								->where('comments.parent_type', $this->var['parent_type'])
+								->whereIn('comments.parent_id', $this->var['parent_id_array']);
+							});
+							$ask = true;
+						}
 					}
-				}
-				if(!$ask){
-					$query = $query
-					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
-				}
+					if(!$ask){
+						$query = $query
+						->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
+					}
+				});
 			});
-		});
-		if(self::$with_trash_global){
-			$query = $query->withTrashed();
+			if(self::$with_trash_global){
+				$query = $query->withTrashed();
+			}
+		} else {
+			$query = $query->whereId(-1); //We reject if no specific access
 		}
 		if($get){
 			$result = $query->get();

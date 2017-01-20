@@ -183,28 +183,33 @@ class Spaces extends ModelLincko {
 	}
 
 	public function scopegetItems($query, $list=array(), $get=false){
-		//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
-		$query = $query
-		->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-			$query
-			->where(function ($query) use ($list) {
-				if(isset($list['projects']) && count($list['projects'])>0){
-					$query = $query
-					->whereIn('spaces.parent_id', $list['projects']);
-				} else {
-					$query = $query
-					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
-				}
-			});
-		})
-		->whereHas("users", function($query) {
-			$app = ModelLincko::getApp();
-			$query
-			->where('users_id', $app->lincko->data['uid'])
-			->where('access', 0);
-		}, '<', 1);
-		if(self::$with_trash_global){
-			$query = $query->withTrashed();
+		$app = ModelLincko::getApp();
+		if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
+			//It will get all roles with access 1, and all roles which are not in the relation table, but the second has to be in conjonction with projects
+			$query = $query
+			->where(function ($query) use ($list) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+				$query
+				->where(function ($query) use ($list) {
+					if(isset($list['projects']) && count($list['projects'])>0){
+						$query = $query
+						->whereIn('spaces.parent_id', $list['projects']);
+					} else {
+						$query = $query
+						->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
+					}
+				});
+			})
+			->whereHas("users", function($query) {
+				$app = ModelLincko::getApp();
+				$query
+				->where('users_id', $app->lincko->data['uid'])
+				->where('access', 0);
+			}, '<', 1);
+			if(self::$with_trash_global){
+				$query = $query->withTrashed();
+			}
+		} else {
+			$query = $query->whereId(-1); //We reject if no specific access
 		}
 		if($get){
 			$result = $query->get();

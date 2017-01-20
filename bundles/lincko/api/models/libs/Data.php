@@ -721,6 +721,7 @@ class Data {
 		}
 
 		if(!$this->item_detail){
+
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($models as $id => $model) {
 					if(isset($model->deleted_at) && !is_null($model->deleted_at)){
@@ -797,51 +798,6 @@ class Data {
 					$result_bis->$uid->$table_name->$id->_users = (object) $default_full;
 				}
 			}
-
-			//---OK---
-			if($this->history_detail){
-				$histories = Users::getHistories($list_id, $list_models, true);
-			} else { //For element where extra was not calculated, we do force the calculation to cache it for any other calls, even if we don't need to display it immediatly to the final user
-				$histories = Users::getHistories($list_id_no_extra, $list_models, false);
-			}
-			foreach ($histories as $table_name => $models) {
-				foreach ($models as $id => $temp) {
-					if(isset($result_bis->$uid->$table_name->$id)){
-						if(isset($result_bis->$uid->$table_name->$id->history)){
-							$result_bis->$uid->$table_name->$id->history = (object) array_merge((array) $result_bis->$uid->$table_name->$id->history, (array) $temp->history);
-						} else {
-							$result_bis->$uid->$table_name->$id->history = $temp->history;
-						}
-					}
-				}
-			}
-
-			//Save extra
-			//\time_checkpoint('before extra');
-			foreach ($result_no_extra as $table_name => $models) {
-				foreach ($models as $id => $model) {
-					$model->extraEncode($result_bis->$uid->$table_name->$id);
-				}
-			}
-			//\time_checkpoint('after extra');
-
-			//For history, we only keep the items that are filled in
-			if($this->history_detail){
-				foreach ($result_bis->$uid as $table_name => $models) {
-					if(!isset($histories->$table_name)){
-						unset($result_bis->$uid->$table_name);
-					} else {
-						foreach ($result_bis->$uid->$table_name as $id => $temp) {
-							if(!isset($histories->$table_name->$id)){
-								unset($result_bis->$uid->$table_name->$id);
-							}
-						}
-					}
-					if(empty((array) $result_bis->$uid)){
-						unset($result_bis->$uid);
-					}
-				}
-			}
 			
 		}
 
@@ -856,6 +812,54 @@ class Data {
 			   (isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god'])
 			|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
 		){
+			if($this->item_detail){
+				//---OK---
+				if($this->history_detail){
+					$histories = Users::getHistories($list_id, $list_models, true);
+				} else { //For element where extra was not calculated, we do force the calculation to cache it for any other calls, even if we don't need to display it immediatly to the final user
+					$histories = Users::getHistories($list_id_no_extra, $list_models, false);
+				}
+				foreach ($histories as $table_name => $models) {
+					foreach ($models as $id => $temp) {
+						if(isset($result_bis->$uid->$table_name->$id)){
+							if(isset($result_bis->$uid->$table_name->$id->history)){
+								$result_bis->$uid->$table_name->$id->history = (object) array_merge((array) $result_bis->$uid->$table_name->$id->history, (array) $temp->history);
+							} else {
+								$result_bis->$uid->$table_name->$id->history = $temp->history;
+							}
+						}
+					}
+				}
+
+				//Save extra
+				//\time_checkpoint('before extra');
+				if(isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
+					foreach ($result_no_extra as $table_name => $models) {
+						foreach ($models as $id => $model) {
+							$model->extraEncode($result_bis->$uid->$table_name->$id);
+						}
+					}
+				}
+				//\time_checkpoint('after extra');
+
+				//For history, we only keep the items that are filled in
+				if($this->history_detail){
+					foreach ($result_bis->$uid as $table_name => $models) {
+						if(!isset($histories->$table_name)){
+							unset($result_bis->$uid->$table_name);
+						} else {
+							foreach ($result_bis->$uid->$table_name as $id => $temp) {
+								if(!isset($histories->$table_name->$id)){
+									unset($result_bis->$uid->$table_name->$id);
+								}
+							}
+						}
+						if(empty((array) $result_bis->$uid)){
+							unset($result_bis->$uid);
+						}
+					}
+				}
+			}
 
 			//$result_bis->$uid->_history = new \stdClass;
 			foreach ($result_bis->$uid as $table_name => $models) {
@@ -907,7 +911,17 @@ class Data {
 		if(!isset($app->lincko->api['x_i_am_god']) || !$app->lincko->api['x_i_am_god']){
 			foreach ($result_bis->$uid as $table_name => $models) {
 				if(!isset($app->lincko->api['x_'.$table_name]) || !$app->lincko->api['x_'.$table_name]){
-					unset($result_bis->$uid->$table_name);
+					if($table_name!='users'){ //Make sure we keep users to have access to the user itself
+						unset($result_bis->$uid->$table_name);
+						continue;
+					}
+				}
+				if(!isset($app->lincko->api['x__history']) || !$app->lincko->api['x__history']){
+					foreach ($models as $id => $model) {
+						if(is_object($model)){
+							unset($model->history);
+						}
+					}
 				}
 			}
 			//Delete history if no access
