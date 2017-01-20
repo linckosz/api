@@ -67,6 +67,7 @@ class Users extends ModelLincko {
 		'firstname',
 		'lastname',
 		'email',
+		'integration',
 	);
 
 	protected $contactsLock = false; //By default do not lock the user
