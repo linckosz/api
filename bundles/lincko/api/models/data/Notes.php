@@ -189,8 +189,8 @@ class Notes extends ModelLincko {
 				$query
 				->where('users_id', $app->lincko->data['uid'])
 				->where('access', 0);
-			}, '<', 1);\libs\Watch::php(self::$with_trash_global, '$var', __FILE__, __LINE__, false, false, true);
-			if(self::$with_trash_global){\libs\Watch::php(true, '$var', __FILE__, __LINE__, false, false, true);
+			}, '<', 1);
+			if(self::$with_trash_global){
 				$query = $query->withTrashed();
 			}
 		} else {
