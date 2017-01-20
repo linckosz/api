@@ -930,9 +930,15 @@ class Data {
 			}
 		}
 
+		$result_bis->$uid->history_items = new \stdClass;
 		foreach ($result_bis->$uid as $table_name => $models) {
 			foreach ($models as $id => $model) {
-				if(is_object($model)){
+				if(is_object($model) && isset($model->history)){
+					foreach ($model->history as $timestamp => $histories) {
+						foreach ($histories as $hist_id => $history) {
+							//$result_bis->$uid->history_items->$hist_id = $history;
+						}
+					}
 					unset($model->history);
 				}
 			}
