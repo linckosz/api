@@ -646,6 +646,9 @@ class Users extends ModelLincko {
 		$temp->integration = $this->setIntegration();
 		if($this->id == $app->lincko->data['uid']){
 			$temp->party = $app->lincko->data['party'];
+			if(empty($temp->party)){
+				$temp->party = 'lincko';
+			}
 		} else {
 			//Do not show email for all other users
 			$temp->email = '';
@@ -665,6 +668,9 @@ class Users extends ModelLincko {
 		$model->integration = $this->setIntegration();
 		if($this->id == $app->lincko->data['uid']){
 			$model->party = $app->lincko->data['party'];
+			if(empty($model->party)){
+				$model->party = 'lincko';
+			}
 		} else {
 			//Do not show email for all other users
 			$model->email = '';
@@ -701,9 +707,15 @@ class Users extends ModelLincko {
 	public function extraDecode(){
 		$app = ModelLincko::getApp();
 		$this->updateContactAttributes();
-		//Do not show email for all other users
-		if($this->id != $app->lincko->data['uid']){
-			$this->email = "";
+		$this->integration = $this->setIntegration();
+		if($this->id == $app->lincko->data['uid']){
+			$this->party = $app->lincko->data['party'];
+			if(empty($this->party)){
+				$this->party = 'lincko';
+			}
+		} else {
+			//Do not show email for all other users
+			$this->email = '';
 		}
 		return parent::extraDecode();
 	}

@@ -57,20 +57,19 @@ class STR {
 
 	//Convert BR to space
 	public static function br2space($text) {
-		return preg_replace("/<br\s*?\/?>/", ' ', $text);
+		return preg_replace("/<br\s*?\/?>/i", ' ', $text);
 	}
 
 	//Convert BR to LN
 	public static function br2ln($text) {
-		return preg_replace("/<br\s*?\/?>/", "\n", $text);
+		return preg_replace("/<br\s*?\/?>/i", "\n", $text);
 	}
 
-	//Convert BR to LN
+	//Add return line to a HTML content
 	public static function HTMLwithReturnLine($text) {
-		$text = str_replace("\]n", '', $text);
-		$text = preg_replace("/<br\s*?\/?>/", "<br>\n", $text);
-		$text = str_replace('<p>', "\n<p>", $text);
-		$text = str_replace('<div>', "\n<div>", $text);
+		$text = preg_replace("/<br\s*?\/?>/i", "<br>\n", $text);
+		$text = str_ireplace('<\p>', "<\p>\n", $text);
+		$text = str_ireplace('<\div>', "<\div>\n", $text);
 		return $text;
 	}
 

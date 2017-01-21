@@ -1646,9 +1646,15 @@ abstract class ModelLincko extends Model {
 		return $dependencies;
 	}
 
-	public static function getHistories(array $list_id, array $classes, $history_detail=false){
+	public static function getHistories(array $list_id, $history_detail=false){
 		$app = ModelLincko::getApp();
 		$history = new \stdClass;
+		$classes = array();
+		foreach ($list_id as $type => $list) {
+			if($class = self::getClass($type)){
+				$classes[$type] = $class;
+			}
+		}
 		$data = null;
 		foreach ($classes as $table => $class) {
 			$model = new $class;
@@ -1676,21 +1682,25 @@ abstract class ModelLincko extends Model {
 						if(isset($classes[$value->parent_type])){
 							$model = new $classes[$value->parent_type];
 							$created_at = (new \DateTime($value->created_at))->getTimestamp();
+
+							$hist = new \stdClass;
+							$hist->by = (integer) $value->created_by;
+							$hist->cod = (integer) $value->code;
+							$hist->att = (string) $value->attribute;
+							if(!empty($value->parameters)){
+								$hist->par = json_decode($value->parameters);
+							}
+							if($history_detail){
+								//Be careful, this can be a very heavy data
+								$hist->old = $value->old;
+							}
+
 							if(!isset($history->{$value->parent_type})){ $history->{$value->parent_type} = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id})){ $history->{$value->parent_type}->{$value->parent_id} = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
-							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id})){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = new \stdClass; }
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->by = (integer)$value->created_by;
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->cod = (integer)$value->code;
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->att = (string)$value->attribute;
-							if(!empty($value->parameters)){
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->par = json_decode($value->parameters);
-							}
-							if($history_detail){
-								//Be careful, this can be a very heavy data
-								$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id}->old = $value->old;
-							}
+							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = $hist;
+
 						}
 					} catch (Exception $obj_exception) {
 						continue;

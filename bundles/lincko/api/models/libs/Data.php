@@ -813,12 +813,46 @@ class Data {
 			|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
 		){
 			if($this->item_detail){
-				//---OK---
-				if($this->history_detail){
-					$histories = Users::getHistories($list_id, $list_models, true);
-				} else { //For element where extra was not calculated, we do force the calculation to cache it for any other calls, even if we don't need to display it immediatly to the final user
-					$histories = Users::getHistories($list_id_no_extra, $list_models, false);
+
+				function loop_tree($root, &$keep, $keep_table=false, $keep_id=false, $save=false){
+					foreach ($root as $table => $table_list) {
+						foreach ($table_list as $id => $children) {
+							$keep_save = false;
+							if($table=='projects' || $table=='chats'){
+								$keep_table = $table;
+								$keep_id = $id;
+								$keep_save = true;
+							}
+							if($save || $keep_save){
+								$keep[$keep_table][$keep_id][$table][$id] = $id;
+								$keep_save = true;
+							}
+							loop_tree($children, $keep, $keep_table, $keep_id, $keep_save);
+						}
+					}
 				}
+				$keep_history = array();
+				loop_tree($root_0, $keep_history);
+
+				//---OK---
+				$keep_history_items = array();
+				$history_root = array();
+				foreach ($keep_history as $root_type => $keep_history_type_list) {
+					foreach ($keep_history_type_list as $root_id => $keep_history_children) {
+						foreach ($keep_history_children as $keep_type => $keep_history_children_list) {
+							foreach ($keep_history_children_list as $keep_id) {
+								if($this->history_detail && isset($list_id[$keep_type][$keep_id])){
+									$keep_history_items[$keep_type][$keep_id] = $keep_id;
+								} else if(isset($list_id_no_extra[$keep_type][$keep_id])){
+									$keep_history_items[$keep_type][$keep_id] = $keep_id;
+								}
+								$history_root[$keep_type][$keep_id] = array($root_type, $root_id);
+							}
+						}
+					}
+				}
+				$histories = Users::getHistories($keep_history_items, $this->history_detail);
+
 				foreach ($histories as $table_name => $models) {
 					foreach ($models as $id => $temp) {
 						if(isset($result_bis->$uid->$table_name->$id)){
@@ -833,7 +867,7 @@ class Data {
 
 				//Save extra
 				//\time_checkpoint('before extra');
-				if(isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
+				if(!$this->history_detail && isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
 					foreach ($result_no_extra as $table_name => $models) {
 						foreach ($models as $id => $model) {
 							$model->extraEncode($result_bis->$uid->$table_name->$id);
@@ -861,22 +895,24 @@ class Data {
 				}
 			}
 
-			//$result_bis->$uid->_history = new \stdClass;
+			$result_bis->$uid->_history = new \stdClass;
 			foreach ($result_bis->$uid as $table_name => $models) {
 				if(strpos($table_name, '_')!==0){ //Skip everything which is not a model list
 					foreach ($models as $id => $model) {
-						if(!is_object($model)){
-							continue;
-						}
-						$previous_timestamp = 0;
-						if(isset($model->history)){
-							foreach ($model->history as $timestamp => $hists) {
-								foreach ($hists as $hist_id => $hist) {
-									$hist->it = $table_name.'-'.$id; //item
-									$hist->rt = false; //root (chats or projects)
+						if(is_object($model) && isset($model->history)){
+							if(isset($history_root[$table_name][$id])){
+								$root_hist = $history_root[$table_name][$id][0].'-'.$history_root[$table_name][$id][1];
+								if(!isset($result_bis->$uid->_history->$root_hist)){
+									$result_bis->$uid->_history->$root_hist = new \stdClass;
+								}
+								foreach ($model->history as $timestamp => $hists) {
+									foreach ($hists as $hist_id => $hist) {
+										$hist->it = $table_name.'-'.$id; //item
+										$result_bis->$uid->_history->$root_hist->$hist_id = $hist;
+									}
 								}
 							}
-							//unset($model->history);
+							unset($model->history);
 						}
 					}
 				}
@@ -930,20 +966,6 @@ class Data {
 			}
 		}
 
-		$result_bis->$uid->history_items = new \stdClass;
-		foreach ($result_bis->$uid as $table_name => $models) {
-			foreach ($models as $id => $model) {
-				if(is_object($model) && isset($model->history)){
-					foreach ($model->history as $timestamp => $histories) {
-						foreach ($histories as $hist_id => $history) {
-							//$result_bis->$uid->history_items->$hist_id = $history;
-						}
-					}
-					unset($model->history);
-				}
-			}
-		}
-
 		//Delete the items that are hidden by spaces
 		if($block = Spaces::blockItems()){
 			foreach ($block as $model) {
@@ -955,13 +977,13 @@ class Data {
 			}
 		}
 
-		//toto => on front it generates more complication than expecting, so don't force to delete temp_id at this moment
+		//On front it generates more complication than expecting, so don't force to delete temp_id at this moment
 		self::setDeleteTempId(false);
 
-		//Delete temp_id if the user is not concerned
 		if($this->item_detail){
 			foreach ($result_bis->$uid as $table_name => $models) {
 				foreach ($result_bis->$uid->$table_name as $id => $temp) {
+					//Delete temp_id if the user is not concerned
 					if(self::$delete_temp_id){
 						unset($result_bis->$uid->$table_name->$id->temp_id);
 					} else if(isset($temp->created_by) && $temp->created_by!=$uid){
@@ -969,13 +991,15 @@ class Data {
 					} else if(isset($temp->temp_id) && $temp->temp_id==''){
 						unset($result_bis->$uid->$table_name->$id->temp_id);
 					}
+					//Because of ios bug Json parser cannot handle a certain number of ] (a swiss report I forgot the link)
+					$result_bis->$uid->$table_name->$id = json_decode(json_encode($temp, JSON_FORCE_OBJECT));
 				}
 			}
 		}
 
-		/*
+		
 		//toto => this is a temp solution (for iOS) the time we can refactor communciation process with less data
-		//At least need 300 items, cannot be lower (avoid to geenrate too much calls)
+		//At least need 300 items, cannot be lower (avoid to generate too much calls)
 		if($this->limit_json>300 && $this->item_detail){
 			$i = 0;
 			$skip = false;
@@ -984,7 +1008,7 @@ class Data {
 			foreach ($result_bis->$uid as $table_name => $models) {
 				$result_limit->$uid->$table_name = new \stdClass;
 				$must = false;
-				if(strpos($table_name, '_')===0){
+				if(strpos($table_name, '_history_title')===0){
 					$must = true;
 				}
 				if(!$skip){
@@ -995,6 +1019,7 @@ class Data {
 						}
 						if(!$must && $i >= $this->limit_json){
 							$result_limit->uncomplete = true;
+							$skip = true;
 							break;
 						}
 					}
@@ -1002,7 +1027,7 @@ class Data {
 			}
 			return $result_limit;
 		}
-		*/
+		
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);
 		//\libs\Watch::php( $db->getQueryLog() ,'QueryLog', __FILE__, __LINE__, false, false, true);
