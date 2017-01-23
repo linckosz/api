@@ -1439,7 +1439,7 @@ abstract class ModelLincko extends Model {
 		foreach ($models as $table => $class) {
 			//Force to recalculate all extra
 			if(in_array('extra', $class::getColumns())){
-				$class::getQuery()->update(['extra' => null]);
+				$class::WhereNotNull('extra')->getQuery()->update(['updated_at' => $time, 'extra' => null]);
 				usleep(30000); //30ms
 			}
 		}
@@ -1682,11 +1682,13 @@ abstract class ModelLincko extends Model {
 						if(isset($classes[$value->parent_type])){
 							$model = new $classes[$value->parent_type];
 							$created_at = (new \DateTime($value->created_at))->getTimestamp();
-
 							$hist = new \stdClass;
 							$hist->by = (integer) $value->created_by;
 							$hist->cod = (integer) $value->code;
 							$hist->att = (string) $value->attribute;
+							$hist->type = (string) $value->parent_type;
+							$hist->id = (integer) $value->parent_id;
+							$hist->timestamp = (integer) $created_at;
 							if(!empty($value->parameters)){
 								$hist->par = json_decode($value->parameters);
 							}
@@ -1694,12 +1696,10 @@ abstract class ModelLincko extends Model {
 								//Be careful, this can be a very heavy data
 								$hist->old = $value->old;
 							}
-
 							if(!isset($history->{$value->parent_type})){ $history->{$value->parent_type} = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id})){ $history->{$value->parent_type}->{$value->parent_id} = new \stdClass; }
 							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history)){ $history->{$value->parent_type}->{$value->parent_id}->history = new \stdClass; }
-							if(!isset($history->{$value->parent_type}->{$value->parent_id}->history->$created_at)){ $history->{$value->parent_type}->{$value->parent_id}->history->$created_at = new \stdClass; }
-							$history->{$value->parent_type}->{$value->parent_id}->history->$created_at->{$value->id} = $hist;
+							$history->{$value->parent_type}->{$value->parent_id}->history->{$value->id} = $hist;
 
 						}
 					} catch (Exception $obj_exception) {
@@ -1722,17 +1722,19 @@ abstract class ModelLincko extends Model {
 			$records = History::whereParentType($this->getTable())->whereParentId($this->id)->get();
 			foreach ($records as $key => $value) {
 				$created_at = (new \DateTime($value->created_at))->getTimestamp();
-				if(!isset($history->$created_at)){ $history->$created_at = new \stdClass; }
-				if(!isset($history->$created_at->{$value->id})){ $history->$created_at->{$value->id} = new \stdClass; }
-				$history->$created_at->{$value->id}->att = (string)$value->attribute;
-				$history->$created_at->{$value->id}->by = (integer)$value->createdBy();
-				$history->$created_at->{$value->id}->cod = (integer)$value->code;
+				if(!isset($history->{$value->id})){ $history->{$value->id} = new \stdClass; }
+				$history->{$value->id}->att = (string) $value->attribute;
+				$history->{$value->id}->by = (integer) $value->createdBy();
+				$history->{$value->id}->cod = (integer) $value->code;
+				$history->{$value->id}->type = (string) $this->getTable();
+				$history->{$value->id}->id = (integer) $this->id;
+				$history->{$value->id}->timestamp = (integer) $created_at;
 				if(!empty($value->parameters)){
-					$parameters = $history->$created_at->{$value->id}->par = json_decode($value->parameters);
+					$parameters = $history->{$value->id}->par = json_decode($value->parameters);
 				}
 				if($history_detail){
 					if(strlen($value->old)<500){
-						$history->$created_at->{$value->id}->old = $value->old;
+						$history->{$value->id}->old = $value->old;
 					}
 				}
 			}
@@ -1749,22 +1751,25 @@ abstract class ModelLincko extends Model {
 		if(array_key_exists('created_at', $this::$archive)){
 			$code = $this::$archive['created_at'];
 		}
-		$key = array_search($this->getTable(), array_keys(Data::getModels())).'_'.$this->id;
-		$history->$created_at = new \stdClass;
-		$history->$created_at->$key = new \stdClass;
+		$key = array_search($this->getTable(), array_keys(Data::getModels())).'_'.$this->id; //Be careful with iOS, it crashes when to many keys as string
+		$history->$key = new \stdClass;
+		$history->$key->hist = (string) $key;
 		//Because some models doesn't have creacted_by column (like the workspaces)
 		$created_by = null;
 		if(isset($this->created_by)){
 			$created_by = $this->created_by;
 		}
-		$history->$created_at->$key->att = 'created_at';
-		$history->$created_at->$key->by = (integer)$created_by;
-		$history->$created_at->$key->cod = (integer)$code;
+		$history->$key->att = 'created_at';
+		$history->$key->by = (integer) $created_by;
+		$history->$key->cod = (integer) $code;
+		$history->$key->type = (string) $this->getTable();
+		$history->$key->id = (integer) $this->id;
+		$history->$key->timestamp = (integer) $created_at;
 		if(!empty($parameters)){
-			$history->$created_at->$key->par = (object)$parameters;
+			$history->$key->par = (object) $parameters;
 		}
 		if($history_detail){
-			$history->$created_at->$key->old = null;
+			$history->$key->old = null;
 		}
 		return $history;
 	}

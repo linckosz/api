@@ -379,12 +379,10 @@ class Comments extends ModelLincko {
 		}
 
 		if(isset(self::$archive['_commented_on_'.$parent_type])){
-			foreach ($history as $created_at) {
-				foreach ($created_at as $zero) {
-					$zero->cod = (int) self::$archive['_commented_on_'.$parent_type];
-					$zero->par_type = $parent_type;
-					$zero->par_id = $parent_id;
-				}
+			foreach ($history as $zero) {
+				$zero->cod = (int) self::$archive['_commented_on_'.$parent_type];
+				$zero->par_type = $parent_type;
+				$zero->par_id = $parent_id;
 			}
 		}
 

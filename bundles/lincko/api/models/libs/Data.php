@@ -674,6 +674,7 @@ class Data {
 					} else {
 						//need delete information for schema
 						$temp->deleted_at = $model->deleted_at;
+						$temp->history = $model->getHistoryCreation(false, array(), $result_bis->$uid);
 					}
 
 					$temp->_parent = $model->setParentAttributes();
@@ -812,27 +813,26 @@ class Data {
 			   (isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god'])
 			|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
 		){
-			if($this->item_detail){
-
-				function loop_tree($root, &$keep, $keep_table=false, $keep_id=false, $save=false){
-					foreach ($root as $table => $table_list) {
-						foreach ($table_list as $id => $children) {
-							$keep_save = false;
-							if($table=='projects' || $table=='chats'){
-								$keep_table = $table;
-								$keep_id = $id;
-								$keep_save = true;
-							}
-							if($save || $keep_save){
+			
+			function loop_tree($root, &$keep, $keep_table=false, $keep_id=false, $save=false){
+				foreach ($root as $table => $table_list) {
+					foreach ($table_list as $id => $children) {
+						if($table=='projects' || $table=='chats' || $table=='users'){
+							$keep[$table][$id][$table][$id] = $id;
+							loop_tree($children, $keep, $table, $id, true);
+						} else {
+							if($save){
 								$keep[$keep_table][$keep_id][$table][$id] = $id;
-								$keep_save = true;
 							}
-							loop_tree($children, $keep, $keep_table, $keep_id, $keep_save);
+							loop_tree($children, $keep, $keep_table, $keep_id, $save);
 						}
 					}
 				}
-				$keep_history = array();
-				loop_tree($root_0, $keep_history);
+			}
+			$keep_history = array();
+			loop_tree($root_0, $keep_history);
+
+			if($this->item_detail){
 
 				//---OK---
 				$keep_history_items = array();
@@ -851,6 +851,7 @@ class Data {
 						}
 					}
 				}
+
 				$histories = Users::getHistories($keep_history_items, $this->history_detail);
 
 				foreach ($histories as $table_name => $models) {
@@ -893,27 +894,51 @@ class Data {
 						}
 					}
 				}
-			}
 
-			$result_bis->$uid->_history = new \stdClass;
-			foreach ($result_bis->$uid as $table_name => $models) {
-				if(strpos($table_name, '_')!==0){ //Skip everything which is not a model list
-					foreach ($models as $id => $model) {
-						if(is_object($model) && isset($model->history)){
-							if(isset($history_root[$table_name][$id])){
-								$root_hist = $history_root[$table_name][$id][0].'-'.$history_root[$table_name][$id][1];
-								if(!isset($result_bis->$uid->_history->$root_hist)){
-									$result_bis->$uid->_history->$root_hist = new \stdClass;
-								}
-								foreach ($model->history as $timestamp => $hists) {
-									foreach ($hists as $hist_id => $hist) {
-										$hist->it = $table_name.'-'.$id; //item
+				//We need to keep history in the model to keep cache capability
+				$result_bis->$uid->_history = new \stdClass;
+				foreach ($result_bis->$uid as $table_name => $models) {
+					if(strpos($table_name, '_')!==0){ //Skip everything which is not a model list
+						foreach ($models as $id => $model) {
+							$i = 1;
+							if(is_object($model) && isset($model->history)){
+								if(isset($history_root[$table_name][$id])){
+									$root_hist = $history_root[$table_name][$id][0].'-'.$history_root[$table_name][$id][1];
+									foreach ($model->history as $hist_id => $hist) {
+										//Only keep invitation for users
+										if($history_root[$table_name][$id][0]=='users' && $hist->cod!='697'){
+											continue;
+										}
+										if(is_numeric($hist_id)){
+											$hist_id = (int) $hist_id;
+										} else {
+											$hist_id = (int) $i; //We make the supposition that no history id will be lower than $i
+											$i++;
+										}
+										if(!isset($result_bis->$uid->_history->$root_hist)){
+											$result_bis->$uid->_history->$root_hist = new \stdClass;
+										}
 										$result_bis->$uid->_history->$root_hist->$hist_id = $hist;
 									}
 								}
+								unset($model->history);
 							}
-							unset($model->history);
 						}
+					}
+				}
+
+			}
+
+			if(
+				   !is_null($this->partial)
+				&& isset($this->partial->$uid)
+				&& isset($this->partial->$uid->{'_history'})
+			)
+			{
+				$result_bis->$uid->_history = new \stdClass;
+				foreach ($keep_history as $keep_table => $list) {
+					foreach ($list as $keep_id => $list_bis) {
+						$result_bis->$uid->_history->{$keep_table.'-'.$keep_id} = new \stdClass;
 					}
 				}
 			}
@@ -996,8 +1021,8 @@ class Data {
 				}
 			}
 		}
-
 		
+		/*
 		//toto => this is a temp solution (for iOS) the time we can refactor communciation process with less data
 		//At least need 300 items, cannot be lower (avoid to generate too much calls)
 		if($this->limit_json>300 && $this->item_detail){
@@ -1006,15 +1031,26 @@ class Data {
 			$result_limit = new \stdClass;
 			$result_limit->$uid = new \stdClass;
 			foreach ($result_bis->$uid as $table_name => $models) {
-				$result_limit->$uid->$table_name = new \stdClass;
+				if(!isset($result_limit->$uid->$table_name)){
+					$result_limit->$uid->$table_name = new \stdClass;
+				}
 				$must = false;
 				if(strpos($table_name, '_history_title')===0){
 					$must = true;
 				}
-				if(!$skip){
+				if(!$skip || $must){
 					foreach ($result_bis->$uid->$table_name as $id => $temp) {
+						if(strpos($table_name, '_history')===0){
+							continue;
+						}
 						if(!$skip || $must){
 							$result_limit->$uid->$table_name->$id = $result_bis->$uid->$table_name->$id;
+							if(isset($result_bis->$uid->_history) && isset($result_bis->$uid->_history->{$table_name.'-'.$id})){
+								if(!isset($result_limit->$uid->_history)){
+									$result_limit->$uid->_history = new \stdClass;
+								}
+								$result_limit->$uid->_history->{$table_name.'-'.$id} = $result_bis->$uid->_history->{$table_name.'-'.$id};
+							}
 							$i++;
 						}
 						if(!$must && $i >= $this->limit_json){
@@ -1027,6 +1063,7 @@ class Data {
 			}
 			return $result_limit;
 		}
+		*/
 		
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);
