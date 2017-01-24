@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use \libs\Controller;
 use \libs\Datassl;
 use \libs\STR;
+use \libs\Json;
 use \libs\Email;
 use \libs\Translation;
 use \bundles\lincko\api\models\UsersLog;
@@ -233,8 +234,6 @@ class ControllerUser extends Controller {
 	public function link_to_post(){
 		$app = $this->app;
 		$form = $this->form;
-
-		\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
 
 		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
@@ -848,8 +847,6 @@ class ControllerUser extends Controller {
 		$app = $this->app;
 		$form = $this->form;
 
-		\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
-
 		if(Users::inviteSomeoneCode($form)){
 			$data = true;
 			$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
@@ -892,8 +889,8 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 35); //E-mail address format incorrect
 			$errfield = 'email';
 		}
-		else if($user = Users::where('email', mb_strtolower($form->party_id))->first()){
-			if($user_log = UsersLog::where('username_sha1', $user->username_sha1)->first()){
+		else if($user_log = UsersLog::Where('party', null)->where('party_id', mb_strtolower($form->party_id))->first()){
+			if($user = Users::Where('username_sha1', $user_log->username_sha1)->first()){
 				$user_log->code = substr(str_shuffle("123456789"), 0, 6);
 				$limit = Carbon::now();
 				$limit->second = $limit->second + 1210; //We give 20 minutes to enter the code (including 10 more seconds to cover communication latency)
@@ -939,6 +936,8 @@ class ControllerUser extends Controller {
 	public function reset_post(){
 		$app = $this->app;
 		$form = $this->form;
+		$data = $this->data;
+
 		$reset = false;
 
 		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed.
@@ -953,22 +952,18 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 31); //Please enter the correct code
 			$errfield = 'code';
 		}
-		else if(!isset($form->password) || !Users::validPassword($form->password)){ //Required
+		else if(!isset($form->password) || !Users::validPassword(Datassl::decrypt($form->password, $form->party_id))){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 12); //We could not validate the password format: - Between 6 and 60 characters
 			$errfield = 'password';
 		}
-		else if($user = Users::where('email', mb_strtolower($form->party_id))->first()){
-			if($user_log = UsersLog::where('username_sha1', $user->username_sha1)->Where('code', '!=', null)->first()){
+		else if($user_log = UsersLog::where('party', null)->where('party_id', mb_strtolower($form->party_id))->WhereNotNull('code')->first()){
+			if($user = Users::where('username_sha1', $user_log->username_sha1)->first()){
 				if($user_log->code == $form->code){
 					$now = time();
 					$code_limit = (new \DateTime($user_log->code_limit))->getTimestamp();
 					if($code_limit >= $now){
 						$user_log->old_password = $user_log->password; //Just in case, keep the old password in memory
-						$user_log->password = password_hash($form->password, PASSWORD_BCRYPT);
-						//Hide the password to avoid hacking
-						if(isset($form->password)){
-							$form->password = '******';
-						}
+						$user_log->password = password_hash(Datassl::decrypt($form->password, $form->party_id), PASSWORD_BCRYPT);
 						$user_log->code = null;
 						$user_log->code_limit = null;
 						$user_log->code_try = 0;
@@ -995,8 +990,20 @@ class ControllerUser extends Controller {
 								$mail->setSubject($mail_subject);
 								$mail->sendLater($mail_template);
 							}
+							
+							$authorize = $user_log->getAuthorize($data);
+
+							//Hide the password to avoid hacking
+							if(isset($form->password)){
+								$form->password = '******';
+							}
+
 							$msg = $app->trans->getBRUT('api', 15, 34); //Password successfully reset
 							$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg), 'error' => false));
+
+							//$json = new Json($msg, false, 200, false, false, array(), true);
+							//$json->render(200);
+
 							return true;
 						}
 					} else {
