@@ -330,10 +330,20 @@ class Tasks extends ModelLincko {
 		parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
 	}
 
-	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
-		$app = ModelLincko::getApp();
-		$history = new \stdClass;
+	public function getHistoryCreationCode(&$items=false){
+		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
+		$dependency = $this->getDependency();
+		if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){
+			$tasksup_id = array_keys((array) $dependency[$this->getTable()][$this->id]['_tasksup'])[0]; //Get the first parent
+			if($tasksup = $this->getModel($tasksup_id)){
+				return false; //Return an empty creation for subtasks
+			}
+		}
+		return parent::getHistoryCreationCode($items);
+	}
 
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
+		$history = new \stdClass;
 		//toto => temporary solution, it will need to be refactored because of later Team/Entreprise accounts, in a gantt chart each task will act as single task with dependencies, not only as a subtask
 		$dependency = $this->getDependency();
 		if($dependency && isset($dependency[$this->getTable()]) && isset($dependency[$this->getTable()][$this->id]) && isset($dependency[$this->getTable()][$this->id]['_tasksup']) && count($dependency[$this->getTable()][$this->id]['_tasksup'])>0){

@@ -347,7 +347,7 @@ class Comments extends ModelLincko {
 		return $result;
 	}
 
-	public function getHistoryCreationCode($items=false){
+	public function getHistoryCreationCode(&$items=false){
 		$app = ModelLincko::getApp();
 
 		//This helps to avoid to have "Bob commented on a message", but instead "Bob commented on a Tasks"
