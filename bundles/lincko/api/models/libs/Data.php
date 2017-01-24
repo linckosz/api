@@ -509,7 +509,7 @@ class Data {
 		$uid = $app->lincko->data['uid'];
 		$workid = $app->lincko->data['workspace_id'];
 		$list_models = self::getModels();
-$this->setLastvisit(0);
+
 		//---OK---
 		$updates = array();
 		if($this->action == 'latest'){
@@ -686,7 +686,7 @@ $this->setLastvisit(0);
 						$list_id_extra[$table_name][$id] = $id;
 					}
 				}
-				if(true || !$temp){
+				if(!$temp){
 					$result_no_extra[$table_name][$id] = $model;
 					$list_id_no_extra[$table_name][$id] = $id;
 					$temp = new \stdClass;
@@ -862,10 +862,6 @@ $this->setLastvisit(0);
 
 				$histories = Users::getHistories($keep_history_items, $this->history_detail);
 
-				\libs\Watch::php($histories, '$histories', __FILE__, __LINE__, false, false, true);
-				
-				
-
 				foreach ($histories as $table_name => $models) {
 					foreach ($models as $id => $temp) {
 						if(isset($result_bis->$uid->$table_name->$id)){
@@ -888,8 +884,6 @@ $this->setLastvisit(0);
 					}
 				}
 				//\time_checkpoint('after extra');
-
-				\libs\Watch::php($result_bis->$uid, '$result_bis', __FILE__, __LINE__, false, false, true);
 
 				//For history, we only keep the items that are filled in
 				if($this->history_detail){
