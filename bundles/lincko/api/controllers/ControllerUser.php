@@ -741,7 +741,6 @@ class ControllerUser extends Controller {
 
 		$form = $this->form;
 		if(is_array($form) || is_object($form)){
-			\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
 			foreach ($form as $key => $value) {
 				$id = Datassl::decrypt($value, 'invitation');
 				break; //Insure to take the first one only

@@ -476,6 +476,16 @@ class Data {
 		return $this->getList();
 	}
 
+	public function refreshHistory(){
+		$this->action = 'refresh_history';
+		$this->reinit();
+		$this->setLastVisit(0);
+		$this->lastvisit = false;
+		$this->full_schema = true;
+		$this->partial = NULL;
+		return $this->getList();
+	}
+
 	protected static function loop_tree($root, &$keep, $keep_table=false, $keep_id=false, $save=false){
 		foreach ($root as $table => $table_list) {
 			foreach ($table_list as $id => $children) {
@@ -749,7 +759,7 @@ class Data {
 				}
 			}
 
-		} else {
+		} else if($this->action!='refresh_history'){ //No need to calculate dependencies for history
 
 			//---OK---
 			//Get dependency (all ManyToMany that have other fields than access)
@@ -829,11 +839,11 @@ class Data {
 			   (isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god'])
 			|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
 		){
-			
-			$keep_history = array();
-			self::loop_tree($root_0, $keep_history);
 
 			if($this->item_detail){
+
+				$keep_history = array();
+				self::loop_tree($root_0, $keep_history);
 
 				//---OK---
 				$keep_history_items = array();
@@ -913,7 +923,7 @@ class Data {
 										if(is_numeric($hist_id)){
 											$hist_id = (int) $hist_id;
 										} else {
-											$hist_id = (int) $i; //We make the supposition that no history id will be lower than $i
+											//$hist_id = (int) $i; //We make the supposition that no history id will be lower than $i
 											$i++;
 										}
 										if(!isset($result_bis->$uid->_history->$root_hist)){
@@ -928,20 +938,6 @@ class Data {
 					}
 				}
 
-			}
-
-			if(
-				   !is_null($this->partial)
-				&& isset($this->partial->$uid)
-				&& isset($this->partial->$uid->{'_history'})
-			)
-			{
-				$result_bis->$uid->_history = new \stdClass;
-				foreach ($keep_history as $keep_table => $list) {
-					foreach ($list as $keep_id => $list_bis) {
-						$result_bis->$uid->_history->{$keep_table.'-'.$keep_id} = new \stdClass;
-					}
-				}
 			}
 
 			if(
@@ -965,6 +961,16 @@ class Data {
 					} else {
 						$result_bis->$uid->{'_history_title'}->$table_name = new \stdClass;
 					}
+				}
+			}
+		}
+
+		//For the refresh of the history, we only keep history elements
+		if($this->action=='refresh_history'){
+			foreach ($result_bis->$uid as $table_name => $models) {
+				if($table_name!='_history' && $table_name!='_history_title'){
+					unset($result_bis->$uid->$table_name);
+					continue;
 				}
 			}
 		}

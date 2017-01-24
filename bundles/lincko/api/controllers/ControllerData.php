@@ -88,6 +88,17 @@ class ControllerData extends Controller {
 		return true;
 	}
 
+	public function refresh_history_post(){
+		$app = $this->app;
+		$msg = $app->trans->getBRUT('api', 8888, 11); //You got the elements including their full history.
+
+		$data = new Data();
+		$partial = $data->refreshHistory();
+
+		$app->render(200, array('msg' => array('msg' => $msg, 'partial' => $partial),));
+		return true;
+	}
+
 	public function force_sync_post(){
 		$app = $this->app;
 		$msg = $app->trans->getBRUT('api', 8888, 12); //The synchronization will be done for all contacts.

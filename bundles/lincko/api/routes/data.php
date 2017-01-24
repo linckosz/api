@@ -31,6 +31,12 @@ $app->group('/data', function () use ($app) {
 	->name('data_history'.$app->lincko->method_suffix);
 
 	$app->post(
+		'/refresh_history',
+		'\bundles\lincko\api\controllers\ControllerData:refresh_history'.$app->lincko->method_suffix
+	)
+	->name('data_refresh_history'.$app->lincko->method_suffix);
+
+	$app->post(
 		'/force_sync',
 		'\bundles\lincko\api\controllers\ControllerData:force_sync'.$app->lincko->method_suffix
 	)
