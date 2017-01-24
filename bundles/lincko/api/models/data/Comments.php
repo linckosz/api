@@ -347,7 +347,44 @@ class Comments extends ModelLincko {
 		return $result;
 	}
 
-	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
+	public function getHistoryCreationCode($items=false){
+		$app = ModelLincko::getApp();
+
+		//This helps to avoid to have "Bob commented on a message", but instead "Bob commented on a Tasks"
+		$parent_type = $this->parent_type;
+		$parent_id = $this->parent_id;
+		$model = $this;
+		if($parent_type=='comments'){
+			$loop = true;
+			while($loop){
+				if($items && isset($items->$parent_type) && isset($items->$parent_type->$parent_id) && isset($items->$parent_type->$parent_id->_parent) && !is_null($items->$parent_type->$parent_id->_parent[0])){
+					$parent = $items->$parent_type->$parent_id->_parent;
+					$parent_type = $parent[0];
+					$parent_id = $parent[1];
+					if($parent_type!='comments'){	
+						break;
+					}
+					continue;
+				} else if($model = $model->getParent()){
+					$parent_type = $model->getTable();
+					$parent_id = $model->id;
+					if($parent_type!='comments'){	
+						break;
+					}
+					continue;
+				}
+				$loop = false;
+			}
+		}
+
+		if(isset(static::$archive['_commented_on_'.$parent_type])){
+			return (int) static::$archive['_commented_on_'.$parent_type];
+		}
+
+		return static::$archive['created_at'];
+	}
+
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
 		$app = ModelLincko::getApp();
 		$history = parent::getHistoryCreation($history_detail, $parameters);
 

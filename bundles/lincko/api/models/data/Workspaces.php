@@ -182,7 +182,12 @@ class Workspaces extends ModelLincko {
 	}
 
 	//Do not show creation event
-	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
+	public function getHistoryCreationCode(&$items=false){
+		return false;
+	}
+
+	//Do not show creation event
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
 		return new \stdClass;
 	}
 

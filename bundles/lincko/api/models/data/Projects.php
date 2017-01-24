@@ -294,7 +294,17 @@ class Projects extends ModelLincko {
 		return parent::checkPermissionAllow($level);
 	}
 
-	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
+	public function getHistoryCreationCode(&$items=false){
+		$app = ModelLincko::getApp();
+		if($this->personal_private==$app->lincko->data['uid']){
+			//Do not record the private project creation since it's created by the framework while user signing
+			return false;
+		} else {
+			return parent::getHistoryCreationCode();
+		}
+	}
+
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
 		$app = ModelLincko::getApp();
 		if($this->personal_private==$app->lincko->data['uid']){
 			//Do not record the private project creation since it's created by the framework while user signing

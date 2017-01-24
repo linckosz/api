@@ -264,13 +264,6 @@ class Messages extends ModelLincko {
 		return $model;
 	}
 
-	/*
-	//toto => temporary DISABLE until tabList list message of Chats not from hist
-	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
-		return null;
-	}
-	*/
-
 	public function pushNotif($new=false){
 		$app = ModelLincko::getApp();
 		$parent = $this->getParent();

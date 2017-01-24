@@ -883,7 +883,7 @@ class ControllerUser extends Controller {
 	public function forgot_post(){
 		$app = $this->app;
 		$form = $this->form;
-\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
+
 		$failmsg = $app->trans->getBRUT('api', 15, 24)."\n"; //Account not found
 		$errmsg = $failmsg;
 		$errfield = 'undefined';
@@ -892,8 +892,8 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 35); //E-mail address format incorrect
 			$errfield = 'email';
 		}
-		else if($user = Users::where('email', mb_strtolower($form->party_id))->first()){\libs\Watch::php($user, '$user', __FILE__, __LINE__, false, false, true);
-			if($user_log = UsersLog::where('username_sha1', $user->username_sha1)->first()){\libs\Watch::php($user_log, '$user_log', __FILE__, __LINE__, false, false, true);
+		else if($user = Users::where('email', mb_strtolower($form->party_id))->first()){
+			if($user_log = UsersLog::where('username_sha1', $user->username_sha1)->first()){
 				$user_log->code = substr(str_shuffle("123456789"), 0, 6);
 				$limit = Carbon::now();
 				$limit->second = $limit->second + 1210; //We give 20 minutes to enter the code (including 10 more seconds to cover communication latency)

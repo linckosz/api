@@ -330,7 +330,7 @@ class Tasks extends ModelLincko {
 		parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
 	}
 
-	public function getHistoryCreation($history_detail=false, array $parameters = array(), $items=false){
+	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
 		$app = ModelLincko::getApp();
 		$history = new \stdClass;
 
