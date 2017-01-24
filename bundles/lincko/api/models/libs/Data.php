@@ -489,7 +489,7 @@ class Data {
 	protected static function loop_tree($root, &$keep, $keep_table=false, $keep_id=false, $save=false){
 		foreach ($root as $table => $table_list) {
 			foreach ($table_list as $id => $children) {
-				if($table=='projects' || $table=='chats' || $table=='users'){
+				if($table=='projects' || $table=='users'){
 					$keep[$table][$id][$table][$id] = $id;
 					self::loop_tree($children, $keep, $table, $id, true);
 				} else {
@@ -692,15 +692,19 @@ class Data {
 					$temp = new \stdClass;
 					if($this->item_detail){
 						$temp = $model->toVisible();
+						/*
 						//Get only creation history to avoid mysql overload
 						$temp->history = $model->getHistoryCreation(false, array(), $result_bis->$uid);
 						if(empty($temp->history)){
 							unset($temp->history);
 						}
+						*/
 					} else {
 						//need delete information for schema
 						$temp->deleted_at = $model->deleted_at;
+						/*
 						$temp->history = $model->getHistoryCreation(false, array(), $result_bis->$uid);
+						*/
 					}
 
 					$temp->_parent = $model->setParentAttributes();
@@ -920,12 +924,7 @@ class Data {
 										if($history_root[$table_name][$id][0]=='users' && $hist->cod!='697'){
 											continue;
 										}
-										if(is_numeric($hist_id)){
-											$hist_id = (int) $hist_id;
-										} else {
-											//$hist_id = (int) $i; //We make the supposition that no history id will be lower than $i
-											$i++;
-										}
+										$hist_id = (int) $hist_id;
 										if(!isset($result_bis->$uid->_history->$root_hist)){
 											$result_bis->$uid->_history->$root_hist = new \stdClass;
 										}

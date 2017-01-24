@@ -1433,7 +1433,6 @@ abstract class ModelLincko extends Model {
 			usleep(30000); //30ms
 		}
 		//Force to rebuild all extra
-		//Reinitialize all permissions
 		$models = Data::getModels();
 		$time = (new Users)->freshTimestamp();
 		foreach ($models as $table => $class) {
@@ -1813,6 +1812,10 @@ abstract class ModelLincko extends Model {
 			$titles->$value = $app->trans->getBRUT('data', 1, $value);
 		}
 		$titles->{'0'} = $app->trans->getBRUT('data', 1, $this->name_code);
+		$titles->{'1'} = 1; //Creation code since we generate it manually on front to save backend CPU
+		if(isset(static::$archive['created_at'])){
+			$titles->{'1'} = (int) static::$archive['created_at'];
+		}
 		return $titles;
 	}
 
