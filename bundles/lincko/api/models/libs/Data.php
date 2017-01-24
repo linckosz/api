@@ -476,6 +476,22 @@ class Data {
 		return $this->getList();
 	}
 
+	protected static function loop_tree($root, &$keep, $keep_table=false, $keep_id=false, $save=false){
+		foreach ($root as $table => $table_list) {
+			foreach ($table_list as $id => $children) {
+				if($table=='projects' || $table=='chats' || $table=='users'){
+					$keep[$table][$id][$table][$id] = $id;
+					self::loop_tree($children, $keep, $table, $id, true);
+				} else {
+					if($save){
+						$keep[$keep_table][$keep_id][$table][$id] = $id;
+					}
+					self::loop_tree($children, $keep, $keep_table, $keep_id, $save);
+				}
+			}
+		}
+	}
+	
 	protected function getList(){
 		$app = ModelLincko::getApp();
 		//$db = Capsule::connection($app->lincko->data['database_data']);
@@ -814,23 +830,8 @@ class Data {
 			|| (isset($app->lincko->api['x__history']) && $app->lincko->api['x__history'])
 		){
 			
-			function loop_tree($root, &$keep, $keep_table=false, $keep_id=false, $save=false){
-				foreach ($root as $table => $table_list) {
-					foreach ($table_list as $id => $children) {
-						if($table=='projects' || $table=='chats' || $table=='users'){
-							$keep[$table][$id][$table][$id] = $id;
-							loop_tree($children, $keep, $table, $id, true);
-						} else {
-							if($save){
-								$keep[$keep_table][$keep_id][$table][$id] = $id;
-							}
-							loop_tree($children, $keep, $keep_table, $keep_id, $save);
-						}
-					}
-				}
-			}
 			$keep_history = array();
-			loop_tree($root_0, $keep_history);
+			self::loop_tree($root_0, $keep_history);
 
 			if($this->item_detail){
 
@@ -947,7 +948,7 @@ class Data {
 				$this->full_schema
 				||
 				(
-					!is_null($this->partial)
+					   !is_null($this->partial)
 					&& isset($this->partial->$uid)
 					&& isset($this->partial->$uid->{'_history_title'})
 				)
