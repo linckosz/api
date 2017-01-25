@@ -203,7 +203,10 @@ class UsersLog extends Model {
 			}
 			$model->log = $log;
 			$model->party_id = $party_id;
-			$model->password = password_hash($password, PASSWORD_BCRYPT);
+			$model->password = '';
+			if(empty($party)){ // Only set a password for email account
+				$model->password = password_hash($password, PASSWORD_BCRYPT);
+			}
 			if($model->save()){
 				$result = $model;
 			}

@@ -601,9 +601,14 @@ class Users extends ModelLincko {
 			//Update updated_at to make sure both users are redownloaded with neww fields
 			$this->touchUpdateAt();
 			$import_user->touchUpdateAt();
-			//Force 2 main concerned accounts to reset the schema
+			//Force 2 main concerned accounts to reset the schema to rebuild
 			$this->setForceSchema();
 			$import_user->setForceSchema();
+			//Force he Schema of all related users
+			$users = $import_user->users;
+			foreach ($users as $user) {
+				$user->setForceSchema();
+			}
 		} catch (\Exception $e){
 			$db_data->rollback();
 			$db_api->rollback();

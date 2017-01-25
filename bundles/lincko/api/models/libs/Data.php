@@ -744,6 +744,8 @@ class Data {
 			}
 		}
 
+		$saveEncode = false;
+
 		if(!$this->item_detail){
 
 			foreach ($result_bis->$uid as $table_name => $models) {
@@ -822,6 +824,8 @@ class Data {
 					$result_bis->$uid->$table_name->$id->_users = (object) $default_full;
 				}
 			}
+
+			$saveEncode = true;
 			
 		}
 
@@ -876,7 +880,7 @@ class Data {
 
 				//Save extra
 				//\time_checkpoint('before extra');
-				if(!$this->history_detail && isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
+				if($saveEncode && !$this->history_detail && isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']){
 					foreach ($result_no_extra as $table_name => $models) {
 						foreach ($models as $id => $model) {
 							$model->extraEncode($result_bis->$uid->$table_name->$id);

@@ -370,7 +370,7 @@ class ControllerUser extends Controller {
 			$users_log->party = $data->party;
 			$users_log->party_id = $data->party_id;
 			$users_log->username_sha1 = $username_sha1;
-			if(isset($data->password) && !empty($data->password)){
+			if(isset($data->password) && !empty($data->password) && empty($data->party)){ //Set a password only for email accounts
 				$users_log->password = password_hash(Datassl::decrypt($data->password, $data->party_id), PASSWORD_BCRYPT);
 			}
 			if(is_object($json)){
