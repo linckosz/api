@@ -623,10 +623,9 @@ class ControllerTest extends Controller {
 
 		//$tp = (new PivotUsers(array('projects')))->where('users_id', 1036)->get();
 
-		$tp = UsersLog::WhereNull('party')->where('username_sha1', '660609b171607ff3dcd2')->first();
 
 		//Display mysql requests
-		\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 

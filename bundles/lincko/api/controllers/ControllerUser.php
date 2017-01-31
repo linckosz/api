@@ -396,7 +396,18 @@ class ControllerUser extends Controller {
 						}
 						//Add profile picture
 						if(isset($json->headimgurl)){
-							if($download = file_get_contents($json->headimgurl)){
+							//CURL is much faster tha file_get_contents because file_get_contents was waiting the connection to timeout
+							$timeout = 8;
+							$ch = curl_init();
+							curl_setopt($ch, CURLOPT_URL, $image);
+							curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+							curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+							curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+							curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+							curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+							curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+							curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
+							if($download = curl_exec($ch)){
 								$tmp_name = '/tmp/'.$user->internal_email;
 								file_put_contents($tmp_name, $download);
 								$profile_pic = new Files;
@@ -412,7 +423,9 @@ class ControllerUser extends Controller {
 									$user->saveHistory(false);
 									$user->save();
 								}
+								@unlink($tmp_name);
 							}
+							@curl_close($ch);
 						}
 					}
 					//$db_data->commit();
