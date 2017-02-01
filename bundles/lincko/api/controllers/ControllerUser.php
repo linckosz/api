@@ -399,7 +399,7 @@ class ControllerUser extends Controller {
 							//CURL is much faster tha file_get_contents because file_get_contents was waiting the connection to timeout
 							$timeout = 8;
 							$ch = curl_init();
-							curl_setopt($ch, CURLOPT_URL, $image);
+							curl_setopt($ch, CURLOPT_URL, $json->headimgurl);
 							curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 							curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 							curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
