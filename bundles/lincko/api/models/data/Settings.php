@@ -5,6 +5,7 @@ namespace bundles\lincko\api\models\data;
 
 use Carbon\Carbon;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\Inform;
 
 class Settings extends ModelLincko {
 
@@ -72,7 +73,7 @@ class Settings extends ModelLincko {
 
 	//We do not record history
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		return true;
+		return false;
 	}
 
 	//We do not attach

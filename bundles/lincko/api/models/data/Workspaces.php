@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use Carbon\Carbon;
 use \libs\Datassl;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\Inform;
 
 class Workspaces extends ModelLincko {
 

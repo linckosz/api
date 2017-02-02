@@ -623,6 +623,14 @@ class ControllerTest extends Controller {
 
 		//$tp = (new PivotUsers(array('projects')))->where('users_id', 1036)->get();
 
+		$a = array('a');
+		$b = array(
+			'a',
+			'b',
+			'c',
+		);
+
+		$tp = in_array($a, $b);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

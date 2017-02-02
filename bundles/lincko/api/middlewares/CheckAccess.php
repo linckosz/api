@@ -7,10 +7,10 @@ use \libs\Datassl;
 use \libs\OneSeventySeven;
 use \libs\Email;
 use \bundles\lincko\api\models\Api;
-use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\Integration;
+use \bundles\lincko\api\models\Inform;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Roles;
 use \bundles\lincko\api\models\data\Workspaces;
@@ -145,27 +145,12 @@ class CheckAccess extends \Slim\Middleware {
 					}
 					
 					$title = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
-					$mail_body_array = array(
+					$content_array = array(
 						'mail_username' => $host->username,
 					);
-					$mail_body = $app->trans->getBRUT('api', 1004, 6, $mail_body_array); //@@mail_username~~ accepted your invitation.
-					$mail_template_array = array(
-						'mail_head' => $title,
-						'mail_body' => $mail_body,
-						'mail_foot' => '',
-					);
-					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-					if(Users::validEmail($host->email)){
-						$mail = new Email();
-						$mail->addAddress($host->email);
-						$mail->setSubject($title);
-						$mail->sendLater($mail_template);
-					}
-
-					//Send mobile notification
-					$notif_body = $mail_body;
-					(new Notif)->push($title, $notif_body, false, $host->getSha());
+					$content = $app->trans->getBRUT('api', 1004, 6, $content_array); //@@mail_username~~ accepted your invitation.
+					$inform = new Inform($title, $content, false, $host->getSha());
+					$inform->send();
 				}
 			}
 		}
@@ -617,6 +602,7 @@ class CheckAccess extends \Slim\Middleware {
 					|| $route == 'file_qrcode_get' && preg_match("/^\/file\/(\d+)\/([\d\w]+?)\/(qrcode)\/(\d+)\/.+$/ui", $resourceUri, $matches)
 					|| $route == 'file_profile_get' && preg_match("/^\/file\/profile\/(\d+)\/(\d+)$/ui", $resourceUri, $matches)
 					|| $route == 'file_link_from_qrcode_get' && preg_match("/^\/file\/link_from_qrcode\/(\d+)\/([\d\w]+?)\/([\d\w]+?)$/ui", $resourceUri, $matches)
+					|| $route == 'file_onboarding_get' && preg_match("/^\/file\/onboarding\/(\d+)\/(\d+)\.mp4$/ui", $resourceUri, $matches)
 				)
 				&& $route!==false
 			){ //File reading

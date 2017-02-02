@@ -12,9 +12,9 @@ use \libs\Email;
 use \libs\Translation;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
-use \bundles\lincko\api\models\Notif;
 use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\Integration;
+use \bundles\lincko\api\models\Inform;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Projects;
@@ -391,8 +391,8 @@ class ControllerUser extends Controller {
 					$users_log->save();
 					Projects::setPersonal();
 					if($data->party=='wechat'){
-						if(isset($json->openid) && !empty($json->openid)){ //Wechat
-							$users_log->subAccount('wechat', 'oid.'.$json->openid, false, false, true);
+						if(isset($json->account) && isset($json->openid) && !empty($json->openid)){ //Wechat
+							$users_log->subAccount('wechat_'.$json->account, 'oid.'.$json->account.'.'.$json->openid, false, false, true);
 						}
 						//Add profile picture
 						if(isset($json->headimgurl)){
@@ -467,28 +467,18 @@ class ControllerUser extends Controller {
 				//Send congrat email
 				$link = 'https://'.$app->lincko->domain;
 				$title = $app->trans->getBRUT('api', 1003, 1); //Congratulations on joining Lincko!
-				$mail_body_array = array(
+				$content_array = array(
 					'mail_username' => $user->username,
 					'mail_link' => $link,
 				);
-				$mail_body = $app->trans->getBRUT('api', 1003, 2, $mail_body_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
-
-				$mail_template_array = array(
-					'mail_head' => $title,
-					'mail_body' => $mail_body,
-					'mail_foot' => '',
-				);
-				$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
 				if(empty($users_log->party) && Users::validEmail($users_log->party_id)){
-					$mail = new Email();
-					$mail->addAddress($email, $user->username);
-					$mail->setSubject($title);
-					$mail->sendLater($mail_template);
+					$content = $app->trans->getBRUT('api', 1003, 2, $content_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
+					$inform = new Inform($title, $content, false, $user->getSha(), array('email'));
+				} else {
+					$content = $app->trans->getBRUT('api', 1003, 3); //We are currently in Beta and are hoping to get a lot of feedback to make...
+					$inform = new Inform($title, $content, false, $user->getSha(), array($users_log->party), array('email')); //Make sure we exclude email
 				}
-
-				$notif_body = $app->trans->getBRUT('api', 1003, 3); //We are currently in Beta and are hoping to get a lot of feedback to make...
-				(new Notif)->push($title, $notif_body, false, $user->getSha());
+				$inform->send();
 
 				return array(
 					$user,
@@ -806,30 +796,24 @@ class ControllerUser extends Controller {
 						$invitation->models = $form->invite_access;
 					}
 					$invitation->save();
+
 					$code = $invitation->code;
 					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
-					$mail = new Email();
-
-					$mail_subject = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
-					$mail_body_array = array(
+					$title = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
+					$content_array = array(
 						'mail_username' => $username,
 						'mail_link' => $link,
 					);
-					$mail_body = $app->trans->getBRUT('api', 1001, 2, $mail_body_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
-					$mail_foot = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
-
-					$mail_template_array = array(
-						'mail_head' => $mail_subject,
-						'mail_body' => $mail_body,
-						'mail_foot' => $mail_foot,
+					$content = $app->trans->getBRUT('api', 1001, 2, $content_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
+					$annex = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
+					$manual = array(
+						'email' => array(
+							$form->emai => $username,
+						),
 					);
-					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
+					$inform = new Inform($title, $content, $annex, array(), false, array('email'));
+					$inform->send($manual);
 
-					if(Users::validEmail($form->email)){
-						$mail->addAddress($form->email);
-						$mail->setSubject($mail_subject);
-						$mail->sendLater($mail_template);
-					}
 					$data = true;
 					$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
 					$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
@@ -910,32 +894,21 @@ class ControllerUser extends Controller {
 				$user_log->code_limit = $limit;
 				$user_log->code_try = 3; //We give 3 shots to success
 				if($user_log->save()){
-					$mail = new Email();
-					$mail_subject = $app->trans->getBRUT('api', 1004, 1); //Password reset
-					$mail_body_array = array(
+					$title_email = $app->trans->getBRUT('api', 1004, 1); //Password reset
+					$title_other = $app->trans->getBRUT('api', 1004, 3); //You have requested a password reset.
+					$content_array = array(
 						'mail_username' => $user->username,
 						'mail_code' => $user_log->code,
 					);
-					$mail_body = $app->trans->getBRUT('api', 1004, 2, $mail_body_array); //You have requested a password reset. You need to enter the code below within 10 minutes in the required field to be able to confirm the operation. CODE: <b>@@mail_code~~<b/>
+					$content_email = $app->trans->getBRUT('api', 1004, 2, $content_array); //You have requested a password reset. You need to enter the code below within 10 minutes in the required field to be able to confirm the operation. CODE: <b>@@mail_code~~<b/>
+					$content_other = $app->trans->getBRUT('api', 1004, 4, $content_array); //CODE: @@mail_code~~
 
-					//Send mobile notification
-					$msg = $title = $app->trans->getBRUT('api', 1004, 3); //You have requested a password reset.
-					$content = $app->trans->getBRUT('api', 1004, 4, $mail_body_array); //CODE: @@mail_code~~
-					(new Notif)->push($title, $content, false, $user->getSha());
+					$inform_email = new Inform($title_email, $content_email, false, $user->getSha(), array('email')); //Only email
+					$inform_email->send();
+					$inform_other = new Inform($title_other, $content_other, false, $user->getSha(), array(), array('email')); //Exclude email
+					$inform_other->send();
 
-					$mail_template_array = array(
-						'mail_head' => $mail_subject,
-						'mail_body' => $mail_body,
-						'mail_foot' => '',
-					);
-					$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-					if(Users::validEmail($user->email)){
-						$mail->addAddress($user->email);
-						$mail->setSubject($mail_subject);
-						if($mail->sendLater($mail_template)){
-							$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
-						}
-					}
+					$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
 					$app->render(200, array('show' => true, 'msg' =>  array('msg' => $msg, 'email' => $user->email), 'error' => false));
 					return true;
 				}
@@ -981,28 +954,15 @@ class ControllerUser extends Controller {
 						$user_log->code_limit = null;
 						$user_log->code_try = 0;
 						if($user_log->save()){
-							$mail = new Email();
-							$mail_subject = $app->trans->getBRUT('api', 1005, 1); //Password reset - Confirmation
+							$title = $app->trans->getBRUT('api', 1005, 1); //Password reset - Confirmation
 							$link = 'https://'.$app->lincko->domain;
-							$mail_body_array = array(
+							$content_array = array(
 								'mail_username' => $user->username,
 								'mail_link' => $link,
 							);
-							$mail_body = $app->trans->getBRUT('api', 1005, 2, $mail_body_array); //You have successfully reset your password. You can now signin.
-							$mail_template_array = array(
-								'mail_head' => $mail_subject,
-								'mail_body' => $mail_body,
-								'mail_foot' => '',
-							);
-							$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-							(new Notif)->push($mail_subject, $mail_body, false, $user->getSha());
-
-							if(Users::validEmail($user->email)){
-								$mail->addAddress($user->email);
-								$mail->setSubject($mail_subject);
-								$mail->sendLater($mail_template);
-							}
+							$content = $app->trans->getBRUT('api', 1005, 2, $content_array); //You have successfully reset your password. You can now signin.
+							$inform = new Inform($title, $content, false, $user->getSha());
+							$inform->send();
 							
 							$authorize = $user_log->getAuthorize($data);
 

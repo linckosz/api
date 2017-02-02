@@ -4,9 +4,12 @@
 namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Chats;
+use \bundles\lincko\api\models\data\Tasks;
+use \bundles\lincko\api\models\Inform;
 use Carbon\Carbon;
 use \libs\Json;
 
@@ -156,6 +159,82 @@ class Projects extends ModelLincko {
 			return false;
 		}
 		return parent::delete();
+	}
+
+	public function pushNotif($new=false, $history=false){
+		$app = ModelLincko::getApp();
+
+		//Only display about moving tasks
+		if(
+			   !$history
+			|| ($history && $history->code!=405 && $history->code!=406)
+		){
+			return false;
+		}
+		if($this->updated_by==0){
+			return false;
+		}
+
+		$users = false;
+		$type = 'projects';
+		$pivot = new PivotUsers(array($type));
+		if($this->tableExists($pivot->getTable())){
+			$users = $pivot
+			->where($type.'_id', $this->id)
+			->where('access', 1)
+			->where('silence', 0)
+			->get(array('users_id'));
+		}
+
+		if($users){
+			if($this->updated_by==0){
+				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+			} else {
+				$sender = Users::find($this->updated_by)->getUsername();
+			}
+			$title = $this->title;
+			$param = array('un' => $sender);
+			if($history && isset($history->par)){
+				foreach ($history->par as $key => $value) {
+					$param[$key] = $value;
+				}
+			}
+			foreach ($users as $value) {
+				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
+					$user = Users::find($value->users_id);
+					$alias = array($value->users_id => $user->getSha());
+					$language = $user->getLanguage();
+					$delete_user = true;
+					if($history){
+						$content = $app->trans->getBRUT('data', 1, $history->code, array(), $language);
+					} else if($new){
+						$content = $app->trans->getBRUT('data', 1, 401, array(), $language); //[{un}] created a new project
+					} else {
+						continue;
+					}
+					foreach ($param as $search => $replace) {
+						$content = str_replace('[{'.$search.'}]', $replace, $content);
+					}
+					if($delete_user){
+						unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
+					}
+					if(empty($alias)){
+						continue;
+					}
+					$target = $this;
+					if($history && ($history->code==405 || $history->code==406)){
+						if(isset($history->par) && isset($history->par->tid)){
+							if($task = Tasks::find($history->par->tid)){
+								$target = $this;
+							}
+						}
+					}
+					$inform = new Inform($title, $content, false, $alias, $target, array(), array('email')); //Exclude email
+					$inform->send();
+				}
+			}
+		}
+		return true;
 	}
 
 	//Insure that we only record 1 personal_private project for each user

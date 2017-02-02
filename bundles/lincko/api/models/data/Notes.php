@@ -8,6 +8,7 @@ use \libs\Datassl;
 use \libs\STR;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\Inform;
 
 class Notes extends ModelLincko {
 

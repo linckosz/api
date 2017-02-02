@@ -5,6 +5,7 @@ namespace bundles\lincko\api\models\data;
 
 use Carbon\Carbon;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\Inform;
 
 class Chats extends ModelLincko {
 

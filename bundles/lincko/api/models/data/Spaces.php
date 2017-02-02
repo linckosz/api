@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\PivotSpaces;
 use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\Inform;
 
 class Spaces extends ModelLincko {
 

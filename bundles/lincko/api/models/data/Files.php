@@ -5,9 +5,10 @@ namespace bundles\lincko\api\models\data;
 
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\Updates;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Workspaces;
-use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\Inform;
 use Carbon\Carbon;
 use \libs\Json;
 use \libs\Folders;
@@ -382,37 +383,72 @@ class Files extends ModelLincko {
 		return array($flip_x, $flip_y, $angle);
 	}
 
-	public function pushNotif($new=false){
+	public function pushNotif($new=false, $history=false){
 		$app = ModelLincko::getApp();
+
+		if(!$new){
+			return false;
+		}
+		if($this->updated_by==0){
+			return false;
+		}
+
 		$parent = $this->getParent();
-		$table = $parent->getTable();
-		if($this->progress>=100 && $table=='chats'){ //Do only alert for files in chats
-			$users = $parent->users()
-				->where('users_x_chats.access', 1)
-				->where('users_x_chats.silence', 0)
-				->get();
+		$type = $parent->getTable();
+
+		if($type!='projects' && $type!='chats'){
+			return false;
+		}
+
+		$users = false;
+		$users_accept = array();
+		$pivot = new PivotUsers(array($type));
+		if($this->tableExists($pivot->getTable())){
+			$users = $pivot
+			->where($type.'_id', $this->id)
+			->where('access', 1)
+			->where('silence', 0)
+			->get(array('users_id'));
+			foreach ($users as $value) {
+				$users_accept[$value->users_id] = $value->users_id;
+			}
+		}
+
+		if($users){
 			if($this->updated_by==0){
 				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
 			} else {
 				$sender = Users::find($this->updated_by)->getUsername();
 			}
-			$content = $this->title;
-			$notif = new Notif;
+			$param = array('un' => $sender);
+			if($history && isset($history->par)){
+				foreach ($history->par as $key => $value) {
+					$param[$key] = $value;
+				}
+			}
+			if($type=='chats' && isset($parent->single) && $parent->single){
+				$title = $sender;
+			} else {
+				$title = $parent->title;
+			}
 			foreach ($users as $value) {
-				if($value->pivot->users_id != $this->updated_by && $value->pivot->users_id != $app->lincko->data['uid']){
-					$user = Users::find($value->pivot->users_id);
-					$alias = array($value->pivot->users_id => $user->getSha());
-					$language = $user->getLanguage();
-					if($new){
-						$title = $app->trans->getBRUT('api', 9, 23, array('un' => $sender,), $language); //@un~~ created a task
-					} else {
-						$title = $app->trans->getBRUT('api', 9, 24, array('un' => $sender,), $language); //@un~~ modified a task
-					}
+				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
+					$user = Users::find($value->users_id);
+					$alias = array($value->users_id => $user->getSha());
 					unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
 					if(empty($alias)){
 						continue;
 					}
-					$notif->push($title, $content, $this, $alias);
+					$content = $this->name;
+					if($type!='chats' || !isset($parent->single) || !$parent->single){
+						$content = $app->trans->getBRUT('data', 1, 901, array(), $language); //[{un}] uploaded a file
+						foreach ($param as $search => $replace) {
+							$content = str_replace('[{'.$search.'}]', $replace, $content);
+						}
+						$content .= ":\n ".$this->name;
+					}
+					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+					$inform->send();
 				}
 			}
 		}

@@ -6,8 +6,9 @@ namespace bundles\lincko\api\models\data;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Users;
-use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\Inform;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class Messages extends ModelLincko {
@@ -264,41 +265,64 @@ class Messages extends ModelLincko {
 		return $model;
 	}
 
-	public function pushNotif($new=false){
+	public function pushNotif($new=false, $history=false){
 		$app = ModelLincko::getApp();
+
+		if(!$new){
+			return false;
+		}
+		if($this->updated_by==0){
+			return false;
+		}
+
 		$parent = $this->getParent();
-		$users = $parent->users()
-			->where('users_x_chats.access', 1)
-			->where('users_x_chats.silence', 0)
-			->get();
-		$aliases = array();
-		foreach ($users as $value) {
-			if($user = Users::find($value->pivot->users_id)){
-				$sha = $user->getSha();
-				if(!empty($sha)){
-					$aliases[$value->pivot->users_id] = $sha;
+		$type = $parent->getTable();
+
+		if($type!='chats'){
+			return false;
+		}
+
+		$users = false;
+		$users_accept = array();
+		$pivot = new PivotUsers(array($type));
+		if($this->tableExists($pivot->getTable())){
+			$users = $pivot
+			->where($type.'_id', $this->id)
+			->where('access', 1)
+			->where('silence', 0)
+			->get(array('users_id'));
+			foreach ($users as $value) {
+				$users_accept[$value->users_id] = $value->users_id;
+			}
+		}
+
+		if($users){
+			if($this->updated_by==0){
+				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+			} else {
+				$sender = Users::find($this->updated_by)->getUsername();
+			}
+			if($parent->single){
+				$title = $sender;
+				$content = $this->comment;
+			} else {
+				$title = $parent->title;
+				$content = $sender.': '.$this->comment;
+			}
+			foreach ($users as $value) {
+				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
+					$user = Users::find($value->users_id);
+					$alias = array($value->users_id => $user->getSha());
+					unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
+					if(empty($alias)){
+						continue;
+					}
+					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+					$inform->send();
 				}
 			}
 		}
-		unset($aliases[$this->created_by]); //Exlude the creator
-		unset($aliases[$app->lincko->data['uid']]); //Exclude the user itself
-		if(empty($aliases)){
-			return true;
-		}
-		if($this->created_by==0){
-			$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
-		} else {
-			$sender = Users::find($this->created_by)->getUsername();
-		}
-		if($parent->single){
-			$title = $sender;
-			$content = $this->comment;
-		} else {
-			$title = $parent->title;
-			$content = $sender.': '.$this->comment;
-		}
-		$notif = new Notif;
-		return $notif->push($title, $content, $this, $aliases);
+		return true;
 	}
 
 	//toto, delete save, it was for test only

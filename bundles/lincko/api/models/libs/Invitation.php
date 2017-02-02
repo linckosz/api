@@ -43,7 +43,7 @@ class Invitation extends ModelLincko {
 
 	//We do not record history
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		return true;
+		return false;
 	}
 
 	//We do not attach

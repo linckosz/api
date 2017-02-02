@@ -225,6 +225,15 @@ class Video {
 		return $result;
 	}
 
+	public static function slideshow($sequence, $destination, $txt){
+		set_time_limit(3600); //Set to 1 hour workload at the most
+		$ffmpeg = self::$FFMPEG;
+		$fast = self::$fast;
+
+		exec("$ffmpeg -f concat -safe 0 -i \"$sequence\" -r 8 -threads 2 -vcodec libx264 -profile:v high $fast -crf 32 -an -y -f mp4 -movflags faststart \"$destination\"", $tablo, $result);
+		
+	}
+
 	public function getInfo(){
 		return $this->info;
 	}

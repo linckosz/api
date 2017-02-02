@@ -6,7 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\STR;
 use Carbon\Carbon;
 
-use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\Inform;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\libs\Models;
@@ -1555,28 +1555,37 @@ class Data {
 			}
 		}
 
-		$notif = new Notif;
 		$title = 'Lincko';
 		
 		foreach ($lang_individual_weekly as $language => $alias) {
 			//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend!
 			$content = $app->trans->getBRUT('api', 19, 4, array(), $language);
-			$notif->push($title, $content, false, $alias);
+			$inform = new Inform($title, $content, false, $alias, array(), array('email')); //Exclude email
+			$inform->send();
 		}
 		foreach ($lang_individual_daily as $language => $alias) {
 			//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
 			$content = $app->trans->getBRUT('api', 19, 3, array(), $language);
-			$notif->push($title, $content, false, $alias);
+			$inform = new Inform($title, $content, false, $alias, array(), array('email')); //Exclude email
+			$inform->send();
 		}
 		foreach ($lang_team_weekly as $language => $alias) {
 			//Your weekly progress update is here! See how the team did last week and what's coming this week.
 			$content = $app->trans->getBRUT('api', 19, 2, array(), $language);
-			//$notif->push($title, $content, false, $alias); //It generates to many notifications for the user
+			//It generates to many notifications for the user
+			/*
+				$inform = new Inform($title, $content, false, $alias, array(), array('email')); //Exclude email
+				$inform->send();
+			*/
 		}
 		foreach ($lang_team_daily as $language => $alias) {
 			//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
 			$content = $app->trans->getBRUT('api', 19, 1, array(), $language);
-			//$notif->push($title, $content, false, $alias); //It generates to many notifications for the user
+			//It generates to many notifications for the user
+			/*
+				$inform = new Inform($title, $content, false, $alias, array(), array('email')); //Exclude email
+				$inform->send();
+			*/
 		}
 
 

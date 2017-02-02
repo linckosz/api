@@ -563,6 +563,7 @@ abstract class ModelLincko extends Model {
 		return array($tree_scan, $tree_desc, $tree_id, $result);
 	}
 
+	//toto => This function is a long CPU calculation, it affects heavuly the UX, must optimize
 	public function setPerm(){
 		$app = ModelLincko::getApp();
 		if(!isset($app->lincko->data['uid']) || $app->lincko->data['uid']===false){
@@ -1287,8 +1288,13 @@ abstract class ModelLincko extends Model {
 	}
 
 	//Check if the user has access to the object
-	public static function getModel($id){
-		if($model = static::find($id)){
+	public static function getModel($id, $with_trash=false){
+		if($with_trash){
+			$model = static::withTrashed()->find($id);
+		} else {
+			$model = static::find($id);
+		}
+		if($model){
 			if($model->checkAccess(false)){
 				return $model;
 			}
@@ -1784,7 +1790,7 @@ abstract class ModelLincko extends Model {
 		$app = ModelLincko::getApp();
 		$namespace = (new \ReflectionClass($this))->getNamespaceName();
 		if(count($this::$archive)==0 || $this->getTable()=='history' || $namespace!='bundles\lincko\api\models\data'){ //We exclude history itself to avoid looping
-			return true;
+			return false;
 		}
 		$history = new History;
 		$history->created_by = $app->lincko->data['uid'];
@@ -1806,6 +1812,7 @@ abstract class ModelLincko extends Model {
 			$history->parameters = json_encode($parameters, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE);
 		}
 		$history->save();
+		return $history;
 	}
 
 	public function getHistoryTitles(){
@@ -2218,7 +2225,7 @@ abstract class ModelLincko extends Model {
 		return $users_tables;
 	}
 
-	public function pushNotif($new=false){
+	public function pushNotif($new=false, $history=false){
 		return true;
 	}
 
@@ -2402,6 +2409,7 @@ abstract class ModelLincko extends Model {
 			Updates::informUsers($users_tables);
 		}
 
+		$history = false;
 		//We do not record any setup for new model, but only change for existing model
 		if(!$new && $this->save_history){
 			foreach($dirty as $key => $value) {
@@ -2413,7 +2421,7 @@ abstract class ModelLincko extends Model {
 					if(isset($dirty[$key])){ $new_att = $dirty[$key]; }
 					//We excluse default modification
 					if(isset($this::$archive[$key]) || isset($this::$archive[$key.'_'.$new_att])){
-						$this->setHistory($key, $new_att, $old_att);
+						$history = $this->setHistory($key, $new_att, $old_att);
 					}
 				}
 			}
@@ -2421,7 +2429,7 @@ abstract class ModelLincko extends Model {
 		$this->save_history = true; //Reenable the history record
 
 		if(!self::$save_skipper){
-			$this->pushNotif($new);
+			$this->pushNotif($new, $history);
 		}
 
 		return $return;
@@ -2760,104 +2768,102 @@ abstract class ModelLincko extends Model {
 				if(!$success){ break; }
 				foreach ($type_id_list as $type_id => $column_list) {
 					if(!$success){ break; }
-					foreach ($column_list as $column => $result) {
-						$history_save = true;
-						if(is_array($result)){
-							$value = $result[0];
-							$history_save = $result[1];
-						} else {
-							$value = $result;
-						}
-						//Convert the value to be compriable with database
-						if(is_bool($value)){
-							$value = (int) $value;
-						}
-						//Do not convert into string a NULL value (ifnot it will return a 0 timestamp or empty string instead of NULL value)
-						if(!is_null($value)){
-							$value = (string) $value;
-						}
-						if(!$success){ break; }
-						$pivot = false;
-						$pivot_array = $this->setPivotExtra($type, $column, $value);
-						if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
-							$pivot_relation = $this->$type();
-							if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
-								if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
-									//We delete created_at since it already exists
-									unset($pivot_array['created_at']);
-									//Update an existing pivot
-									if(is_null($pivot->pivot->$column)){ //Do not convert a NULL into a string
-										$value_old = $pivot->pivot->$column;
-									} else {
-										$value_old = (string) $pivot->pivot->$column;
-									}
-									if($value_old != $value){
-										if($pivot_relation->updateExistingPivot($type_id, $pivot_array)){
-											if($column=='access'){
-												$this->change_permission = true;
-												if($type=="users"){
-													$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
-												}
-											}
-											$touch = true;
-											$class = $this::getClass($type);
-											if($model = $class::withTrashed()->find($type_id)){
-												$users_tables = $model->touchUpdateAt($users_tables, false, true);
-											}
-											if($history_save){
-												$parameters = array();
-												if($type=='users'){
-													$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
-												}
-												$parameters['pvid'] = $type_id;
-												//We excluse default modification
-												if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
-													$this->setHistory('pivot_'.$type.'_'.$column, $value, $value_old, $parameters, $type, $type_id);
-												}
-											}
+					//Check if the user has access to the element to avoid unwanted assignements
+					$class = $this::getClass($type);
+					if($model = $class::getModel($type_id, true)){
+						foreach ($column_list as $column => $result) {
+							$history_save = true;
+							if(is_array($result)){
+								$value = $result[0];
+								$history_save = $result[1];
+							} else {
+								$value = $result;
+							}
+							//Convert the value to be compriable with database
+							if(is_bool($value)){
+								$value = (int) $value;
+							}
+							//Do not convert into string a NULL value (ifnot it will return a 0 timestamp or empty string instead of NULL value)
+							if(!is_null($value)){
+								$value = (string) $value;
+							}
+							if(!$success){ break; }
+							$pivot = false;
+							$pivot_array = $this->setPivotExtra($type, $column, $value);
+							if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
+								$pivot_relation = $this->$type();
+								if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
+									if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
+										//We delete created_at since it already exists
+										unset($pivot_array['created_at']);
+										//Update an existing pivot
+										if(is_null($pivot->pivot->$column)){ //Do not convert a NULL into a string
+											$value_old = $pivot->pivot->$column;
 										} else {
-											$success = false;
+											$value_old = (string) $pivot->pivot->$column;
 										}
-									}
-									continue;
-								} else {
-									//Create a new pivot line
-									if($column!='access' && !isset($this->pivots_var->$type->$type_id->access)){
-										//By default, if we affect a new pivot, we always authorized access if it's not specified (for instance a user assigned to a task will automaticaly have access to it)
-										$pivot_array['access'] = true;
-									}
-									$pivot_relation->attach($type_id, $pivot_array); //attach() return nothing
-									$this->pivot_extra_array = false;
-									if($column=='access'){
-										$this->change_permission = true;
-										if($type=="users"){
-											$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
+										if($value_old != $value){
+											if($pivot_relation->updateExistingPivot($type_id, $pivot_array)){
+												if($column=='access'){
+													$this->change_permission = true;
+													if($type=="users"){
+														$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
+													}
+												}
+												$touch = true;
+												$users_tables = $model->touchUpdateAt($users_tables, false, true);
+												if($history_save){
+													$parameters = array();
+													if($type=='users'){
+														$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
+													}
+													$parameters['pvid'] = $type_id;
+													//We excluse default modification
+													if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
+														$this->setHistory('pivot_'.$type.'_'.$column, $value, $value_old, $parameters, $type, $type_id);
+													}
+												}
+											} else {
+												$success = false;
+											}
 										}
-									}
-									$touch = true;
-									$class = $this::getClass($type);
-									if($class && $model = $class::withTrashed()->find($type_id)){
+										continue;
+									} else {
+										//Create a new pivot line
+										if($column!='access' && !isset($this->pivots_var->$type->$type_id->access)){
+											//By default, if we affect a new pivot, we always authorized access if it's not specified (for instance a user assigned to a task will automaticaly have access to it)
+											$pivot_array['access'] = true;
+										}
+										$pivot_relation->attach($type_id, $pivot_array); //attach() return nothing
+										$this->pivot_extra_array = false;
+										if($column=='access'){
+											$this->change_permission = true;
+											if($type=="users"){
+												$users_schema[$type_id] = $type_id; //Mainly used for chats that does not download all messages attached
+											}
+										}
+										$touch = true;
 										$users_tables = $model->touchUpdateAt($users_tables, false, true);
-									}
-									if($history_save){
-										$parameters = array();
-										if($type=='users'){
-											$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
+										if($history_save){
+											$parameters = array();
+											if($type=='users'){
+												$parameters['cun'] = Users::find($type_id)->username; //Storing this value helps to avoid many SQL calls later
+											}
+											$parameters['pvid'] = $type_id;
+											//We excluse default modification
+											if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
+												$this->setHistory('pivot_'.$type.'_'.$column, $value, null, $parameters, $type, $type_id);
+											}
 										}
-										$parameters['pvid'] = $type_id;
-										//We excluse default modification
-										if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
-											$this->setHistory('pivot_'.$type.'_'.$column, $value, null, $parameters, $type, $type_id);
-										}
+										continue;
 									}
-									continue;
 								}
+								$success = false;
+								break;
 							}
 							$success = false;
 							break;
 						}
-						$success = false;
-						break;
 					}
 				}
 			}

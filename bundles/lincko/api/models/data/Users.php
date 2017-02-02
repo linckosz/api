@@ -6,7 +6,7 @@ namespace bundles\lincko\api\models\data;
 use Carbon\Carbon;
 use \libs\Datassl;
 use \libs\Email;
-use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\Inform;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
 use \bundles\lincko\api\models\libs\ModelLincko;
@@ -405,7 +405,7 @@ class Users extends ModelLincko {
 
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
 		$parameters['hh'] = $this->get_HisHer();
-		parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
+		return parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
 	}
 
 	//Do not show creation event
@@ -897,31 +897,16 @@ class Users extends ModelLincko {
 			//$user->pivots_save();
 			$user->save();
 			$link = 'https://'.$app->lincko->domain;
-			$mail = new Email();
 
-			$mail_subject = $app->trans->getBRUT('api', 1002, 1); //New Lincko collaboration request
-			$mail_body_array = array(
+			$title = $app->trans->getBRUT('api', 1002, 1); //New Lincko collaboration request
+			$content_array = array(
 				'mail_username_guest' => $username_guest,
 				'mail_username' => $username,
 				'mail_link' => $link,
 			);
-			$mail_body = $app->trans->getBRUT('api', 1002, 2, $mail_body_array); //You have a new collaboration request!<br><br>@@mail_username~~ has invited you to collaborate together using Lincko.
-
-			$mail_template_array = array(
-				'mail_head' => $mail_subject,
-				'mail_body' => $mail_body,
-				'mail_foot' => '',
-			);
-			$mail_template = $app->trans->getBRUT('api', 1000, 1, $mail_template_array);
-
-			//Send mobile notification
-			(new Notif)->push($mail_subject, $mail_body, $guest, $guest->getSha());
-
-			if(Users::validEmail($guest->email)){
-				$mail->addAddress($guest->email);
-				$mail->setSubject($mail_subject);
-				$mail->sendLater($mail_template);
-			}
+			$content = $app->trans->getBRUT('api', 1002, 2, $content_array); //You have a new collaboration request!<br><br>@@mail_username~~ has invited you to collaborate together using Lincko.
+			$inform = new Inform($title, $content, false, $guest->getSha(), $guest);
+			$inform->send();
 		} else if($pivot && $pivot->access){ //toto => I am not sure why it's here, we should never match that condition (inviting someone that is already in the contact list)
 			//we directly give access to models
 			if($data && isset($data->invite_access)){

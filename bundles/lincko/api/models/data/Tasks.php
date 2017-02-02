@@ -7,8 +7,9 @@ use Carbon\Carbon;
 use \libs\Datassl;
 use \libs\STR;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
-use \bundles\lincko\api\models\Notif;
+use \bundles\lincko\api\models\Inform;
 
 class Tasks extends ModelLincko {
 
@@ -310,7 +311,7 @@ class Tasks extends ModelLincko {
 				$project_to->setHistory('_tasks', 1, 0, $parameters); //Move in
 				$project_to->touchUpdateAt();
 				$parameters['pj'] = $project_to->title;
-				return true; //Allow return if we don't want double record of task move
+				return false; //Allow return if we don't want double record of task move
 			} else {
 				$parameters['pj'] = $app->trans->getBRUT('api', 0, 2); //unknown
 			}
@@ -323,11 +324,11 @@ class Tasks extends ModelLincko {
 			if($tasksup = $this->getModel($tasksup_id)){
 				$tasksup->setHistory('tasksdown_'.$key, $new, $old, $parameters);
 				$tasksup->touchUpdateAt();
-				return true; //Do not record element itself, only the parent one
+				return false; //Do not record element itself, only the parent one
 			}
 		}
 
-		parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
+		return parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
 	}
 
 	public function getHistoryCreationCode(&$items=false){
@@ -359,38 +360,85 @@ class Tasks extends ModelLincko {
 	}
 
 
-	public function pushNotif($new=false){
+	public function pushNotif($new=false, $history=false){
 		$app = ModelLincko::getApp();
-		$users = $this->users()
-		->where('users_x_tasks.access', 1)
-		->where(function ($query){
-			$query
-			->where('users_x_tasks.in_charge', 1)
-			->orWhere('users_x_tasks.approver', 1);
-		})->get();
 
-		if($this->updated_by==0){
-			$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
-		} else {
-			$sender = Users::find($this->updated_by)->getUsername();
+		if(!$new && !$history){
+			return false;
 		}
-		$content = $this->title;
-		$notif = new Notif;
-		foreach ($users as $value) {
-			if($value->pivot->users_id != $this->updated_by && $value->pivot->users_id != $app->lincko->data['uid']){
-				$user = Users::find($value->pivot->users_id);
-				$alias = array($value->pivot->users_id => $user->getSha());
-				$language = $user->getLanguage();
-				if($new){
-					$title = $app->trans->getBRUT('api', 9, 23, array('un' => $sender,), $language); //@un~~ created a task
-				} else {
-					$title = $app->trans->getBRUT('api', 9, 24, array('un' => $sender,), $language); //@un~~ modified a task
+		if($this->updated_by==0){
+			return false;
+		}
+
+		//Get all users that didn't silence the project
+		$type = 'projects';
+		$users_accept = array();
+		$pivot = new PivotUsers(array($type));
+		if($this->tableExists($pivot->getTable())){
+			if($list = $pivot->where($type.'_id', $this->parent_id)->where('access', 1)->where('silence', 0)->get(array('users_id'))){
+				foreach ($list as $value) {
+					$users_accept[$value->users_id] = $value->users_id;
 				}
-				unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
-				if(empty($alias)){
-					continue;
+			}
+		}
+
+		$users = false;
+		$type = 'tasks';
+		$pivot = new PivotUsers(array($type));
+		if($this->tableExists($pivot->getTable())){
+			$users = $pivot
+			->where($type.'_id', $this->id)
+			->whereIn('users_id', $users_accept)
+			->where('access', 1)
+			->where(function ($query){
+				$query
+				->where('in_charge', 1)
+				->orWhere('approver', 1);
+			})
+			->get(array('users_id'));
+		}
+
+		if($users){
+			if($this->updated_by==0){
+				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+			} else {
+				$sender = Users::find($this->updated_by)->getUsername();
+			}
+			$title = $this->title;
+			$param = array('un' => $sender);
+			if($history && isset($history->par)){
+				foreach ($history->par as $key => $value) {
+					$param[$key] = $value;
 				}
-				$notif->push($title, $content, $this, $alias);
+			}
+			foreach ($users as $value) {
+				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
+					$user = Users::find($value->users_id);
+					$alias = array($value->users_id => $user->getSha());
+					$language = $user->getLanguage();
+					$delete_user = true;
+					if($history){
+						$content = $app->trans->getBRUT('data', 1, $history->code, array(), $language);
+					} else if($new){
+						$content = $app->trans->getBRUT('data', 1, 501, array(), $language); //[{un}] created a new task
+					} else {
+						continue;
+					}
+					foreach ($param as $search => $replace) {
+						$content = str_replace('[{'.$search.'}]', $replace, $content);
+						if($search=='pvid' && $replace==$app->lincko->data['uid'] && ($history->code==551 || $history->code==552)){
+							$delete_user = false;
+						}
+					}
+					if($delete_user){
+						unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
+					}
+					if(empty($alias)){
+						continue;
+					}
+					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+					$inform->send();
+				}
 			}
 		}
 		return true;

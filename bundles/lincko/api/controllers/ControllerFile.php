@@ -10,6 +10,7 @@ use \libs\SimpleImage;
 use \libs\File;
 use \libs\STR;
 use \libs\Folders;
+use \libs\Video;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Files;
@@ -483,6 +484,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$app = $this->app;
 		ob_clean();
 		flush();
+		Workspaces::getSFTP();	
 		$uid = $app->lincko->data['uid'];
 		$user = Users::find($uid);
 		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/uid/'.Datassl::encrypt($user->id, 'invitation');
@@ -792,6 +794,71 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$file->setProgress();
 		}
 		return true;
+	}
+
+	public function onboarding_get($workspace, $id){
+		$app = $this->app;
+		ob_clean();
+		flush();
+		if(!Users::amIadmin()){
+			return false;
+		}
+		Workspaces::getSFTP();	
+		$path = $app->lincko->filePathPrefix.$app->lincko->filePath.'/'.$id.'/screenshot/';
+
+		$destination = $path.$id.'.mp4';
+		$file_sequence = '/tmp/ffmpeg_concat_'.$id;
+		$file_txt = '/tmp/ffmpeg_concat_'.$id.'.txt';
+		$convert = false;
+		if(!is_file($destination)){
+			$previous_time = false;
+			$sequence = array("ffconcat version 1.0\n");
+			$folder = new Folders;
+			$folder->createPath($path);
+			if($files = $folder->loopFolder()){
+				foreach ($files as $file) {
+					if($file==$id.'.mp4'){
+						continue;
+					}
+					if($previous_time){
+						$laps = intval($file) - intval($previous_time);
+						$laps = floor($laps/2);
+						if($laps<1){
+							$laps = 1;
+						} else if($laps>5){
+							$laps = 5;
+						}
+						$sequence[] = 'duration '.$laps."\n";
+					}
+					$previous_time = $file;
+					$sequence[] = 'file '.$path.$file."\n";
+				}
+				$sequence[] = 'duration 3'; //Last picture
+			}
+			file_put_contents($file_sequence, $sequence);
+			$video = Video::slideshow($file_sequence, $destination, $file_txt);
+			$convert = true;
+		}
+		
+		if(is_file($destination)){
+			if(filesize($destination)!==false){
+				header('Content-Description: File Transfer');
+				header('Content-Type: attachment/force-download;');
+				header('Content-Disposition: attachment; filename="'.$id.'.mp4"');
+				header('Content-Transfer-Encoding: binary');
+				header('Expires: 0');
+				header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+				header('Pragma: public');
+				header('Content-Length: ' . filesize($destination));
+				readfile($destination);
+			}
+		}
+		if($convert){
+			@unlink($file_sequence);
+			@unlink($file_txt);
+		}
+
+		return exit(0);
 	}
 
 }

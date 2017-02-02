@@ -25,7 +25,7 @@ class Integration extends Model {
 		$app = ModelLincko::getApp();
 		$limit = Carbon::now();
 		$limit->second = $limit->second - intval($app->lincko->security['expired']);
-		return self::where('updated_at', '<', $limit)->delete();
+		return self::Where('updated_at', '<', $limit)->delete();
 	}
 
 }
