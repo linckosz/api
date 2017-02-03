@@ -202,6 +202,7 @@ class UsersLog extends Model {
 				$log = md5(uniqid());
 			}
 			$model->log = $log;
+			$model->party = $party;
 			$model->party_id = $party_id;
 			$model->password = '';
 			if(empty($party)){ // Only set a password for email account
@@ -264,7 +265,7 @@ class UsersLog extends Model {
 				//For Wechat, if we log with union id, double check that the openid is registered too
 				if($data->data->party=='wechat' && substr($data->data->party_id, 0, 4)=='uid.'){ //Wechat
 					if(isset($json->account) && isset($json->openid) && !empty($json->openid)){
-						$users_log->subAccount('wechat', 'oid.'.$json->account.'.'.$json->openid, false, false, true);
+						$users_log->subAccount('wechat_'.$json->account, 'oid.'.$json->account.'.'.$json->openid, false, false, true);
 					}
 				}
 				return $users_log;

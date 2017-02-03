@@ -1127,6 +1127,7 @@ class Data {
 	//$period (string) => 'daily', 'weekly'
 	public static function getResume(){ //Default is 24H (daily is 86,400s), weekly is 604,800s.
 		$app = ModelLincko::getApp();
+		set_time_limit(3600); //1H max
 		//Capsule::connection($app->lincko->data['database_data'])->enableQueryLog();
 		if(function_exists('proc_nice')){proc_nice(20);}
 		$db = Capsule::connection($app->lincko->data['database_data']);
@@ -1177,9 +1178,7 @@ class Data {
 				$timelimit->second = $timelimit->second - $timeback; //This help to display at least one message of no activity for weekly report
 			}
 
-			
-			$projects = Projects::Where('personal_private', null)
-				->where('updated_at', '>=', $timelimit)
+			$request = Projects::Where('personal_private', null)
 				->where(function ($query) use ($current_hour) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
 					$query
 					->whereHas('users', function ($query) use ($current_hour) {
@@ -1189,8 +1188,13 @@ class Data {
 					})
 					->orWhere('resume', $current_hour) //toto (hide for test)
 					;
-				})
-				->get(array('id', 'updated_at', '_perm', 'resume', 'weekly'));
+				});
+
+			if($period!='weekly'){
+				$request = $request->where('updated_at', '>=', $timelimit); //Limit the result for non-weekly report
+			}
+			
+			$projects = $request->get(array('id', 'updated_at', '_perm', 'resume', 'weekly'));
 
 			foreach ($projects as $project) {
 				$users_most = array();
@@ -1215,7 +1219,7 @@ class Data {
 				}
 				if($project->updated_at >= $timestart){
 
-					usleep(1000);
+					usleep(5000);
 					unset($result);
 					unset($result_users);
 					unset($data);
@@ -1451,13 +1455,68 @@ class Data {
 						}
 					}
 
+				} if($period=='weekly'){
+					//There was no activity last week. 2 tasks are overdue.
+
+					usleep(5000);
+					unset($result);
+					unset($data);
+					$result = array();
+					//Tasks
+					$result[$base] = 0;			//total tasks (not deleted)
+					$result[$base+5] = array(); //total remain overdue
+
+					//Tasks
+					$show = false; //At true send activity only if overdue tasks
+					$tasks = Tasks::
+						Where('parent_id', $project->id)
+						->where('approved', 0)
+						->whereHas("tasksup", function($query) {
+							$query->withTrashed(); //this exclude all subtasks
+						}, '<', 1)
+						->get(array('id', 'approved', 'start', 'duration'));
+
+					foreach ($tasks as $task) {
+						//calculate the total number of overdue tasks
+						if($task->overdue($timeend) > 0){
+							$result[$base]++;
+							array_push($result[$base+5], $task->id);
+							$show = true;
+						}
+					}
+					unset($tasks);
+
+					if($show){
+						//Resume for team
+						foreach ($result as $key => $value) {
+							//Every value on front that are not recorded will be considerate as 0 or empty array
+							if($value==0 || count($value)==0){
+								if($key != $base){ //expect for base (100, 700) which is used to recognized a record
+									continue;
+								}
+							}
+							if(!isset($data)){ $data = new \stdClass; }
+							if(!isset($data->{'0'})){ $data->{'0'} = array(); }
+							if(is_numeric($value)){
+								$data->{'0'}[$key+100] = (int) $value;
+							} else {
+								$data->{'0'}[$key+100] = $value;
+							}
+						}
+						if(isset($data) && is_object($data)){
+							$comments_update = true;
+							$msg = json_encode($data);
+							//\libs\Watch::php($data, '[team] $project '.$project->id, __FILE__, __LINE__, false, false, true);
+						}
+					}
+
 				}
 
 				//For team
 				if($project->resume!=$current_hour || ($period=='weekly' && $project->weekly!=$weekday) ){
+				//if(false){ //toto (show for test)
 					$msg = false;
 				} else if(!empty($msg)){
-				//} if(!empty($msg)){ //toto (show for test)
 					$comment = new Comments;
 					$comment->created_by = 0;
 					$comment->updated_by = 0;

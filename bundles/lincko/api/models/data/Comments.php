@@ -496,14 +496,14 @@ class Comments extends ModelLincko {
 		}
 
 		if($users){
-			if($this->updated_by==0){
+			if($this->created_by==0){
 				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
 			} else {
-				$sender = Users::find($this->updated_by)->getUsername();
+				$sender = Users::find($this->created_by)->getUsername();
 			}
 			$content = $sender.': '.$this->comment;
 			foreach ($users as $value) {
-				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
+				if($value->users_id != $this->created_by && $value->users_id != $app->lincko->data['uid']){
 					$user = Users::find($value->users_id);
 					$alias = array($value->users_id => $user->getSha());
 					unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
