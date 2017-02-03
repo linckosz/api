@@ -473,10 +473,10 @@ class ControllerUser extends Controller {
 				);
 				if(empty($users_log->party) && Users::validEmail($users_log->party_id)){
 					$content = $app->trans->getBRUT('api', 1003, 2, $content_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
-					$inform = new Inform($title, $content, false, $user->getSha(), array('email'));
+					$inform = new Inform($title, $content, false, $user->getSha(), false, array('email'));
 				} else {
 					$content = $app->trans->getBRUT('api', 1003, 3); //We are currently in Beta and are hoping to get a lot of feedback to make...
-					$inform = new Inform($title, $content, false, $user->getSha(), array($users_log->party), array('email')); //Make sure we exclude email
+					$inform = new Inform($title, $content, false, $user->getSha(), false, array($users_log->party), array('email')); //Make sure we exclude email
 				}
 				$inform->send();
 
@@ -903,9 +903,9 @@ class ControllerUser extends Controller {
 					$content_email = $app->trans->getBRUT('api', 1004, 2, $content_array); //You have requested a password reset. You need to enter the code below within 10 minutes in the required field to be able to confirm the operation. CODE: <b>@@mail_code~~<b/>
 					$content_other = $app->trans->getBRUT('api', 1004, 4, $content_array); //CODE: @@mail_code~~
 
-					$inform_email = new Inform($title_email, $content_email, false, $user->getSha(), array('email')); //Only email
+					$inform_email = new Inform($title_email, $content_email, false, $user->getSha(), false, array('email')); //Only email
 					$inform_email->send();
-					$inform_other = new Inform($title_other, $content_other, false, $user->getSha(), array(), array('email')); //Exclude email
+					$inform_other = new Inform($title_other, $content_other, false, $user->getSha(), false, array(), array('email')); //Exclude email
 					$inform_other->send();
 
 					$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
