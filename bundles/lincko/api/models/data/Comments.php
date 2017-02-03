@@ -433,7 +433,7 @@ class Comments extends ModelLincko {
 		if(!$new){
 			return false;
 		}
-		if($this->updated_by==0){ //Resumes are sent by cronjob
+		if($this->created_by==0){ //Resumes are sent by cronjob
 			return false;
 		}
 
@@ -441,6 +441,7 @@ class Comments extends ModelLincko {
 		$type = false;
 		$title = 'Lincko';
 		$comment_on = false;
+		$sub_item = false;
 		$parent = $this;
 		while($parent = $parent->getParent()){
 			$type = $parent->getTable();
@@ -452,6 +453,7 @@ class Comments extends ModelLincko {
 				}
 				break;
 			} else if($type=='tasks' && !$comment_on){
+				$sub_item = $parent;
 				$comment_on = $type;
 				$title = $parent->title;
 			}
@@ -466,7 +468,7 @@ class Comments extends ModelLincko {
 		$pivot = new PivotUsers(array($type));
 		if($this->tableExists($pivot->getTable())){
 			$users = $pivot
-			->where($type.'_id', $this->id)
+			->where($type.'_id', $parent->id)
 			->where('access', 1)
 			->where('silence', 0)
 			->get(array('users_id'));
@@ -475,13 +477,13 @@ class Comments extends ModelLincko {
 			}
 		}
 
-		if($users && $comment_on=='tasks'){
+		if($users && $sub_item && $comment_on=='tasks'){
 			$type = 'tasks';
 			$pivot = new PivotUsers(array($type));
 			if($this->tableExists($pivot->getTable())){
 				//Redefine users list with a narrow filter
 				$users = $pivot
-				->where($type.'_id', $this->id)
+				->where($type.'_id', $sub_item->id)
 				->whereIn('users_id', $users_accept)
 				->where('access', 1)
 				->where(function ($query){

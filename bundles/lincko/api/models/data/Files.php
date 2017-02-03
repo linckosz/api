@@ -405,7 +405,7 @@ class Files extends ModelLincko {
 		$pivot = new PivotUsers(array($type));
 		if($this->tableExists($pivot->getTable())){
 			$users = $pivot
-			->where($type.'_id', $this->id)
+			->where($type.'_id', $parent->id)
 			->where('access', 1)
 			->where('silence', 0)
 			->get(array('users_id'));

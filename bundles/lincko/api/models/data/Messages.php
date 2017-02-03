@@ -271,9 +271,6 @@ class Messages extends ModelLincko {
 		if(!$new){
 			return false;
 		}
-		if($this->updated_by==0){
-			return false;
-		}
 
 		$parent = $this->getParent();
 		$type = $parent->getTable();
@@ -283,17 +280,13 @@ class Messages extends ModelLincko {
 		}
 
 		$users = false;
-		$users_accept = array();
 		$pivot = new PivotUsers(array($type));
 		if($this->tableExists($pivot->getTable())){
 			$users = $pivot
-			->where($type.'_id', $this->id)
+			->where($type.'_id', $parent->id)
 			->where('access', 1)
 			->where('silence', 0)
 			->get(array('users_id'));
-			foreach ($users as $value) {
-				$users_accept[$value->users_id] = $value->users_id;
-			}
 		}
 
 		if($users){
