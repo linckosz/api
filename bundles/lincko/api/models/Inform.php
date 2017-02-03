@@ -152,6 +152,10 @@ class Inform {
 		}
 
 		$content = '[ '.$this->title." ]\n".$this->content_text;
+		//Add item link if any
+		if($item){
+			$content .= "\n".$app->lincko->domain.'/#'.$item->getTable().'-'.$item->id;
+		}
 
 		foreach ($this->sha['wechat'] as $openid => $username) {
 			$wechat->sendMsg($openid, $content, 'text');
