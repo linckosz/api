@@ -94,7 +94,7 @@ class Inform {
 						continue;
 					}
 					if($this->methods['mobile']){
-						$this->sha['mobile'][$user->username_sha1] = $usernames[$user->username_sha1];
+						$this->sha['mobile'][$user->username_sha1] = $user->username_sha1;
 					}
 					if(isset($this->methods[$party]) && $this->methods[$party]){
 						$this->sha[$party][$party_id] = $usernames[$user->username_sha1];
@@ -133,7 +133,7 @@ class Inform {
 		}
 	}
 
-	protected function send_wechat(){
+	protected function send_wechat(){return false;
 		$app = ModelLincko::getApp();
 		if(!isset($this->sha['wechat'])){
 			return false;
@@ -150,11 +150,14 @@ class Inform {
 		if(!$access_token){
 			$wechat->getToken();
 		}
-
-		$content = '[ '.$this->title." ]\n".$this->content_text;
+		
 		//Add item link if any
-		if($item){
-			$content .= "\n".$app->lincko->domain.'/#'.$item->getTable().'-'.$item->id;
+		if($this->item){
+			$content = '[ '.$this->title." ]\n"
+				.$app->lincko->domain.'/#'.$this->item->getTable().'-'.$this->item->id."\n"
+				.$this->content_text;
+		} else {
+			$content = '[ '.$this->title." ]\n".$this->content_text;
 		}
 
 		foreach ($this->sha['wechat'] as $openid => $username) {

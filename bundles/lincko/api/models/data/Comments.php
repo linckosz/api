@@ -446,7 +446,7 @@ class Comments extends ModelLincko {
 		while($parent = $parent->getParent()){
 			$type = $parent->getTable();
 			if($type=='projects'){
-				$keep = false;
+				$keep = true;
 				if(!$comment_on){
 					$comment_on = $type;
 					$title = $parent->title;

@@ -316,7 +316,7 @@ class Onboarding {
 				} else if($default_lang == 'fr'){
 					$clone_id = 1844; //French
 				} else if($default_lang == 'ko'){
-					$clone_id = 1823; //French
+					$clone_id = 1823; //Korean
 				}
 			} else if($app->lincko->domain=='lincko.co'){
 				$clone_id = 980;
