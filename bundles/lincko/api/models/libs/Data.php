@@ -87,6 +87,10 @@ class Data {
 				$msg
 			);
 		} else {
+			//Need -a if not file upload may not return the object
+			if($lastvisit>=2){
+				$lastvisit--;
+			}
 			$msg = array_merge(
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
