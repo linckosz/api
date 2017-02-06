@@ -550,6 +550,7 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::find(1973)->clone();
 
+
 /*
 		//test2016122104@lincko.cafe
 		$links = array();
@@ -623,14 +624,8 @@ class ControllerTest extends Controller {
 
 		//$tp = (new PivotUsers(array('projects')))->where('users_id', 1036)->get();
 
-		$a = array('a');
-		$b = array(
-			'a',
-			'b',
-			'c',
-		);
-
-		$tp = in_array($a, $b);
+		$tp = Projects::find(3548)->clone();
+		//23359
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
