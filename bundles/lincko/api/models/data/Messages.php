@@ -48,7 +48,7 @@ class Messages extends ModelLincko {
 	protected $name_code = 200;
 
 	protected static $archive = array(
-			'created_at' => array(true, 201), //[{un}] sent a new message
+			'created_at' => array(false, 201), //[{un}] sent a new message
 	);
 
 	protected static $history_xdiff = array('comment');
