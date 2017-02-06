@@ -808,7 +808,7 @@ class ControllerUser extends Controller {
 					$annex = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
 					$manual = array(
 						'email' => array(
-							$form->emai => $username,
+							$form->email => $username,
 						),
 					);
 					$inform = new Inform($title, $content, $annex, array(), false, array('email'));
