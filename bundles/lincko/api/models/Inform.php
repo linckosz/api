@@ -117,8 +117,8 @@ class Inform {
 		if(is_array($manual)){
 			foreach ($manual as $party => $list) {
 				if(isset($this->methods[$party]) && $this->methods[$party] && is_array($list)){
-					foreach ($list as $value) {
-						$this->sha[$party][$party_id] = $party_id;
+					foreach ($list as $party_id => $username) {
+						$this->sha[$party][$party_id] = $username;
 					}
 				}
 			}
