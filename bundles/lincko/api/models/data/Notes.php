@@ -64,15 +64,15 @@ class Notes extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 801, //[{un}] created a new note
-		'_' => 802,//[{un}] modified a note
-		'title' => 803,//[{un}] changed a note title
-		'comment' => 804, //[{un}] modified a note content
-		'parent_id' => 805, //[{un}] moved a note to the project "[{pj|ucfirst}]"
-		'pivot_users_access_0' => 896, //[{un}] blocked [{cun}]'s access to a note
-		'pivot_users_access_1' => 897, //[{un}] authorized [{cun}]'s access to a note
-		'_restore' => 898,//[{un}] restored a note
-		'_delete' => 899,//[{un}] deleted a note
+		'created_at' => array(true, 801), //[{un}] created a new note
+		'_' => array(true, 802), //[{un}] modified a note
+		'title' => array(true, 803), //[{un}] changed a note title
+		'comment' => array(true, 804), //[{un}] modified a note content
+		'parent_id' => array(true, 805), //[{un}] moved a note to the project "[{pj|ucfirst}]"
+		'pivot_users_access_0' => array(true, 896), //[{un}] blocked [{cun}]'s access to a note
+		'pivot_users_access_1' => array(true, 897), //[{un}] authorized [{cun}]'s access to a note
+		'_restore' => array(true, 898), //[{un}] restored a note
+		'_delete' => array(true, 899), //[{un}] deleted a note
 	);
 
 	protected static $history_xdiff = array('comment');

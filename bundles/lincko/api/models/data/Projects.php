@@ -59,18 +59,18 @@ class Projects extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 401, //[{un}] created a new project
-		'_' => 402,//[{un}] modified a project
-		'title' => 403,//[{un}] changed a project name
-		'description' => 404, //[{un}] modified a project description
-		'resume' => 402,//[{un}] modified a project
-		'_tasks_0' => 405,//[{un}] moved the task "[{tt}]" from this project to another one
-		'_tasks_1' => 406,//[{un}] moved the task "[{tt}]" to this project
-		'diy' => 402,//[{un}] modified a project
-		'pivot_users_access_0' => 496, //[{un}] blocked [{cun}]'s access to a project
-		'pivot_users_access_1' => 497, //[{un}] authorized [{cun}]'s access to a project
-		'_restore' => 498,//[{un}] restored a project
-		'_delete' => 499,//[{un}] deleted a project
+		'created_at' => array(true, 401), //[{un}] created a new project
+		'_' => array(true, 402), //[{un}] modified a project
+		'title' => array(true, 403), //[{un}] changed a project name
+		'description' => array(true, 404), //[{un}] modified a project description
+		'resume' => array(true, 402), //[{un}] modified a project
+		'_tasks_0' => array(true, 405), //[{un}] moved the task "[{tt}]" from this project to another one
+		'_tasks_1' => array(true, 406), //[{un}] moved the task "[{tt}]" to this project
+		'diy' => array(true, 402), //[{un}] modified a project
+		'pivot_users_access_0' => array(true, 496), //[{un}] blocked [{cun}]'s access to a project
+		'pivot_users_access_1' => array(true, 497), //[{un}] authorized [{cun}]'s access to a project
+		'_restore' => array(true, 498), //[{un}] restored a project
+		'_delete' => array(true, 499), //[{un}] deleted a project
 	);
 
 	protected static $history_xdiff = array('description');

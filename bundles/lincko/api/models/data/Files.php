@@ -87,14 +87,14 @@ class Files extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 901, //[{un}] uploaded a file
-		'_' => 902, //[{un}] modified a file
-		'name' => 903, //[{un}] changed a file name
-		'comment' => 904, //[{un}] modified a file description
-		'pivot_users_access_0' => 996, //[{un}] blocked [{cun}]'s access to a file
-		'pivot_users_access_1' => 997, //[{un}] authorized [{cun}]'s access to a file
-		'_restore' => 998,//[{un}] restored a file
-		'_delete' => 999,//[{un}] deleted a file
+		'created_at' => array(true, 901), //[{un}] uploaded a file
+		'_' => array(true, 902), //[{un}] modified a file
+		'name' => array(true, 903), //[{un}] changed a file name
+		'comment' => array(true, 904), //[{un}] modified a file description
+		'pivot_users_access_0' => array(true, 996), //[{un}] blocked [{cun}]'s access to a file
+		'pivot_users_access_1' => array(true, 997), //[{un}] authorized [{cun}]'s access to a file
+		'_restore' => array(true, 998), //[{un}] restored a file
+		'_delete' => array(true, 999), //[{un}] deleted a file
 	);
 
 	/*

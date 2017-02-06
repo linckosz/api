@@ -50,23 +50,23 @@ class Comments extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 201, //[{un}] sent a new comment
-		'_' => 202,//[{un}] modified a comment
-		'comment' => 202,//[{un}] modified a comment
-		'recalled_by' => 203,//[{un}] recalled a comment
-		//'_commented_on_item' => 210,//[{un}] commented on an item
-		//'_commented_on_chats' => 211,//[{un}]  commented on a chat group
-		'_commented_on_comments' => 212,//[{un}] replied on a comment
-		//'_commented_on_workspaces' => 213,//[{un}] commented on a workspace
-		//'_commented_on_projects' => 214,//[{un}] commented on a project
-		'_commented_on_tasks' => 215,//[{un}] commented on a task
-		//'_commented_on_users' => 216,//[{un}] commented on a user profile
-		//'_commented_on_roles' => 217,//[{un}] commented on a role
-		'_commented_on_files' => 218,//[{un}] commented on a file
-		'_commented_on_notes' => 219,//[{un}] commented on a note
-		//'_commented_on_spaces' => 220,//[{un}] commented on a space
-		'_restore' => 298,//[{un}] restored a comment
-		'_delete' => 299,//[{un}] deleted a comment
+		'created_at' => array(true, 201), //[{un}] sent a new comment
+		'_' => array(true, 202), //[{un}] modified a comment
+		'comment' => array(true, 202), //[{un}] modified a comment
+		'recalled_by' => array(true, 203), //[{un}] recalled a comment
+			'_commented_on_item' => array(false, 210), //[{un}] commented on an item
+			'_commented_on_chats' => array(false, 211), //[{un}]  commented on a chat group
+		'_commented_on_comments' => array(true, 212), //[{un}] replied on a comment
+			'_commented_on_workspaces' => array(false, 213), //[{un}] commented on a workspace
+			'_commented_on_projects' => array(false, 214), //[{un}] commented on a project
+		'_commented_on_tasks' => array(true, 215), //[{un}] commented on a task
+			'_commented_on_users' => array(false, 216), //[{un}] commented on a user profile
+			'_commented_on_roles' => array(false, 217), //[{un}] commented on a role
+		'_commented_on_files' => array(true, 218), //[{un}] commented on a file
+		'_commented_on_notes' => array(true, 219), //[{un}] commented on a note
+			'_commented_on_spaces' => array(false, 220), //[{un}] commented on a space
+		'_restore' => array(true, 298), //[{un}] restored a comment
+		'_delete' => array(true, 299), //[{un}] deleted a comment
 	);
 
 	protected static $history_xdiff = array('comment');
@@ -378,11 +378,11 @@ class Comments extends ModelLincko {
 			}
 		}
 
-		if(isset(static::$archive['_commented_on_'.$parent_type])){
-			return (int) static::$archive['_commented_on_'.$parent_type];
+		if(isset(static::$archive['_commented_on_'.$parent_type]) && static::$archive['_commented_on_'.$parent_type][0]){
+			return (int) static::$archive['_commented_on_'.$parent_type][1];
 		}
 
-		return static::$archive['created_at'];
+		return (int) static::$archive['created_at'][1];
 	}
 
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
@@ -416,9 +416,9 @@ class Comments extends ModelLincko {
 			}
 		}
 
-		if(isset(self::$archive['_commented_on_'.$parent_type])){
+		if(isset(self::$archive['_commented_on_'.$parent_type]) && self::$archive['_commented_on_'.$parent_type][0]){
 			foreach ($history as $zero) {
-				$zero->cod = (int) self::$archive['_commented_on_'.$parent_type];
+				$zero->cod = (int) self::$archive['_commented_on_'.$parent_type][1];
 				$zero->par_type = $parent_type;
 				$zero->par_id = $parent_id;
 			}

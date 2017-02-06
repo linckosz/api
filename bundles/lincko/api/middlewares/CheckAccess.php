@@ -544,6 +544,18 @@ class CheckAccess extends \Slim\Middleware {
 			return $this->next->call();
 		}
 
+		//For users statistics
+		if(
+			   $app->lincko->method_suffix == '_get'
+			&& ($route == 'info_action_get' && preg_match("/^([a-z]+\.){0,1}api\..*:10443$/ui", $app->request->headers->Host))
+			&& $username_sha1 = UsersLog::pukpicToSha()
+		){
+			if($user = Users::Where('username_sha1', $username_sha1)->first(array('id'))){
+				$app->lincko->data['uid'] = $user->id;
+				return $this->next->call();
+			}
+		}
+
 		//For file uploading, make a specific process
 		if(preg_match("/^\/file\/.+$/ui", $resourceUri) && preg_match("/^([a-z]+\.){0,1}file\..*:(8443|8080)$/ui", $app->request->headers->Host)){
 			$file_error = true;

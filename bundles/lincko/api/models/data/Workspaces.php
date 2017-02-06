@@ -47,14 +47,14 @@ class Workspaces extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 301, //[{un}] created a new workspace
-		'_' => 302,//[{un}] modified the workspace
-		'name' => 303,//[{un}] changed the workspace name
-		'domain' => 304,//[{un}] changed the workspace domain link
-		'pivot_users_access_0' => 396, //[{un}] blocked [{cun}]'s access to the workspace
-		'pivot_users_access_1' => 397, //[{un}] authorized [{cun}]'s access to the workspace
-		'_restore' => 398,//[{un}] restored the workspace
-		'_delete' => 399,//[{un}] deleted the workspace
+		'created_at' => array(true, 301), //[{un}] created a new workspace
+		'_' => array(true, 302), //[{un}] modified the workspace
+		'name' => array(true, 303), //[{un}] changed the workspace name
+		'domain' => array(true, 304), //[{un}] changed the workspace domain link
+		'pivot_users_access_0' => array(true, 396), //[{un}] blocked [{cun}]'s access to the workspace
+		'pivot_users_access_1' => array(true, 397), //[{un}] authorized [{cun}]'s access to the workspace
+		'_restore' => array(true, 398), //[{un}] restored the workspace
+		'_delete' => array(true, 399), //[{un}] deleted the workspace
 	);
 
 	protected static $allow_role = true;

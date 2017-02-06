@@ -86,20 +86,20 @@ class Users extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 601,  //[{un}] joined @@title~~
-		'_' => 602,//[{un}] modified [{hh}] profile
-		//'username' => 602,//[{un}] modified [{hh}] profile
-		//'firstname' => 602,//[{un}] modified [{hh}] profile
-		//'lastname' => 602,//[{un}] modified [{hh}] profile
-		//'gender' => 602,//[{un}] modified [{hh}] profile
-		'email' => 602,//[{un}] modified [{hh}] profile
-		//'timeoffset' => 602,//[{un}] modified [{hh}] profile
-		//'resume' => 602,//[{un}] modified [{hh}] profile
-		'pivot_users_invitation_1' => 695, //[{un}] has invited [{cun}]
-		'pivot_users_access_0' => 696, //[{un}] blocked [{cun}]'s access to [{hh}] profile
-		'pivot_users_access_1' => 697, //[{un}] authorized [{cun}]'s access to [{hh}] profile
-		'_restore' => 698,//[{un}] restored [{hh}] profile
-		'_delete' => 699,//[{un}] deleted [{hh}] profile
+		'created_at' => array(true, 601), //[{un}] joined @@title~~
+		'_' => array(true, 602), //[{un}] modified [{hh}] profile
+			'username' => array(false, 602), //[{un}] modified [{hh}] profile
+			'firstname' => array(false, 602), //[{un}] modified [{hh}] profile
+			'lastname' => array(false, 602), //[{un}] modified [{hh}] profile
+			'gender' => array(false, 602), //[{un}] modified [{hh}] profile
+		'email' => array(true, 602), //[{un}] modified [{hh}] profile
+			'timeoffset' => array(false, 602), //[{un}] modified [{hh}] profile
+			'resume' => array(false, 602), //[{un}] modified [{hh}] profile
+		'pivot_users_invitation_1' => array(true, 695), //[{un}] has invited [{cun}]
+		'pivot_users_access_0' => array(true, 696), //[{un}] blocked [{cun}]'s access to [{hh}] profile
+		'pivot_users_access_1' => array(true, 697), //[{un}] authorized [{cun}]'s access to [{hh}] profile
+		'_restore' => array(true, 698), //[{un}] restored [{hh}] profile
+		'_delete' => array(true, 699), //[{un}] deleted [{hh}] profile
 	);
 
 	protected $model_integer = array(

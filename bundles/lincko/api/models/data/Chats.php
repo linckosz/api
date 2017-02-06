@@ -49,13 +49,13 @@ class Chats extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 101, //[{un}] created a new chat group
-		'_' => 102,//[{un}] modified a chat group
-		'title' => 103,//[{un}] changed a chat group title
-		'pivot_users_access_0' => 196, //[{un}] blocked [{cun}]'s access to a chat group
-		'pivot_users_access_1' => 197, //[{un}] authorized [{cun}]'s access to a chat group
-		'_restore' => 198,//[{un}] restored a chat group
-		'_delete' => 199,//[{un}] deleted a chat group
+		'created_at' => array(true, 101), //[{un}] created a new chat group
+		'_' => array(true, 102), //[{un}] modified a chat group
+		'title' => array(true, 103), //[{un}] changed a chat group title
+		'pivot_users_access_0' => array(true, 196), //[{un}] blocked [{cun}]'s access to a chat group
+		'pivot_users_access_1' => array(true, 197), //[{un}] authorized [{cun}]'s access to a chat group
+		'_restore' => array(true, 198), //[{un}] restored a chat group
+		'_delete' => array(true, 199), //[{un}] deleted a chat group
 	);
 
 	protected static $parent_list = array(null, 'workspaces', 'projects');

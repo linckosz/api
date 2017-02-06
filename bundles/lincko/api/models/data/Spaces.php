@@ -60,14 +60,14 @@ class Spaces extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 1001, //[{un}] created a new space
-		'_' => 1002,//[{un}] modified a space
-		'title' => 1003,//[{un}] changed a space name
-		'parent_id' => 1005, //[{un}] moved a space to the project "[{pj|ucfirst}]"
-		'pivot_users_access_0' => 1096, //[{un}] blocked [{cun}]'s access to a space
-		'pivot_users_access_1' => 1097, //[{un}] authorized [{cun}]'s access to a space
-		'_restore' => 1098,//[{un}] restored a space
-		'_delete' => 1099,//[{un}] deleted a space
+		'created_at' => array(true, 1001), //[{un}] created a new space
+		'_' => array(true, 1002), //[{un}] modified a space
+		'title' => array(true, 1003), //[{un}] changed a space name
+		'parent_id' => array(true, 1005), //[{un}] moved a space to the project "[{pj|ucfirst}]"
+		'pivot_users_access_0' => array(true, 1096), //[{un}] blocked [{cun}]'s access to a space
+		'pivot_users_access_1' => array(true, 1097), //[{un}] authorized [{cun}]'s access to a space
+		'_restore' => array(true, 1098), //[{un}] restored a space
+		'_delete' => array(true, 1099), //[{un}] deleted a space
 	);
 
 	protected static $parent_list = 'projects';

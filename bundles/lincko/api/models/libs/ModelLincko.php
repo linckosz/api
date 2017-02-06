@@ -20,6 +20,7 @@ use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\Tree;
 use \bundles\lincko\api\models\libs\Models;
+use \bundles\lincko\api\models\libs\Action;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Roles;
@@ -68,12 +69,12 @@ abstract class ModelLincko extends Model {
 	//Key: Column title to record
 	//Value: Title of record
 	protected static $archive = array(
-		'created_at' => 1,  //[{un}] created a new item
-		'_' => 2,//[{un}] modified an item
-		'_access_0' => 96, //[{un}] blocked [{cun}]'s access to an item
-		'_access_1' => 97, //[{un}] authorized [{cun}]'s access to an item
-		'_restore' => 98,//[{un}] restored an item
-		'_delete' => 99,//[{un}] deleted an item
+		'created_at' => array(true, 1), //[{un}] created a new item
+		'_' => array(true, 2), //[{un}] modified an item
+		'_access_0' => array(true, 96), //[{un}] blocked [{cun}]'s access to an item
+		'_access_1' => array(true, 97), //[{un}] authorized [{cun}]'s access to an item
+		'_restore' => array(true, 98), //[{un}] restored an item
+		'_delete' => array(true, 99), //[{un}] deleted an item
 	);
 
 	//Tell we do a patch for some attrobutes
@@ -1749,7 +1750,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function getHistoryCreationCode(&$items=false){
-		return static::$archive['created_at'];
+		return static::$archive['created_at'][1];
 	}
 
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
@@ -1757,8 +1758,8 @@ abstract class ModelLincko extends Model {
 		$history = new \stdClass;
 		$created_at = (new \DateTime($this->created_at))->getTimestamp();
 		$code = 1; //Default created_at comment
-		if(array_key_exists('created_at', $this::$archive)){
-			$code = $this::$archive['created_at'];
+		if(array_key_exists('created_at', $this::$archive) && $this::$archive['created_at'][0]){
+			$code = $this::$archive['created_at'][1];
 		}
 		$key = array_search($this->getTable(), array_keys(Data::getModels())).'_'.$this->id; //Be careful with iOS, it crashes when to many keys as string
 		$history->$key = new \stdClass;
@@ -1792,13 +1793,17 @@ abstract class ModelLincko extends Model {
 		if(count($this::$archive)==0 || $this->getTable()=='history' || $namespace!='bundles\lincko\api\models\data'){ //We exclude history itself to avoid looping
 			return false;
 		}
+		$code = $this->getArchiveCode($key, $new);
+		if($code===false){
+			return false;
+		}
 		$history = new History;
 		$history->created_by = $app->lincko->data['uid'];
 		$history->parent_id = $this->id;
 		$history->parent_type = $this->getTable();
 		$history->pivot_type = $pivot_type;
 		$history->pivot_id = $pivot_id;
-		$history->code = $this->getArchiveCode($key, $new);
+		$history->code = $code;
 		$history->attribute = $key;
 		if(!is_null($old)){
 			if(in_array($key, static::$history_xdiff)){
@@ -1812,6 +1817,7 @@ abstract class ModelLincko extends Model {
 			$history->parameters = json_encode($parameters, JSON_FORCE_OBJECT | JSON_UNESCAPED_UNICODE);
 		}
 		$history->save();
+		Action::record($code);
 		return $history;
 	}
 
@@ -1820,10 +1826,14 @@ abstract class ModelLincko extends Model {
 		$connectionName = $this->getConnectionName();
 		$titles = new \stdClass;
 		foreach ($this::$archive as $key => $value) {
-			$titles->$value = $app->trans->getBRUT('data', 1, $value);
+			$titles->{$value[1]} = $app->trans->getBRUT('data', 1, $value[1]);
 		}
 		$titles->{'0'} = $app->trans->getBRUT('data', 1, $this->name_code);
 		return $titles;
+	}
+
+	public static function getArchive(){
+		return static::$archive;
 	}
 
 	protected function getArchiveCode($column, $value){
@@ -1832,11 +1842,19 @@ abstract class ModelLincko extends Model {
 		}
 		$value = (string) $value;
 		if(array_key_exists($column.'_'.$value, $this::$archive)){
-			return $this::$archive[$column.'_'.$value];
+			if($this::$archive[$column.'_'.$value][0]){
+				return $this::$archive[$column.'_'.$value][1];
+			}
 		} else if(array_key_exists($column, $this::$archive)){
-			return $this::$archive[$column];
+			if($this::$archive[$column][0]){
+				return $this::$archive[$column][1];
+			}
+		} else {
+			if($this::$archive['_'][0]){
+				return $this::$archive['_'][1]; //Neutral comment
+			}
 		}
-		return $this::$archive['_']; //Neutral comment
+		return false; //Not authorized to display the history to the front
 	}
 
 	public function getContactsLock(){

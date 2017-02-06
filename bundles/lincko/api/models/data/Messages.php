@@ -47,11 +47,8 @@ class Messages extends ModelLincko {
 
 	protected $name_code = 200;
 
-	//We don't record any history for chats messages
-	//protected static $archive = array();
-	//toto => temporary until tabList list message of Chats not from hist
 	protected static $archive = array(
-		'created_at' => 201, //[{un}] sent a new message
+			'created_at' => array(false, 201), //[{un}] sent a new message
 	);
 
 	protected static $history_xdiff = array('comment');

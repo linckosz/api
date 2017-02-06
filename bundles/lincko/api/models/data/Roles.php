@@ -45,12 +45,12 @@ class Roles extends ModelLincko {
 	protected $save_history = true;
 
 	protected static $archive = array(
-		'created_at' => 701, //[{un}] created a new role
-		'_' => 702,//[{un}] modified a role
-		//'pivot_users_access_0' => 796, /* UNSUSED */ //[{un}] blocked [{cun}]'s access to a role
-		//'pivot_users_access_1' => 797, /* UNSUSED */ //[{un}] authorized [{cun}]'s access to a role
-		'_restore' => 798,//[{un}] restored a role
-		'_delete' => 799,//[{un}] deleted a role
+		'created_at' => array(true, 701), //[{un}] created a new role
+		'_' => array(true, 702), //[{un}] modified a role
+			'pivot_users_access_0' => array(false, 796), /* UNSUSED */ //[{un}] blocked [{cun}]'s access to a role
+			'pivot_users_access_1' => array(false, 797), /* UNSUSED */ //[{un}] authorized [{cun}]'s access to a role
+		'_restore' => array(true, 798), //[{un}] restored a role
+		'_delete' => array(true, 799), //[{un}] deleted a role
 	);
 
 	protected static $parent_list = 'workspaces';
