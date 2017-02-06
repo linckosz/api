@@ -297,7 +297,7 @@ class Chats extends ModelLincko {
 					$table = $item->getTable();
 					if(isset($links[$table][$item->id])){
 						if(!isset($pivots->{$dep.'>access'})){ $pivots->{$dep.'>access'} = new \stdClass; }
-						$pivots->{$dep.'>access'}->{$links[$table][$item->id]->id} = true;
+						$pivots->{$dep.'>access'}->{$links[$table][$item->id]->id} = $item->pivot->access;
 						foreach ($dependencies_visible[$dep][1] as $field) {
 							if(isset($item->pivot->$field)){
 								if(!isset($pivots->{$dep.'>'.$field})){ $pivots->{$dep.'>'.$field} = new \stdClass; }
