@@ -439,6 +439,7 @@ class Files extends ModelLincko {
 					if(empty($alias)){
 						continue;
 					}
+					$language = $user->getLanguage();
 					$content = $this->name;
 					if($type!='chats' || !isset($parent->single) || !$parent->single){
 						$content = $app->trans->getBRUT('data', 1, 901, array(), $language); //[{un}] uploaded a file

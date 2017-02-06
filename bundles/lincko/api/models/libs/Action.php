@@ -69,8 +69,8 @@ class Action extends Model {
 					$archive = $class::getArchive();
 					if(!empty($archive)){
 						foreach ($archive as $code) {
-							if($content = $app->trans->getBRUT('data', 1, $code, array(), 'en')){
-								self::$convert[intval($code)] = str_replace('[{un}]', $username, $content);
+							if($content = $app->trans->getBRUT('data', 1, $code[1], array(), 'en')){
+								self::$convert[intval($code[1])] = str_replace('[{un}]', $username, $content);
 							}
 						}
 					}
