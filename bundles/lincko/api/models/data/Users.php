@@ -474,6 +474,10 @@ class Users extends ModelLincko {
 		if($import_user->id==$this->id){
 			return false;
 		}
+		$this->forceGiveAccess();
+		$import_user->forceGiveAccess();
+		Users::$permission_users[$app->lincko->data['uid']]['users'][$this->id] = 2;
+		Users::$permission_users[$app->lincko->data['uid']]['users'][$import_user->id] = 2;
 
 		//Grab personal project items to move them to the current user
 		$personal_array = array();
