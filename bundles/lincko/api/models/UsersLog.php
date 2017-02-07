@@ -246,7 +246,8 @@ class UsersLog extends Model {
 				$user = Users::WhereNotNull('username_sha1')->where('username_sha1', $model->username_sha1)->first();
 				$main_user = Users::WhereNotNull('username_sha1')->where('username_sha1', $this->username_sha1)->first();
 			}
-
+			$main_user->forceGiveAccess();
+			$user->forceGiveAccess();
 			if($user && $import_user && $main_user->import($user)){
 				$result = self::Where('party', $party)->whereNotNull('party_id')->where('party_id', $party_id)->first(array('log'));
 			}
