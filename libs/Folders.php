@@ -84,11 +84,13 @@ class Folders {
 
 	public function createPath($folder, $chmod=0755){
 		$this->folder = false;
-		if(!is_dir($folder)){
-			if(mkdir($folder, $chmod, true)){
-				return $this->setPath($folder);
+		try {
+			if(!is_dir($folder)){
+				if(mkdir($folder, $chmod, true)){
+					return $this->setPath($folder);
+				}
 			}
-		}
+		} catch(\Exception $e){}
 		return $this->setPath($folder);
 	}
 

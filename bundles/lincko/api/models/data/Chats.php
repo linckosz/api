@@ -221,7 +221,7 @@ class Chats extends ModelLincko {
 		return parent::checkPermissionAllow($level);
 	}
 
-	public function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array(), $force_access=false){
 		//For all chats that depends of a projects, we automatically give them same access as projects
 		$parent = $this->getParent();
 		if($parent && $parent->getTable()=='projects'){

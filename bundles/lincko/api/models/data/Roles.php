@@ -165,7 +165,7 @@ class Roles extends ModelLincko {
 		return parent::delete();
 	}
 
-	public function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array(), $force_access=false){
 		//We don't set roles since it will always be access 1, but we allow deletion
 		return false;
 	}

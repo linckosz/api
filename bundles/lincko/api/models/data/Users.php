@@ -895,7 +895,7 @@ class Users extends ModelLincko {
 				$pivots->{'usersLinked>models'}->{$guest->id} = json_encode($invite_access);
 			}
 			$user->pivots_format($pivots);
-			//$user->pivots_save();
+			//$user->pivots_save(array(), true);
 			$user->save();
 			$link = 'https://'.$app->lincko->domain;
 

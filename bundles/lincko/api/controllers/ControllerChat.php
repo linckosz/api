@@ -140,7 +140,7 @@ class ControllerChat extends Controller {
 						$save = false;
 					}
 				}
-				if($save && $guest = Users::find($form->single)){
+				if($save && $guest = Users::getModel($form->single)){ //Make sure that for single chats the user is part of your contact list
 					$pivots = new \stdClass;
 					$pivots->{'users>access'} = new \stdClass;
 					$pivots->{'users>access'}->{$app->lincko->data['uid']} = true;
@@ -150,6 +150,8 @@ class ControllerChat extends Controller {
 					$pivots->{'users>single'}->{$form->single} = $app->lincko->data['uid'];
 					$model->single = true;
 					$model->pivots_format($pivots, false);
+				} else {
+					$save = false;
 				}
 			} else {
 				$model->pivots_format($form, false);

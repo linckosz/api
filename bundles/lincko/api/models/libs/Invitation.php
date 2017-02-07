@@ -47,7 +47,7 @@ class Invitation extends ModelLincko {
 	}
 
 	//We do not attach
-	public function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array(), $force_access=false){
 		return true;
 	}
 

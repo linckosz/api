@@ -1289,13 +1289,16 @@ abstract class ModelLincko extends Model {
 	}
 
 	//Check if the user has access to the object
-	public static function getModel($id, $with_trash=false){
+	public static function getModel($id, $with_trash=false, $force_access=false){
 		if($with_trash){
 			$model = static::withTrashed()->find($id);
 		} else {
 			$model = static::find($id);
 		}
 		if($model){
+			if($force_access){
+				$model->forceGiveAccess();
+			}
 			if($model->checkAccess(false)){
 				return $model;
 			}
@@ -2770,7 +2773,7 @@ abstract class ModelLincko extends Model {
 		return $pivot_array;
 	}
 
-	public function pivots_save(array $parameters = array()){
+	public function pivots_save(array $parameters = array(), $force_access=false){
 		$app = ModelLincko::getApp();
 		$namespace = (new \ReflectionClass($this))->getNamespaceName();
 		if($namespace!='bundles\lincko\api\models\data'){ //We exclude users_x_roles_x itself to avoid looping
@@ -2788,7 +2791,8 @@ abstract class ModelLincko extends Model {
 					if(!$success){ break; }
 					//Check if the user has access to the element to avoid unwanted assignements
 					$class = $this::getClass($type);
-					if($model = $class::getModel($type_id, true)){
+					//if($model = $class::getModel($type_id, true, $force_access)){ //This give some issue of invitation (link, codem or auto items)
+					if($model = $class::getModel($type_id, true, true)){
 						foreach ($column_list as $column => $result) {
 							$history_save = true;
 							if(is_array($result)){
