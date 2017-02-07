@@ -791,7 +791,7 @@ class ControllerUser extends Controller {
 		if(is_array($form) || is_object($form)){
 			$form = (object) $form;
 			if(!$form->exists && isset($form->email)){
-				if($user_log = UsersLog::Where('party', null)->where('party_id', $email)->first(array('username_sha1'))){
+				if($user_log = UsersLog::Where('party', null)->where('party_id', $form->email)->first(array('username_sha1'))){
 					$guest = Users::where('username_sha1', $user_log->username_sha1)->first();
 					if(!$guest){
 						$user = Users::getUser();
