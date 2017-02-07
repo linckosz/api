@@ -130,6 +130,32 @@ class Messages extends ModelLincko {
 		return parent::withTrashed()->find($id, $columns);
 	}
 
+	public function checkAccess($show_msg=true){
+		$app = ModelLincko::getApp();
+		$this->checkUser();
+		$uid = $app->lincko->data['uid'];
+		if(!is_bool($this->accessibility)){
+			$this->accessibility = (bool) false; //By default, for security reason, we do not allow the access
+			//Since message does not have _perm attribute, we check directly the parent
+			$parent = $this->getParent();
+			if($parent){
+				if(isset($parent->_perm)){
+					$perm = json_decode($parent->_perm);
+					if(!empty($perm) && isset($perm->$uid)){
+						$this->accessibility = (bool) true;
+					}
+				} else {
+					$this->accessibility = $parent->checkAccess($show_msg);
+				}
+			}
+			//Root directory
+			else if(empty($parent_type) && empty($parent_id)){
+				$this->accessibility = (bool) true;
+			}
+		}
+		return parent::checkAccess($show_msg);
+	}
+
 	public function scopegetItems($query, $list=array(), $get=false){
 		if($get){
 			$result = array();

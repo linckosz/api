@@ -316,7 +316,7 @@ class ControllerUser extends Controller {
 			$json = null;
 			if(empty($data->party)){ //Email
 				$email = mb_strtolower($user->email);
-				if(Users::where('email', $email)->first()){
+				if(UsersLog::Where('party', null)->where('party_id', $email)->first() || Users::where('email', $email)->first()){
 					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 10); //Email address already in use.
 					$errfield = 'email';
 					goto failed;
@@ -705,24 +705,28 @@ class ControllerUser extends Controller {
 				$email = mb_strtolower($value);
 				break; //Insure to take the first one only
 			}
-			if($user = Users::where('email', $email)->first()){ //Account found
-				$data = new \stdClass;
-				$data->myself = false;
-				if($user->id == $app->lincko->data['uid']){
-					$data->myself = true;
+			$user = false;
+			if($user_log = UsersLog::Where('party', null)->where('party_id', $email)->first(array('username_sha1'))){
+				if($user = Users::where('username_sha1', $user_log->username_sha1)->first()){ //Account found
+					$data = new \stdClass;
+					$data->myself = false;
+					if($user->id == $app->lincko->data['uid']){
+						$data->myself = true;
+					}
+					$data->contact = false;
+					if(Users::getModel($user->id)){
+						$data->contact = true;
+					}
+					$data->id = $user->id;
+					$data->username = $user->username;
+					$data->updated_at = $user->updated_at->getTimestamp();
+					$data->profile_pic = $user->profile_pic;
+					$msg = $app->trans->getBRUT('api', 15, 23); //Account found
+					$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+					return true;
 				}
-				$data->contact = false;
-				if(Users::getModel($user->id)){
-					$data->contact = true;
-				}
-				$data->id = $user->id;
-				$data->username = $user->username;
-				$data->updated_at = $user->updated_at->getTimestamp();
-				$data->profile_pic = $user->profile_pic;
-				$msg = $app->trans->getBRUT('api', 15, 23); //Account found
-				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
-				return true;
-			} else {
+			}
+			if(!$user){
 				$data = true;
 				$msg = $app->trans->getBRUT('api', 15, 24); //Account not found
 				$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
@@ -787,37 +791,39 @@ class ControllerUser extends Controller {
 		if(is_array($form) || is_object($form)){
 			$form = (object) $form;
 			if(!$form->exists && isset($form->email)){
-				$guest = Users::where('email', $form->email)->first();
-				if(!$guest){
-					$user = Users::getUser();
-					$username = $user->username;
-					$invitation = new Invitation();
-					if(isset($form->invite_access)){
-						$invitation->models = $form->invite_access;
+				if($user_log = UsersLog::Where('party', null)->where('party_id', $email)->first(array('username_sha1'))){
+					$guest = Users::where('username_sha1', $user_log->username_sha1)->first();
+					if(!$guest){
+						$user = Users::getUser();
+						$username = $user->username;
+						$invitation = new Invitation();
+						if(isset($form->invite_access)){
+							$invitation->models = $form->invite_access;
+						}
+						$invitation->save();
+
+						$code = $invitation->code;
+						$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
+						$title = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
+						$content_array = array(
+							'mail_username' => $username,
+							'mail_link' => $link,
+						);
+						$content = $app->trans->getBRUT('api', 1001, 2, $content_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
+						$annex = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
+						$manual = array(
+							'email' => array(
+								$form->email => $username,
+							),
+						);
+						$inform = new Inform($title, $content, $annex, array(), false, array('email'));
+						$inform->send($manual);
+
+						$data = true;
+						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+						return true;
 					}
-					$invitation->save();
-
-					$code = $invitation->code;
-					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
-					$title = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
-					$content_array = array(
-						'mail_username' => $username,
-						'mail_link' => $link,
-					);
-					$content = $app->trans->getBRUT('api', 1001, 2, $content_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
-					$annex = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
-					$manual = array(
-						'email' => array(
-							$form->email => $username,
-						),
-					);
-					$inform = new Inform($title, $content, $annex, array(), false, array('email'));
-					$inform->send($manual);
-
-					$data = true;
-					$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
-					$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
-					return true;
 				}
 			} else if($form->exists && isset($form->users_id)){
 				if($guest = Users::find($form->users_id)){
