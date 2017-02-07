@@ -791,39 +791,37 @@ class ControllerUser extends Controller {
 		if(is_array($form) || is_object($form)){
 			$form = (object) $form;
 			if(!$form->exists && isset($form->email)){
-				if($user_log = UsersLog::Where('party', null)->where('party_id', $form->email)->first(array('username_sha1'))){
-					$guest = Users::where('username_sha1', $user_log->username_sha1)->first();
-					if(!$guest){
-						$user = Users::getUser();
-						$username = $user->username;
-						$invitation = new Invitation();
-						if(isset($form->invite_access)){
-							$invitation->models = $form->invite_access;
-						}
-						$invitation->save();
-
-						$code = $invitation->code;
-						$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
-						$title = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
-						$content_array = array(
-							'mail_username' => $username,
-							'mail_link' => $link,
-						);
-						$content = $app->trans->getBRUT('api', 1001, 2, $content_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
-						$annex = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
-						$manual = array(
-							'email' => array(
-								$form->email => $username,
-							),
-						);
-						$inform = new Inform($title, $content, $annex, array(), false, array('email'));
-						$inform->send($manual);
-
-						$data = true;
-						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
-						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
-						return true;
+				$guest = UsersLog::Where('party', null)->where('party_id', $form->email)->first(array('username_sha1'));
+				if(!$guest){
+					$user = Users::getUser();
+					$username = $user->username;
+					$invitation = new Invitation();
+					if(isset($form->invite_access)){
+						$invitation->models = $form->invite_access;
 					}
+					$invitation->save();
+
+					$code = $invitation->code;
+					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
+					$title = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
+					$content_array = array(
+						'mail_username' => $username,
+						'mail_link' => $link,
+					);
+					$content = $app->trans->getBRUT('api', 1001, 2, $content_array); //Hello,@@username~~ has invited you to join Lincko. Lincko helps you accomplish great....
+					$annex = $app->trans->getBRUT('api', 1001, 3); //You are receiving this e-mail because someone invited you to collaborate together using Lincko.
+					$manual = array(
+						'email' => array(
+							$form->email => $username,
+						),
+					);
+					$inform = new Inform($title, $content, $annex, array(), false, array('email'));
+					$inform->send($manual);
+
+					$data = true;
+					$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
+					$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));
+					return true;
 				}
 			} else if($form->exists && isset($form->users_id)){
 				if($guest = Users::find($form->users_id)){
@@ -834,7 +832,6 @@ class ControllerUser extends Controller {
 						return true;
 					}
 				}
-				
 			}
 			$data = false;
 			$msg = $app->trans->getBRUT('api', 15, 25); //Invitation failed to send.
