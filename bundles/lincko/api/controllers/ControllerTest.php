@@ -624,7 +624,7 @@ class ControllerTest extends Controller {
 
 		//$tp = (new PivotUsers(array('projects')))->where('users_id', 1036)->get();
 
-		$tp = Projects::find(3548)->clone();
+		//$tp = Projects::find(3548)->clone();
 		//23359
 
 		//Display mysql requests

@@ -28,3 +28,13 @@ $app->group('/info', function () use ($app) {
 	->name('info_action_get');
 
 });
+
+$app->group('/debug', function () use ($app) {
+	
+	if($app->getMode()==='development'){
+		$app->get('/md5', function () use($app) {
+			include($app->lincko->path.'/error/md5.php');
+		});
+	}
+
+});
