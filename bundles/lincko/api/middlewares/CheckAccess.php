@@ -60,10 +60,12 @@ class CheckAccess extends \Slim\Middleware {
 		} else {
 			$user_log = new UsersLog;
 		}
-		$authorize = $user_log->getAuthorize($data);
-		if(is_array($authorize) && isset($authorize['public_key'])){
-			return $authorize['public_key'];
-		}
+		//if($user_log){ //toto => need to uncomment
+			$authorize = $user_log->getAuthorize($data);
+			if(is_array($authorize) && isset($authorize['public_key'])){
+				return $authorize['public_key'];
+			}
+		//}
 		if(isset($data->public_key)){
 			Authorization::clean();
 			return $data->public_key;
@@ -146,7 +148,7 @@ class CheckAccess extends \Slim\Middleware {
 					
 					$title = $app->trans->getBRUT('api', 1004, 5); //Invitation accepted
 					$content_array = array(
-						'mail_username' => $host->username,
+						'mail_username' => $user->username,
 					);
 					$content = $app->trans->getBRUT('api', 1004, 6, $content_array); //@@mail_username~~ accepted your invitation.
 					$inform = new Inform($title, $content, false, $host->getSha());

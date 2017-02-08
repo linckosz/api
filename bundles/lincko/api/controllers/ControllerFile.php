@@ -631,7 +631,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			}
 		}
 
-		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/#submenu-personal_lincko%false%false%'.$email;
+		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/#submenu-'.base64_encode('personal_lincko%false%false%'.$email);
 		header('Expires: 0');
 		header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 

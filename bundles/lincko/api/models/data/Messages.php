@@ -273,7 +273,7 @@ class Messages extends ModelLincko {
 
 	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		if(!empty($this->recalled_by)){
-			$this->comment = '...';
+			$this->comment = ' ';
 		}
 		$temp = parent::toJson($detail, $options);
 
@@ -282,7 +282,7 @@ class Messages extends ModelLincko {
 
 	public function toVisible(){
 		if(!empty($this->recalled_by)){
-			$this->comment = '...';
+			$this->comment = ' ';
 		}
 		$model = parent::toVisible();
 		return $model;
@@ -291,7 +291,7 @@ class Messages extends ModelLincko {
 	public function pushNotif($new=false, $history=false){
 		$app = ModelLincko::getApp();
 
-		if(!$new){
+		if(!$new || !empty($this->recalled_by)){
 			return false;
 		}
 
