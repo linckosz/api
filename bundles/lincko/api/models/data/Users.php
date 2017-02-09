@@ -799,7 +799,7 @@ class Users extends ModelLincko {
 							if(!isset($this->pivots_var->users)){ $this->pivots_var->users = new \stdClass; }
 							if(!isset($this->pivots_var->users->$users_id)){ $this->pivots_var->users->$users_id = new \stdClass; }
 							$this->pivots_var->users->$users_id->models = array(false, false);
-							$this->pivots_var->users->$users_id->access = array(true, false);
+							$this->pivots_var->users->$users_id->access = array(true, true);
 							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
 						} else if($access && isset($app->lincko->data['invitation_code']) && $app->lincko->data['invitation_code']){
 							$this->pivots_var->users->$users_id->access = array(true, true); //Need to trigger a notification for URL invitation
@@ -812,7 +812,7 @@ class Users extends ModelLincko {
 				}
 			}
 		}
-		return $save;	
+		return $save;
 	}
 
 	public function setLanguage(){
