@@ -2563,9 +2563,6 @@ abstract class ModelLincko extends Model {
 	//False (default): will display only not deleted
 	public static function enableTrashGlobal($trash=false){
 		$app = ModelLincko::getApp();
-		if(!isset($app->lincko->api['x_i_am_god']) || !$app->lincko->api['x_i_am_god']){
-			$trash = false; //Don't allow to see trashed if not a god user
-		}
 		$trash = (boolean) $trash;
 		self::$with_trash_global = $trash;
 	}
