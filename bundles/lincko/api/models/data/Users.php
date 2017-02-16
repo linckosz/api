@@ -554,6 +554,10 @@ class Users extends ModelLincko {
 						}
 					}
 				}
+				$columns = $class::getColumns();
+				foreach ($columns as $column) {
+					# code... toto => to finish
+				}
 			}
 			//import Personal spaces
 			foreach ($personal_array as $item) {

@@ -627,6 +627,14 @@ class ControllerTest extends Controller {
 		//$tp = Projects::find(3548)->clone();
 		//23359
 
+		//$tp = Projects::getColumns();
+
+		//$tp = strpos('created_by', '_by');
+
+		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/mp4.png';
+
+		$tp = pathinfo($path, PATHINFO_FILENAME);
+
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);

@@ -133,7 +133,7 @@ class Inform {
 		}
 	}
 
-	protected function send_wechat(){return false;
+	protected function send_wechat(){
 		$app = ModelLincko::getApp();
 		if(!isset($this->sha['wechat'])){
 			return false;

@@ -579,6 +579,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					$puid = $file->puid;
 				}
 				$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/thumbnail/'.$file->link;
+				$path_xsend = '/protected_files/'.$puid.'/thumbnail/'.$file->link;
+				$name = pathinfo($path, PATHINFO_FILENAME).'.'.$file->ori_thu;
 				$content_type = $file->thu_type;
 				if(filesize($path)!==false){
 					//http://stackoverflow.com/questions/2000715/answering-http-if-modified-since-and-http-if-none-match-in-php/2015665#2015665
@@ -594,7 +596,16 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						}
 					}
 					header('Content-Type: '.$content_type.';');
-					readfile($path);
+					header('Content-Disposition: inline; filename="'.$name.'"');
+					header('Pragma: public');
+					$size = filesize($path);
+					header('Content-Length: '.$size);
+					header('Content-Range: bytes 0-'.($size-1).'/'.$size);
+					if(!$app->lincko->data['remote'] && $path_xsend){
+						header('X-Accel-Redirect: '.$path_xsend);
+					} else {
+						readfile($path);
+					}
 					return exit(0);
 				}
 			}
@@ -688,42 +699,57 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			if($file->progress<100 && $file->category=='video'){
 				$file->checkProgress();
 			}
-			if($type=='thumbnail' && is_null($file->thu_type)){ //If the thumbnail is not available we download
-				$type = 'download';
+			if($type=='thumbnail' && is_null($file->thu_type)){ //If the thumbnail is not available we link
+				$type = 'link';
 			}
-			if($type=='link' && $file->category!='image'){ //If the file is different than an image we download by default
+			if($type=='link' && $file->category=='file'){ //If it's a common file, we force to download
 				$type = 'download';
 			}
 			$puid = $file->created_by;
 			if(!is_null($file->puid)){
 				$puid = $file->puid;
 			}
+			$name = $file->name;
 			if($type=='download'){
 				$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/'.$file->link;
-				$name = $file->name;
+				$path_xsend = '/protected_files/'.$puid.'/'.$file->link;
 				if($file->progress<100 && $file->category=='video'){
 					$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/mp4.png';
+					$path_xsend = false;
 					$name = 'converting.png';
 				}
 				if(filesize($path)!==false){
+					//note that the root and internal redirect paths are concatenated.
+					//https://www.nginx.com/resources/wiki/start/topics/examples/xsendfile/
 					header('Content-Description: File Transfer');
 					header('Content-Type: attachment/force-download;');
-					//header('Content-Type: application/octet-stream'); //toto => test for ios
-					header('Content-Disposition: attachment; filename="'.$name.'"');
 					header('Content-Transfer-Encoding: binary');
+					//header('Content-Type: application/octet-stream'); //toto => test for ios
+					$content_type = $file->ori_type;
+					header('Content-Type: '.$content_type.';');
+					header('Content-Disposition: attachment; filename="'.$name.'"');
 					header('Expires: 0');
 					header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 					header('Pragma: public');
-					header('Content-Length: ' . filesize($path));
-					readfile($path);
+					$size = filesize($path);
+					header('Content-Length: '.$size);
+					header('Content-Range: bytes 0-'.($size-1).'/'.$size);
+					if(!$app->lincko->data['remote'] && $path_xsend){
+						header('X-Accel-Redirect: '.$path_xsend);
+					} else {
+						readfile($path);
+					}
 					return exit(0);
 				}
 			} else if($type=='link' || $type=='thumbnail'){
 				if($type=='thumbnail'){
 					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/thumbnail/'.$file->link;
+					$path_xsend = '/protected_files/'.$puid.'/thumbnail/'.$file->link;
 					$content_type = $file->thu_type;
+					$name = pathinfo($path, PATHINFO_FILENAME).'.'.$file->ori_thu;
 				} else {
 					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/'.$file->link;
+					$path_xsend = '/protected_files/'.$puid.'/'.$file->link;
 					$content_type = $file->ori_type;
 				}
 				if(filesize($path)!==false){
@@ -740,7 +766,16 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						}
 					}
 					header('Content-Type: '.$content_type.';');
-					readfile($path);
+					header('Content-Disposition: inline; filename="'.$name.'"');
+					header('Pragma: public');
+					$size = filesize($path);
+					header('Content-Length: '.$size);
+					header('Content-Range: bytes 0-'.($size-1).'/'.$size);
+					if(!$app->lincko->data['remote'] && $path_xsend){
+						header('X-Accel-Redirect: '.$path_xsend);
+					} else {
+						readfile($path);
+					}
 					return exit(0);
 				}
 			}
@@ -807,6 +842,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$path = $app->lincko->filePathPrefix.$app->lincko->filePath.'/'.$id.'/screenshot/';
 
 		$destination = $path.$id.'.mp4';
+		$path_xsend = '/protected_files/'.$id.'/screenshot/'.$id.'.mp4';
 		$file_sequence = '/tmp/ffmpeg_concat_'.$id;
 		$file_txt = '/tmp/ffmpeg_concat_'.$id.'.txt';
 		$convert = false;
@@ -849,8 +885,14 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				header('Expires: 0');
 				header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 				header('Pragma: public');
-				header('Content-Length: ' . filesize($destination));
-				readfile($destination);
+				$size = filesize($destination);
+				header('Content-Length: '.$size);
+				header('Content-Range: bytes 0-'.($size-1).'/'.$size);
+				if(!$app->lincko->data['remote'] && $path_xsend){
+					header('X-Accel-Redirect: '.$path_xsend);
+				} else {
+					readfile($destination);
+				}
 			}
 		}
 		if($convert){
