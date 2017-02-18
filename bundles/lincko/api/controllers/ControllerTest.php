@@ -631,13 +631,18 @@ class ControllerTest extends Controller {
 
 		//$tp = strpos('created_by', '_by');
 
-		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/mp4.png';
+		$folder = new Folders;
+		//$folder->createSymlink('/glusterfs/.lincko.cafe/files/share/upload/3/dba16407ff5b793b0121667685af6c49', '/glusterfs/.lincko.cafe/back/share/slim.api/dev/bruno/public/../public/file/0/bFN1US9FTHBwd0QyQytwbUlUVWxlSjFOMUsraGtEVS9jMDlncTFObUtnZz0=/link/23148/04.png');
+		
+		//$folder->createSymlink('/glusterfs/.lincko.cafe/files/share/upload/3/dba16407ff5b793b0121667685af6c49', '/glusterfs/.lincko.cafe/back/share/slim.api/dev/bruno/public/04.png');
+		//$tp = is_file('/glusterfs/.lincko.cafe/files/share/upload/3/dba16407ff5b793b0121667685af6c49');
 
-		$tp = pathinfo($path, PATHINFO_FILENAME);
+		//$folder->createSymlink('/tmp/sym/toto', '/tmp/sym/tata');
+		symlink('/glusterfs/.lincko.cafe/files/share/upload/3/3800abb2ce152a54a122aca80f63d3ba', '/glusterfs/.lincko.cafe/back/share/slim.api/dev/bruno/public/file/tata');
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $_SERVER['SERVER_ADDR'], '$tp', __FILE__, __LINE__, false, false, true);
 
 
 		/*

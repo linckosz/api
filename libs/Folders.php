@@ -96,8 +96,8 @@ class Folders {
 
 	public function createSymlink($target, $link){
 		if(!is_dir($link)){
-			if($this->createPath($link)){
-				if(rmdir($link)){
+			if($this->createPath($link)){ //Create recursive path
+				if(rmdir($link)){ //Remove last directory to then build it as a symlink
 					if(symlink($target, $link)){
 						return $this->setPath($link);
 					}

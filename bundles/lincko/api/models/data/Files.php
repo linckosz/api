@@ -516,17 +516,11 @@ class Files extends ModelLincko {
 						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
 						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
-						if($this->ori_type == 'image/png'){
-							$this->thu_type = 'image/png';
-							$this->thu_ext = 'png';
-							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.png');
-							rename($folder_thu->getPath().$this->link.'.png', $folder_thu->getPath().$this->link);
-						} else {
-							$this->thu_type = 'image/jpeg';
-							$this->thu_ext = 'jpg';
-							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
-							rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
-						}
+						//We convert PNG into JPEG, the size will be smaller for thumbnail only
+						$this->thu_type = 'image/jpeg';
+						$this->thu_ext = 'jpg';
+						$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
+						rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
 					} catch(\Exception $e){
 						\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 						$this->thu_type = 'image/png';
@@ -548,7 +542,7 @@ class Files extends ModelLincko {
 					$this->ori_type = 'video/mp4';
 					$this->ori_ext = 'mp4';
 
-					$video = new Video($this->tmp_name, $this->server_path.'/'.$app->lincko->data['uid'], $this->link, $folder_txt->getPath().$this->link, Workspaces::getPrefixSFTP());
+					$video = new Video($this->tmp_name, $app->lincko->filePath.'/'.$app->lincko->data['uid'], $this->link, $folder_txt->getPath().$this->link, Workspaces::getPrefixSFTP());
 					
 					if($video->thumbnail()!==0){
 						return false;
@@ -673,7 +667,7 @@ class Files extends ModelLincko {
 			while($loop){
 				$handle = fopen($path, 'r');
 				if($handle){
-					if(filesize($path)>0){
+					if(is_file($path) && filesize($path)>0){
 						$contents = fread($handle, filesize($path));
 						$reg_duration = "/\b.*?Duration:\s*?(\d\d):(\d\d):(\d\d)\.(\d\d).*\b/i";
 						if(preg_match_all($reg_duration, $contents, $matches, PREG_SET_ORDER)){
@@ -912,7 +906,7 @@ class Files extends ModelLincko {
 	//IPTC data list
 	protected function output_iptc_data( $image_path ) {
 		$info = 0;
-			if(filesize($image_path)>=12){
+			if(is_file($image_path) && filesize($image_path)>=12){
 				$size = getimagesize ( $image_path, $info);
 			}
 		$list = "";

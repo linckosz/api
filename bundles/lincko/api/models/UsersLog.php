@@ -85,6 +85,8 @@ class UsersLog extends Model {
 		$pukpic = false;
 		if(!$pukpic && isset($_COOKIE) && isset($_COOKIE['pukpic']) && !empty($_COOKIE['pukpic'])){
 			$pukpic = $_COOKIE['pukpic'];
+		} else if(!$pukpic && isset($_GET) && isset($_GET['pukpic']) && !empty($_GET['pukpic'])){
+			$pukpic = rawurldecode($_GET['pukpic']);
 		} else if($shangzai_puk){
 			$pukpic = Datassl::decrypt($shangzai_puk);
 		}

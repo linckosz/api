@@ -582,7 +582,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				$path_xsend = '/protected_files/'.$puid.'/thumbnail/'.$file->link;
 				$name = pathinfo($path, PATHINFO_FILENAME).'.'.$file->ori_thu;
 				$content_type = $file->thu_type;
-				if(filesize($path)!==false){
+				if(is_file($path) && filesize($path)!==false){
 					//http://stackoverflow.com/questions/2000715/answering-http-if-modified-since-and-http-if-none-match-in-php/2015665#2015665
 					$timestamp = filemtime($path); 
 					$gmt_mtime = gmdate('r', $timestamp);
@@ -718,7 +718,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					$path_xsend = false;
 					$name = 'converting.png';
 				}
-				if(filesize($path)!==false){
+				if(is_file($path) && filesize($path)!==false){
 					//note that the root and internal redirect paths are concatenated.
 					//https://www.nginx.com/resources/wiki/start/topics/examples/xsendfile/
 					header('Content-Description: File Transfer');
@@ -745,14 +745,21 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				if($type=='thumbnail'){
 					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/thumbnail/'.$file->link;
 					$path_xsend = '/protected_files/'.$puid.'/thumbnail/'.$file->link;
+					if($file->ori_type=='image/gif'){ //It will keep the animation if any
+						$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/'.$file->link;
+						$path_xsend = '/protected_files/'.$puid.'/'.$file->link;
+					}
 					$content_type = $file->thu_type;
 					$name = pathinfo($path, PATHINFO_FILENAME).'.'.$file->ori_thu;
 				} else {
 					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/'.$file->link;
 					$path_xsend = '/protected_files/'.$puid.'/'.$file->link;
+					if($file->category=='video'){
+						$path_xsend = '/protected_videos/'.$puid.'/'.$file->link;
+					}
 					$content_type = $file->ori_type;
 				}
-				if(filesize($path)!==false){
+				if(is_file($path) && filesize($path)!==false){
 					//http://stackoverflow.com/questions/2000715/answering-http-if-modified-since-and-http-if-none-match-in-php/2015665#2015665
 					$timestamp = filemtime($path); 
 					$gmt_mtime = gmdate('r', $timestamp);
@@ -877,7 +884,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		}
 		
 		if(is_file($destination)){
-			if(filesize($destination)!==false){
+			if(is_file($destination) && filesize($destination)!==false){
 				header('Content-Description: File Transfer');
 				header('Content-Type: attachment/force-download;');
 				header('Content-Disposition: attachment; filename="'.$id.'.mp4"');
