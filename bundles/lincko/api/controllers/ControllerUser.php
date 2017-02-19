@@ -339,6 +339,16 @@ class ControllerUser extends Controller {
 				}
 			}
 
+			if(isset($data->timeoffset)){
+				$user->timeoffset = (int) $data->timeoffset;
+				if($user->timeoffset<0){
+					$user->timeoffset = 24 + $user->timeoffset;
+				}
+				if($user->timeoffset>=24){
+					$user->timeoffset = 0;
+				}
+			}
+
 			if(!isset($user->username)){
 				$user->username = $app->trans->getBRUT('api', 15, 36); //User
 			}

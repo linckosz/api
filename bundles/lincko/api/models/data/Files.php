@@ -516,11 +516,42 @@ class Files extends ModelLincko {
 						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
 						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
+
+						$has_transparency = false;
+						//For PNG, check if we have any transparent pixel, if yes we do keep PNG format;
+						if($this->ori_type == 'image/png'){
+							$im = $src->getHandle();
+							$width = $src->getWidth();
+							$height = $src->getHeight();
+							for($x = 0; $x < $width; $x++){
+								for($y = 0; $y < $height; $y++) {
+									$alpha = (imagecolorat($im,$x,$y) & 0x7F000000) >> 24;
+									if($alpha > 0){
+										$has_transparency = true;
+										break 2;
+									}
+								}
+							}
+						}
+
+						if($this->ori_type == 'image/png' && $has_transparency){
+							$this->thu_type = 'image/png';
+							$this->thu_ext = 'png';
+							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.png');
+							rename($folder_thu->getPath().$this->link.'.png', $folder_thu->getPath().$this->link);
+						} else {
+							$this->thu_type = 'image/jpeg';
+							$this->thu_ext = 'jpg';
+							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
+							rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
+						}
+						/*
 						//We convert PNG into JPEG, the size will be smaller for thumbnail only
 						$this->thu_type = 'image/jpeg';
 						$this->thu_ext = 'jpg';
 						$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
 						rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
+						*/
 					} catch(\Exception $e){
 						\libs\Watch::php(\error\getTraceAsString($e, 10), 'Exception: '.$e->getLine().' / '.$e->getMessage(), __FILE__, __LINE__, true);
 						$this->thu_type = 'image/png';

@@ -9,6 +9,7 @@ use \libs\Json;
 use \libs\STR;
 use \libs\Network;
 use \libs\Datassl;
+use \libs\Translation;
 use \bundles\lincko\api\models\Integration;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
@@ -38,7 +39,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
 use Carbon\Carbon;
-use \libs\Translation;
+use WideImage\WideImage;
 use JPush\Client as JPush;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -631,18 +632,68 @@ class ControllerTest extends Controller {
 
 		//$tp = strpos('created_by', '_by');
 
-		$folder = new Folders;
-		//$folder->createSymlink('/glusterfs/.lincko.cafe/files/share/upload/3/dba16407ff5b793b0121667685af6c49', '/glusterfs/.lincko.cafe/back/share/slim.api/dev/bruno/public/../public/file/0/bFN1US9FTHBwd0QyQytwbUlUVWxlSjFOMUsraGtEVS9jMDlncTFObUtnZz0=/link/23148/04.png');
-		
-		//$folder->createSymlink('/glusterfs/.lincko.cafe/files/share/upload/3/dba16407ff5b793b0121667685af6c49', '/glusterfs/.lincko.cafe/back/share/slim.api/dev/bruno/public/04.png');
-		//$tp = is_file('/glusterfs/.lincko.cafe/files/share/upload/3/dba16407ff5b793b0121667685af6c49');
+		/*
+		public function whitebordertotrans() {
+			$imgx = $this->getWidth();
+			$imgy = $this->getHeight();
+			imagealphablending($this->image, false);
+			imagesavealpha($this->image, true);
+			$transparent = imagecolorallocatealpha($this->image, 255, 255, 255, 127 );
+			
+			//Initialization of array, we extrapolate borders to avoid any offset
+			for($y=-1;$y<$imgy+1;$y++){
+				for($x=-1;$x<$imgx+1;$x++){
+					if($x>=0 && $x<=$imgx-1 && $y>=0 && $y<=$imgy-1){
+						$rgb = imagecolorat($this->image, $x, $y);
+						$r = ($rgb >> 16) & 0xFF;
+						$g = ($rgb >> 8) & 0xFF;
+						$b = $rgb & 0xFF;
+					} else {
+						$r = 0;
+						$g = 0;
+						$b = 0;
+					}
+					if($r>245 && $g>245 && $b>245){
+						$sheet[$x][$y]=0; //Probable transparency cell
+					} else {
+						$sheet[$x][$y]=-1;
+					}
+				}
+			}
+		}
 
-		//$folder->createSymlink('/tmp/sym/toto', '/tmp/sym/tata');
-		symlink('/glusterfs/.lincko.cafe/files/share/upload/3/3800abb2ce152a54a122aca80f63d3ba', '/glusterfs/.lincko.cafe/back/share/slim.api/dev/bruno/public/file/tata');
+		$tp = WideImage::load('/glusterfs/.lincko.cafe/files/share/upload/3/thumbnail/28429225a68038b3a9140fdcf4357448');
+
+		$rgba = imagecolorat($im,$x,$y);
+		$alpha = ($rgba & 0x7F000000) >> 24;
+		*/
+
+		
+		
+		
+
+		$has_transparency = false;
+		//$im = imagecreatefrompng('/glusterfs/.lincko.cafe/files/share/upload/3/thumbnail/28429225a68038b3a9140fdcf4357448');
+		$ww = WideImage::load('/glusterfs/.lincko.cafe/files/share/upload/3/thumbnail/7a6b475eac9bf995f2d71cf022d40551');
+		$im = $ww->getHandle();
+		$height = imagesy($im);
+		$width = imagesx($im);
+		for($x = 0; $x < $width; $x++){
+			for($y = 0; $y < $height; $y++) {
+				$alpha = (imagecolorat($im,$x,$y) & 0x7F000000) >> 24;
+				if($alpha > 0){
+					$has_transparency = true;
+					break 2;
+				}
+			}
+		}
+
+		$tp = $has_transparency;
+
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
-		\libs\Watch::php( $_SERVER['SERVER_ADDR'], '$tp', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
 		/*
