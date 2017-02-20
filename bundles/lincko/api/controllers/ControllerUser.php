@@ -259,9 +259,13 @@ class ControllerUser extends Controller {
 		}
 		else if($model = Users::getUser()){
 			$users_log = UsersLog::WhereNotNull('username_sha1')->Where('username_sha1', $model->username_sha1)->first();
-			if($users_log->subAccount($form->party, $form->party_id, $form->password, true, false)){
-				$app->render(201, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 15, 37)),)); //Accounts successfully linked.
+			if(!UsersLog::Where('party', $form->party)->Where('party_id', $form->party_id)->first()){
+				$errmsg = $app->trans->getBRUT('api', 15, 24); //Account not found
+			} else if($users_log && $users_log->subAccount($form->party, $form->party_id, $form->password, true, false)){
+				$app->render(201, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 15, 39)),)); //Your account has been linked! Please wait for Lincko to restart.
 				return true;
+			} else {
+				$errmsg = $app->trans->getBRUT('api', 15, 38); //This account is not available to be linked.
 			}
 		}
 		//Hide the password to avoid hacking
