@@ -13,6 +13,7 @@ use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\Invitation;
+use \bundles\lincko\api\models\libs\Action;
 
 use Illuminate\Database\Capsule\Manager as Capsule;
 
@@ -838,6 +839,7 @@ class Users extends ModelLincko {
 		if(isset($data->user_code) && $user_code = Datassl::decrypt($data->user_code, 'invitation')){
 			if($guest = Users::find($user_code)){
 				$invite = self::inviteSomeone($guest, $data);
+				Action::record(-8); //Invite by external scan / paste url
 			}
 		}
 		$app->lincko->flash['unset_user_code'] = true;

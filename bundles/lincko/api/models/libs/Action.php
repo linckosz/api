@@ -28,6 +28,12 @@ class Action extends Model {
 		-3 => 'Next onborading step',
 		-4 => 'Finish onboarding',
 		-5 => 'Skip onboarding',
+		-6 => 'Invite by email',
+		-7 => 'Invite by internal scan',
+		-8 => 'Invite by external scan / paste url',
+		-9 => 'Accept invitation by url code',
+		-10 => 'Accept invitation',
+		-11 => 'Reject invitation',
 	);
 	
 ////////////////////////////////////////////
@@ -46,7 +52,7 @@ class Action extends Model {
 		return $return;
 	}
 
-	public static function record($action){
+	public static function record($action, $info=null){
 		if(!is_numeric($action)){
 			return false;
 		}
@@ -57,6 +63,9 @@ class Action extends Model {
 		$item->users_id = $app->lincko->data['uid'];
 		$item->created_at = time();
 		$item->action = intval($action);
+		if(!is_null($info)){
+			$item->info = $info;
+		}
 		return $item->save();
 	}
 

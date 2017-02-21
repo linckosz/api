@@ -4,6 +4,22 @@ namespace bundles\lincko\api\routes;
 
 $app = \Slim\Slim::getInstance();
 
+/*
+
+Get the list of files to check if any inconsistancy
+	https://api.lincko.com:10443/debug/md5
+	https://bruno.api.lincko.cafe:10443/debug/md5
+
+Return all users actions as strings
+	https://api.lincko.com:10443/info/action/3
+	https://bruno.api.lincko.cafe:10443/info/action/6
+
+Return all users actions as strings
+	https://api.lincko.com:10443/info/list_users/2017-02-17/2017-02-19/
+	https://bruno.api.lincko.cafe:10443/info/list_users/2017-02-01/2017-02-18/
+
+*/
+
 $app->group('/info', function () use ($app) {
 
 	$app->post(
@@ -27,6 +43,16 @@ $app->group('/info', function () use ($app) {
 	))
 	->name('info_action_get');
 
+	$app->get(
+		'/list_users/:from/:to/',
+		'\bundles\lincko\api\controllers\ControllerInfo:list_users_get'
+	)
+	->conditions(array(
+		'from' => '\d{4}-\d{2}-\d{2}',
+		'to' => '\d{4}-\d{2}-\d{2}',
+	))
+	->name('info_list_users_get');
+
 });
 
 $app->group('/debug', function () use ($app) {
@@ -38,3 +64,4 @@ $app->group('/debug', function () use ($app) {
 	}
 
 });
+

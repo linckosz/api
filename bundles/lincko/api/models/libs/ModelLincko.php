@@ -1839,7 +1839,7 @@ abstract class ModelLincko extends Model {
 		return static::$archive;
 	}
 
-	protected function getArchiveCode($column, $value){
+	protected function getArchiveCode($column, $value=null){
 		if(is_bool($value)){
 			$value = (int) $value;
 		}

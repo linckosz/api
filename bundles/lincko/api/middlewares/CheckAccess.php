@@ -18,6 +18,7 @@ use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\libs\Invitation;
+use \bundles\lincko\api\models\libs\Action;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class CheckAccess extends \Slim\Middleware {
@@ -107,6 +108,7 @@ class CheckAccess extends \Slim\Middleware {
 					$pivot->{'users>access'} = new \stdClass;
 					$pivot->{'users>access'}->{$host->id} = true;
 					$app->lincko->data['invitation_code'] = true;
+					Action::record(-9); //Accept invitation by url code
 					//If gave access to some items
 					$items = new \stdClass;
 					if($invitation_models){
@@ -549,7 +551,11 @@ class CheckAccess extends \Slim\Middleware {
 		//For users statistics
 		if(
 			   $app->lincko->method_suffix == '_get'
-			&& ($route == 'info_action_get' && preg_match("/^([a-z]+\.){0,1}api\..*:10443$/ui", $app->request->headers->Host))
+			&& preg_match("/^([a-z]+\.){0,1}api\..*:10443$/ui", $app->request->headers->Host)
+			&& in_array($route, array(
+					'info_action_get',
+					'info_list_users_get'
+				))
 			&& $username_sha1 = UsersLog::pukpicToSha()
 		){
 			if($user = Users::Where('username_sha1', $username_sha1)->first(array('id'))){

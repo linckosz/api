@@ -35,6 +35,7 @@ use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Settings;
 use \bundles\lincko\api\models\data\Spaces;
 use \bundles\lincko\api\models\data\Messages;
+use GeoIp2\Database\Reader;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 use Illuminate\Database\Eloquent\Relations\BelongsTo as BelongsTo;
@@ -669,27 +670,13 @@ class ControllerTest extends Controller {
 		*/
 
 		
-		
-		
 
-		$has_transparency = false;
-		//$im = imagecreatefrompng('/glusterfs/.lincko.cafe/files/share/upload/3/thumbnail/28429225a68038b3a9140fdcf4357448');
-		$ww = WideImage::load('/glusterfs/.lincko.cafe/files/share/upload/3/thumbnail/7a6b475eac9bf995f2d71cf022d40551');
-		$im = $ww->getHandle();
-		$height = imagesy($im);
-		$width = imagesx($im);
-		for($x = 0; $x < $width; $x++){
-			for($y = 0; $y < $height; $y++) {
-				$alpha = (imagecolorat($im,$x,$y) & 0x7F000000) >> 24;
-				if($alpha > 0){
-					$has_transparency = true;
-					break 2;
-				}
-			}
-		}
+		//$reader = new Reader($app->lincko->path.'/bundles/lincko/api/models/geoip2/GeoLite2-City.mmdb');
+		//$record = $reader->city('220.231.203.67');
 
-		$tp = $has_transparency;
+		//$tp = $record->country->name.' => '.$record->city->name;
 
+		$tp = preg_match('/^\d{1,3}\\.\d{1,3}\\.\d{1,3}\\.\d{1,3}$/ui', '220.231.203.6788');
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

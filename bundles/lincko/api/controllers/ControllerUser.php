@@ -21,6 +21,7 @@ use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\Invitation;
+use \bundles\lincko\api\models\libs\Action;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 /*
@@ -311,6 +312,7 @@ class ControllerUser extends Controller {
 						$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
 						goto failed;
 					}
+					Action::record(-9); //Accept invitation by url code
 				} else {
 					$errmsg = $failmsg.$app->trans->getBRUT('api', 15, 29); //Invitation code already used.
 					goto failed;
