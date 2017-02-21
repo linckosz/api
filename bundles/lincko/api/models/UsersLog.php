@@ -12,8 +12,9 @@ use \bundles\lincko\api\models\Onboarding;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Files;
-use \bundles\lincko\api\controllers\ControllerUser;
 use \bundles\lincko\api\models\libs\ModelLincko;
+use \bundles\lincko\api\models\libs\Action;
+use \bundles\lincko\api\controllers\ControllerUser;
 
 class UsersLog extends Model {
 
@@ -268,6 +269,7 @@ class UsersLog extends Model {
 				if($data->data->party=='wechat' && substr($data->data->party_id, 0, 4)=='uid.'){ //Wechat
 					if(isset($json->account) && isset($json->openid) && !empty($json->openid)){
 						$users_log->subAccount('wechat_'.$json->account, 'oid.'.$json->account.'.'.$json->openid, false, false, true);
+						Action::record(-12); //Email to Wechat
 					}
 				}
 				return $users_log;

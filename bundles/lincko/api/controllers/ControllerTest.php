@@ -676,7 +676,7 @@ class ControllerTest extends Controller {
 
 		//$tp = $record->country->name.' => '.$record->city->name;
 
-		$tp = preg_match('/^\d{1,3}\\.\d{1,3}\\.\d{1,3}\\.\d{1,3}$/ui', '220.231.203.6788');
+		$tp = strpos('wechat_pub', 'wechat');
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

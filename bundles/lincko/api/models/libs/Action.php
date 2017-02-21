@@ -34,6 +34,8 @@ class Action extends Model {
 		-9 => 'Accept invitation by url code',
 		-10 => 'Accept invitation',
 		-11 => 'Reject invitation',
+		-12 => 'Email to Wechat',
+		-13 => 'Wechat to Email',
 	);
 	
 ////////////////////////////////////////////
@@ -50,6 +52,10 @@ class Action extends Model {
 		$return = parent::save($options);
 		usleep(30000); //30ms
 		return $return;
+	}
+
+	public static function getConvert(){
+		return self::$convert;
 	}
 
 	public static function record($action, $info=null){

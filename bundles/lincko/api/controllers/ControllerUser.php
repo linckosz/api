@@ -263,6 +263,9 @@ class ControllerUser extends Controller {
 			if(!UsersLog::Where('party', $form->party)->Where('party_id', $form->party_id)->first()){
 				$errmsg = $app->trans->getBRUT('api', 15, 24); //Account not found
 			} else if($users_log && $users_log->subAccount($form->party, $form->party_id, $form->password, true, false)){
+				if(strpos($users_log->party, 'wechat')==0){
+					Action::record(-13); //Wechat to Email
+				}
 				$app->render(201, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 15, 39)),)); //Your account has been linked! Please wait for Lincko to restart.
 				return true;
 			} else {

@@ -554,7 +554,8 @@ class CheckAccess extends \Slim\Middleware {
 			&& preg_match("/^([a-z]+\.){0,1}api\..*:10443$/ui", $app->request->headers->Host)
 			&& in_array($route, array(
 					'info_action_get',
-					'info_list_users_get'
+					'info_list_users_get',
+					'info_weeks_get',
 				))
 			&& $username_sha1 = UsersLog::pukpicToSha()
 		){

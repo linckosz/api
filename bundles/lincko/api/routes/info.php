@@ -18,6 +18,10 @@ Return all users actions as strings
 	https://api.lincko.com:10443/info/list_users/2017-02-17/2017-02-19/
 	https://bruno.api.lincko.cafe:10443/info/list_users/2017-02-01/2017-02-18/
 
+Return week-scale reporting
+	https://api.lincko.com:10443/info/weeks
+	https://bruno.api.lincko.cafe:10443/info/weeks
+
 */
 
 $app->group('/info', function () use ($app) {
@@ -52,6 +56,12 @@ $app->group('/info', function () use ($app) {
 		'to' => '\d{4}-\d{2}-\d{2}',
 	))
 	->name('info_list_users_get');
+
+	$app->get(
+		'/weeks',
+		'\bundles\lincko\api\controllers\ControllerInfo:weeks_get'
+	)
+	->name('info_weeks_get');
 
 });
 
