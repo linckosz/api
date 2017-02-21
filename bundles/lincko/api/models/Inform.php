@@ -134,6 +134,7 @@ class Inform {
 	}
 
 	protected function send_wechat(){
+		return true; //Do not allow wechat notification, it poluate the pblic account too much
 		$app = ModelLincko::getApp();
 		if(!isset($this->sha['wechat'])){
 			return false;
