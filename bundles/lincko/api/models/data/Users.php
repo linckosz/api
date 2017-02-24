@@ -593,6 +593,7 @@ class Users extends ModelLincko {
 			}
 
 			$import_user->linked_to = $this->id;
+			$import_user->save();
 
 			//Launch the transaction
 			$db_data->commit();

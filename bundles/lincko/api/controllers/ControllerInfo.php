@@ -479,7 +479,7 @@ class ControllerInfo extends Controller {
 				echo '<td style="text-align:center;"><img style="height:32px;cursor:pointer;" src="'.$link.'" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->id.'\', \'_top\');" /></td>';
 				echo '<td>'.$user->id.'</td>';
 				if(is_numeric($user->linked_to)){
-					echo '<td style="cursor:pointer;" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->linked_to.'\', \'_top\');" >'.$user->linked_to.'</td>';
+					echo '<td style="cursor:pointer;background-color:#FFFAE6;text-align:center;" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->linked_to.'\', \'_top\');" >'.$user->linked_to.'</td>';
 				} else {
 					echo '<td></td>';
 				}
