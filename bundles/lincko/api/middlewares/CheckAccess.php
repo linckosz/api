@@ -556,6 +556,7 @@ class CheckAccess extends \Slim\Middleware {
 					'info_action_get',
 					'info_list_users_get',
 					'info_weeks_get',
+					'info_representative_get',
 				))
 			&& $username_sha1 = UsersLog::pukpicToSha()
 		){

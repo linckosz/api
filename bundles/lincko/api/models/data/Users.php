@@ -592,6 +592,8 @@ class Users extends ModelLincko {
 				$this->save();
 			}
 
+			$import_user->linked_to = $this->id;
+
 			//Launch the transaction
 			$db_data->commit();
 			$db_api->commit();
@@ -620,6 +622,7 @@ class Users extends ModelLincko {
 				$user->setForceSchema();
 			}
 		} catch (\Exception $e){
+			\libs\Watch::php($e, 'import user', __FILE__, __LINE__, true);
 			$db_data->rollback();
 			$db_api->rollback();
 		}

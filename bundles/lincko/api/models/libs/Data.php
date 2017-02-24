@@ -925,6 +925,12 @@ class Data {
 										if($history_root[$table_name][$id][0]=='users' && $hist->cod!='697'){
 											continue;
 										}
+										if($history_root[$table_name][$id][0]=='users'){
+											//For user who has 697 (invitation accepted), we skip it if there are not visible
+											if(isset($result_bis->$uid->$table_name->$id->_visible) && empty($result_bis->$uid->$table_name->$id->_visible)){
+												continue;
+											}
+										}
 										$hist_id = (int) $hist_id;
 										if(!isset($result_bis->$uid->_history->$root_hist)){
 											$result_bis->$uid->_history->$root_hist = new \stdClass;

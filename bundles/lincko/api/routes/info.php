@@ -22,6 +22,10 @@ Return week-scale reporting
 	https://api.lincko.com:10443/info/weeks
 	https://bruno.api.lincko.cafe:10443/info/weeks
 
+Return individual sales perfomances
+	https://api.lincko.com:10443/info/sales/3qOflwtr3dHXPc06T8m4sg==
+	https://bruno.api.lincko.cafe:10443/info/sales/3qOflwtr3dHXPc06T8m4sg==
+
 */
 
 $app->group('/info', function () use ($app) {
@@ -62,6 +66,15 @@ $app->group('/info', function () use ($app) {
 		'\bundles\lincko\api\controllers\ControllerInfo:weeks_get'
 	)
 	->name('info_weeks_get');
+
+	$app->get(
+		'/representative/:sales_id',
+		'\bundles\lincko\api\controllers\ControllerInfo:representative_get'
+	)
+	->conditions(array(
+		'sales_id' => '.+',
+	))
+	->name('info_representative_get');
 
 });
 

@@ -34,8 +34,10 @@ class Action extends Model {
 		-9 => 'Accept invitation by url code',
 		-10 => 'Accept invitation',
 		-11 => 'Reject invitation',
-		-12 => 'Email to Wechat',
-		-13 => 'Wechat to Email',
+		-12 => 'Link Email to Wechat',
+		-13 => 'Link Wechat to Email',
+		-14 => 'Access Lincko appstore link',
+		-15 => 'Account creation from a sales',
 	);
 	
 ////////////////////////////////////////////
@@ -62,17 +64,22 @@ class Action extends Model {
 		if(!is_numeric($action)){
 			return false;
 		}
-		$user = Users::getUser();
-		$created_at = $user->created_at->getTimestamp();
-		$app = ModelLincko::getApp();
-		$item = new Action;
-		$item->users_id = $app->lincko->data['uid'];
-		$item->created_at = time();
-		$item->action = intval($action);
-		if(!is_null($info)){
-			$item->info = $info;
+		if($user = Users::getUser()){
+			$created_at = $user->created_at->getTimestamp();
+			$app = ModelLincko::getApp();
+			$item = new Action;
+			$item->users_id = $app->lincko->data['uid'];
+			$item->created_at = time();
+			$item->action = intval($action);
+			if(!is_null($info)){
+				if(!is_numeric($info) && !is_string($info)){
+					$info = json_encode($info);
+				}
+				$item->info = $info;
+			}
+			return $item->save();
 		}
-		return $item->save();
+		return false;
 	}
 
 	public static function action(int $action, $username=' '){

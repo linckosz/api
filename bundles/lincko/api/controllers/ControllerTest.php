@@ -676,7 +676,16 @@ class ControllerTest extends Controller {
 
 		//$tp = $record->country->name.' => '.$record->city->name;
 
-		$tp = strpos('wechat_pub', 'wechat');
+/*
+		$tp = Carbon::now();
+		\libs\Watch::php( $tp->format('Y-m-d'), '$tp', __FILE__, __LINE__, false, false, true);
+		$tp = $tp->parse('next friday')->copy();
+		\libs\Watch::php( $tp->format('Y-m-d'), '$tp', __FILE__, __LINE__, false, false, true);
+		$tp = $tp->parse('next friday')->copy();
+		\libs\Watch::php( $tp->format('Y-m-d'), '$tp', __FILE__, __LINE__, false, false, true);
+*/
+
+		$tp = Datassl::encrypt_smp(1);
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

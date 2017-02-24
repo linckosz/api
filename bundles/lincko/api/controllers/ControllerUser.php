@@ -447,6 +447,11 @@ class ControllerUser extends Controller {
 							@curl_close($ch);
 						}
 					}
+					//Record who did the sales
+					if(isset($data->sales_code) && is_numeric($data->sales_code)){
+						Action::record(-15, $data->sales_code);
+					}
+					$app->lincko->flash['unset_sales_code'] = true;
 					//$db_data->commit();
 					//$db_api->commit();
 					$committed = true;
