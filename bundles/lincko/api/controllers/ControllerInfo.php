@@ -202,7 +202,7 @@ class ControllerInfo extends Controller {
 		$sales_id = Datassl::decrypt($sales_id);
 
 		echo "<br />\n";
-		echo 'Sales ID: '.$sales_id;
+		echo 'Representative ID: '.$sales_id;
 		echo "<br />\n";
 
 		
