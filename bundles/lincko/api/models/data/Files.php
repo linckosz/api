@@ -133,7 +133,9 @@ class Files extends ModelLincko {
 ////////////////////////////////////////////
 
 	protected $imagequalitysize = '1920'; //1GB => 3,500 pictures
-	protected $imagequalitycomp = '70';
+	protected $imagequalitycomp = '80';
+	protected $imagecompressed = false;
+
 	protected $videoquality = 1; //[0]480p / [1]720p / [2]1080p
 
 	//public $category = 'file'; //Store in file by default
@@ -329,6 +331,10 @@ class Files extends ModelLincko {
 		return parent::toVisible();
 	}
 
+	public function setCompression($value=true){
+		$this->imagecompressed = (bool) $value;
+	}
+
 	public function setOrientation(){
 		$orientation = 1;
 		$flip_x = false;
@@ -487,24 +493,46 @@ class Files extends ModelLincko {
 					$src = WideImage::load($this->tmp_name);
 					$this->width = $src->getWidth();
 					$this->height = $src->getHeight();
-					if(($this->ori_type == 'image/jpeg' || $this->ori_type == 'image/png') && $this->orientation!=1){
-						//For a jpeg we check if there is any orientation, if yes we rotate and overwrite
-						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
-						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
-						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
-						$this->orientation = 1;
-						if($this->ori_type == 'image/png'){
-							$src = $src->saveToFile($folder_ori->getPath().$this->link.'.png');
-							rename($folder_ori->getPath().$this->link.'.png', $folder_ori->getPath().$this->link);
-						} else {
-							$compression = 90;
+					$modify = false;
+					$resize = false;
+					$compression = 90;
+					if($this->ori_type == 'image/jpeg' || $this->ori_type == 'image/png') {
+						if($this->orientation!=1){
+							$modify = true;
+							//For a jpeg we check if there is any orientation, if yes we rotate and overwrite
+							if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
+							if($orientation[1]){ $src = $src->flip(); } //Flip up/down
+							if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
+							$this->orientation = 1;
+						}
+						if($this->ori_type == 'image/jpeg'){
 							exec("identify -format '%Q' \"$source\" 2>&1 ", $tablo, $error);
 							if(!$error && is_numeric($tablo[0]) && $tablo[0]>0){
 								$compression = $tablo[0];
 							}
+							if($this->imagecompressed){
+								if($compression > $this->imagequalitycomp){
+									$modify = true;
+									$compression = $this->imagequalitycomp;
+								}
+								if($this->width > $this->imagequalitysize || $this->height > $this->imagequalitysize){
+									$modify = true;
+									$src = $src->resize($this->imagequalitysize, $this->imagequalitysize, 'inside', 'any');
+								}
+							}
+						}
+						$this->width = $src->getWidth();
+						$this->height = $src->getHeight();
+					}
+					if($modify){
+						if($this->ori_type == 'image/png'){
+							$src = $src->saveToFile($folder_ori->getPath().$this->link.'.png');
+							rename($folder_ori->getPath().$this->link.'.png', $folder_ori->getPath().$this->link);
+						} else {
 							$src = $src->saveToFile($folder_ori->getPath().$this->link.'.jpg', $compression);
 							rename($folder_ori->getPath().$this->link.'.jpg', $folder_ori->getPath().$this->link);
 						}
+						$this->size = filesize($folder_ori->getPath().$this->link);
 					} else {
 						copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					}

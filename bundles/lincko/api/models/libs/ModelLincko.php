@@ -321,7 +321,7 @@ abstract class ModelLincko extends Model {
 
 	//191 is limited by MySQL for Indexing
 	public static function validEmail($data, $optional=false){
-		$return = is_string($data) && preg_match("/^.{1,191}$/u", trim($data)) && preg_match("/^.{1,100}@.*\..{2,4}$/ui", trim($data)) && preg_match("/^[_a-z0-9-%+]+(\.[_a-z0-9-%+]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", trim($data));
+		$return = is_string($data) && preg_match("/^.{1,191}$/u", trim($data)) && filter_var(trim($data), FILTER_VALIDATE_EMAIL) && preg_match("/^.{1,100}@.*\..{2,4}$/ui", trim($data)) && preg_match("/^[_a-z0-9-%+]+(\.[_a-z0-9-%+]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/ui", trim($data));
 		return self::noValidMessage($return, __FUNCTION__);
 	}
 
@@ -2778,6 +2778,7 @@ abstract class ModelLincko extends Model {
 		}
 		$success = true;
 		$touch = false;
+		$history_pivot = false;
 		$users_tables = array();
 		$users_schema = array();
 		//checkAccess and CheckPermissionAllow are previously used in save()
@@ -2839,7 +2840,7 @@ abstract class ModelLincko extends Model {
 													$parameters['pvid'] = $type_id;
 													//We excluse default modification
 													if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
-														$this->setHistory('pivot_'.$type.'_'.$column, $value, $value_old, $parameters, $type, $type_id);
+														$history_pivot = $this->setHistory('pivot_'.$type.'_'.$column, $value, $value_old, $parameters, $type, $type_id);
 													}
 												}
 											} else {
@@ -2871,7 +2872,7 @@ abstract class ModelLincko extends Model {
 											$parameters['pvid'] = $type_id;
 											//We excluse default modification
 											if(isset($this::$archive['pivot_'.$type.'_'.$column]) || isset($this::$archive['pivot_'.$type.'_'.$column.'_'.$value])){
-												$this->setHistory('pivot_'.$type.'_'.$column, $value, null, $parameters, $type, $type_id);
+												$history_pivot = $this->setHistory('pivot_'.$type.'_'.$column, $value, null, $parameters, $type, $type_id);
 											}
 										}
 										continue;
@@ -2886,6 +2887,10 @@ abstract class ModelLincko extends Model {
 					}
 				}
 			}
+		}
+
+		if($history_pivot){
+			$this->pushNotif(false, $history_pivot);
 		}
 		
 		if($touch){

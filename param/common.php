@@ -220,6 +220,8 @@ $app->lincko->routeFilter = array(
 	'user_signout_post',
 	'user_forgot_post',
 	'user_reset_post',
+	'email_verify_post',
+	'email_exists_post',
 );
 
 //List of route names accepted without sigining in and do the call immediatly (faster)

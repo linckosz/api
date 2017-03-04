@@ -25,7 +25,7 @@ class Action extends Model {
 	protected static $convert = array(
 		-1 => 'Logged',
 		-2 => 'Start onboarding',
-		-3 => 'Next onborading step',
+		-3 => 'Next onboarding step',
 		-4 => 'Finish onboarding',
 		-5 => 'Skip onboarding',
 		-6 => 'Invite by email',
@@ -38,6 +38,9 @@ class Action extends Model {
 		-13 => 'Link Wechat to Email',
 		-14 => 'Access Lincko appstore link',
 		-15 => 'Account creation from a sales',
+		-16 => 'Exit onboarding project',
+		-17 => 'Enter onboarding project',
+		-18 => 'Switch the project',
 	);
 	
 ////////////////////////////////////////////

@@ -140,7 +140,7 @@ class ControllerChat extends Controller {
 						$save = false;
 					}
 				}
-				if($save && $guest = Users::getModel($form->single)){ //Make sure that for single chats the user is part of your contact list
+				if($save && ($form->single==0 || $guest = Users::getModel($form->single))){ //Make sure that for single chats the user is part of your contact list, or allow to discusss with linckobot
 					$pivots = new \stdClass;
 					$pivots->{'users>access'} = new \stdClass;
 					$pivots->{'users>access'}->{$app->lincko->data['uid']} = true;

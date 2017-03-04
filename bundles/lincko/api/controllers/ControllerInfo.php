@@ -668,7 +668,7 @@ class ControllerInfo extends Controller {
 			$week->addDay(1);
 		}
 		
-		if($parties = UsersLog::all(array('created_at', 'party'))){
+		if($parties = UsersLog::all(array('created_at', 'party', 'party_id'))){
 			foreach ($parties as $party) {
 				$list_party = false;
 				if(is_null($party->party)){
@@ -679,7 +679,7 @@ class ControllerInfo extends Controller {
 					continue;
 				}
 				if($app->lincko->domain=='lincko.com'){
-					if(in_array($party->email, $this->email_exclude) || preg_match('/.+@lincko\..+/ui', $party->email) || preg_match('/.+@eyeis\.com/ui', $party->email)){
+					if(in_array($party->party_id, $this->email_exclude) || preg_match('/.+@lincko\..+/ui', $party->party_id) || preg_match('/.+@eyeis\.com/ui', $party->party_id)){
 						continue;
 					}
 				}

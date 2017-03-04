@@ -685,7 +685,11 @@ class ControllerTest extends Controller {
 		\libs\Watch::php( $tp->format('Y-m-d'), '$tp', __FILE__, __LINE__, false, false, true);
 */
 
-		$tp = Datassl::encrypt_smp(1);
+		$ve = new \hbattat\VerifyEmail('brunoocto@gmail.con', 'noreply@'.$app->lincko->domain);
+
+		$tp = $ve->verify();
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		$tp = $ve->get_debug();
 
 		//Display mysql requests
 		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

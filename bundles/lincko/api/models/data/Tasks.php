@@ -86,7 +86,7 @@ class Tasks extends ModelLincko {
 		'fixed' => array(true, 502), //[{un}] modified a task
 		'milestone' => array(true, 502), //[{un}] modified a task
 		'status' => array(true, 502), //[{un}] modified a task
-		'start' => array(true, 506), //[{un}] modified a task due date
+		'start' => array(true, 507), //[{un}] modified a task due date
 		'progress' => array(true, 502), //[{un}] modified a task
 		'parent_id' => array(true, 505), //[{un}] moved a task to the project "[{pj|ucfirst}]"
 		'pivot_tasksup_delay' => array(true, 550), //[{un}] modified a task delay

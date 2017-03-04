@@ -247,6 +247,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 							if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 							if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
+							if(isset($form->precompress)){ $model->setCompression($form->precompress); } //Optional
 							$model->pivots_format($form, false);
 							if($model->getParentAccess() && $model->save()){
 								$success = true;
@@ -270,6 +271,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 						if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
 						if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
+						if(isset($form->precompress)){ $model->setCompression($form->precompress); } //Optional
 						$model->pivots_format($form, false);
 						if($model->getParentAccess() && $model->save()){
 							$success = true;
