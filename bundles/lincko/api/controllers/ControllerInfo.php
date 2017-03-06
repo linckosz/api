@@ -18,6 +18,7 @@ class ControllerInfo extends Controller {
 
 	protected $app = NULL;
 	protected $data = NULL;
+	protected static $first_week_day = 1; //Start Monday
 
 	protected $email_exclude = array(
 		'willshakespeare@mac.com',
@@ -32,6 +33,14 @@ class ControllerInfo extends Controller {
 		$app = $this->app = \Slim\Slim::getInstance();
 		$this->data = json_decode($app->request->getBody());
 		return true;
+	}
+
+	protected static function setFirstWeekDay($day){
+		return self::$first_week_day = intval($day) % 7;
+	}
+
+	protected static function getWeekOffset(){
+		return (8 - self::$first_week_day) % 7;
 	}
 
 	public function beginning_post(){
@@ -77,6 +86,10 @@ class ControllerInfo extends Controller {
 		flush();
 		Workspaces::getSFTP();
 		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+
+		$from = $to = Carbon::now()->format('Y-m-d');
+		$this->list_users_get($from, $to, $users_id);
+
 		echo '<div style="font-family:monospace;font-size: 13px;">';
 
 		echo '
@@ -170,6 +183,8 @@ class ControllerInfo extends Controller {
 
 	public function representative_get($sales_id){
 		$app = $this->app;
+		self::setFirstWeekDay(6); //Start week on Satuday
+		$week_offset = self::getWeekOffset();
 		ob_clean();
 		flush();
 		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
@@ -205,8 +220,6 @@ class ControllerInfo extends Controller {
 		echo 'Representative ID: '.$sales_id;
 		echo "<br />\n";
 
-		
-
 		$date_gap = array();
 		$sales_qty = array();
 
@@ -232,23 +245,40 @@ class ControllerInfo extends Controller {
 			$week = $min->copy();
 			$max = Carbon::createFromTimestamp($max);
 			while($week <= $max){
-				$week_start = $week->copy()->startOfWeek()->subDay(2);
+				$week_start = $week->copy()->startOfWeek()->subDay($week_offset);
+				$week_end = $week->copy()->endOfWeek()->subDay($week_offset);
+				if($week->format('N') >= self::$first_week_day){
+					//Insure to work with next week value
+					$week_start->addDay(7);
+					$week_end->addDay(7);
+				}
 				if($week_start < $min){
 					$week_start = $min->copy()->startOfDay();
 				}
-				$week_end = $week->copy()->endOfWeek()->subDay(2);
+				
+				$format_year = $date->format('\\yy');
+				$format_week = intval($date->format('W'));
+				if($format_week<10){
+					$format_week = '0'.$format_week;
+				}
+				$year_week = $format_year.'-w'.$format_week;
 
-				$format = $week_end->format('\\yy-\\wW');
-				$sales_qty[$format] = 0;
+				$sales_qty[$year_week] = 0;
 
-				$date_gap[$format] = array($week_start->format('Y-m-d'), $week_end->format('Y-m-d'));
-				$week->addDay(1);
+				$date_gap[$year_week] = array($week_start->format('Y-m-d'), $week_end->format('Y-m-d'));
+				$week->addDay(1); //Must be dily to cover week offset
 			}
 
 			foreach ($actions as $action) {
-				$created_at = Carbon::createFromTimestamp($action->created_at)->format('\\yy-\\wW');
-				if(isset($sales_qty[$created_at])){
-					$sales_qty[$created_at]++;
+				$created_at = Carbon::createFromTimestamp($action->created_at);
+				$format_year = $created_at->format('\\yy');
+				$format_week = intval($created_at->format('W'));
+				if($format_week<10){
+					$format_week = '0'.$format_week;
+				}
+				$year_week = $format_year.'-w'.$format_week;
+				if(isset($sales_qty[$year_week])){
+					$sales_qty[$year_week]++;
 				}
 			}
 		}
@@ -291,7 +321,7 @@ class ControllerInfo extends Controller {
 		return exit(0);
 	}
 
-	public function list_users_get($from, $to){
+	public function list_users_get($from, $to, $users_id=false){
 		$app = $this->app;
 		if(!Users::amIadmin()){
 			return false;
@@ -301,9 +331,10 @@ class ControllerInfo extends Controller {
 		ob_clean();
 		flush();
 		Workspaces::getSFTP();
-		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+		if(!$users_id){
+			$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+		}
 		echo '<div style="font-family:monospace;font-size: 13px;">';
-
 		echo '
 		<style>
 			table {
@@ -322,17 +353,21 @@ class ControllerInfo extends Controller {
 		</style>
 		';
 
+		if(!$users_id){
+			echo 'Convert Table to CSV:';
+			echo "<br />\n";
+			echo 'https://chrome.google.com/webstore/search/html%20table%20to%20csv?_category=extensions';
+			echo "<br />\n<br />\n<br />\n";
+		} else {
+			echo "<br />\n";
+		}
+
 		$from = Carbon::createFromFormat('Y-m-d', $from)->startOfDay();
 		$to = Carbon::createFromFormat('Y-m-d', $to)->endOfDay();
 		
 		if($from >= $to){
 			$to = $from->copy()->endOfDay(); //24H the same day
 		}
-
-		echo 'Convert Table to CSV:';
-		echo "<br />\n";
-		echo 'https://chrome.google.com/webstore/search/html%20table%20to%20csv?_category=extensions';
-		echo "<br />\n<br />\n<br />\n";
 		
 		$users = array();
 		echo '<table>';
@@ -370,11 +405,24 @@ class ControllerInfo extends Controller {
 			';
 		}
 
+		$users_logs = UsersLog::WhereNotNull('username_sha1')->get(array('username_sha1'));
+		$sha_exists = array();
+		foreach ($users_logs as $user_logs) {
+			if(!empty($user_logs->username_sha1)){
+				$sha_exists[$user_logs->username_sha1] = array();
+			}
+		}
+		unset($users_logs);
+
 		insert_info();
 		$insert = 0;
 		$total = 0;
 		$models = array('projects', 'tasks', 'notes', 'files', 'comments', 'messages');
-		$users = Users::whereBetween('created_at', [$from, $to])->get();
+		if(!$users_id){
+			$users = Users::WhereNotNull('username_sha1')->whereBetween('created_at', [$from, $to])->get();
+		} else {
+			$users = Users::where('id', $users_id)->get();
+		}
 		if($users){
 			//Record action by users
 			$list_users = array();
@@ -441,16 +489,16 @@ class ControllerInfo extends Controller {
 						$info = json_decode($action->info, true);
 						if(is_array($info)){
 							if(isset($info[0])){
-								$last_os[$user->id] = $info[0];
+								$last_os[$action->users_id] = $info[0];
 							}
 							if(isset($info[1])){
-								$last_device[$user->id] = $info[1];
+								$last_device[$action->users_id] = $info[1];
 							}
 							if(isset($info[2])){
-								$last_platform[$user->id] = $info[2];
+								$last_platform[$action->users_id] = $info[2];
 							}
 							if(isset($info[3]) && filter_var($info[3], FILTER_VALIDATE_IP)){
-								$last_location[$user->id] = $info[3];
+								$last_location[$action->users_id] = $info[3];
 							}
 						}
 					}
@@ -469,7 +517,12 @@ class ControllerInfo extends Controller {
 
 			//Draw the table
 			foreach ($users as $user) {
-				if(!isset($list_users[$user->id])){
+				if(!isset($list_users[$user->id]) || !isset($sha_exists[$user->username_sha1])){
+					continue;
+				}
+				$parties = UsersLog::Where('username_sha1', $user->username_sha1)->get(array('party'));
+				if($parties->count()==0){
+					//Do not display if the user is attached to no login method
 					continue;
 				}
 				$total++;
@@ -539,15 +592,21 @@ class ControllerInfo extends Controller {
 				echo '<td>'.$user->language.'</td>';
 				echo '<td>'.$user->email.'</td>';
 				$list_party = '';
-				if($parties = UsersLog::Where('username_sha1', $user->username_sha1)->get(array('party'))){
-					foreach ($parties as $party) {
-						if(empty($party->party)){
-							$list_party .= 'email, ';
-						} else if(!in_array($party->party, array('wechat_pub', 'wechat_dev'))){
-							$list_party .= $party->party.', ';
-						}
+				foreach ($parties as $party) {
+					$list_party_name = false;
+					if(empty($party->party)){
+						$list_party_name = 'email';
+					} else if(in_array($party->party, array('wechat_pub', 'wechat_dev'))){ //Exclude some
+						$list_party_name = 'wechat';
+					} else {
+						$list_party_name = $party->party;
+					}
+					if($list_party_name && !isset($sha_exists[$user->username_sha1][$list_party_name])){
+						$list_party .= $list_party_name.', ';
+						$sha_exists[$user->username_sha1][$list_party_name] = true;
 					}
 				}
+				//Delete the last comma
 				if(strpos(strrev($list_party), ' ,')===0){
 					$list_party = rtrim($list_party, ', ');
 				}
@@ -572,10 +631,15 @@ class ControllerInfo extends Controller {
 		echo '</table>';
 
 		echo '</div>';
-		echo "<br />\n<br />\n<br />\n";
 		proc_nice(0);
-		return exit(0);
+		if(!$users_id){
+			echo "<br />\n<br />\n<br />\n";
+			return exit(0);
+		}
+		echo "<br />\n";
+		return true;
 	}
+
 
 
 	public function weeks_get(){
@@ -588,6 +652,8 @@ class ControllerInfo extends Controller {
 		ob_clean();
 		flush();
 		Workspaces::getSFTP();
+		self::setFirstWeekDay(6); //Start week on Satuday
+		$week_offset = self::getWeekOffset();
 		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
 		echo '<div style="font-family:monospace;font-size: 13px;">';
 
@@ -649,32 +715,54 @@ class ControllerInfo extends Controller {
 		//Make sure that no week are missing
 		$week = $announcement->copy()->addDay(1);
 		while($week <= $today){
-			$week_start = $week->copy()->startOfWeek()->subDay(2);
+			$week_start = $week->copy()->startOfWeek()->subDay($week_offset);
+			$week_end = $week->copy()->endOfWeek()->subDay($week_offset);
+			if($week->format('N') >= self::$first_week_day){
+				//Insure to work with next week value
+				$week_start->addDay(7);
+				$week_end->addDay(7);
+			}
 			if($week_start < $announcement){
 				$week_start = $announcement->copy()->addDay(1)->startOfDay();
 			}
-			$week_end = $week->copy()->endOfWeek()->subDay(2);
 
-			$format = $week_end->format('\\yy-\\wW');
-			$new_accounts[$format] = array();
-			$integrations[$format] = array();
-			$countries[$format] = array();
-			$sales[$format] = array();
-			$info_os[$format] = array();
-			$info_device[$format] = array();
-			$info_platform[$format] = array();
+			$format_year = $week_end->format('\\yy');
+			$format_week = intval($week_end->format('W'));
+			if($format_week<10){
+				$format_week = '0'.$format_week;
+			}
+			$year_week = $format_year.'-w'.$format_week;
 
-			$date_gap[$format] = array($week_start->format('Y-m-d'), $week_end->format('Y-m-d'));
-			$week->addDay(1);
+			$new_accounts[$year_week] = array();
+			$integrations[$year_week] = array();
+			$countries[$year_week] = array();
+			$sales[$year_week] = array();
+			$info_os[$year_week] = array();
+			$info_device[$year_week] = array();
+			$info_platform[$year_week] = array();
+
+			$date_gap[$year_week] = array($week_start->format('Y-m-d'), $week_end->format('Y-m-d'));
+			$week->addDay(1); //Must be dily to cover week offset
 		}
+
+		$users = Users::whereNotNull('username_sha1')->get(array('username_sha1'));
+		$sha_exists = array();
+		foreach ($users as $user) {
+			if(!empty($user->username_sha1)){
+				$sha_exists[$user->username_sha1] = array();
+			}
+		}
+		unset($users);
 		
-		if($parties = UsersLog::all(array('created_at', 'party', 'party_id'))){
+		if($parties = UsersLog::orderBy('created_at', 'asc')->get(array('created_at', 'party', 'party_id', 'username_sha1'))){
 			foreach ($parties as $party) {
 				$list_party = false;
-				if(is_null($party->party)){
+				if(!isset($sha_exists[$party->username_sha1])){
+					continue;
+				} else if(is_null($party->party)){
 					$list_party = 'email';
 				} else if(!empty($party->party) && !in_array($party->party, array('wechat_pub', 'wechat_dev'))){
-					$list_party = $party->party;
+					$list_party = 'wechat';
 				} else {
 					continue;
 				}
@@ -683,9 +771,24 @@ class ControllerInfo extends Controller {
 						continue;
 					}
 				}
+				if(isset($sha_exists[$party->username_sha1][$list_party])){
+					//do not display twice the same login method
+					continue;
+				}
+				$sha_exists[$party->username_sha1][$list_party] = true; //Avoid to double the same user, the orderby helps to crab the first user creation account
 				$year_week = $announcement_str;
 				if($party->created_at > $announcement){
-					$year_week = $party->created_at->format('\\yy-\\wW');
+					if($party->created_at->format('N') >= self::$first_week_day){
+						$format_year = $party->created_at->copy()->addDay($week_offset)->format('\\yy');
+						$format_week = intval($party->created_at->copy()->addDay($week_offset)->format('W'));
+					} else {
+						$format_year = $party->created_at->format('\\yy');
+						$format_week = intval($party->created_at->format('W'));
+					}
+					if($format_week<10){
+						$format_week = '0'.$format_week;
+					}
+					$year_week = $format_year.'-w'.$format_week;
 				}
 				if(!isset($new_accounts[$year_week][$list_party])){
 					$new_accounts[$year_week][$list_party] = 1;
@@ -705,7 +808,17 @@ class ControllerInfo extends Controller {
 				$date = Carbon::createFromTimestamp($action->created_at);
 				$year_week = $announcement_str;
 				if($date > $announcement){
-					$year_week = $date->format('\\yy-\\wW');
+					if($date->format('N') >= self::$first_week_day){
+						$format_year = $date->copy()->addDay($week_offset)->format('\\yy');
+						$format_week = intval($date->copy()->addDay($week_offset)->format('W'));
+					} else {
+						$format_year = $date->format('\\yy');
+						$format_week = intval($date->format('W'));
+					}
+					if($format_week<10){
+						$format_week = '0'.$format_week;
+					}
+					$year_week = $format_year.'-w'.$format_week;
 				}
 				if($action->action==-1 && !empty($action->info)){
 					try {
@@ -848,7 +961,7 @@ class ControllerInfo extends Controller {
 		}
 
 		echo '<tr style="text-align:center;background-color:#F6FFF6;color:#979797">';
-		echo '<td style="text-align:left;">Location</td>';
+		echo '<td style="text-align:left;">Location logs</td>';
 		foreach ($new_accounts as $week => $array) {
 			echo '<td></td>';
 		}
@@ -872,7 +985,7 @@ class ControllerInfo extends Controller {
 		}
 
 		echo '<tr style="text-align:center;background-color:#F6FFF6;color:#979797">';
-		echo '<td style="text-align:left;">Operation Systems</td>';
+		echo '<td style="text-align:left;">Operation Systems logs</td>';
 		foreach ($new_accounts as $week => $array) {
 			echo '<td></td>';
 		}
@@ -896,7 +1009,7 @@ class ControllerInfo extends Controller {
 		}
 
 		echo '<tr style="text-align:center;background-color:#F6FFF6;color:#979797">';
-		echo '<td style="text-align:left;">Devices</td>';
+		echo '<td style="text-align:left;">Devices logs</td>';
 		foreach ($new_accounts as $week => $array) {
 			echo '<td></td>';
 		}
@@ -920,7 +1033,7 @@ class ControllerInfo extends Controller {
 		}
 
 		echo '<tr style="text-align:center;background-color:#F6FFF6;color:#979797">';
-		echo '<td style="text-align:left;">Platforms</td>';
+		echo '<td style="text-align:left;">Platforms logs</td>';
 		foreach ($new_accounts as $week => $array) {
 			echo '<td></td>';
 		}

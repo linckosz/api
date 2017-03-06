@@ -194,9 +194,11 @@ class Projects extends ModelLincko {
 			}
 			$title = $this->title;
 			$param = array('un' => $sender);
-			if($history && isset($history->par)){
-				foreach ($history->par as $key => $value) {
-					$param[$key] = $value;
+			if($history && isset($history->parameters)){
+				if($json = json_decode($history->parameters)){
+					foreach ($json as $key => $value) {
+						$param[$key] = $value;
+					}
 				}
 			}
 			foreach ($users as $value) {
@@ -223,9 +225,13 @@ class Projects extends ModelLincko {
 					}
 					$target = $this;
 					if($history && ($history->code==405 || $history->code==406)){
-						if(isset($history->par) && isset($history->par->tid)){
-							if($task = Tasks::find($history->par->tid)){
-								$target = $this;
+						if(isset($history->parameters)){
+							if($json = json_decode($history->parameters)){
+								if(isset($json->tid)){
+									if($task = Tasks::find($json->tid)){
+										$target = $task;
+									}
+								}
 							}
 						}
 					}

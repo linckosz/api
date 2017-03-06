@@ -71,6 +71,8 @@ class ControllerTest extends Controller {
 		$msg = $app->trans->getBRUT('api', 8888, 0); //The application is reading.
 		$db = Capsule::connection('data');
 		$db->enableQueryLog();
+		$db_api = Capsule::connection('api');
+		$db_api->enableQueryLog();
 		$tp = null;
 
 		//\libs\Watch::php(Users::getUser()->toJson(),'$user', __FILE__, __LINE__);
@@ -676,23 +678,11 @@ class ControllerTest extends Controller {
 
 		//$tp = $record->country->name.' => '.$record->city->name;
 
-/*
-		$tp = Carbon::now();
-		\libs\Watch::php( $tp->format('Y-m-d'), '$tp', __FILE__, __LINE__, false, false, true);
-		$tp = $tp->parse('next friday')->copy();
-		\libs\Watch::php( $tp->format('Y-m-d'), '$tp', __FILE__, __LINE__, false, false, true);
-		$tp = $tp->parse('next friday')->copy();
-		\libs\Watch::php( $tp->format('Y-m-d'), '$tp', __FILE__, __LINE__, false, false, true);
-*/
-
-		$ve = new \hbattat\VerifyEmail('brunoocto@gmail.con', 'noreply@'.$app->lincko->domain);
-
-		$tp = $ve->verify();
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
-		$tp = $ve->get_debug();
+		$tp = UsersLog::orderBy('created_at', 'asc')->get(array('created_at', 'party', 'party_id', 'username_sha1'))->count();
+		\libs\Watch::php( $db_api->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 
 		//Display mysql requests
-		//\libs\Watch::php( Capsule::connection('data')->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 

@@ -328,7 +328,15 @@ class Tasks extends ModelLincko {
 			}
 		}
 
-		return parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
+		if($history = parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id)){
+			//Make sure we notify assigned and unassigned
+			if($history->code==551 || $history->code==552){
+				$this->pushNotif(false, $history);
+				$history = false;
+			}
+		}
+
+		return $history;
 	}
 
 	public function getHistoryCreationCode(&$items=false){
@@ -362,7 +370,6 @@ class Tasks extends ModelLincko {
 
 	public function pushNotif($new=false, $history=false){
 		$app = ModelLincko::getApp();
-
 		if(!$new && !$history){
 			return false;
 		}
@@ -382,6 +389,13 @@ class Tasks extends ModelLincko {
 			}
 		}
 
+		if($history->pivot_type=='users'){
+			$users_accept[$history->pivot_id] = $history->pivot_id;
+		}
+		if($history->parent_type=='users'){
+			$users_accept[$history->parent_id] = $history->parent_id;
+		}
+
 		$users = false;
 		$type = 'tasks';
 		$pivot = new PivotUsers(array($type));
@@ -390,10 +404,21 @@ class Tasks extends ModelLincko {
 			->where($type.'_id', $this->id)
 			->whereIn('users_id', $users_accept)
 			->where('access', 1)
-			->where(function ($query){
-				$query
-				->where('in_charge', 1)
-				->orWhere('approver', 1);
+			->where(function ($query) use ($history){
+				$query = $query
+				->where('approver', 1);
+				if($history->attribute!='pivot_users_in_charge'){
+					$query = $query
+					->orWhere('in_charge', 1);
+				}
+				if($history->parent_type=='users'){
+					$query = $query
+					->orWhere('users_id', $history->parent_id);
+				}
+				if($history->pivot_type=='users'){
+					$query = $query
+					->orWhere('users_id', $history->pivot_id);
+				}
 			})
 			->get(array('users_id'));
 		}
@@ -406,9 +431,11 @@ class Tasks extends ModelLincko {
 			}
 			$title = $this->title;
 			$param = array('un' => $sender);
-			if($history && isset($history->par)){
-				foreach ($history->par as $key => $value) {
-					$param[$key] = $value;
+			if($history && isset($history->parameters)){
+				if($json = json_decode($history->parameters)){
+					foreach ($json as $key => $value) {
+						$param[$key] = $value;
+					}
 				}
 			}
 			foreach ($users as $value) {

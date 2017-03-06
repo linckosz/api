@@ -420,6 +420,13 @@ class Files extends ModelLincko {
 			}
 		}
 
+		if($history->pivot_type=='users'){
+			$users_accept[$history->pivot_id] = $history->pivot_id;
+		}
+		if($history->parent_type=='users'){
+			$users_accept[$history->parent_id] = $history->parent_id;
+		}
+
 		if($users){
 			if($this->updated_by==0){
 				$sender = $app->trans->getBRUT('api', 0, 11); //LinckoBot
@@ -427,9 +434,11 @@ class Files extends ModelLincko {
 				$sender = Users::find($this->updated_by)->getUsername();
 			}
 			$param = array('un' => $sender);
-			if($history && isset($history->par)){
-				foreach ($history->par as $key => $value) {
-					$param[$key] = $value;
+			if($history && isset($history->parameters)){
+				if($json = json_decode($history->parameters)){
+					foreach ($json as $key => $value) {
+						$param[$key] = $value;
+					}
 				}
 			}
 			if($type=='chats' && isset($parent->single) && $parent->single){
