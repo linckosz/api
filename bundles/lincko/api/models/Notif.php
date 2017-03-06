@@ -44,7 +44,7 @@ class Notif {
 			return true;
 		}
 
-		$response->iosNotification($msg, $notif);
+		$response->iosNotification($notif['title'].":\n".$msg, $notif);
 		$response->options(array(
 			'apns_production' => true,
 		));
@@ -68,7 +68,7 @@ class Notif {
 		$title = (new \Html2Text\Html2Text($title))->getText();
 		$msg = (new \Html2Text\Html2Text($msg))->getText();
 		$notif = array(
-			'sound' => $title,
+			'sound' => 'sound',
 			'title' => $title,
 			'badge' => '+1',
 			'build_id' => 2,

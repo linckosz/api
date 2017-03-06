@@ -420,10 +420,10 @@ class Files extends ModelLincko {
 			}
 		}
 
-		if($history->pivot_type=='users'){
+		if(isset($history->pivot_type) && $history->pivot_type=='users'){
 			$users_accept[$history->pivot_id] = $history->pivot_id;
 		}
-		if($history->parent_type=='users'){
+		if(isset($history->parent_type) && $history->parent_type=='users'){
 			$users_accept[$history->parent_id] = $history->parent_id;
 		}
 

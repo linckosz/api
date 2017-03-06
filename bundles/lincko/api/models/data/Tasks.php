@@ -389,10 +389,10 @@ class Tasks extends ModelLincko {
 			}
 		}
 
-		if($history->pivot_type=='users'){
+		if(isset($history->pivot_type) && $history->pivot_type=='users'){
 			$users_accept[$history->pivot_id] = $history->pivot_id;
 		}
-		if($history->parent_type=='users'){
+		if(isset($history->parent_type) && $history->parent_type=='users'){
 			$users_accept[$history->parent_id] = $history->parent_id;
 		}
 
@@ -411,11 +411,11 @@ class Tasks extends ModelLincko {
 					$query = $query
 					->orWhere('in_charge', 1);
 				}
-				if($history->parent_type=='users'){
+				if(isset($history->parent_type) && $history->parent_type=='users'){
 					$query = $query
 					->orWhere('users_id', $history->parent_id);
 				}
-				if($history->pivot_type=='users'){
+				if(isset($history->pivot_type) && $history->pivot_type=='users'){
 					$query = $query
 					->orWhere('users_id', $history->pivot_id);
 				}

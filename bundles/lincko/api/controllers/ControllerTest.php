@@ -677,9 +677,7 @@ class ControllerTest extends Controller {
 		//$record = $reader->city('220.231.203.67');
 
 		//$tp = $record->country->name.' => '.$record->city->name;
-
-		$tp = UsersLog::orderBy('created_at', 'asc')->get(array('created_at', 'party', 'party_id', 'username_sha1'))->count();
-		\libs\Watch::php( $db_api->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

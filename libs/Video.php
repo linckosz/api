@@ -83,9 +83,6 @@ class Video {
 						default: $this->info['rotate'] = ''; break;
 					}
 				}
-				
-				//IMPORTANT: It seems that the current ffmpeg version handle the rotation automaticaly
-				$this->info['rotate'] = '';
 
 				unset($matches);
 				if($this->info['duration']==0 && preg_match($regdur, $tablo[$i], $matches)){
@@ -111,12 +108,17 @@ class Video {
 				}
 			}
 		}
+		
+		//IMPORTANT: It seems that the current ffmpeg version handle the rotation automaticaly
+		$this->info['rotate'] = '';
+		
 		if($invert){
 			$width = $this->info['width'];
 			$height = $this->info['height'];
 			$this->info['width'] = $height;
 			$this->info['height'] = $width;
 		}
+		
 		$this->info['width_new'] = $this->info['width'];
 		$this->info['height_new'] = $this->info['height'];
 		return $result;

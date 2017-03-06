@@ -229,6 +229,7 @@ $app->lincko->routeSkip = array(
 	'integration_code_get',
 	'integration_setcode_get',
 	'debug_md5_get',
+	'debug_get',
 );
 
 //The hook ModifyRequest will redirect to the right class method according to the method requested in the body, it's not HTTP request which is always POST expect for file uploading (GET to get form, or POST to upload file)
