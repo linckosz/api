@@ -407,7 +407,7 @@ class Tasks extends ModelLincko {
 			->where(function ($query) use ($history){
 				$query = $query
 				->where('approver', 1);
-				if($history->attribute!='pivot_users_in_charge'){
+				if(isset($history->attribute) && $history->attribute!='pivot_users_in_charge'){
 					$query = $query
 					->orWhere('in_charge', 1);
 				}
