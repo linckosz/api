@@ -2750,7 +2750,7 @@ abstract class ModelLincko extends Model {
 					if($column=='access' && $type_id==$app->lincko->data['uid'] && !static::$save_user_access){
 						continue;
 					} else
-					if(is_numeric($type_id) && (int)$type_id>0){
+					if(is_numeric($type_id) && (int)$type_id>=0){
 						$save = true;
 						if($this->pivots_var==null){ $this->pivots_var = new \stdClass; }
 						if(!isset($this->pivots_var->$type)){ $this->pivots_var->$type = new \stdClass; }

@@ -61,12 +61,12 @@ class CheckAccess extends \Slim\Middleware {
 		} else {
 			$user_log = new UsersLog;
 		}
-		//if($user_log){ //toto => need to uncomment
+		if($user_log){
 			$authorize = $user_log->getAuthorize($data);
 			if(is_array($authorize) && isset($authorize['public_key'])){
 				return $authorize['public_key'];
 			}
-		//}
+		}
 		if(isset($data->public_key)){
 			Authorization::clean();
 			return $data->public_key;

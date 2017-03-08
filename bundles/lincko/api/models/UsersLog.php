@@ -145,7 +145,7 @@ class UsersLog extends Model {
 
 		if($users_log && $authorization){
 			$sha1 = sha1(uniqid());
-			while(!is_null(Authorization::where('public_key', $sha1)->first(array('public_key')))){
+			while(Authorization::where('public_key', $sha1)->take(1)->count() > 0){
 				$sha1 = sha1(uniqid());
 			}
 			//Warning: $authorization->public_key will reset to empty value after save because it's a primary value
