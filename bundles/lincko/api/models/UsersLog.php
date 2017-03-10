@@ -154,7 +154,7 @@ class UsersLog extends Model {
 			$authorization->fingerprint = $data->fingerprint;
 			$user = Users::where('username_sha1', $users_log->username_sha1)->first(array('id', 'username'));
 			$authorization->sha = $users_log->username_sha1;
-			if($user &&	$authorization->save()){
+			if(!is_null($users_log->username_sha1) && $user && $authorization->save()){
 				$app->lincko->translation['user_username'] = $user->username;
 				$arr = array(
 					'public_key' => $public_key,
