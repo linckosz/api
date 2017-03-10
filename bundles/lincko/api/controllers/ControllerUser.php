@@ -262,6 +262,7 @@ class ControllerUser extends Controller {
 			$users_log = UsersLog::WhereNotNull('username_sha1')->Where('username_sha1', $model->username_sha1)->first();
 			if(!UsersLog::Where('party', $form->party)->Where('party_id', $form->party_id)->first()){
 				if($users_log->subAccount($form->party, $form->party_id, $form->password, true, false)){
+					$model->touchUpdateAt();
 					if(strpos($users_log->party, 'wechat')==0){
 						Action::record(-13); //Wechat to Email
 					}
