@@ -274,7 +274,6 @@ class ControllerUser extends Controller {
 				if(strpos($users_log->party, 'wechat')==0){
 					Action::record(-13); //Wechat to Email
 				}
-				$app->lincko->flash['refresh'] = true;
 				$app->render(201, array('show' => true, 'msg' => array('msg' => $app->trans->getBRUT('api', 15, 39)),)); //Your account has been linked! Please wait for Lincko to restart.
 				return true;
 			} else {
