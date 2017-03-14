@@ -37,10 +37,10 @@ class Action extends Model {
 		-12 => 'Link Email to Wechat',
 		-13 => 'Link Wechat to Email',
 		-14 => 'Access Lincko appstore link',
-		-15 => 'Account creation from a sales',
-		-16 => 'Exit onboarding project',
-		-17 => 'Enter onboarding project',
-		-18 => 'Switch the project',
+		-15 => 'Exit onboarding project',
+		-16 => 'Enter onboarding project',
+		-17 => 'Switch the project',
+		-18 => 'Account creation from a sales',
 	);
 	
 ////////////////////////////////////////////

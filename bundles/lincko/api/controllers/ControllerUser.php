@@ -458,7 +458,7 @@ class ControllerUser extends Controller {
 					}
 					//Record who did the sales
 					if(isset($data->sales_code) && !empty($data->sales_code)){
-						Action::record(-15, $data->sales_code);
+						Action::record(-18, $data->sales_code);
 					}
 					$app->lincko->flash['unset_sales_code'] = true;
 					//$db_data->commit();
