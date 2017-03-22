@@ -149,7 +149,8 @@ class Inform {
 		}
 		$wechat = new Wechat($options);
 		if(!$access_token){
-			$wechat->getToken();
+			$access_token = $wechat->getToken();
+			Token::setToken('wechat_pub', $access_token, 3600);
 		}
 		
 		//Add item link if any

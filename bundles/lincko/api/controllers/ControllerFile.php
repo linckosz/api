@@ -556,7 +556,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$qrCode->save($path);
 			$qrCode->render();
 		} else {
-			WideImage::load($path)->output('png');;
+			WideImage::load($path)->output('png');
 		}
 		
 		return exit(0);

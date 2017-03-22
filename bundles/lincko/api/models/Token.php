@@ -24,7 +24,7 @@ class Token extends Model {
 	public static function getToken($party){
 		$app = ModelLincko::getApp();
 		$limit = Carbon::now();
-		if($item = self::Where('party', $party)->where('expired_at', '<', Carbon::now())->first(array('token'))){
+		if($item = self::Where('party', $party)->where('expired_at', '>', Carbon::now())->first(array('token'))){
 			return $item->token;
 		}
 		return false;

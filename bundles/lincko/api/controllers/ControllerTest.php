@@ -263,7 +263,7 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::withTrashed()->find(5)->delete();
 		//$tp = Projects::withTrashed()->find(5)->restore();
-		//$tp = Projects::getLinked()->get();;
+		//$tp = Projects::getLinked()->get();
 		
 		//$tp = Projects::find(5)->getUsersContacts();
 		//$tp = Tasks::find(4)->getUsersContacts();

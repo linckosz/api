@@ -5,9 +5,11 @@ namespace bundles\lincko\api\controllers\integration;
 use \bundles\lincko\api\models\Integration;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
+use \bundles\lincko\api\models\Token;
 use \bundles\lincko\api\middlewares\CheckAccess;
 use \libs\Controller;
 use \libs\Json;
+use \libs\Wechat;
 use Endroid\QrCode\QrCode;
 use \config\Handler;
 
@@ -68,14 +70,70 @@ class ControllerIntegration extends Controller {
 		return exit(0);
 	}
 
+	public function set_wechat_qrcode_get(){
+
+		$app = \Slim\Slim::getInstance();
+		$options = array(
+			'appid' => $app->lincko->integration->wechat['public_appid'],
+			'secret' => $app->lincko->integration->wechat['public_secretapp'],
+		);
+	
+		if($access_token = Token::getToken('wechat_pub')){
+			$options['access_token'] = $access_token;
+		}
+		$wechat = new Wechat($options);
+		if(!$access_token){
+			$access_token = $wechat->getToken();
+			Token::setToken('wechat_pub', $access_token, 3600); //toto => need to observe, it seems that the token is quickly unvalid (at least for .co)
+		}
+		$ticket = $wechat->getJsapiTicket();
+		if(!$ticket){
+			unset($options['access_token']);
+			$wechat = new Wechat($options);
+			$access_token = $wechat->getToken();
+			Token::setToken('wechat_pub', $access_token, 3600);
+			$ticket = $wechat->getJsapiTicket();
+		}
+		Integration::clean();
+		//$code = substr(md5(uniqid()), 0, 8);
+		$code = rand(1, 100000);
+		while(Integration::find($code)){
+			usleep(10000);
+			//$code = substr(md5(uniqid()), 0, 8);
+			$code = rand(1, 100000);
+		}
+
+		$integration = new Integration;
+		$integration->code = $code;
+		$integration->processing = false;
+		$integration->save();
+
+		$url = $wechat->getQRUrl($code, false, 600); //Wechat validity (10 minutes), but the limit is true so there is no expiration time
+
+		$app->render(200, array('show' => false, 'msg' => array('msg' => 'integration code', 'code' => $code, 'url' => $url, 'access_token' => $access_token)));
+		return exit(0);
+	}
+
 	public function code_get(){
 		$app = $this->app;
 		$data = $this->data;
-		$status = 0; //[0]failed [1]pending [2]processing [3]done
-		$msg = $app->trans->getBRUT('api', 20, 1); //Software connection failed.
-		Handler::session_initialize(true);
-		if(isset($_SESSION['integration_code']) && isset($data->fingerprint)){
-			if($integration = Integration::find($_SESSION['integration_code'])){
+		$msg = $app->trans->getBRUT('api', 20, 3); //Software connection pending...
+		$status = 1;
+
+		$integration_code = false;
+		if(isset($data->data) && isset($data->data->integration_code)){
+			$integration_code = $data->data->integration_code;
+		} else {
+			Handler::session_initialize(true);
+			if(isset($_SESSION['integration_code'])){
+				$integration_code = $_SESSION['integration_code'];
+			}
+		}
+
+		if($integration_code && isset($data->fingerprint)){
+			if($integration = Integration::find($integration_code)){
+				$status = 0; //[0]failed [1]pending [2]processing [3]done
+				$msg = $app->trans->getBRUT('api', 20, 1); //Software connection failed.
 				if(is_null($integration->log)){
 					$msg = $app->trans->getBRUT('api', 20, 3); //Software connection pending...
 					$status = 1;

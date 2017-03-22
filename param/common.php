@@ -228,6 +228,7 @@ $app->lincko->routeFilter = array(
 $app->lincko->routeSkip = array(
 	'integration_code_get',
 	'integration_setcode_get',
+	'integration_set_wechat_qrcode_get',
 	'debug_md5_get',
 	'debug_get',
 );

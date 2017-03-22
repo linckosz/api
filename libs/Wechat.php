@@ -157,7 +157,6 @@ class Wechat {
 		}
 		return true;
 	}
-
 	/**
 	 * 检查用户签名信息
 	 * @return boolean
@@ -650,11 +649,13 @@ class Wechat {
 		$this->send['msgtype'] = $msgtype;
 		/* 添加类型数据 */
 		$sendtype = 'send' . $msgtype;
-		$this->$sendtype($content);
+		$this->$sendtype(urldecode(urlencode($content)));
 		/* 发送 */
-		$params = self::json_encode($this->send);
-		$url    = self::CUSTOM_SEND_URL . '?access_token=' . $this->access_token;
+		$params = json_encode($this->send,JSON_UNESCAPED_UNICODE);
+		
+		$url = self::CUSTOM_SEND_URL . '?access_token=' . $this->access_token;
 		$jsonStr = $this->http($url, $params, 'POST');
+
 		$jsonArr = $this->parseJson($jsonStr);
 		if ($jsonArr) {
 			return true;
@@ -822,11 +823,26 @@ class Wechat {
 	 * @return string|boolean    二维码图片地址
 	 */
 	public function getQRUrl($scene_id = '', $limit = true, $expire = 1800) {
-		if (!isset($this->ticket)) {
-			if (!$this->qrcode($scene_id, $limit, $expire)) return false;
+		if (!isset($this->ticket) && !$this->qrcode($scene_id, $limit, $expire)) {
+			return false;
 		}
 		return self::QRCODE_SHOW_URL.'?ticket=' . $this->ticket;
 	}
+
+	/**
+	 * 获取二维码图像地址
+	 * @param  integer $scene_id 场景值 1-100000整数
+	 * @param  boolean $limit    true永久二维码 false 临时
+	 * @param  integer $expire   临时二维码有效时间
+	 * @return string|boolean    二维码图片地址
+	 */
+	public function getQRUrlStr($scene_str = '',  $expire = 1800) {
+		if (!isset($this->ticket) && !$this->qrcode_bystr($scene_str, $expire)) {
+			return false;
+		}
+		return self::QRCODE_SHOW_URL.'?ticket=' . $this->ticket;
+	}
+
 
 	/**
 	 * 生成推广二维码
@@ -855,11 +871,35 @@ class Wechat {
 	}
 
 	/**
+	 * 生成推广二维码
+	 * @param  integer $scene_id 场景值 1-100000整数
+	 * @param  boolean $limit    true永久二维码 false 临时
+	 * @param  integer $expire   临时二维码有效时间
+	 * @return string|boolean
+	 */
+	private function qrcode_bystr($scene_str = '', $expire = 1800) {
+		$params['action_name'] = 'QR_LIMIT_STR_SCENE';
+		$params['expire_seconds'] = $expire;
+		$params['action_info'] = array('scene' => array('scene_str' => $scene_str));
+		$params = json_encode($params);
+		$url = self::QRCODE_URL . '?access_token=' . $this->access_token;
+		$jsonStr = $this->http($url, $params, 'POST');
+		$jsonArr = $this->parseJson($jsonStr);
+		if ($jsonArr) {
+			return $this->ticket = $jsonArr['ticket'];
+		}else {
+			return false;
+		}
+		
+	}
+
+	/**
 	 * 不转义中文字符和\/的 json 编码方法
 	 * @param  array $array
 	 * @return json
 	 */
 	private function json_encode($array = array()) {
+		//return unicode_to_utf8(json_encode($array));
 		$array = str_replace("\\/", "/", json_encode($array));
 		$search = '#\\\u([0-9a-f]+)#i'; //bruno
 		if (strpos(strtoupper(PHP_OS), 'WIN') === false) {
@@ -869,6 +909,9 @@ class Wechat {
 		}
 		return preg_replace($search, $replace, $array);
 	}
+
+
+
 
 	/**
 	 * 解析JSON编码，如果有错误，则返回错误并设置错误信息d
@@ -1577,7 +1620,7 @@ class Wechat {
 		unset($data['sign']);
 		if (self::_getOrderMd5($data) != $sign) {
 			$this->error = '签名校验失败';
- 			return false;
+			return false;
 		} else {
 			return true;
 		}
