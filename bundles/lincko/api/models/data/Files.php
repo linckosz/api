@@ -729,7 +729,7 @@ class Files extends ModelLincko {
 			$try = 10; //5s of try
 			$time = $this->freshTimestamp();
 			$this::where('id', $this->id)->getQuery()->update(['progress' => 1, 'updated_at' => $time, 'extra' => null]);
-			usleep(30000); //30ms
+			usleep(rand(30000, 35000)); //30ms
 			Updates::informUsers($users_tables);
 			usleep(500000); //500ms
 			while($loop){
@@ -789,14 +789,14 @@ class Files extends ModelLincko {
 
 				$time = $this->freshTimestamp();
 				$this::where('id', $this->id)->getQuery()->update(['progress' => $progress, 'size' => $size, 'updated_at' => $time, 'extra' => null]);
-				usleep(30000); //30ms
+				usleep(rand(30000, 35000)); //30ms
 				Updates::informUsers($users_tables);
 				usleep(500000); //500ms
 			}
 			if($try<=0){
 				$time = $this->freshTimestamp();
 				$this::where('id', $this->id)->getQuery()->update(['progress' => 100, 'size' => $size, 'error' => 1, 'updated_at' => $time, 'extra' => null]);
-				usleep(30000); //30ms
+				usleep(rand(30000, 35000)); //30ms
 				Updates::informUsers($users_tables);
 			}
 

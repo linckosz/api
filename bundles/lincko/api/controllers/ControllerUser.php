@@ -346,6 +346,9 @@ class ControllerUser extends Controller {
 			} else if($data->party=='wechat'){ //Wechat
 				$json = $data->data;
 				if(!isset($json->nickname)){ //We exit if we are only on base mode and no user logged
+					if(isset($json->scope) && $json->scope=='snsapi_base'){
+						goto failed_free; //Skip the error log because that's normal in base scope to not having username info
+					}
 					goto failed;
 				}
 				$user->username = $json->nickname;
@@ -528,6 +531,8 @@ class ControllerUser extends Controller {
 			unset($data->password);
 		}
 		\libs\Watch::php(array($errmsg, $data), 'Account creation failed', __FILE__, __LINE__, true);
+
+		failed_free:
 		return false;
 	}
 

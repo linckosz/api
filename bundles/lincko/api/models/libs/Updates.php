@@ -50,7 +50,7 @@ class Updates extends Model {
 
 	public function save(array $options = array()){
 		$return = Model::save($options);
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 		return $return;
 	}
 
@@ -72,6 +72,7 @@ class Updates extends Model {
 		}
 		
 		$db = static::getDB();
+		usleep(rand(30000, 35000)); //30ms
 		foreach ($temp as $table_name => $users) {
 			$values = '';
 			foreach ($users as $users_id) {
@@ -82,8 +83,21 @@ class Updates extends Model {
 				$values .= '('.intval($users_id).', \''.$time.'\')';
 			}
 			$sql = 'INSERT INTO `updates` (`id`, `'.$table_name.'`) VALUES '.$values.' ON DUPLICATE KEY UPDATE `'.$table_name.'`=\''.$time.'\';';
-			$db->insert( $db->raw($sql));
-			usleep(30000); //30ms
+			$loop = 10; //do 10 tries at the most
+			while($loop && $loop>0){
+				try {
+					$db->insert( $db->raw($sql));
+					$loop = false;
+				} catch (\Exception $e) {
+					\libs\Watch::php(true, 'informUsers => Do not worry about this deadlock issue, it will be retried in a loop', __FILE__, __LINE__, true);
+					$loop--;
+					if($loop<=0){
+						$loop = false;
+					}
+					usleep(100000); //Give 100ms after any failure
+				}
+			}
+			usleep(rand(30000, 35000)); //30ms
 		}
 
 		return true;

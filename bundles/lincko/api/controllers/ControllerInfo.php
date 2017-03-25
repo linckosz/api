@@ -850,7 +850,7 @@ class ControllerInfo extends Controller {
 								} else {
 									$info_platform[$year_week][$info[2]]++;
 								}
-								if(!in_array($info[2], $info_platforms_fields)){
+								if(!in_array($info[2], $info_platform_fields)){
 									$info_platform_fields[] = $info[2];
 								}
 							}

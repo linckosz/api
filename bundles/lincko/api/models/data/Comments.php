@@ -344,7 +344,7 @@ class Comments extends ModelLincko {
 
 	public function saveRobot(array $options = array()){
 		$result = Model::save($options);
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 		return $result;
 	}
 

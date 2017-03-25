@@ -39,7 +39,7 @@ class History extends Model {
 			return false;
 		}
 		$return = parent::save($options);
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 		return $return;
 	}
 

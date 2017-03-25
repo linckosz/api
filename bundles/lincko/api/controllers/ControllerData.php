@@ -181,6 +181,7 @@ class ControllerData extends Controller {
 			$settings->setup = $data->data->settings;
 			$dirty = $settings->getDirty();
 			if(count($dirty)>0){
+				usleep(rand(30000, 35000)); //30~35ms
 				if($settings->save()){
 					$msg = array('msg' => 'Settings recorded');
 					$data = new Data();

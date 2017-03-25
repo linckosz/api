@@ -197,7 +197,7 @@ class Tree extends ModelLincko {
 		}
 		//\libs\Watch::php( $sql, '$sql', __FILE__, __LINE__, false, false, true);
 		$result = $db->insert( $db->raw($sql));
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 		return $result;
 	}
 

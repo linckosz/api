@@ -34,6 +34,7 @@ class Email extends \PHPMailer {
 	}
 
 	public static function UrlToShortLink($text){
+		//https://mathiasbynens.be/demo/url-regex
 		$pattern = "`((?:https?|ftp)://\S+?)(?=[[:punct:]]?(?:\s|\Z)|\Z|<)`"; 
 		$target = '<a href="${0}" target="_blank" style="cursor:pointer;cursor:hand;">${0}</a>';
 		$text = preg_replace($pattern, $target, $text);

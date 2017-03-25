@@ -362,7 +362,7 @@ abstract class ModelLincko extends Model {
 	public function scopeextraUpdate($query, array $bindings=array()){
 		$bindings['extra'] = null;
 		$result = $query->withTrashed()->update($bindings);
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 		return $result;
 	}
 
@@ -1013,7 +1013,7 @@ abstract class ModelLincko extends Model {
 					$class = $list_models[$table_name];
 					if((is_bool($class::$has_perm) && $class::$has_perm) || in_array('_perm', $class::getColumns())){ //has_perm is a shortcut to limit some SQL calls
 						$class::getQuery()->whereIn('id', $ids)->update(['updated_at' => $time, '_perm' => $json, 'extra' => null]);
-						usleep(30000); //30ms
+						usleep(rand(30000, 35000)); //30ms
 						$users = json_decode($json);
 						if(is_object($users)){
 							foreach ($users as $users_id => $value) {
@@ -1397,7 +1397,7 @@ abstract class ModelLincko extends Model {
 		$timestamp = time();
 		if($all){
 			Users::getQuery()->update(['check_schema' => $timestamp]);
-			usleep(30000); //30ms
+			usleep(rand(30000, 35000)); //30ms
 			return true;
 		}
 		if(isset($this->_perm)){
@@ -1415,7 +1415,7 @@ abstract class ModelLincko extends Model {
 			}
 			if(!empty($users)){
 				Users::getQuery()->whereIn('id', $users)->update(['check_schema' => $timestamp]);
-				usleep(30000); //30ms
+				usleep(rand(30000, 35000)); //30ms
 				return true;
 			}
 		}
@@ -1423,7 +1423,7 @@ abstract class ModelLincko extends Model {
 			$this->getTable() => array($this->id),
 		);
 		Users::getUsers($list)->getQuery()->update(['check_schema' => $timestamp]);
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 		return true;
 	}
 
@@ -1436,11 +1436,11 @@ abstract class ModelLincko extends Model {
 				'workspaces' => array($app->lincko->data['workspace_id']),
 			);
 			Users::getUsers($list)->getQuery()->update(['force_schema' => $timestamp]);
-			usleep(30000); //30ms
+			usleep(rand(30000, 35000)); //30ms
 		} else {
 			// getQuery() helps to not update Timestamps updated_at and get ride off checkAccess
 			Users::getQuery()->update(['force_schema' => $timestamp]);
-			usleep(30000); //30ms
+			usleep(rand(30000, 35000)); //30ms
 		}
 		//Force to rebuild all extra
 		$models = Data::getModels();
@@ -1449,7 +1449,7 @@ abstract class ModelLincko extends Model {
 			//Force to recalculate all extra
 			if(in_array('extra', $class::getColumns())){
 				$class::WhereNotNull('extra')->getQuery()->update(['updated_at' => $time, 'extra' => null]);
-				usleep(30000); //30ms
+				usleep(rand(30000, 35000)); //30ms
 			}
 		}
 		return true;
@@ -1904,7 +1904,7 @@ abstract class ModelLincko extends Model {
 			if(strpos($this->viewed_by, ';'.$app->lincko->data['uid'].';') === false){
 				$viewed_by = $this->viewed_by = $this->viewed_by.';'.$app->lincko->data['uid'].';';
 				$this::where('id', $this->id)->getQuery()->update(['viewed_by' => $viewed_by]); //toto => with about 200+ viewed, it crashes (1317 Query execution was interrupted)
-				usleep(30000); //30ms
+				usleep(rand(30000, 35000)); //30ms
 				$this->touchUpdateAt();
 				usleep(5000); //5ms (trying to avoid crash (1317 Query execution was interrupted) when over +200 viewed to updated)
 				return true;
@@ -2376,7 +2376,7 @@ abstract class ModelLincko extends Model {
 		$return = false;
 		try {
 			$return = parent::save($options);
-			usleep(30000); //30ms
+			usleep(rand(30000, 35000)); //30ms
 			if($new){
 				$this->new_model = true;
 				if($this->getTable()=='users'){
@@ -2464,7 +2464,7 @@ abstract class ModelLincko extends Model {
 	//Note: this is unsafe because it skip every step of checking
 	public function brutSave(array $options = array()){
 		$result = Model::save($options);
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 		return $result;
 	}
 
@@ -2478,7 +2478,7 @@ abstract class ModelLincko extends Model {
 
 		$time = $this->freshTimestamp();
 		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time, 'extra' => null]);
-		usleep(30000); //30ms
+		usleep(rand(30000, 35000)); //30ms
 
 		if($inform || $return_list){
 			$users_tables = $this->getUsersTable($users_tables);
@@ -2514,7 +2514,7 @@ abstract class ModelLincko extends Model {
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->delete();
-			usleep(30000); //30ms
+			usleep(rand(30000, 35000)); //30ms
 			$this->touchUpdateAt();
 		}
 		return true;
@@ -2546,7 +2546,7 @@ abstract class ModelLincko extends Model {
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->restore();
-			usleep(30000); //30ms
+			usleep(rand(30000, 35000)); //30ms
 			$this->touchUpdateAt();
 		}
 		return true;
@@ -2715,9 +2715,22 @@ abstract class ModelLincko extends Model {
 						}
 					}
 					if($extra = json_encode($bindings, JSON_UNESCAPED_UNICODE)){
-						usleep(30000); //Give 30ms before anyking of update
-						$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
-						usleep(30000); //Give 30ms after anyking of update
+						usleep(rand(30000, 35000)); //Give 30ms before anyking of update
+						$loop = 10; //do 10 tries at the most
+						while($loop && $loop>0){
+							try {
+								$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
+								$loop = false;
+							} catch (\Exception $e) {
+								\libs\Watch::php(true, 'extraEncode => Do not worry about this deadlock issue, it will be retried in a loop', __FILE__, __LINE__, true);
+								$loop--;
+								if($loop<=0){
+									$loop = false;
+								}
+								usleep(100000); //Give 100ms after any failure
+							}
+						}
+						usleep(rand(30000, 35000)); //Give 30ms after anyking of update
 						return true;
 					}
 				}
@@ -2792,6 +2805,12 @@ abstract class ModelLincko extends Model {
 					//if($model = $class::getModel($type_id, true, $force_access)){ //This give some issue of invitation (link, codem or auto items)
 					if($model = $class::getModel($type_id, true, true)){
 						foreach ($column_list as $column => $result) {
+							$loop = 10; //do 10 tries at the most
+							retry:
+							if(!$loop || $loop<=0){
+								continue;
+							}
+							$loop--;
 							$history_save = true;
 							if(is_array($result)){
 								$value = $result[0];
@@ -2812,7 +2831,7 @@ abstract class ModelLincko extends Model {
 							$pivot_array = $this->setPivotExtra($type, $column, $value);
 							if(method_exists(get_called_class(), $type)){ //Check if the pivot call exists
 								$pivot_relation = $this->$type();
-								if($pivot_relation !== false && method_exists($pivot_relation,'updateExistingPivot') && method_exists($pivot_relation,'attach')){
+								if($pivot_relation !== false && method_exists($pivot_relation, 'updateExistingPivot') && method_exists($pivot_relation, 'attach')){
 									if($pivot = $pivot_relation->find($type_id)){ //Check if the pivot exists
 										//We delete created_at since it already exists
 										unset($pivot_array['created_at']);
@@ -2854,7 +2873,13 @@ abstract class ModelLincko extends Model {
 											//By default, if we affect a new pivot, we always authorized access if it's not specified (for instance a user assigned to a task will automaticaly have access to it)
 											$pivot_array['access'] = true;
 										}
-										$pivot_relation->attach($type_id, $pivot_array); //attach() return nothing
+										//For an unknown reason, sometime the pivot exist already, so attach will fail
+										try {
+											$pivot_relation->attach($type_id, $pivot_array); //attach() return nothing
+										} catch (\Exception $e) {
+											\libs\Watch::php(true, 'pivots_save => this is only a warning, the system will retry it. It looks like sometime the pivot is not find but actually exists, so attach is launched', __FILE__, __LINE__, true);
+											goto retry; //restart the operation
+										}
 										$this->pivot_extra_array = false;
 										if($column=='access'){
 											$this->change_permission = true;
@@ -2894,7 +2919,7 @@ abstract class ModelLincko extends Model {
 		}
 		
 		if($touch){
-			usleep(30000);
+			usleep(rand(30000, 35000));
 			$users_tables = $this->touchUpdateAt($users_tables, false, true);
 		}
 		Updates::informUsers($users_tables);
