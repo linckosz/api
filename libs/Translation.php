@@ -27,6 +27,7 @@ class Translation {
 		'fr' => 'fr_FR.utf8',
 		'zh-chs' => 'zh_CN.utf8',
 		'zh-cht' => 'zh_TW.utf8',
+		'ko' => 'ko_KR.UTF-8',
 	);
 
 	public function __construct(){
@@ -140,6 +141,32 @@ class Translation {
 		}
 	}
 
+	public function getNumber(){
+		$langshort = mb_strtolower($this->getClientLanguage());
+		$num = 1; //"en" by default
+		$i = 0;
+		foreach ($this->default_locale_list as $key => $value) {
+			$i++;
+			if($langshort == mb_strtolower($key)){
+				$num = $i;
+				break;
+			}
+		}
+		return $num;
+	}
+
+	public function setLanguageNumber($num=1){
+		$i = 0;
+		foreach ($this->default_locale_list as $key => $value) {
+			$i++;
+			if($num == $i){
+				return $this->setLanguage($key);
+				break;
+			}
+		}
+		return $this->setLanguage();
+	}
+
 	public function getLanguagesShort($bundle = NULL){
 		$list = $this->getLanguages($bundle);
 		$listshort = array();
@@ -211,7 +238,7 @@ class Translation {
 		return $text;
 	}
 
-	protected function get($bundle, $category, $phrase, $data, $force_lang=false){
+	protected function get($bundle, $category, $phrase, array $data = array(), $force_lang=false){
 		$app = $this->app;
 		$value = false;
 		if(!empty($data)){

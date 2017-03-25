@@ -70,7 +70,7 @@ class ControllerIntegration extends Controller {
 		return exit(0);
 	}
 
-	public function set_wechat_qrcode_get(){
+	public function set_wechat_qrcode_post(){
 
 		$app = \Slim\Slim::getInstance();
 		$options = array(
@@ -78,30 +78,61 @@ class ControllerIntegration extends Controller {
 			'secret' => $app->lincko->integration->wechat['public_secretapp'],
 		);
 	
-		if($access_token = Token::getToken('wechat_pub')){
-			$options['access_token'] = $access_token;
+		$access_token = false;
+		if($token = Token::getToken('wechat_pub')){
+			$access_token = $options['access_token'] = $token->token;
 		}
 		$wechat = new Wechat($options);
 		if(!$access_token){
-			$access_token = $wechat->getToken();
-			Token::setToken('wechat_pub', $access_token, 3600); //toto => need to observe, it seems that the token is quickly unvalid (at least for .co)
+			if($access_token = $wechat->getToken()){
+				Token::setToken('wechat_pub', $access_token, 3600); //toto => need to observe, it seems that the token is quickly unvalid (at least for .co)
+			}
 		}
-		$ticket = $wechat->getJsapiTicket();
-		if(!$ticket){
+		
+		$jsapi_ticket = false;
+		if($token = Token::getToken('wechat_jsapi_ticket')){
+			$jsapi_ticket = $token->token;
+		}
+		if(!$jsapi_ticket){
+			if($jsapi_ticket = $wechat->getJsapiTicket()){
+				Token::setToken('wechat_jsapi_ticket', $jsapi_ticket, 3600);
+			}
+		}
+
+		if(!$jsapi_ticket){
 			unset($options['access_token']);
 			$wechat = new Wechat($options);
+
 			$access_token = $wechat->getToken();
 			Token::setToken('wechat_pub', $access_token, 3600);
-			$ticket = $wechat->getJsapiTicket();
+
+			$jsapi_ticket = $wechat->getJsapiTicket();
+			$token = Token::setToken('wechat_jsapi_ticket', $jsapi_ticket, 3600);
 		}
+
 		Integration::clean();
-		//$code = substr(md5(uniqid()), 0, 8);
-		$code = rand(1, 100000);
+		$code = rand(1, 99999);
 		while(Integration::find($code)){
 			usleep(10000);
-			//$code = substr(md5(uniqid()), 0, 8);
-			$code = rand(1, 100000);
+			$code = rand(1, 99999);
 		}
+
+		$language = intval($app->trans->getNumber());
+		if($language < 10){
+			$language = '0'.$language;
+		}
+		$language = substr($language, 0, 2);
+
+		$timeoffset = 0;
+		if(isset($this->data->data) && isset($this->data->data->timeoffset)){
+			$timeoffset = intval($this->data->data->timeoffset);
+		}
+		if($timeoffset < 10){
+			$timeoffset = '0'.$timeoffset;
+		}
+		$timeoffset = substr($timeoffset, 0, 2);
+
+		$code .= $timeoffset.$language;
 
 		$integration = new Integration;
 		$integration->code = $code;
@@ -110,7 +141,72 @@ class ControllerIntegration extends Controller {
 
 		$url = $wechat->getQRUrl($code, false, 600); //Wechat validity (10 minutes), but the limit is true so there is no expiration time
 
-		$app->render(200, array('show' => false, 'msg' => array('msg' => 'integration code', 'code' => $code, 'url' => $url, 'access_token' => $access_token)));
+		//if URL is empty, token may not work, so we force to reset it the next call
+		if(!$url){
+			Token::setToken('wechat_pub', false, -1);
+		}
+
+		$app->render(200, array('show' => false, 'msg' => array(
+			'msg' => 'integration code', 'code' => $code,
+			'url' => $url
+		)));
+		return exit(0);
+	}
+
+	public function get_wechat_token_get(){
+
+		$app = \Slim\Slim::getInstance();
+		$options = array(
+			'appid' => $app->lincko->integration->wechat['public_appid'],
+			'secret' => $app->lincko->integration->wechat['public_secretapp'],
+		);
+	
+		$access_token = false;
+		$expire_access_token = 0;
+		if($token = Token::getToken('wechat_pub')){
+			$access_token = $options['access_token'] = $token->token;
+			$expire_access_token = $token->expired_at->getTimestamp();
+		}
+		$wechat = new Wechat($options);
+		if(!$access_token){
+			if($access_token = $wechat->getToken()){
+				$token = Token::setToken('wechat_pub', $access_token, 3600); //toto => need to observe, it seems that the token is quickly unvalid (at least for .co)
+				$expire_access_token = $token->expired_at->getTimestamp();
+			}
+		}
+
+		$jsapi_ticket = false;
+		$expire_jsapi_ticket = 0;
+		if($token = Token::getToken('wechat_jsapi_ticket')){
+			$jsapi_ticket = $token->token;
+			$expire_jsapi_ticket = $token->expired_at->getTimestamp();
+		}
+		if(!$jsapi_ticket){
+			if($jsapi_ticket = $wechat->getJsapiTicket()){
+				$token = Token::setToken('wechat_jsapi_ticket', $jsapi_ticket, 3600);
+				$expire_jsapi_ticket = $token->expired_at->getTimestamp();
+			}
+		}
+			
+		if(!$jsapi_ticket){
+			unset($options['access_token']);
+			$wechat = new Wechat($options);
+
+			$access_token = $wechat->getToken();
+			Token::setToken('wechat_pub', $access_token, 3600);
+			$expire_access_token = $token->expired_at->getTimestamp();
+
+			$jsapi_ticket = $wechat->getJsapiTicket();
+			$token = Token::setToken('wechat_jsapi_ticket', $jsapi_ticket, 3600);
+			$expire_jsapi_ticket = $token->expired_at->getTimestamp();
+		}
+
+		$app->render(200, array('show' => false, 'msg' => array(
+			'access_token' => $access_token,
+			'expire_access_token' => $expire_access_token,
+			'jsapi_ticket' => $jsapi_ticket,
+			'expire_jsapi_ticket' => $expire_jsapi_ticket
+		)));
 		return exit(0);
 	}
 

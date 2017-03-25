@@ -119,6 +119,15 @@ class STR {
 		}
 	}
 
+	//Get an hazard alphanumeric mix of lengh X
+	public static function random($lengh=16) {
+		$characters = '123456789abcdefghijklmnopqrstuvwxyz';
+		$string = '';
+		for($p=0; $p<$lengh; $p++) {
+			$string .= $characters[mt_rand(0,mb_strlen($characters)-1)];
+		}
+		return ''.$string; //To be sure it will return a string
+	}
 
 
 
@@ -236,16 +245,6 @@ class STR {
 	//Check if the value is pair or odd, return true if yes
 	public static function Odd_old($value) {
 	   return ($value & 1)==1; //=1 if odd
-	}
-
-	//Get an hazard alphanumeric mix of lengh X
-	public static function genRandomString_old($x) {
-		$characters = '123456789abcdefghijklmnopqrstuvwxyz';
-		$string=NULL;
-		for($p=0;$p<$x;$p++) {
-			$string.=$characters[mt_rand(0,mb_strlen($characters)-1)];
-		}
-		return "".$string; //To be sure it will return a string
 	}
 
 	//Idem as genRandomString($x) but we can play with words instead of alphanumerics

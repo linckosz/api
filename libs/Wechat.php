@@ -830,21 +830,6 @@ class Wechat {
 	}
 
 	/**
-	 * 获取二维码图像地址
-	 * @param  integer $scene_id 场景值 1-100000整数
-	 * @param  boolean $limit    true永久二维码 false 临时
-	 * @param  integer $expire   临时二维码有效时间
-	 * @return string|boolean    二维码图片地址
-	 */
-	public function getQRUrlStr($scene_str = '',  $expire = 1800) {
-		if (!isset($this->ticket) && !$this->qrcode_bystr($scene_str, $expire)) {
-			return false;
-		}
-		return self::QRCODE_SHOW_URL.'?ticket=' . $this->ticket;
-	}
-
-
-	/**
 	 * 生成推广二维码
 	 * @param  integer $scene_id 场景值 1-100000整数
 	 * @param  boolean $limit    true永久二维码 false 临时
@@ -852,9 +837,11 @@ class Wechat {
 	 * @return string|boolean
 	 */
 	private function qrcode($scene_id = '', $limit = true, $expire = 1800) {
-		if (empty($scene_id) || !is_numeric($scene_id) || $scene_id > 100000 || $scene_id < 1) {
-			$this->error = '场景值必须是1-100000之间的整数';
-			return false;
+		if($limit){
+			if (empty($scene_id) || !is_numeric($scene_id) || $scene_id > 100000 || $scene_id < 1) {
+				$this->error = '场景值必须是1-100000之间的整数';
+				return false;
+			}
 		}
 		$params['action_name'] = $limit?'QR_LIMIT_SCENE':'QR_SCENE';
 		if (!$limit) $params['expire_seconds'] = $expire;
@@ -868,6 +855,20 @@ class Wechat {
 		}else {
 			return false;
 		}
+	}
+
+	/**
+	 * 获取二维码图像地址
+	 * @param  integer $scene_id 场景值 1-100000整数
+	 * @param  boolean $limit    true永久二维码 false 临时
+	 * @param  integer $expire   临时二维码有效时间
+	 * @return string|boolean    二维码图片地址
+	 */
+	public function getQRUrlStr($scene_str = '', $expire = 1800) {
+		if (!isset($this->ticket) && !$this->qrcode_bystr($scene_str, $expire)) {
+			return false;
+		}
+		return self::QRCODE_SHOW_URL.'?ticket=' . $this->ticket;
 	}
 
 	/**

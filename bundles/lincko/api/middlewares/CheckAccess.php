@@ -416,7 +416,7 @@ class CheckAccess extends \Slim\Middleware {
 				   isset($data->data)
 				&& isset($data->data->integration_code)
 				&& strlen($data->data->integration_code)>=1
-				&& strlen($data->data->integration_code)<=8
+				&& strlen($data->data->integration_code)<=10
 				&& $integration = Integration::find($data->data->integration_code)
 			){
 				if(isset($this->authorization->sha) && $users_log = UsersLog::Where('username_sha1', $this->authorization->sha)->first(array('log'))){

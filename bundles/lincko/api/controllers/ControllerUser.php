@@ -310,7 +310,7 @@ class ControllerUser extends Controller {
 				   !empty($data->party)
 				&& isset($data->integration_code)
 				&& strlen($data->integration_code)>=1
-				&& strlen($data->integration_code)<=8
+				&& strlen($data->integration_code)<=10
 				&& $integration = Integration::find($data->integration_code)
 			){
 				$integration->processing = true;

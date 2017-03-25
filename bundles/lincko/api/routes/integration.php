@@ -30,6 +30,12 @@ $app->group('/integration', function () use ($app) {
 	)
 	->name('integration_set_wechat_qrcode'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/get_wechat_token',
+		'\bundles\lincko\api\controllers\integration\ControllerIntegration:get_wechat_token'.$app->lincko->method_suffix
+	)
+	->name('integration_get_wechat_token'.$app->lincko->method_suffix);
+
 //We use get here because we do a direct connection to display the QR code
 	$app->get(
 		'/qrcode(/:mini)',

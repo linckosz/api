@@ -144,13 +144,15 @@ class Inform {
 			'secret' => $app->lincko->integration->wechat['public_secretapp'],
 		);
 		
-		if($access_token = Token::getToken('wechat_pub')){
-			$options['access_token'] = $access_token;
+		$access_token = false;
+		if($token = Token::getToken('wechat_pub')){
+			$access_token = $options['access_token'] = $token->token;
 		}
 		$wechat = new Wechat($options);
 		if(!$access_token){
-			$access_token = $wechat->getToken();
-			Token::setToken('wechat_pub', $access_token, 3600);
+			if($access_token = $wechat->getToken()){
+				Token::setToken('wechat_pub', $access_token, 3600);
+			}
 		}
 		
 		//Add item link if any

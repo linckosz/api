@@ -8,6 +8,8 @@ use \bundles\lincko\api\models\libs\ModelLincko;
 
 class Token extends Model {
 
+	protected $dates = ['expired_at'];
+
 	protected $connection = 'api';
 
 	protected $table = 'token';
@@ -24,8 +26,8 @@ class Token extends Model {
 	public static function getToken($party){
 		$app = ModelLincko::getApp();
 		$limit = Carbon::now();
-		if($item = self::Where('party', $party)->where('expired_at', '>', Carbon::now())->first(array('token'))){
-			return $item->token;
+		if($item = self::Where('party', $party)->where('expired_at', '>', Carbon::now())->first()){
+			return $item;
 		}
 		return false;
 	}
