@@ -42,6 +42,7 @@ class Users extends ModelLincko {
 		'resume',
 		'email',
 		'integration',
+		'pending',
 		'party',
 		'_parent',
 		'_lock',
@@ -73,6 +74,7 @@ class Users extends ModelLincko {
 		'lastname',
 		'email',
 		'integration',
+		'pending',
 		'party',
 	);
 
@@ -673,6 +675,7 @@ class Users extends ModelLincko {
 			if(empty($temp->party)){
 				$temp->party = 'lincko';
 			}
+			$temp->pending = $this->setPending();
 		} else {
 			//Do not show email for all other users
 			$temp->email = '';
@@ -695,11 +698,29 @@ class Users extends ModelLincko {
 			if(empty($model->party)){
 				$model->party = 'lincko';
 			}
+			$model->pending = $this->setPending();
 		} else {
 			//Do not show email for all other users
 			$model->email = '';
 		}
 		return $model;
+	}
+
+	public function extraDecode(){
+		$app = ModelLincko::getApp();
+		$this->updateContactAttributes();
+		$this->integration = $this->setIntegration();
+		if($this->id == $app->lincko->data['uid']){
+			$this->party = $app->lincko->data['party'];
+			if(empty($this->party)){
+				$this->party = 'lincko';
+			}
+			$this->pending = $this->setPending();
+		} else {
+			//Do not show email for all other users
+			$this->email = '';
+		}
+		return parent::extraDecode();
 	}
 
 	public function setIntegration(){
@@ -728,20 +749,23 @@ class Users extends ModelLincko {
 		return $integration;
 	}
 
-	public function extraDecode(){
+	public function setPending(){
 		$app = ModelLincko::getApp();
-		$this->updateContactAttributes();
-		$this->integration = $this->setIntegration();
+		$pending = null;
 		if($this->id == $app->lincko->data['uid']){
-			$this->party = $app->lincko->data['party'];
-			if(empty($this->party)){
-				$this->party = 'lincko';
+			$pending = new \stdClass;
+			$users = Users::whereHas("users", function($query) {
+				$app = ModelLincko::getApp();
+				$uid = $app->lincko->data['uid'];
+				$query->where('users_id_link', $uid)->where('access', 0)->where('invitation', 1);
+			})->get(array('id', 'username', 'profile_pic'));
+			foreach ($users as $user) {
+				if($user->id != $app->lincko->data['uid']){
+					$pending->{$user->id} = array($user->username, $user->profile_pic);
+				}
 			}
-		} else {
-			//Do not show email for all other users
-			$this->email = '';
 		}
-		return parent::extraDecode();
+		return $pending;
 	}
 
 	public function getUsername(){

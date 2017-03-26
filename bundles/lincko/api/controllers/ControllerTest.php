@@ -677,10 +677,18 @@ class ControllerTest extends Controller {
 		//$record = $reader->city('220.231.203.67');
 
 		//$tp = $record->country->name.' => '.$record->city->name;
+
+		//$tp = Users::getUser()->users;
+
+		$users = Users::whereHas("users", function($query) {
+			$app = \Slim\Slim::getInstance();
+			$uid = $app->lincko->data['uid'];
+			$query->where('users_id_link', $uid)->where('access', 0)->where('invitation', 1);
+		})->get(array('id', 'username', 'profile_pic'));
 		
 
 		//Display mysql requests
-		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 

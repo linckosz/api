@@ -838,6 +838,9 @@ class ControllerUser extends Controller {
 					if(isset($form->invite_access)){
 						$invitation->models = $form->invite_access;
 					}
+					if(filter_var(trim($form->email), FILTER_VALIDATE_EMAIL)){
+						$invitation->email = trim($form->email);
+					}
 					$invitation->save();
 
 					$code = $invitation->code;
