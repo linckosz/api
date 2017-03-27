@@ -10,6 +10,6 @@ $app->group('/invitation', function () use ($app) {
 		'/email',
 		'\bundles\lincko\api\controllers\ControllerInvitation:email'.$app->lincko->method_suffix
 	)
-	->name('integration_connect'.$app->lincko->method_suffix);
+	->name('invitation_email'.$app->lincko->method_suffix);
 
 });
