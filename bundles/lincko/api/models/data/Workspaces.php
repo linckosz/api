@@ -40,8 +40,6 @@ class Workspaces extends ModelLincko {
 
 	protected $contactsLock = true; //Do not allow to delete users from contact list
 
-	protected $contactsVisibility = true; //Make all user linked to the workspace visible by the user into the contact list
-
 	protected $name_code = 300;
 
 	protected $save_history = true;
@@ -190,6 +188,15 @@ class Workspaces extends ModelLincko {
 	//Do not show creation event
 	public function getHistoryCreation($history_detail=false, array $parameters = array(), &$items=false){
 		return new \stdClass;
+	}
+
+	public function getContactsVisibility(){
+		$app = ModelLincko::getApp();
+		if($this->id == $app->lincko->data['workspace_id']){
+			return true; //Make all user linked to the workspace visible by the user into the contact list
+		} else {
+			return false;
+		}
 	}
 
 ////////////////////////////////////////////

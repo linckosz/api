@@ -147,7 +147,8 @@ class ControllerIntegration extends Controller {
 		}
 
 		$app->render(200, array('show' => false, 'msg' => array(
-			'msg' => 'integration code', 'code' => $code,
+			'msg' => 'integration code',
+			'code' => $code,
 			'url' => $url
 		)));
 		return exit(0);

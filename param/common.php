@@ -133,6 +133,8 @@ $app->lincko->email->Abuse = 'abuse@'.$app->lincko->domain;
 $app->lincko->email->Sender = 'noreply@'.$app->lincko->domain;
 $app->lincko->email->From = 'noreply@'.$app->lincko->domain;
 $app->lincko->email->FromName = $app->lincko->title.' team';
+$app->lincko->email->Port = 587;
+$app->lincko->email->Host = 'service1';
 $app->lincko->email->List = array();
 
 //Translator parameters
@@ -206,6 +208,11 @@ $app->lincko->data['lastvisit_enabled'] = true;
 
 $app->lincko->data['remote'] = false; //At true if we connect to remote server
 $app->lincko->data['database_data'] = 'data'; //data is the local, but it can be changed to third party database for more security
+
+$app->lincko->workspace = array(
+	'public' => true, //[true] The workspace is switchable from anywhere
+	'open_access' => false, //[8 alphanumeric] Must be the entry point as a get parameter ?open_access=1R47s82a , without it the user cannot log in
+);
 
 $app->lincko->filePathPrefix = '';
 

@@ -127,19 +127,50 @@ class ControllerChat extends Controller {
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(empty($model->parent_type)){
-				$model->parent_type = null;
-				$model->parent_id = 0;
+				if($app->lincko->data['workspace_id']<=0){
+					$model->parent_type = null;
+					$model->parent_id = 0;
+				} else {
+					$model->parent_type = 'workspaces';
+					$model->parent_id = $app->lincko->data['workspace_id'];
+				}
 			}
 			$save = true;
 			if(isset($form->single)){ //Optional, create single user chat
-				$exits = false;
-				$pivot = new PivotUsers(array('chats'));
-				if($model->tableExists($pivot->getTable())){
-					$list = $pivot->where('users_id', $app->lincko->data['uid'])->where('single', $form->single)->get();
-					if($list->count()>0){
-						$save = false;
-					}
+
+				$toid = $form->single;
+				$sql = Chats::whereHas('users', function($query) use ($toid) {
+					$app = \Slim\Slim::getInstance();
+					$fromid = $app->lincko->data['uid'];
+					$query
+						->Where(function ($query) use ($fromid, $toid) {
+							$query
+							->where('users_x_chats.users_id', $fromid)
+							->where('users_x_chats.single', $toid);
+						})
+						->orWhere(function ($query) use ($fromid, $toid) {
+							$query
+							->where('users_x_chats.users_id', $toid)
+							->where('users_x_chats.single', $fromid);
+						});
+				})
+				->where('single', '>', 0);
+
+				if($app->lincko->data['workspace_id']<=0){
+					$sql = $sql
+						->where('parent_type', null)
+						->where('parent_id', 0);
+				} else {
+					$sql = $sql
+						->where('parent_type', 'workspaces')
+						->where('parent_id', $app->lincko->data['workspace_id']);
 				}
+
+				$count = $sql->count();
+				if($count>0){
+					$save = false;
+				}
+
 				if($save && ($form->single==0 || $guest = Users::getModel($form->single))){ //Make sure that for single chats the user is part of your contact list, or allow to discusss with linckobot
 					$pivots = new \stdClass;
 					$pivots->{'users>access'} = new \stdClass;
@@ -153,6 +184,7 @@ class ControllerChat extends Controller {
 				} else {
 					$save = false;
 				}
+				
 			} else {
 				$model->pivots_format($form, false);
 			}

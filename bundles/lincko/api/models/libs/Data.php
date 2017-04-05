@@ -562,14 +562,6 @@ class Data {
 		$visible = array();
 		if(isset($tree_id['users'])){
 			$visible = $tree_id['users'];
-			//If inside a workspace, automatically add users as visible
-			if($app->lincko->data['workspace_id']>0 && !empty($app->lincko->data['workspace'])){
-				$workspace = Workspaces::getWorkspace();
-				$workspace_users = $workspace->users;
-				foreach ($workspace_users as $value) {
-					$visible[$value->id] = $value->id;
-				}
-			}
 			$users = array_merge($tree_id['users'], $users);
 		}
 
@@ -1271,7 +1263,7 @@ class Data {
 					$activity = false; //This represents real activity (task completed, new file, etc.), not statistics calculated
 					$tasks = Tasks::
 						Where('parent_id', $project->id)
-						->whereHas("tasksup", function($query) {
+						->whereHas('tasksup', function($query) {
 							$query->withTrashed(); //this exclude all subtasks
 						}, '<', 1)
 						->get(array('id', 'created_at', 'approved_at', 'approved_by', 'approved', 'start', 'duration'));
@@ -1465,7 +1457,7 @@ class Data {
 						}
 					}
 
-				} if($period=='weekly'){
+				} else if($period=='weekly'){
 					//There was no activity last week. 2 tasks are overdue.
 
 					usleep(5000);
@@ -1481,7 +1473,7 @@ class Data {
 					$tasks = Tasks::
 						Where('parent_id', $project->id)
 						->where('approved', 0)
-						->whereHas("tasksup", function($query) {
+						->whereHas('tasksup', function($query) {
 							$query->withTrashed(); //this exclude all subtasks
 						}, '<', 1)
 						->get(array('id', 'approved', 'start', 'duration'));
@@ -1522,6 +1514,11 @@ class Data {
 
 				}
 
+				$last_comment = false;
+				if(!empty($msg) || !empty($msg_users)){
+					$last_comment = Comments::Where('parent_type', 'projects')->where('parent_id', $project->id)->orderBy('id', 'desc')->first(array('temp_id', 'created_by', 'comment'));
+				}
+
 				//For team
 				if($project->resume!=$current_hour || ($period=='weekly' && $project->weekly!=$weekday) ){
 				//if(false){ //toto (show for test)
@@ -1533,24 +1530,37 @@ class Data {
 					$comment->parent_type = 'projects';
 					$comment->parent_id = $project->id;
 					$comment->comment = $msg;
+					$comment->temp_id = $period.'_team';
 					$comment->_perm = json_encode($users_perm);
-					$comment->saveRobot();
+					$keep = true;
 					//\libs\Watch::php(json_decode($msg), $period.': [team] $project '.$project->id, __FILE__, __LINE__, false, false, true);
 
-					//Team Daily
-					//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
-					if($period=='daily'){
-						foreach ($users_perm as $uid => $value) {
-							$notif_team_daily[''.$uid] = $uid;
+					if($last_comment && $last_comment->created_by==0){
+						$last_report = $last_comment;
+						if($last_comment->temp_id != $comment->temp_id){
+							$last_report = Comments::Where('parent_type', 'projects')->where('parent_id', $comment->parent_id)->where('created_by', 0)->where('temp_id', $comment->temp_id)->orderBy('id', 'desc')->first(array('comment'));
+						}
+						if($last_report && $last_report->comment == $comment->comment){
+							$keep = false;
 						}
 					}
 
-					//Team Weekly
-					//Your weekly progress update is here! See how the team did last week and what's coming this week.
-					if($period=='weekly'){
-						foreach ($users_perm as $uid => $value) {
-							$notif_team_weekly[''.$uid] = $uid;
+					if($keep){
+						//Team Daily
+						//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
+						if($period=='daily'){
+							foreach ($users_perm as $uid => $value) {
+								$notif_team_daily[''.$uid] = $uid;
+							}
 						}
+						//Team Weekly
+						//Your weekly progress update is here! See how the team did last week and what's coming this week.
+						if($period=='weekly'){
+							foreach ($users_perm as $uid => $value) {
+								$notif_team_weekly[''.$uid] = $uid;
+							}
+						}
+						$comment->saveRobot();
 					}
 				}
 
@@ -1563,24 +1573,37 @@ class Data {
 					$comment->parent_type = 'projects';
 					$comment->parent_id = $project->id;
 					$comment->comment = $msg_users;
+					$comment->temp_id = $period.'_individual';
 					$comment->_perm = json_encode($users_perm);
-					$comment->saveRobot();
+					$keep = true;
 					//\libs\Watch::php(json_decode($msg_users), $period.':[individual] $project '.$project->id, __FILE__, __LINE__, false, false, true);
 
-					//Individual Daily
-					//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
-					if($period=='daily'){
-						foreach ($users_perm as $uid => $value) {
-							$notif_individual_daily[''.$uid] = $uid;
+					if($last_comment && $last_comment->created_by==0){
+						$last_report = $last_comment;
+						if($last_comment->temp_id != $comment->temp_id){
+							$last_report = Comments::Where('parent_type', 'projects')->where('parent_id', $comment->parent_id)->where('created_by', 0)->where('temp_id', $comment->temp_id)->orderBy('id', 'desc')->first(array('comment'));
+						}
+						if($last_report && $last_report->comment == $comment->comment){
+							$keep = false;
 						}
 					}
 
-					//Individual Weekly
-					//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend.
-					if($period=='weekly'){
-						foreach ($users_perm as $uid => $value) {
-							$notif_individual_weekly[''.$uid] = $uid;
+					if($keep){
+						//Individual Daily
+						//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
+						if($period=='daily'){
+							foreach ($users_perm as $uid => $value) {
+								$notif_individual_daily[''.$uid] = $uid;
+							}
 						}
+						//Individual Weekly
+						//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend.
+						if($period=='weekly'){
+							foreach ($users_perm as $uid => $value) {
+								$notif_individual_weekly[''.$uid] = $uid;
+							}
+						}
+						$comment->saveRobot();
 					}
 				}
 

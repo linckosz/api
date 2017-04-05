@@ -103,7 +103,7 @@ class ControllerComment extends Controller {
 		if(isset($form->parent_type) && $form->parent_type == 'users' && isset($form->parent_id) && $form->parent_id == $app->lincko->data['uid'] ){
 			$form->parent_type = 'projects';
 			$project = Projects::
-				  orderBy('created_by', 'asc') //By security, always take the ealiest created private project
+				  orderBy('created_by', 'asc') //By security, always take the earliest created private project
 				->where('personal_private', $app->lincko->data['uid'])
 				->where('projects.parent_id', null) //Insure to get only the workspace information
 				->first();

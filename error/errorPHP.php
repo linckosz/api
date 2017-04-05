@@ -14,6 +14,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 	//Hide some warnings of exif_read_data because there is a PHP bug if EXIF are not standard
 	if($errmsg!="" && (mb_strpos($errmsg, 'exif_read_data')===false || mb_strpos($errmsg, 'Illegal')===false)){
 		$app = \Slim\Slim::getInstance();
+		$continue = false; //At true it does continue the code execution
 		$logPath = $app->lincko->logPath.'/php';
 		$dt = date("Y-m-d H:i:s (T)");
 		$infos = $app->request->getUserAgent();
@@ -49,6 +50,15 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 			16384 => 'User Depreciated',
 			32767 => 'All'
 		);
+
+		if(in_array($errno, array(
+			E_WARNING,
+			E_NOTICE,
+			E_USER_WARNING,
+			E_USER_NOTICE
+		))){
+			$continue = true;
+		}
 		
 		$errid = 'unknown'; //User ID
 		$erruser = 'unknown'; //User Login
@@ -81,7 +91,7 @@ function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars, $type='UN
 		$err .= "LINE: $linenum\n";
 		$err .= "FILE : $filename\n";
 		$err .= "URL : $url\n";
-		$err .= "MSG : $type: $errortype[$errno] => $errmsg\n";
+		$err .= "MSG : $type: $errortype[$errno] (run: $continue) => $errmsg\n";
 		$err .= "DBT : $var\n\n\n";
 
 $err = str_replace("\n","
@@ -105,6 +115,11 @@ $err = str_replace("\n","
 		//To avoid "EXH: Error => Exception: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found" we give enough time to the server to retry teh transaction
 		if($type=='EXH' && mb_strpos($errmsg, 'try restarting transaction')!==false){
 			usleep(300000); //Give 300ms to finish SQL transaction and eventually try again
+			$continue = true;
+		}
+
+		if($continue){
+			usleep(30000); //Give 30ms in case to help some other thread to not be blocked, or finish the load balancing to write in all databases
 		} else {
 			sendMsg();
 		}

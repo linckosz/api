@@ -162,19 +162,40 @@ class Chats extends ModelLincko {
 				$query
 				->where(function ($query) {
 					$app = ModelLincko::getApp();
-					$query
-					->where('chats.parent_type', '')
-					->orWhere('chats.parent_type', null);
+					if($app->lincko->data['workspace_id']<=0){
+						//Shared area => We only see chats that are in shared workspace
+						$query
+						->where(function ($query) {
+							$query
+							->where('chats.parent_type', 'workspaces')
+							->orWhere('chats.parent_type', null);
+						})
+						->where('chats.parent_id', 0);
+					} else {
+						//In workspace => We only see chats that are part of this workspace (a conversation to someone in a workspace will be different in that workspace)
+						$query
+						->where('chats.parent_type', 'workspaces')
+						->where('chats.parent_id', $app->lincko->data['workspace_id']);
+					}
 				})
 				->orWhere(function ($query) use ($list) {
+					$app = ModelLincko::getApp();
 					$ask = false;
 					foreach ($list as $table_name => $list_id) {
 						if(!empty($table_name) && in_array($table_name, $this::$parent_list) && $this::getClass($table_name)){
+							if($table_name=='workspaces'){
+								//Make sure that we only allow chats that are part of the workspace
+								$workspace_id = $app->lincko->data['workspace_id'];
+								$list_id = array(
+									$workspace_id => $workspace_id,
+								);
+							}
 							$this->var['parent_type'] = $table_name;
 							$this->var['parent_id_array'] = $list_id;
 							$query = $query
 							->orWhere(function ($query) {
 								$query
+								->whereNotNull('chats.parent_type')
 								->where('chats.parent_type', $this->var['parent_type'])
 								->whereIn('chats.parent_id', $this->var['parent_id_array']);
 							});

@@ -688,6 +688,29 @@ class ControllerTest extends Controller {
 		})->get(array('id', 'username', 'profile_pic'));
 		*/
 
+		/*
+		$toid = 6;
+		$tp = Chats::whereHas('users', function($query) use ($toid) {
+			$app = \Slim\Slim::getInstance();
+			$fromid = $app->lincko->data['uid'];
+			$query
+				->Where(function ($query) use ($fromid, $toid) {
+					$query
+					->where('users_x_chats.users_id', $fromid)
+					->where('users_x_chats.single', $toid);
+				})
+				->orWhere(function ($query) use ($fromid, $toid) {
+					$query
+					->where('users_x_chats.users_id', $toid)
+					->where('users_x_chats.single', $fromid);
+				});
+		})
+		->where('parent_type', null)
+		->where('parent_id', 0)
+		->where('single', '>', 0)
+		->get();
+		*/
+
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);

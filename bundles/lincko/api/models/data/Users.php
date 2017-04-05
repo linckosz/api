@@ -220,27 +220,39 @@ class Users extends ModelLincko {
 
 	public function scopegetItems($query, $list=array(), $get=false){
 		$app = ModelLincko::getApp();
-		$query = $query
-		->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
-			$app = ModelLincko::getApp();
-			if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
-				$query
-				//->with('usersLinked') //It affects heavily speed performance
-				->whereHas('usersLinked', function ($query) {
-					$app = ModelLincko::getApp();
+		if($app->lincko->data['workspace_id']<=0){
+			//Shared workspace
+			$query = $query
+			->where(function ($query) { //Need to encapsule the OR, if not it will not take in account the updated_by condition in Data.php because of later prefix or suffix
+				$app = ModelLincko::getApp();
+				if((isset($app->lincko->api['x_i_am_god']) && $app->lincko->api['x_i_am_god']) || (isset($app->lincko->api['x_'.$this->getTable()]) && $app->lincko->api['x_'.$this->getTable()])){
 					$query
-					->where('users_id', $app->lincko->data['uid'])
-					->where(function ($query) {
+					//->with('usersLinked') //It affects heavily speed performance
+					->whereHas('usersLinked', function ($query) {
+						$app = ModelLincko::getApp();
 						$query
-						->where('access', 1)
-						->orWhere('invitation', 1);
-					});
-				})
-				->orWhere('users.id', $app->lincko->data['uid']);
-			} else {
-				$query->where('users.id', $app->lincko->data['uid']);
-			}
-		});
+						->where('users_id', $app->lincko->data['uid'])
+						->where(function ($query) {
+							$query
+							->where('access', 1)
+							->orWhere('invitation', 1);
+						});
+					})
+					->orWhere('users.id', $app->lincko->data['uid']);
+				} else {
+					$query->where('users.id', $app->lincko->data['uid']);
+				}
+			});
+		} else {
+			$query
+			->whereHas('workspaces', function ($query) {
+				$app = ModelLincko::getApp();
+				$query
+				->where('workspaces_id', $app->lincko->data['workspace_id'])
+				->where('access', 1);
+			})
+			->orWhere('users.id', $app->lincko->data['uid']);
+		}
 		//We do not allow to gather deleted users
 		if($get){
 			$result = $query->get();
@@ -648,6 +660,24 @@ class Users extends ModelLincko {
 		} else if(!isset($this->id) || (isset($this->id) && $this->id == $app->lincko->data['uid'])){ //Always allow for the user itself
 			return $this->accessibility = (bool) true;
 		}
+		//Inside a workspace, you can talk to any members of it, there is no invitation process, it's managed by the administrator
+		if($app->lincko->data['workspace_id']>=0){
+			$uid = $this->id;
+			$access = Users::whereHas('workspaces', function ($query) use ($uid) {
+				$app = ModelLincko::getApp();
+				$query
+				->where('users_id', $uid)
+				->where('workspaces_id', $app->lincko->data['workspace_id'])
+				->where('access', 1);
+			})
+			->first();
+			if($access){
+				return $this->accessibility = (bool) true;
+			} else {
+				return $this->accessibility = (bool) false;
+			}
+		}
+
 		return parent::checkAccess($show_msg);
 	}
 
@@ -754,7 +784,7 @@ class Users extends ModelLincko {
 		$pending = null;
 		if($this->id == $app->lincko->data['uid']){
 			$pending = new \stdClass;
-			$users = Users::whereHas("users", function($query) {
+			$users = Users::whereHas('users', function($query) {
 				$app = ModelLincko::getApp();
 				$uid = $app->lincko->data['uid'];
 				$query->where('users_id_link', $uid)->where('access', 0)->where('invitation', 1);
@@ -867,7 +897,7 @@ class Users extends ModelLincko {
 		if(isset($data->user_code) && $user_code = Datassl::decrypt($data->user_code, 'invitation')){
 			if($guest = Users::find($user_code)){
 				$invite = self::inviteSomeone($guest, $data);
-				Action::record(-8); //Invite by external scan / paste url
+				Action::record(-8, $user_code); //Invite by external scan / paste url
 			}
 		}
 		$app->lincko->flash['unset_user_code'] = true;

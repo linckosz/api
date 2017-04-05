@@ -57,9 +57,13 @@ class Watch {
 			$msg = (string)$var;
 		}
 		if($error){
-			$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
+			if(function_exists('\error\getTraceAsString')){
+				$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
+			}
 		} else {
-			//$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
+			if(function_exists('\error\getTraceAsString')){
+				//$msg .= "\n".\error\getTraceAsString(new \Exception, 30);
+			}
 		}
 
 		$comment = (string)$comment;

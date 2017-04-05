@@ -1166,6 +1166,7 @@ class Wechat {
 	 * @return array
 	 */
 	public function media_get($media_id) {
+		$url    = self::MEDIA_GET_URL;
 		$params = array(
 			'access_token' => $this->access_token,
 			'media_id'     => $media_id

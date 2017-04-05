@@ -268,14 +268,14 @@ class Tasks extends ModelLincko {
 				->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include 'projects'
 			}
 			$query = $query
-			->whereHas("users", function($query) {
+			->whereHas('users', function($query) {
 				$app = ModelLincko::getApp();
 				$query
 				->where('users_id', $app->lincko->data['uid'])
 				->where('access', 0);
 			}, '<', 1)
 			//This exclude subtask from tasks deleted
-			->whereHas("tasksup", function($query) {
+			->whereHas('tasksup', function($query) {
 				$table_alias = $query->getModel()->getTable();
 				$query
 				->withTrashed()

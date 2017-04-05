@@ -278,7 +278,7 @@ class Projects extends ModelLincko {
 				//Get personal project
 				$app = ModelLincko::getApp();
 				$query
-				->orderBy('created_by', 'asc') //By security, always take the ealiest created private project
+				->orderBy('created_by', 'asc') //By security, always take the earliest created private project
 				->where('personal_private', $app->lincko->data['uid'])
 				->take(1);
 			})

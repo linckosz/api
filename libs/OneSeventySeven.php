@@ -52,15 +52,21 @@ class OneSeventySeven {
 			if($one_seventy_seven = $app->getCookie('one_seventy_seven', false)){
 				$one_seventy_seven = json_decode($one_seventy_seven);
 				foreach($one_seventy_seven as $key => $value) {
-					self::$cookies[$key] = $value;
+					if(!isset(self::$cookies[$key])){
+						self::$cookies[$key] = $value;
+					}
 				}
 			}
 			if(isset($_SESSION['one_seventy_seven'])){
 				foreach($_SESSION['one_seventy_seven'] as $key => $value) {
+					//The session overwrite cookies
 					self::$cookies[$key] = $value;
 				}
 			}
-			self::$first = false;
+			if(isset($_SESSION)){
+				//Stop checking only once the session (=database) is available
+				self::$first = false;
+			}
 			return self::$cookies;
 		}
 		return false;

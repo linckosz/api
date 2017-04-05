@@ -185,7 +185,7 @@ class Notes extends ModelLincko {
 					}
 				});
 			})
-			->whereHas("users", function($query) {
+			->whereHas('users', function($query) {
 				$app = ModelLincko::getApp();
 				$query
 				->where('users_id', $app->lincko->data['uid'])

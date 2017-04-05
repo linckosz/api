@@ -271,7 +271,7 @@ class Files extends ModelLincko {
 					->whereId(-1); //Make sure we reject it to not display the whole list if $list doesn't include any category
 				}
 			})
-			->whereHas("users", function($query) {
+			->whereHas('users', function($query) {
 				$app = ModelLincko::getApp();
 				$query
 				->where('users_id', $app->lincko->data['uid'])
