@@ -28,8 +28,11 @@ require_once $path.'/config/eloquent.php';
 
 $app->get('/get/:ip/:hostname/:deployment/:sub/:git', function ($ip = null, $hostname = null, $deployment = null, $sub = null, $git = null) use ($app) {
 
-	$version = new Version;
-	$version->id = 1;
+	$version = Version::find(1);
+	if(!$version){
+		$version = new Version;
+		$version->id = 1;
+	}
 	$version->version = $git;
 	$version->save();
 
@@ -154,8 +157,11 @@ $app->post('/update', function () use ($app) {
 		}
 	}
 
-	$version = new Version;
-	$version->id = 1;
+	$version = Version::find(1);
+	if(!$version){
+		$version = new Version;
+		$version->id = 1;
+	}
 	$version->version = $data->git;
 	$version->save();
 	
