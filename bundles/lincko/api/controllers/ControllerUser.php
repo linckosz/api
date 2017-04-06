@@ -121,8 +121,12 @@ class ControllerUser extends Controller {
 		if(isset($form->gender)){
 			$form->gender = (int) boolval($form->gender);
 		}
-		if(isset($form->profile_pic) && is_numeric($form->profile_pic)){
-			$form->profile_pic = (int) $form->profile_pic;
+		if(isset($form->profile_pic)){
+			if(is_numeric($form->profile_pic)){
+				$form->profile_pic = (int) $form->profile_pic;
+			} else if(empty($form->profile_pic)){
+				$form->profile_pic = null;
+			}
 		}
 		if(isset($form->code) && is_numeric($form->code)){
 			$form->code = (int) $form->code;
@@ -215,7 +219,7 @@ class ControllerUser extends Controller {
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
-			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
+			if(property_exists($form, 'profile_pic')){ $model->profile_pic = $form->profile_pic; } //Optional
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			if($this->createAccount($form, $model, $errmsg, $errfield)){
@@ -605,7 +609,7 @@ class ControllerUser extends Controller {
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
-			if(isset($form->profile_pic)){ $model->profile_pic = $form->profile_pic; } //Optional
+			if(property_exists($form, 'profile_pic')){ $model->profile_pic = $form->profile_pic; } //Optional
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$dirty = $model->getDirty();

@@ -106,9 +106,13 @@ class ControllerTask extends Controller {
 				$form->title = substr($form->title, 0, 197).'...';
 			}
 		}
-		if(isset($form->start) && is_numeric($form->start)){
-			$form->start = (int) $form->start;
-			$form->start = (new \DateTime('@'.$form->start))->format('Y-m-d H:i:s');
+		if(isset($form->start)){
+			if(is_numeric($form->start)){
+				$form->start = (int) $form->start;
+				$form->start = (new \DateTime('@'.$form->start))->format('Y-m-d H:i:s');
+			} else if(empty($form->start)){
+				$form->start = null;
+			}
 		}
 		if(isset($form->duration) && is_numeric($form->duration)){
 			$form->duration = (int) $form->duration;
@@ -197,7 +201,7 @@ class ControllerTask extends Controller {
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
-			if(isset($form->start)){ $model->start = $form->start; } //Optional
+			if(property_exists($form, 'start')){ $model->start = $form->start; } //Optional
 			if(isset($form->duration)){ $model->duration = $form->duration; } //Optional
 			if(isset($form->fixed)){ $model->fixed = $form->fixed; } //Optional
 			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional
@@ -318,7 +322,7 @@ class ControllerTask extends Controller {
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
-			if(isset($form->start)){ $model->start = $form->start; } //Optional
+			if(property_exists($form, 'start')){ $model->start = $form->start; } //Optional
 			if(isset($form->duration)){ $model->duration = $form->duration; } //Optional
 			if(isset($form->fixed)){ $model->fixed = $form->fixed; } //Optional
 			if(isset($form->approved)){ $model->approved = $form->approved; } //Optional

@@ -102,6 +102,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if(isset($form->fav) && is_numeric($form->fav)){
 			$form->fav = (int) $form->fav;
 		}
+		if(isset($form->comment) && empty($form->comment)){
+			$form->comment = null;
+		}
 		if(isset($form->parent_type) && is_string($form->parent_type)){
 			$form->parent_type = strtolower(trim($form->parent_type));
 		}
@@ -245,7 +248,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							$model->parent_type = $form->parent_type;
 							$model->parent_id = $form->parent_id;
 							if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
-							if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+							if(property_exists($form, 'comment')){ $model->comment = $form->comment; } //Optional
 							if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
 							if(isset($form->precompress)){ $model->setCompression($form->precompress); } //Optional
 							$model->pivots_format($form, false);
@@ -269,7 +272,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						$model->parent_type = $form->parent_type;
 						$model->parent_id = $form->parent_id;
 						if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
-						if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+						if(property_exists($form, 'comment')){ $model->comment = $form->comment; } //Optional
 						if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
 						if(isset($form->precompress)){ $model->setCompression($form->precompress); } //Optional
 						$model->pivots_format($form, false);
@@ -379,7 +382,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->parent_type)){ $model->parent_type = $form->parent_type; } //Optional
 			if(isset($form->name)){ $model->name = $form->name; } //Optional
-			if(isset($form->comment)){ $model->comment = $form->comment; } //Optional
+			if(property_exists($form, 'comment')){ $model->comment = $form->comment; } //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){
