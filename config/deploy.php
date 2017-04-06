@@ -4,6 +4,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use \libs\TranslationModel;
 use \libs\Datassl;
 use \libs\Folders;
+use \libs\Version;
 
 $path = dirname(__FILE__).'/..';
 
@@ -25,7 +26,13 @@ ini_set('opcache.enable', '0');
 require_once $path.'/error/errorPHP.php';
 require_once $path.'/config/eloquent.php';
 
-$app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname = null, $deployment = null, $sub = null) use($app) {
+$app->get('/get/:ip/:hostname/:deployment/:sub/:git', function ($ip = null, $hostname = null, $deployment = null, $sub = null, $git = null) use ($app) {
+
+	$version = new Version;
+	$version->id = 1;
+	$version->version = $data->git;
+	$version->save();
+
 	$list = array();
 	foreach ($app->lincko->databases as $bundle => $value) {
 		if(Capsule::schema($bundle)->hasTable('translation')){
@@ -50,6 +57,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 	$data = json_encode(array(
 		'translation' => $list,
 		'deployment' => $deployment,
+		'git' => $git,
 	));
 	$ch = curl_init($ip.':8888/update');
 	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
@@ -93,6 +101,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub', function ($ip = null, $hostname
 	'hostname' => '([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}',
 	'deployment' => '\w+',
 	'sub' => '\w+',
+	'git' => '\w+',
 ))
 ->name('get_translation_data');
 
@@ -105,13 +114,14 @@ $app->post('/update', function () use($app) {
 		echo "It has to use a hostname qualified\n";
 		return true;
 	}
-	$app->lincko->deployment = json_decode($app->request->getBody())->deployment;
+	$data = json_decode($app->request->getBody());
+	$app->lincko->deployment = $data->deployment;
 	if( !password_verify($app->lincko->deployment, '$2y$10$J6gakNmqkjrpnyMFJHhyq.JQves6JslSHJLKqpWXfZVJ6qpDKDXK6') ){
 		echo "You are not authorized to modify the translation database\n";
 		return true;
 	}
 	echo "Update the translation data [$domain] => \n";
-	$translation = json_decode($app->request->getBody())->translation;
+	$translation = $data->translation;
 	foreach ($translation as $bundle => $items) {
 		foreach ($items as $item) {
 			if($sentence = TranslationModel::on($bundle)->where('category', $item->category)->where('phrase', $item->phrase)->first()){
@@ -143,6 +153,11 @@ $app->post('/update', function () use($app) {
 			}
 		}
 	}
+
+	$version = new Version;
+	$version->id = 1;
+	$version->version = $data->git;
+	$version->save();
 	
 	echo "Translation ok\n";
 })
