@@ -30,7 +30,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub/:git', function ($ip = null, $hos
 
 	$version = new Version;
 	$version->id = 1;
-	$version->version = $data->git;
+	$version->version = $git;
 	$version->save();
 
 	$list = array();
@@ -105,7 +105,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub/:git', function ($ip = null, $hos
 ))
 ->name('get_translation_data');
 
-$app->post('/update', function () use($app) {
+$app->post('/update', function () use ($app) {
 	$domain = $_SERVER['HTTP_HOST'];
 	if(strpos($domain, ':')){
 		$domain = strstr($domain, ':', true);
