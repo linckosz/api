@@ -89,8 +89,8 @@ function _donothing(){
 }
 
 function get_session_id(){
-	if(isset($_SERVER) && isset($_SERVER['LINCKO_PHPSESSID']) && !empty($_SERVER['LINCKO_PHPSESSID'])){
-		return $_SERVER['LINCKO_PHPSESSID'];
+	if(isset($_SERVER) && isset($_SERVER['HTTP_LINCKO_PHPSESSID']) && !empty($_SERVER['HTTP_LINCKO_PHPSESSID'])){
+		return $_SERVER['HTTP_LINCKO_PHPSESSID'];
 	} else if(isset($_COOKIE) && isset($_COOKIE['PHPSESSID']) && !empty($_COOKIE['PHPSESSID'])){
 		return $_COOKIE['PHPSESSID'];
 	} else {
