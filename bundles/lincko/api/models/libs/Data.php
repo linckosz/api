@@ -1026,50 +1026,6 @@ class Data {
 				}
 			}
 		}
-		
-		/*
-		//toto => this is a temp solution (for iOS) the time we can refactor communciation process with less data
-		//At least need 300 items, cannot be lower (avoid to generate too much calls)
-		if($this->limit_json>300 && $this->item_detail){
-			$i = 0;
-			$skip = false;
-			$result_limit = new \stdClass;
-			$result_limit->$uid = new \stdClass;
-			foreach ($result_bis->$uid as $table_name => $models) {
-				if(!isset($result_limit->$uid->$table_name)){
-					$result_limit->$uid->$table_name = new \stdClass;
-				}
-				$must = false;
-				if(strpos($table_name, '_history_title')===0){
-					$must = true;
-				}
-				if(!$skip || $must){
-					foreach ($result_bis->$uid->$table_name as $id => $temp) {
-						if(strpos($table_name, '_history')===0){
-							continue;
-						}
-						if(!$skip || $must){
-							$result_limit->$uid->$table_name->$id = $result_bis->$uid->$table_name->$id;
-							if(isset($result_bis->$uid->_history) && isset($result_bis->$uid->_history->{$table_name.'-'.$id})){
-								if(!isset($result_limit->$uid->_history)){
-									$result_limit->$uid->_history = new \stdClass;
-								}
-								$result_limit->$uid->_history->{$table_name.'-'.$id} = $result_bis->$uid->_history->{$table_name.'-'.$id};
-							}
-							$i++;
-						}
-						if(!$must && $i >= $this->limit_json){
-							$result_limit->uncomplete = true;
-							$skip = true;
-							break;
-						}
-					}
-				}
-			}
-			return $result_limit;
-		}
-		*/
-		
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);
 		//\libs\Watch::php( $db->getQueryLog() ,'QueryLog', __FILE__, __LINE__, false, false, true);

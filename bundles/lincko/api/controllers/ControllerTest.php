@@ -711,6 +711,8 @@ class ControllerTest extends Controller {
 		->get();
 		*/
 
+		$tp = Tasks::find(26185);
+
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);

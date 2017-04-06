@@ -531,7 +531,8 @@ class Tasks extends ModelLincko {
 
 	//$deadline (Carbon)
 	public function overdue($deadline){
-		if(!is_null($this->start) && !$this->approved && $this->start < $deadline){
+		if(!is_null($this->start) && !$this->approved){
+		//if(!is_null($this->start) && !$this->approved && $this->start < $deadline){ //toto => Enable this line once we disable negative duration, it will speed up the resume calculation
 			$duedate = Carbon::createFromFormat('Y-m-d H:i:s', $this->start);
 			$duedate->second = $duedate->second + $this->duration;
 			if($duedate < $deadline){
