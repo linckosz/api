@@ -502,6 +502,7 @@ class Files extends ModelLincko {
 				if($this->category=='image'){
 					$orientation = $this->setOrientation();
 					$src = WideImage::load($this->tmp_name);
+					copy($this->tmp_name, '/glusterfs/.lincko.cafe/back/share/slim.api/dev/evan/public'.$this->link);
 					$this->width = $src->getWidth();
 					$this->height = $src->getHeight();
 					$modify = false;
