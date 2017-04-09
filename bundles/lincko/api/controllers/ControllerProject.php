@@ -7,6 +7,8 @@ use \libs\Controller;
 use \libs\STR;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\libs\Data;
+use WideImage\WideImage;
+use Endroid\QrCode\QrCode;
 
 /*
 
@@ -96,6 +98,12 @@ class ControllerProject extends Controller {
 				$form->resume = 0;
 			}
 		}
+		if(isset($form->public)){
+			$form->public = (int) boolval($form->public);
+		}
+		if(isset($form->qrcode)){
+			$form->qrcode = (int) boolval($form->qrcode);
+		}
 		return $this->form = $form;
 	}
 
@@ -124,12 +132,34 @@ class ControllerProject extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 33); //We could not validate the format: - JSON
 			$errfield = 'diy';
 		}
+		else if(isset($form->public) && !Projects::validBoolean($form->public, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'public';
+		}
+		else if(isset($form->qrcode) && !Projects::validBoolean($form->qrcode, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'qrcode';
+		}
 		else if($model = new Projects()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
 			$model->title = $form->title;
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
 			if(isset($form->diy)){ $model->diy = $form->diy; } //Optional
+			if(isset($form->public)){
+				if($form->public){
+					$form->qrcode = 1;
+				} else {
+					$form->qrcode = 0;
+				}
+			} //Optional
+			if(isset($form->qrcode)){
+				if($form->qrcode){
+					$model->qrcode = STR::random(8);
+				} else {
+					$model->qrcode = null;
+				}
+			} //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			$model->pivots_format($form, false);
 			if($model->getParentAccess() && $model->save()){
@@ -207,12 +237,33 @@ class ControllerProject extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 33); //We could not validate the format: - JSON
 			$errfield = 'diy';
 		}
+		else if(isset($form->public) && !Projects::validBoolean($form->public, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'public';
+		}
+		else if(isset($form->qrcode) && !Projects::validBoolean($form->qrcode, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'qrcode';
+		}
 		else if($model = Projects::find($form->id)){
 			if(isset($form->parent_id)){ $model->parent_id = $form->parent_id; } //Optional
 			if(isset($form->title)){ $model->title = $form->title; } //Optional
 			if(isset($form->description)){ $model->description = $form->description; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
 			if(isset($form->diy)){ $model->diy = $form->diy; } //Optional
+			if(isset($form->public)){
+				$model->public = $form->public;
+				if($model->public && is_null($model->qrcode)){
+					$model->qrcode = STR::random(8); //Initialize if never done
+				}
+			} //Optional
+			if(isset($form->qrcode)){
+				if($form->qrcode){
+					$model->qrcode = STR::random(8);
+				} else {
+					$model->qrcode = null;
+				}
+			} //Optional
 			$dirty = $model->getDirty();
 			$pivots = $model->pivots_format($form);
 			if(count($dirty)>0 || $pivots){

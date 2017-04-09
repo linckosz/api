@@ -833,17 +833,102 @@ class ControllerUser extends Controller {
 		$form = $this->form;
 		if(is_array($form) || is_object($form)){
 			$form = (object) $form;
+			$invite_access = false;
+			if(!isset($form->invite_access)){
+				$form->invite_access = new \stdClass;
+			} else {
+				$form->invite_access = json_decode($form->invite_access);
+			}
+			if($workspace = Workspaces::getWorkspace()){
+				$form->invite_access->workspaces = $workspace->id;
+			}
+			//Make sure that the host has all rights
+			if(isset($form->invite_access)){
+				$invitation_models = $form->invite_access;
+				if(is_object($invitation_models)){
+					$invite_access = new \stdClass;
+					foreach ($invitation_models as $table => $list) {
+						//Make sure that the host have access to the original item
+						if($class = Users::getClass($table)){
+							if(is_numeric($list)){
+								$id = intval($list);
+								if($class::getModel($id)){
+									$invite_access->$table = $list;
+								}
+							} else if(is_array($list) || is_object($list)){
+								foreach ($list as $id) {
+									$id = intval($id);
+									if($class::getModel($id)){
+										if(!isset($invite_access->$table)){
+											$invite_access->$table = new \stdClass;
+										}
+										$invite_access->$table->$id = $id;
+									}
+								}
+							}
+						}
+					}
+				}
+				if(is_object($invite_access)){
+					$form->invite_access = json_encode($invite_access);
+				} else {
+					unset($form->invite_access);
+				}
+			}
 			if(!$form->exists && isset($form->email)){
 				$guest = UsersLog::Where('party', null)->where('party_id', $form->email)->first(array('username_sha1'));
 				if(!$guest){
 					$user = Users::getUser();
 					$username = $user->username;
-					$invitation = new Invitation();
-					if(isset($form->invite_access)){
-						$invitation->models = $form->invite_access;
-					}
+					$email = false;
+					$invitation = false;
 					if(filter_var(trim($form->email), FILTER_VALIDATE_EMAIL)){
-						$invitation->email = trim($form->email);
+						$email = trim($form->email);
+					}
+					if($invitation = Invitation::withTrashed()->where('email', $email)->where('created_by', $app->lincko->data['uid'])->first()){
+						if(is_object($invite_access) && $invitation->models){
+							$invitation_models = json_decode($invitation->models);
+							foreach ($invitation_models as $table => $list) {
+								if(!isset($invite_access->$table)){
+									$invite_access->$table = $invitation_models->$table;
+								} else if(is_numeric($list)){
+									$id = intval($list);
+									if(is_numeric($invite_access->$table)){
+										if($invite_access->$table != $id){
+											$old_id = $invite_access->$table;
+											$invite_access->$table = new \stdClass;
+											$invite_access->$table->$old_id = $old_id;
+											$invite_access->$table->$id = $id;
+										}
+									} else if(is_object($invite_access->$table)){
+										$invite_access->$table->$id = $id;
+									}
+								} else if(is_array($list) || is_object($list)){
+									foreach ($list as $id) {
+										$id = intval($id);
+										if(is_numeric($invite_access->$table)){
+											if($invite_access->$table != $id){
+												$old_id = $invite_access->$table;
+												$invite_access->$table = new \stdClass;
+												$invite_access->$table->$old_id = $old_id;
+												$invite_access->$table->$id = $id;
+											}
+										} else if(is_object($invite_access->$table)){
+											$invite_access->$table->$id = $id;
+										}
+									}
+								}
+							}
+						}
+					}
+					if(!$invitation){
+						$invitation = new Invitation();
+					}
+					if(is_object($invite_access)){
+						$invitation->models = json_encode($invite_access);
+					}
+					if($email){
+						$invitation->email = $email;
 					}
 					$invitation->save();
 
@@ -1059,6 +1144,27 @@ class ControllerUser extends Controller {
 		}
 
 		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield, 'reset' => $reset), 'error' => true));
+		return false;
+	}
+
+	//Remember the last workspace visited for future login
+	public function workspace_post(){
+		$app = $this->app;
+		$form = $this->form;
+
+		if($user = Users::getUser()){
+			$user->workspace = null;
+			if(isset($form->workspace) && !empty($form->workspace)){
+				if($workspace = Workspaces::Where('url', $form->workspace)->first()){
+					if($workspace->checkAccess()){
+						$user->workspace = mb_strtolower($form->workspace);
+					}
+				}
+			}
+			$user->brutSave();
+		}
+
+		$app->render(200, array('show' => false, 'msg' => 'Workspace OK'));
 		return false;
 	}
 

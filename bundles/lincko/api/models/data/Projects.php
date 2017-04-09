@@ -34,6 +34,8 @@ class Projects extends ModelLincko {
 		'title',
 		'description',
 		'diy',
+		'qrcode',
+		'public',
 		'personal_private',
 		'resume',
 		'_parent',
@@ -67,6 +69,8 @@ class Projects extends ModelLincko {
 		'_tasks_0' => array(true, 405), //[{un}] moved the task "[{tt}]" from this project to another one
 		'_tasks_1' => array(true, 406), //[{un}] moved the task "[{tt}]" to this project
 		'diy' => array(true, 402), //[{un}] modified a project
+		'qrcode' => array(true, 402), //[{un}] modified a project
+		'public' => array(true, 402), //[{un}] modified a project
 		'pivot_users_access_0' => array(true, 496), //[{un}] blocked [{cun}]'s access to a project
 		'pivot_users_access_1' => array(true, 497), //[{un}] authorized [{cun}]'s access to a project
 		'_restore' => array(true, 498), //[{un}] restored a project
@@ -81,6 +85,10 @@ class Projects extends ModelLincko {
 		'fav',
 		'personal_private',
 		'resume',
+	);
+
+	protected $model_boolean = array(
+		'public',
 	);
 
 	protected static $allow_role = true;
@@ -316,6 +324,15 @@ class Projects extends ModelLincko {
 		} else {
 			return $query;
 		}
+	}
+
+	public function checkAccess($show_msg=true){
+		$data = ModelLincko::getData();
+		if($data && isset($data->project_qrcode) && $this->public && $this->qrcode==$data->project_qrcode){
+			//If it's a public project and we provide the correct code
+			$this->accessibility = (bool) true;
+		}
+		return parent::checkAccess($show_msg);
 	}
 
 	public function checkPermissionAllow($level, $msg=false){

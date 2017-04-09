@@ -60,9 +60,6 @@ class Invitation extends ModelLincko {
 			}
 			$this->created_by = $app->lincko->data['uid'];
 			$this->used = false;
-		} else {
-			$this->guest = $app->lincko->data['uid'];
-			$this->used = true;
 		}
 		$return = Model::save($options);
 		usleep(rand(30000, 35000)); //30ms

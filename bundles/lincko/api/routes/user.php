@@ -102,4 +102,10 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_inviteqrcode'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/workspace',
+		'\bundles\lincko\api\controllers\ControllerUser:workspace'.$app->lincko->method_suffix
+	)
+	->name('user_workspace'.$app->lincko->method_suffix);
+
 });

@@ -109,6 +109,17 @@ $app->group('/file', function () use ($app) {
 	))
 	->name('file_onboarding_get');
 
+	$app->get(
+		'/project_qrcode/:workspace/:id/:name.png',
+		'\bundles\lincko\api\controllers\ControllerFile:project_qrcode_get'
+	)
+	->conditions(array(
+		'workspace' => '\d+',
+		'id' => '\d+',
+		'name' => '.+',
+	))
+	->name('file_project_qrcode_get');
+
 });
 
 //Third party connection (more secured)

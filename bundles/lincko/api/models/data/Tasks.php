@@ -542,14 +542,6 @@ class Tasks extends ModelLincko {
 		return false;
 	}
 
-	//For pivot tasksup and tasksdown, make sure we return the class Tasks
-	public static function getClass($class=false){
-		if($class=='tasksup' || $class=='tasksdown'){
-			$class = 'tasks';
-		}
-		return parent::getClass($class);
-	}
-
 	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
 		$this->locked_by = $this->checkLock()[0];
 		return parent::toJson($detail, $options);

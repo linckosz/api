@@ -19,6 +19,7 @@ use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\libs\PivotUsersRoles;
 use \bundles\lincko\api\models\libs\Invitation;
 use \bundles\lincko\api\models\libs\Action;
+use \bundles\lincko\api\models\libs\ModelLincko;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
 class CheckAccess extends \Slim\Middleware {
@@ -42,6 +43,7 @@ class CheckAccess extends \Slim\Middleware {
 		if(isset($this->data->data) && !is_object($this->data->data)){
 			$this->data->data = (object) $this->data->data;
 		}
+		ModelLincko::setData($this->data);
 		return true;
 	}
 
@@ -78,7 +80,7 @@ class CheckAccess extends \Slim\Middleware {
 	protected function inviteSomeone(){
 		$app = $this->app;
 		$data = $this->data;
-		if(isset($data->user_code) && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
+		if(isset($data->user_code) && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){ //must be logged
 			Users::inviteSomeoneCode($data);
 		}
 	}
@@ -113,13 +115,13 @@ class CheckAccess extends \Slim\Middleware {
 					$items = new \stdClass;
 					if($invitation_models){
 						foreach ($invitation_models as $table => $list) {
-							//Don't give access to others users or workspace
-							if($table=='workspaces' || $table=='users'){
+							//Don't give access to others users
+							if($table=='users'){
 								continue;
 							}
 							$items->$table = new \stdClass;
 							$pivot->{$table.'>access'} = new \stdClass;
-							//Make sure that the host have access to the original item
+							//Make sure that the host have access to the original item => the check is done at the invitation request from host
 							if(is_numeric($list)){
 								$id = intval($list);
 								$pivot->{$table.'>access'}->$id = true;
@@ -133,7 +135,9 @@ class CheckAccess extends \Slim\Middleware {
 							}
 						}
 					}
+					$user->givePivotAccess(true);
 					$user->pivots_format($pivot);
+					$user->givePivotAccess(false);
 					$user->forceSaving();
 					$user->save();
 
@@ -626,6 +630,7 @@ class CheckAccess extends \Slim\Middleware {
 					|| $route == 'file_profile_get' && preg_match("/^\/file\/profile\/(\d+)\/(\d+)$/ui", $resourceUri, $matches)
 					|| $route == 'file_link_from_qrcode_get' && preg_match("/^\/file\/link_from_qrcode\/(\d+)\/([\d\w]+?)\/([\d\w]+?)$/ui", $resourceUri, $matches)
 					|| $route == 'file_onboarding_get' && preg_match("/^\/file\/onboarding\/(\d+)\/(\d+)\.mp4$/ui", $resourceUri, $matches)
+					|| $route == 'file_project_qrcode_get' && preg_match("/^\/file\/project_qrcode\/(\d+)\/(\d+)\/.+\.png$/ui", $resourceUri, $matches)
 				)
 				&& $route!==false
 			){ //File reading

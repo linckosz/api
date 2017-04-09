@@ -38,6 +38,9 @@ abstract class ModelLincko extends Model {
 
 ////////////////////////////////////////////
 
+	//Keep a record of the data sent
+	protected static $data = null;
+
 	protected static $schema_table = array();
 	protected static $schema_default = array();
 
@@ -193,6 +196,14 @@ abstract class ModelLincko extends Model {
 
 	//This suffix is used for users_x_ , for users, it's specific because it's users_id and users_id_link
 	protected static $pivot_users_suffix = '_id';
+
+	public static function setData($data){
+		return self::$data = $data;
+	}
+
+	public static function getData(){
+		return self::$data;
+	}
 
 	public static function getPivotUsersSuffix(){
 		return static::$pivot_users_suffix;
@@ -1384,6 +1395,10 @@ abstract class ModelLincko extends Model {
 	public static function getClass($class=false){
 		if(!$class){
 			$class = static::getTableStatic();
+		} else if($class=='tasksup' || $class=='tasksdown'){
+			$class = 'tasks';
+		} else if($class=='usersLinked'){
+			$class = 'users';
 		}
 		$fullClass = '\\bundles\\lincko\\api\\models\\data\\'.STR::textToFirstUC($class);
 		if(class_exists($fullClass)){

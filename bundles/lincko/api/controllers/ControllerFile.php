@@ -915,4 +915,51 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return exit(0);
 	}
 
+	public function project_qrcode_get($workspace, $id){
+		$app = $this->app;
+		ob_clean();
+		flush();
+		if($project = Projects::getModel($id)){
+			$w_url = false;
+			if($workspace>0){
+				$ws = Workspaces::find($workspace);
+				if($ws = Workspaces::getModel($workspace)){
+					$w_url = $ws->url.'.';
+				}
+			} else {
+				$w_url = '';
+			}
+			if($w_url!==false && !is_null($project->qrcode)){
+				$url = $_SERVER['REQUEST_SCHEME'].'://'.$w_url.$_SERVER['SERVER_HOST'].'/pid/'.$workspace.'/'.$id.'/'.$project->qrcode;
+				$timestamp = $project->updated_at->timestamp; 
+				$gmt_mtime = gmdate('r', $timestamp);
+				header('Last-Modified: '.$gmt_mtime);
+				header('Expires: '.gmdate(DATE_RFC1123, time()+16000000)); //About 6 months cached
+				header('ETag: "'.md5($id.'-'.$w_url.'-'.$project->qrcode).'"');
+				if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+					if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmt_mtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($id.'-'.$w_url.'-'.$project->qrcode)) {
+						header('HTTP/1.1 304 Not Modified');
+						return exit(0);
+					}
+				}
+				$qrCode = new QrCode();
+				$qrCode
+					->setText($url)
+					->setSize(482)
+					->setPadding(15)
+					->setErrorCorrection('medium')
+					->setForegroundColor(array('r' => 0, 'g' => 0, 'b' => 0, 'a' => 0))
+					->setBackgroundColor(array('r' => 255, 'g' => 255, 'b' => 255, 'a' => 0))
+					->setImageType(QrCode::IMAGE_TYPE_PNG)
+				;
+				header('Content-Type: '.$qrCode->getContentType());
+				$qrCode->render();
+				return exit(0);
+			}
+		}
+		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/unavailable.png';
+		WideImage::load($path)->output('png');
+		return exit(0);
+	}
+
 }

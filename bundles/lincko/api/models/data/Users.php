@@ -132,6 +132,9 @@ class Users extends ModelLincko {
 
 	protected static $pivot_users_suffix = '_id_link';
 
+	//At true it helps to force giving access to non-accessible items
+	protected $keep_all_pivots = false;
+
 	//One(Users) to One(UsersLog)
 	//Warning: This does not work because the 2 tables are in 2 different databases
 	public function usersLog(){
@@ -321,13 +324,6 @@ class Users extends ModelLincko {
 			$this->contactsVisibility = false; //Do not allow the user to talk to himself (technicaly, cannot attached comment to yourself, use MyPlaceholder instead)
 		}
 		return $this->contactsVisibility;
-	}
-
-	public static function getClass($class=false){
-		if($class=='usersLinked'){
-			return '\\bundles\\lincko\\api\\models\\data\\Users';
-		}
-		return parent::getClass($class);
 	}
 
 	public function setInvitation(){
@@ -802,21 +798,29 @@ class Users extends ModelLincko {
 		return $this->username;
 	}
 
+	public function givePivotAccess($access=true){
+		$this->keep_all_pivots = (bool) $access;
+	}
+
 	public function pivots_format($form, $history_save=true){
 		$app = ModelLincko::getApp();
 		$save = parent::pivots_format($form, $history_save);
+		$keep_item = array();
+		$keep_item['users'][$app->lincko->data['uid']] = true;
 		if(isset($this->pivots_var->users)){
 			if(!isset($this->pivots_var->usersLinked)){ $this->pivots_var->usersLinked = new \stdClass; }
 			foreach ($this->pivots_var->users as $users_id => $column_list) {
 				if(!isset($this->pivots_var->usersLinked->$users_id)){ $this->pivots_var->usersLinked->$users_id = new \stdClass; }
 				foreach ($column_list as $column => $value) {
 					//This insure to give or block access to both users in case of invitation
-					//toto => this can be a security issue becuse users>access is set on front
+					//toto => this can be a security issue because 'type'>access is set on front
 					if($column=='access'){
 						$save = true;
 						$access = $value[0];
-						$this->pivots_var->users->$users_id->invitation = array(false, false);
+						$this->pivots_var->users->$users_id->invitation = array(false, false); //before
 						$this->pivots_var->usersLinked->$users_id->invitation = array(false, false);
+						$keep_item['users'][$users_id] = true;
+						$keep_item['usersLinked'][$users_id] = true;
 						//this should be secure enough since we allow access at true only if there is an invitation pending
 						if($access && $pivot = (new PivotUsers(array('users')))->where('invitation', 1)->where('users_id', $app->lincko->data['uid'])->where('users_id_link', $users_id)->first()){
 							$this->pivots_var->usersLinked->$users_id->access = array(true, true);
@@ -826,7 +830,11 @@ class Users extends ModelLincko {
 								if(is_object($invitation_models)){
 									foreach ($invitation_models as $table => $list) {
 										//Don't give access to others users or workspace
-										if($table=='workspaces' || $table=='users'){
+										if($this->keep_all_pivots){
+											if($table=='users'){
+												continue;
+											}
+										} else if($table=='workspaces' || $table=='users'){ //workspace access works only via invitation process
 											continue;
 										}
 										if(!isset($this->pivots_var->$table)){ $this->pivots_var->$table = new \stdClass; }
@@ -842,6 +850,7 @@ class Users extends ModelLincko {
 											//After saving, reset item permission to give access to the new user
 											if(!isset(self::$permission_reset[$table])){ self::$permission_reset[$table] = array(); }
 											self::$permission_reset[$table][$id] = $id;
+											$keep_item[$table][$id] = true;
 										} else if(is_array($list) || is_object($list)){
 											foreach ($list as $id) {
 												$id = intval($id);
@@ -854,6 +863,7 @@ class Users extends ModelLincko {
 												//After saving, reset item permission to give access to the new user
 												if(!isset(self::$permission_reset[$table])){ self::$permission_reset[$table] = array(); }
 												self::$permission_reset[$table][$id] = $id;
+												$keep_item[$table][$id] = true;
 											}
 										}
 									}
@@ -865,7 +875,7 @@ class Users extends ModelLincko {
 							$this->pivots_var->users->$users_id->access = array(true, true);
 							$this->pivots_var->usersLinked->$users_id->models = array(false, false);
 						} else if($access && isset($app->lincko->data['invitation_code']) && $app->lincko->data['invitation_code']){
-							$this->pivots_var->users->$users_id->access = array(true, true); //Need to trigger a notification for URL invitation
+							$this->pivots_var->users->$users_id->access = array(true, true); //before - Need to trigger a notification for URL invitation
 							$this->pivots_var->usersLinked->$users_id->access = array(true, true);
 						} else {
 							$this->pivots_var->usersLinked->$users_id->access = array(false, true);
@@ -875,6 +885,34 @@ class Users extends ModelLincko {
 				}
 			}
 		}
+		
+		//Make sure that we don't give access to any other items
+		if(is_object($this->pivots_var)){
+			foreach ($this->pivots_var as $table => $items) {
+				foreach ($items as $id => $pivots) {
+					foreach ($pivots as $pivot => $arr) {
+						$keep = true;
+						if(!$this->keep_all_pivots && !isset($keep_item[$table][$id])){
+							$keep = false;
+							if($class = Users::getClass($table)){
+								if($pivot=='access' && $this->pivots_var->$table->$id->$pivot == false){
+									$keep = true;
+								} else if($class::getModel($id)){
+									$keep = true;
+								}
+							}
+						}
+						if($keep){
+							self::$permission_reset[$table][$id] = $id;
+						} else {
+							unset($this->pivots_var->$table->$id->$pivot);
+							\libs\Watch::php($table.'_'.$id.' > '.$pivot, 'pivots_format => cannot access this item', __FILE__, __LINE__, true);
+						}
+					}
+				}
+			}
+		}
+
 		return $save;
 	}
 
@@ -883,7 +921,7 @@ class Users extends ModelLincko {
 		$language = $app->trans->getClientLanguage();
 		if(!empty($language) && $language!=$this->language){
 			$this->language = strtolower($language);
-			$this->brutSave(); //Because teh language settings doesn't need to be shown on front
+			$this->brutSave(); //Because the language settings doesn't need to be shown on front
 		}
 	}
 

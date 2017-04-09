@@ -152,7 +152,7 @@ class UsersLog extends Model {
 			$public_key = $authorization->public_key = $sha1;
 			$private_key = $authorization->private_key = md5(uniqid());
 			$authorization->fingerprint = $data->fingerprint;
-			$user = Users::where('username_sha1', $users_log->username_sha1)->first(array('id', 'username'));
+			$user = Users::where('username_sha1', $users_log->username_sha1)->first(array('id', 'username', 'workspace'));
 			$authorization->sha = $users_log->username_sha1;
 			if(!is_null($users_log->username_sha1) && $user && $authorization->save()){
 				$app->lincko->translation['user_username'] = $user->username;
@@ -163,6 +163,7 @@ class UsersLog extends Model {
 					'username_sha1' => substr($users_log->username_sha1, 0, 20), //Truncate to 20 character because phone alias notification limitation
 					'uid' => $user->id,
 					'username' => $user->username,
+					'workspace' => $user->workspace,
 					'refresh' => $refresh,
 				);
 				//If it's a new login we send back users_log ID encrypted for cookies (make sure the cookie is refreshed)
