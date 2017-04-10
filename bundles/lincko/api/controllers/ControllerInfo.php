@@ -690,6 +690,8 @@ class ControllerInfo extends Controller {
 		$info_device_fields = array();
 		$info_platform = array();
 		$info_platform_fields = array();
+		$info_all = array();
+		$info_all_fields = array();
 		$sales = array();
 		$sales_fields = array();
 		$countries_fields = array();
@@ -864,6 +866,17 @@ class ControllerInfo extends Controller {
 								}
 								if(!in_array($country, $countries_fields)){
 									$countries_fields[] = $country;
+								}
+							}
+							if(isset($info[0]) && isset($info[1]) && isset($info[2])){
+								$info_str = $info[0].' _ '.$info[1].' _ '.$info[2];
+								if(!isset($info_all[$year_week][$info_str])){
+									$info_all[$year_week][$info_str] = 1;
+								} else {
+									$info_all[$year_week][$info_str]++;
+								}
+								if(!in_array($info_str, $info_all_fields)){
+									$info_all_fields[] = $info_str;
 								}
 							}
 						}
@@ -1045,6 +1058,30 @@ class ControllerInfo extends Controller {
 			echo '<tr style="text-align:right;">';
 			echo '<td style="text-align:left;">'.$title.'</td>';
 			foreach ($info_platform as $week => $array) {
+				if(isset($array[$title]) && !empty($array[$title])){
+					echo '<td>'.number_format($array[$title]).'</td>';
+					$total += intval($array[$title]);
+				} else {
+					echo '<td></td>';
+				}
+			}
+			echo '<td style="font-weight: bold;">'.number_format($total).'</td>';
+			echo '</tr>';
+		}
+
+		echo '<tr style="text-align:center;background-color:#F6FFF6;color:#979797">';
+		echo '<td style="text-align:left;">Full logs</td>';
+		foreach ($new_accounts as $week => $array) {
+			echo '<td></td>';
+		}
+		echo '<td></td>';
+		echo '</tr>';
+		ksort($info_all_fields);
+		foreach ($info_all_fields as $title) {
+			$total = 0;
+			echo '<tr style="text-align:right;">';
+			echo '<td style="text-align:left;">'.$title.'</td>';
+			foreach ($info_all as $week => $array) {
 				if(isset($array[$title]) && !empty($array[$title])){
 					echo '<td>'.number_format($array[$title]).'</td>';
 					$total += intval($array[$title]);

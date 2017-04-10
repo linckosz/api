@@ -6,6 +6,7 @@ namespace bundles\lincko\api\models\data;
 use Carbon\Carbon;
 use \libs\Datassl;
 use \libs\Email;
+use \libs\Json;
 use \bundles\lincko\api\models\Inform;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\Authorization;
@@ -485,10 +486,8 @@ class Users extends ModelLincko {
 		if($import_user->id==$this->id){
 			return false;
 		}
-		$this->forceGiveAccess();
-		$import_user->forceGiveAccess();
-		Users::$permission_users[$app->lincko->data['uid']]['users'][$this->id] = 2;
-		Users::$permission_users[$app->lincko->data['uid']]['users'][$import_user->id] = 2;
+		$this->forceGiveAccess(2);
+		$import_user->forceGiveAccess(2);
 
 		//Grab personal project items to move them to the current user
 		$personal_array = array();
@@ -641,13 +640,6 @@ class Users extends ModelLincko {
 		return $committed;
 	}
 
-	//Unsafe method
-	public function giveEditAccess(){
-		$app = ModelLincko::getApp();
-		$this->accessibility = (bool) true;
-		self::$permission_users[$app->lincko->data['uid']][$this->getTable()][$this->id] = 2;
-	}
-
 	//It checks if the user has access to it
 	public function checkAccess($show_msg=true){
 		$app = ModelLincko::getApp();
@@ -684,6 +676,37 @@ class Users extends ModelLincko {
 			return true;
 		}
 		return parent::checkPermissionAllow($level, $msg);
+	}
+
+	public static function getModel($id, $with_trash=false, $force_access=false){
+		$app = ModelLincko::getApp();
+		$access = $force_access;
+		if(!$access){
+			//If the 2 users are on the same workspace or in contact in shared workspace we allow the access
+			if($id==$app->lincko->data['uid']){
+				$access = true;
+			} else if($app->lincko->data['workspace_id']>0){
+				$access = Workspaces::whereHas('users', function ($query) use ($id) {
+					$app = \Slim\Slim::getInstance();
+					$query
+					->where('workspaces_id', $app->lincko->data['workspace_id'])
+					->where('users_id', $id)
+					->where('access', 1);
+				})->first();
+			} else {
+				$access = Users::whereHas('users', function ($query) use ($id) {
+					$app = \Slim\Slim::getInstance();
+					$query
+					->where('users_id', $app->lincko->data['uid'])
+					->where('users_id_link', $id)
+					->where('access', 1);
+				})->first();
+			}
+		}
+		if($access){
+			$force_access = true;
+		}
+		return parent::getModel($id, $with_trash, $force_access);
 	}
 
 	public function toJson($detail=true, $options = 256){ //256: JSON_UNESCAPED_UNICODE
@@ -807,7 +830,21 @@ class Users extends ModelLincko {
 		$save = parent::pivots_format($form, $history_save);
 		$keep_item = array();
 		$keep_item['users'][$app->lincko->data['uid']] = true;
-		if(isset($this->pivots_var->users)){
+		if(isset($this->pivots_var->usersLinked)){ //Delete user contact
+			foreach ($this->pivots_var->usersLinked as $users_id => $column_list) {
+				foreach ($column_list as $column => $value) {
+					if($column=='access' && !$value[0]){
+						if($usersLinked = Users::find($users_id)){
+							self::$permission_reset['users'][$users_id] = $users_id;
+							$usersLinked->forceGiveAccess(2);
+							$keep_item['usersLinked'][$users_id] = true;
+							$save = true;
+						}
+					}
+				}
+			}
+		}
+		if(isset($this->pivots_var->users)){ //Add user by invitation
 			if(!isset($this->pivots_var->usersLinked)){ $this->pivots_var->usersLinked = new \stdClass; }
 			foreach ($this->pivots_var->users as $users_id => $column_list) {
 				if(!isset($this->pivots_var->usersLinked->$users_id)){ $this->pivots_var->usersLinked->$users_id = new \stdClass; }
@@ -817,7 +854,7 @@ class Users extends ModelLincko {
 					if($column=='access'){
 						$save = true;
 						$access = $value[0];
-						$this->pivots_var->users->$users_id->invitation = array(false, false); //before
+						$this->pivots_var->users->$users_id->invitation = array(false, false);
 						$this->pivots_var->usersLinked->$users_id->invitation = array(false, false);
 						$keep_item['users'][$users_id] = true;
 						$keep_item['usersLinked'][$users_id] = true;
@@ -912,7 +949,7 @@ class Users extends ModelLincko {
 				}
 			}
 		}
-
+		
 		return $save;
 	}
 
@@ -932,13 +969,13 @@ class Users extends ModelLincko {
 	public static function inviteSomeoneCode($data){
 		$app = ModelLincko::getApp();
 		$invite = false;
+		$app->lincko->flash['unset_user_code'] = true;
 		if(isset($data->user_code) && $user_code = Datassl::decrypt($data->user_code, 'invitation')){
 			if($guest = Users::find($user_code)){
 				$invite = self::inviteSomeone($guest, $data);
 				Action::record(-8, $user_code); //Invite by external scan / paste url
 			}
 		}
-		$app->lincko->flash['unset_user_code'] = true;
 		return $invite;
 	}
 
@@ -958,50 +995,137 @@ class Users extends ModelLincko {
 			$username = $user->username;
 			$username_guest = $guest->username;
 			$pivots = new \stdClass;
-			$pivots->{'usersLinked>invitation'} = new \stdClass;
-			$pivots->{'usersLinked>invitation'}->{$guest->id} = true;
-			$pivots->{'usersLinked>access'} = new \stdClass;
-			$pivots->{'usersLinked>access'}->{$guest->id} = false;
-			if($data && isset($data->invite_access)){
-				$invite_access = new \stdClass;
-				if($pivots_previous){
-					foreach ($pivots_previous as $table => $list) {
-						if(!isset($invite_access->$table)){
-							$invite_access->$table = new \stdClass;
-						}
-						if(is_numeric($list)){
-							$id = intval($list);
-							$invite_access->$table->$id = $id;
-						} else if(is_array($list) || is_object($list)){
-							foreach ($list as $id) {
-								$id = intval($id);
-								$invite_access->$table->$id = $id;
-							}
-						} 
+			if($app->lincko->data['workspace_id']>0){
+				//If we are inside a workspace, we give immediate access if the user has the workspace edition right only
+				$workspace = Workspaces::whereHas('users', function ($query){
+					$app = \Slim\Slim::getInstance();
+					$query
+					->where('workspaces_id', $app->lincko->data['workspace_id'])
+					->where('users_id', $app->lincko->data['uid'])
+					->where('access', 1)
+					->where('super', 1);
+				})->first();
+				if($workspace){
+					if(!isset($pivots->{'workspaces>access'})){
+						$pivots->{'workspaces>access'} = new \stdClass;
 					}
-				}
-				$invitation_models = json_decode($data->invite_access);
-				if($invitation_models){
-					foreach ($invitation_models as $table => $list) {
-						if(!isset($invite_access->$table)){
-							$invite_access->$table = new \stdClass;
-						}
-						if(is_numeric($list)){
-							$id = intval($list);
-							$invite_access->$table->$id = $id;
-						} else if(is_array($list) || is_object($list)){
-							foreach ($list as $id) {
-								$id = intval($id);
-								$invite_access->$table->$id = $id;
+					$pivots->{'workspaces>access'}->{$app->lincko->data['workspace_id']} = 1;
+
+					$invitation_models = json_decode($data->invite_access);
+					if($invitation_models){
+						foreach ($invitation_models as $table => $list) {
+							//Don't give access to others users or other workspaces
+							if($table=='workspaces' || $table=='users'){
+								continue;
 							}
-						} 
+							if(!isset($pivots->{$table.'>access'})){
+								$pivots->{$table.'>access'} = new \stdClass;
+							}
+							if($table=='tasks'){
+								if(!isset($pivots->{$table.'>in_charge'})){ $pivots->{$table.'>in_charge'} = new \stdClass; }
+								if(!isset($pivots->{$table.'>approver'})){ $pivots->{$table.'>approver'} = new \stdClass; }
+							}
+
+							if(is_numeric($list)){
+								$id = intval($list);
+								$pivots->{$table.'>access'}->{$id} = true;
+								if($table=='tasks'){
+									$pivots->{$table.'>in_charge'}->{$id} = true;
+									$pivots->{$table.'>approver'}->{$id} = true;
+								}
+							} else if(is_array($list) || is_object($list)){
+								foreach ($list as $id) {
+									$id = intval($id);
+									$pivots->{$table.'>access'}->{$id} = true;
+									if($table=='tasks'){
+										$pivots->{$table.'>in_charge'}->{$id} = true;
+										$pivots->{$table.'>approver'}->{$id} = true;
+									}
+								}
+							} 
+						}
 					}
+
+					$guest->givePivotAccess(true);
+					$guest->pivots_format($pivots);
+					$guest->givePivotAccess(false);
+					$guest->forceSaving();
+					$guest->forceGiveAccess(2);
+					$guest->save();
+
+					$link = 'https://'.$workspace->url.'.'.$app->lincko->domain;
+					
+					$content_array = array(
+						'username_guest' => $username_guest,
+						'mail_username_guest' => $username_guest,
+						'mail_username' => $username,
+						'mail_link' => $link,
+						'w_name' => $workspace->name,
+					);
+					$title = $app->trans->getBRUT('api', 1006, 1, $content_array); //You joined @@w_name~~ workspace
+					$content = $app->trans->getBRUT('api', 1006, 2, $content_array); //@@mail_username~~ let you join @@w_name~~ workspace.
+					$inform = new Inform($title, $content, false, $guest->getSha(), $guest);
+					$inform->send();
+
+					$msg = $app->trans->getBRUT('api', 8, 37, $content_array); //@@username_guest~~ is now part of @@w_name~~ workspace.
+					$app->render(200, array('msg' => array('msg' => $msg, 'data' => $msg)));
+					return true;
+				} else {
+					$msg = $app->trans->getBRUT('api', 8, 36); //you need the administrator rights to invite someone
+					$json = new Json($msg, true, 406);
+					$json->render(406);
+					return false;
 				}
-				$pivots->{'usersLinked>models'} = new \stdClass;
-				$pivots->{'usersLinked>models'}->{$guest->id} = json_encode($invite_access);
+
+			} else {
+				$pivots->{'usersLinked>invitation'} = new \stdClass;
+				$pivots->{'usersLinked>invitation'}->{$guest->id} = true;
+				$pivots->{'usersLinked>access'} = new \stdClass;
+				$pivots->{'usersLinked>access'}->{$guest->id} = false;
+				if($data && isset($data->invite_access)){
+					$invite_access = new \stdClass;
+					if($pivots_previous){
+						foreach ($pivots_previous as $table => $list) {
+							if(!isset($invite_access->$table)){
+								$invite_access->$table = new \stdClass;
+							}
+							if(is_numeric($list)){
+								$id = intval($list);
+								$invite_access->$table->$id = $id;
+							} else if(is_array($list) || is_object($list)){
+								foreach ($list as $id) {
+									$id = intval($id);
+									$invite_access->$table->$id = $id;
+								}
+							} 
+						}
+					}
+					$invitation_models = json_decode($data->invite_access);
+					if($invitation_models){
+						foreach ($invitation_models as $table => $list) {
+							if(!isset($invite_access->$table)){
+								$invite_access->$table = new \stdClass;
+							}
+							if(is_numeric($list)){
+								$id = intval($list);
+								$invite_access->$table->$id = $id;
+							} else if(is_array($list) || is_object($list)){
+								foreach ($list as $id) {
+									$id = intval($id);
+									$invite_access->$table->$id = $id;
+								}
+							} 
+						}
+					}
+					$pivots->{'usersLinked>models'} = new \stdClass;
+					$pivots->{'usersLinked>models'}->{$guest->id} = json_encode($invite_access);
+				}
 			}
+			$user->givePivotAccess(true);
 			$user->pivots_format($pivots);
-			//$user->pivots_save(array(), true);
+			$user->givePivotAccess(false);
+
+			$user->forceSaving();
 			$user->save();
 			$link = 'https://'.$app->lincko->domain;
 
@@ -1015,13 +1139,13 @@ class Users extends ModelLincko {
 			$inform = new Inform($title, $content, false, $guest->getSha(), $guest);
 			$inform->send();
 		} else if($pivot && $pivot->access){ //toto => I am not sure why it's here, we should never match that condition (inviting someone that is already in the contact list)
+			\libs\Watch::php('Not sure how we can arrive here, should be not possible but it happened already', 'Users::inviteSomeone', __FILE__, __LINE__, true);
 			//we directly give access to models
 			if($data && isset($data->invite_access)){
 				$invitation_models = json_decode($data->invite_access);
-				$guest->giveEditAccess(); //A bit unsafe method
 				foreach ($invitation_models as $table => $list) {
-					//Don't give access to others users or workspace
-					if($table=='workspaces' || $table=='users'){
+					//Don't give access to others users
+					if($table=='users'){
 						continue;
 					}
 					if(is_numeric($list)){
@@ -1030,10 +1154,16 @@ class Users extends ModelLincko {
 						$pivots->{$table.'>access'} = new \stdClass;
 						$pivots->{$table.'>access'}->{$id} = true;
 						if($table=='tasks'){
+							if(!isset($pivots->{$table.'>in_charge'})){ $pivots->{$table.'>in_charge'} = new \stdClass; }
+							if(!isset($pivots->{$table.'>approver'})){ $pivots->{$table.'>approver'} = new \stdClass; }
 							$pivots->{$table.'>in_charge'}->{$id} = true;
 							$pivots->{$table.'>approver'}->{$id} = true;
 						}
+						$guest->givePivotAccess(true);
 						$guest->pivots_format($pivots);
+						$guest->givePivotAccess(false);
+						$guest->forceSaving();
+						$guest->forceGiveAccess(2);
 						$guest->save();
 						if($class = Users::getClass($table)){
 							if($item = $class::withTrashed()->find($id)){
@@ -1049,10 +1179,16 @@ class Users extends ModelLincko {
 							$pivots->{$table.'>access'} = new \stdClass;
 							$pivots->{$table.'>access'}->{$id} = true;
 							if($table=='tasks'){
+								if(!isset($pivots->{$table.'>in_charge'})){ $pivots->{$table.'>in_charge'} = new \stdClass; }
+								if(!isset($pivots->{$table.'>approver'})){ $pivots->{$table.'>approver'} = new \stdClass; }
 								$pivots->{$table.'>in_charge'}->{$id} = true;
 								$pivots->{$table.'>approver'}->{$id} = true;
 							}
+							$guest->givePivotAccess(true);
 							$guest->pivots_format($pivots);
+							$guest->givePivotAccess(false);
+							$guest->forceSaving();
+							$guest->forceGiveAccess(2);
 							$guest->save();
 							if($class = Users::getClass($table)){
 								if($item = $class::withTrashed()->find($id)){

@@ -112,8 +112,11 @@ abstract class ModelLincko extends Model {
 	protected $contactsVisibility = false; //If true, it will appear in user contact list
 
 	//It should be a array of [key1:val1, key2:val2, etc]
-	//It helps to recover some iformation on client side
-	protected $historyParameters = array();
+	//It helps to recover some information on client side
+	protected $historyParameters = array(); //Not used
+
+	//Make visible by default some history of attrobutes
+	protected static $history_visible = array();
 
 	//At false we block history
 	protected $save_history = false;
@@ -1704,7 +1707,7 @@ abstract class ModelLincko extends Model {
 				foreach ($data as $key => $value) {
 					try { //In case access in not available for the model
 						if(isset($classes[$value->parent_type])){
-							$model = new $classes[$value->parent_type];
+							$class = $classes[$value->parent_type];
 							$created_at = (new \DateTime($value->created_at))->getTimestamp();
 							$hist = new \stdClass;
 							$hist->by = (integer) $value->created_by;
@@ -1716,7 +1719,7 @@ abstract class ModelLincko extends Model {
 							if(!empty($value->parameters)){
 								$hist->par = json_decode($value->parameters);
 							}
-							if($history_detail){
+							if($history_detail || isset($class::$history_visible[$hist->att])){
 								//Be careful, this can be a very heavy data
 								$hist->old = $value->old;
 							}
@@ -1756,10 +1759,8 @@ abstract class ModelLincko extends Model {
 				if(!empty($value->parameters)){
 					$parameters = $history->{$value->id}->par = json_decode($value->parameters);
 				}
-				if($history_detail){
-					if(strlen($value->old)<500){
-						$history->{$value->id}->old = $value->old;
-					}
+				if($history_detail || isset(static::$history_visible[$history->{$value->id}->att])){
+					$history->{$value->id}->old = $value->old;
 				}
 			}
 		}
@@ -2094,8 +2095,13 @@ abstract class ModelLincko extends Model {
 		return $perm;
 	}
 
-	public function forceGiveAccess(){
+	//Unsafe method
+	public function forceGiveAccess($perm=false){
+		$app = ModelLincko::getApp();
 		$this->accessibility = true;
+		if($perm!==false && $perm>=0 && $perm<=2){ //Do not allow delete/restore
+			self::$permission_users[$app->lincko->data['uid']][$this->getTable()][$this->id] = $perm;
+		}
 	}
 
 	//It checks if the user has access to it
@@ -2199,7 +2205,7 @@ abstract class ModelLincko extends Model {
 		}
 		\libs\Watch::php($detail, $msg, __FILE__, __LINE__, true);
 		if(!self::$debugMode){
-			$json = new Json($msg, true, 406, $resignin);
+			$json = new Json($msg, true, 406, false, $resignin, array(), false);
 			$json->render(406);
 		}
 		return false;
@@ -2363,7 +2369,7 @@ abstract class ModelLincko extends Model {
 			}
 		}
 		$dirty = $this->getDirty();
-		
+
 		//do nothing if dirty is empty
 		if(!$this->force_save && count($dirty)<=0){
 			return true;
@@ -2492,7 +2498,7 @@ abstract class ModelLincko extends Model {
 		}
 
 		$time = $this->freshTimestamp();
-		$result = $this::where('id', $this->id)->getQuery()->update(['updated_at' => $time, 'extra' => null]);
+		$result = $this::withTrashed()->where('id', $this->id)->getQuery()->update(['updated_at' => $time, 'extra' => null]);
 		usleep(rand(30000, 35000)); //30ms
 
 		if($inform || $return_list){
@@ -2526,6 +2532,7 @@ abstract class ModelLincko extends Model {
 				$save = true;
 			}
 			if($save){
+				$this->forceSaving();
 				$this->save();
 			}
 			parent::withTrashed()->where('id', $this->id)->delete();
@@ -2796,6 +2803,10 @@ abstract class ModelLincko extends Model {
 			$column => $value,
 		);
 		return $pivot_array;
+	}
+
+	public function pivots_get(){
+		return $this->pivots_var;
 	}
 
 	public function pivots_save(array $parameters = array(), $force_access=false){

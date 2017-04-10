@@ -116,6 +116,13 @@ class Tasks extends ModelLincko {
 
 	protected static $history_xdiff = array('comment');
 
+	protected static $history_visible = array(
+		'title' => true,
+		'start' => true,
+		'duration' => true,
+		'tasksdown_title' => true,
+	);
+
 	protected static $parent_list = 'projects';
 
 	protected $model_timestamp = array(
@@ -326,6 +333,12 @@ class Tasks extends ModelLincko {
 				$tasksup->touchUpdateAt();
 				return false; //Do not record element itself, only the parent one
 			}
+		}
+
+		if($key == 'start' || $key == 'duration'){
+			$duedate = Carbon::createFromFormat('Y-m-d H:i:s', $this->start);
+			$duedate->second = $duedate->second + $this->duration;
+			$parameters['dd'] = $duedate->timestamp;
 		}
 
 		if($history = parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id)){

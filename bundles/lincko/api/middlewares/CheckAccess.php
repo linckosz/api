@@ -91,7 +91,7 @@ class CheckAccess extends \Slim\Middleware {
 		if(isset($data->data->invitation_code) && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
 			$app->lincko->flash['unset_invitation_code'] = true;
 			$invitation_code = $data->data->invitation_code;
-			if($invitation = Invitation::withTrashed()->where('code', $invitation_code)->first()){
+			if($invitation = Invitation::withTrashed()->where('code', $invitation_code)->where('used', 0)->first()){
 				$user = Users::getUser();
 				$invitation_models = false;
 				if(!is_null($invitation->models)){
@@ -104,9 +104,44 @@ class CheckAccess extends \Slim\Middleware {
 				$invitation->models = null;
 				$invitation->save();
 
+				//Convert Invitation into users_x_users request
+				$email_list = array();
+				//User optional email
+				if(!is_null($user->email)){
+					$email_list[$user->email] = $user->email;
+				}
+				//Email used to invite
+				if(!is_null($invitation->email)){
+					$email_list[$invitation->email] = $invitation->email;
+				}
+				//Accout creation email
+				if(isset($app->lincko->data['create_account_email']) && $app->lincko->data['create_account_email']){
+					$email_list[$app->lincko->data['create_account_email']] = $app->lincko->data['create_account_email'];
+				}
+				
+				$pivot = new \stdClass;
+				$invitations = false;
+				if(count($email_list)>0){
+					$invitations = Invitation::withTrashed()->whereIn('email', $email_list)->where('used', 0)->get();
+					foreach ($invitations as $invit) {
+						if(!isset($pivot->{'users>invitation'})){
+							$pivot->{'users>invitation'} = new \stdClass;
+						}
+						$pivot->{'users>invitation'}->{$invit->created_by} = true;
+						if(!isset($pivot->{'users>access'})){
+							$pivot->{'users>access'} = new \stdClass;
+						}
+						$pivot->{'users>access'}->{$invit->created_by} = false;
+						if(!isset($pivot->{'users>models'})){
+							$pivot->{'users>models'} = new \stdClass;
+						}
+						$pivot->{'users>models'}->{$invit->created_by} = $invit->models;
+					}
+				}
+				
+				//Authorize the user who send the invitation
 				if($invitation->created_by>0 && $host = Users::find($invitation->created_by)){
 					//For guest
-					$pivot = new \stdClass;
 					$pivot->{'users>access'} = new \stdClass;
 					$pivot->{'users>access'}->{$host->id} = true;
 					$app->lincko->data['invitation_code'] = true;
@@ -138,6 +173,22 @@ class CheckAccess extends \Slim\Middleware {
 					$user->givePivotAccess(true);
 					$user->pivots_format($pivot);
 					$user->givePivotAccess(false);
+
+					$pivots_var = $user->pivots_get();
+					if($pivots_var && isset($pivots_var->workspaces) && is_object($pivots_var->workspaces)){
+						foreach ($pivots_var->workspaces as $id => $attributes) {
+							foreach ($attributes as $coloumn => $value) {
+								if($coloumn == 'access' && $value){
+									if($workspace = Workspaces::find($id)){
+										$user->workspace = $workspace->url;
+										break;
+									}
+								}
+							}
+						}
+					}
+
+					
 					$user->forceSaving();
 					$user->save();
 
@@ -159,6 +210,17 @@ class CheckAccess extends \Slim\Middleware {
 					$content = $app->trans->getBRUT('api', 1004, 6, $content_array); //@@mail_username~~ accepted your invitation.
 					$inform = new Inform($title, $content, false, $host->getSha());
 					$inform->send();
+				}
+
+				if($invitations){
+					foreach ($invitations as $invit) {
+						//Record for invitation
+						$invit->guest = $user->id;
+						$invit->code = null;
+						$invit->used = true;
+						$invit->models = null;
+						$invit->save();
+					}
 				}
 			}
 		}

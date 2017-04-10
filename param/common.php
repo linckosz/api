@@ -67,12 +67,19 @@ $app->config(array(
 	'cookies.encrypt' => true, //Must use $app->getCookie('foo', false);
 	'cookies.secret_key' => 'au6G7dbSh87Ws',
 	'cookies.lifetime' => $app->lincko->cookies_lifetime,
-	'cookies.secure' => true,
+	'cookies.secure' => false, //At true it keeps record only on SSL connection
 	'cookies.path' => '/',
 	'cookies.httponly' => true,
 	'templates.path' => '..',
 	'debug' => false,
 ));
+
+//Set the cookie via Slim with root domain only work in HTTPS mode
+if(isset($_SERVER['HTTPS'])){
+	$app->config(array(
+		'cookies.domain' => $app->lincko->domain, //get .lincko.cafe
+	));
+}
 
 //Root directory (which is different from landing page which is in public folder)
 $app->lincko->path = $path;

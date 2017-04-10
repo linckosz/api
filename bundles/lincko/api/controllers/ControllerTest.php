@@ -711,7 +711,22 @@ class ControllerTest extends Controller {
 		->get();
 		*/
 
-		$tp = Tasks::find(26185);
+		/*
+		$tp = Workspaces::whereHas('users', function ($query){
+			$app = \Slim\Slim::getInstance();
+			$query
+			->where('workspaces_id', $app->lincko->data['workspace_id'])
+			->where('users_id', $app->lincko->data['uid'])
+			->where('access', 1)
+			->where('super', 1);
+		})->first()->toArray();
+		*/
+
+		$arr = array(
+			'toto@lincko.cafe',
+			'bruno2017040804@lincko.cafe',
+		);
+		$tp = Invitation::withTrashed()->whereIn('email', $arr)->count();
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

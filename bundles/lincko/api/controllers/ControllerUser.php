@@ -347,6 +347,7 @@ class ControllerUser extends Controller {
 				if(!isset($user->username) || empty($user->username)){
 					$user->username = mb_strstr($email, '@', true);
 				}
+				$app->lincko->data['create_account_email'] = $email;
 			} else if($data->party=='wechat'){ //Wechat
 				$json = $data->data;
 				if(!isset($json->nickname)){ //We exit if we are only on base mode and no user logged

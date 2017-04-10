@@ -77,6 +77,10 @@ class Notes extends ModelLincko {
 
 	protected static $history_xdiff = array('comment');
 
+	protected static $history_visible = array(
+		'title' => true,
+	);
+
 	protected static $parent_list = 'projects';
 
 	protected $model_integer = array(

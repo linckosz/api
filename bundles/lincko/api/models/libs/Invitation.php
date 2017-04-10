@@ -29,6 +29,9 @@ class Invitation extends ModelLincko {
 		0, //[R] owner
 		1, //[RC] max allow || super
 	);
+
+	//Keep a record of the email retreive from invitation code (column "email")
+	protected static $email_code = null;
 	
 ////////////////////////////////////////////
 

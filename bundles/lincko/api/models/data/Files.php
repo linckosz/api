@@ -97,6 +97,8 @@ class Files extends ModelLincko {
 		'_delete' => array(true, 999), //[{un}] deleted a file
 	);
 
+	protected static $history_xdiff = array('comment');
+
 	/*
 		IMPORTANT:
 		'users', 'chats', 'projects' are hardly attached
