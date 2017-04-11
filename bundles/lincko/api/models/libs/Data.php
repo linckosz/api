@@ -1092,6 +1092,14 @@ class Data {
 
 		sleep(1); //Just insure we are working on the current day
 
+		//For debugging purpose only on .cafe
+		$debug = false; //At true force to launch all messages
+		$debug_project = false;
+		$debug_br = false;
+		if($debug){
+			//$debug_project = 3706; //If only want to display one project
+		}
+
 		$timeend = Carbon::today();
 		$now = Carbon::now();
 		$current_hour = $now->hour;
@@ -1103,11 +1111,17 @@ class Data {
 		$weekday = date('w');
 
 		$users_resume = array();
-		$temp = Users::Where('resume', $current_hour)->get(array('id', 'weekly'));
-		//$temp = Users::Where('id', '>', 0)->get(array('id', 'weekly')); //toto (show for test)
+		if(!$debug){
+			$temp = Users::Where('resume', $current_hour)->get(array('id', 'weekly'));
+		} else {
+			$temp = Users::Where('id', '>', 0)->get(array('id', 'weekly')); //toto (show for test)
+		}
 		foreach ($temp as $user) {
-			$users_resume[$user->id] = $user->weekly;
-			//$users_resume[$user->id] = $weekday; //toto (show for test)
+			if(!$debug){
+				$users_resume[$user->id] = $user->weekly;
+			} else {
+				$users_resume[$user->id] = $weekday; //toto (show for test)
+			}
 		}
 		//\libs\Watch::php($users_resume, '$users_resume: '.$current_hour, __FILE__, __LINE__, false, false, true);
 
@@ -1137,15 +1151,17 @@ class Data {
 			}
 
 			$request = Projects::Where('personal_private', null)
-				->where(function ($query) use ($current_hour) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
-					$query
-					->whereHas('users', function ($query) use ($current_hour) {
-						$query
-						->where('resume', $current_hour) //toto (hide for test)
-						->where('access', 1);
-					})
-					->orWhere('resume', $current_hour) //toto (hide for test)
-					;
+				->where(function ($query) use ($current_hour, $debug) { //Need to encapsule the OR, if not it will not take in account the updated_at condition in Data.php because of later prefix or suffix
+					$query = $query
+					->whereHas('users', function ($query) use ($current_hour, $debug) {
+						$query = $query->where('access', 1);
+						if(!$debug){
+							$query = $query->where('resume', $current_hour); //toto (hide for test)
+						}
+					});
+					if(!$debug){
+						$query = $query->orWhere('resume', $current_hour); //toto (hide for test)
+					}
 				});
 
 			if($period!='weekly'){
@@ -1155,6 +1171,10 @@ class Data {
 			$projects = $request->get(array('id', 'updated_at', '_perm', 'resume', 'weekly'));
 
 			foreach ($projects as $project) {
+				$debug_br = false;
+				if($debug && $debug_project && $debug_project!=$project->id){
+					continue;
+				}
 				$users_most = array();
 				$users = new \stdClass;
 				$users_perm = new \stdClass;
@@ -1170,6 +1190,7 @@ class Data {
 					}
 				}
 
+				$activity = false; //This represents real activity (task completed, new file, etc.), not statistics calculated
 				$msg = false;
 				$msg_users = false;
 				if($period=='weekly'){
@@ -1216,7 +1237,6 @@ class Data {
 					$remain_start = 0;
 					$done = 0;
 					$done_total = 0;
-					$activity = false; //This represents real activity (task completed, new file, etc.), not statistics calculated
 					$tasks = Tasks::
 						Where('parent_id', $project->id)
 						->whereHas('tasksup', function($query) {
@@ -1413,7 +1433,8 @@ class Data {
 						}
 					}
 
-				} else if($period=='weekly'){
+				}
+				if(!$activity && $period=='weekly'){
 					//There was no activity last week. 2 tasks are overdue.
 
 					usleep(5000);
@@ -1476,8 +1497,7 @@ class Data {
 				}
 
 				//For team
-				if($project->resume!=$current_hour || ($period=='weekly' && $project->weekly!=$weekday) ){
-				//if(false){ //toto (show for test)
+				if( !$debug && ($project->resume!=$current_hour || ($period=='weekly' && $project->weekly!=$weekday) ) ){ //toto (skip for test)
 					$msg = false;
 				} else if(!empty($msg)){
 					$comment = new Comments;
@@ -1517,6 +1537,10 @@ class Data {
 							}
 						}
 						$comment->saveRobot();
+						if($debug){
+							echo $comment->parent_type.'_'.$comment->parent_id.' [Team '.$period.']: '.$comment->comment.'<br />';
+							$debug_br = true;
+						}
 					}
 				}
 
@@ -1560,7 +1584,15 @@ class Data {
 							}
 						}
 						$comment->saveRobot();
+						if($debug){
+							echo $comment->parent_type.'_'.$comment->parent_id.' [Perso '.$period.']: '.$comment->comment.'<br />';
+							$debug_br = true;
+						}
 					}
+				}
+
+				if($debug && $debug_br){
+					echo '<br />';
 				}
 
 			}
@@ -1605,35 +1637,37 @@ class Data {
 
 		$title = 'Lincko';
 		
-		foreach ($lang_individual_weekly as $language => $alias) {
-			//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend!
-			$content = $app->trans->getBRUT('api', 19, 4, array(), $language);
-			$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
-			$inform->send();
-		}
-		foreach ($lang_individual_daily as $language => $alias) {
-			//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
-			$content = $app->trans->getBRUT('api', 19, 3, array(), $language);
-			$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
-			$inform->send();
-		}
-		foreach ($lang_team_weekly as $language => $alias) {
-			//Your weekly progress update is here! See how the team did last week and what's coming this week.
-			$content = $app->trans->getBRUT('api', 19, 2, array(), $language);
-			//It generates to many notifications for the user
-			/*
+		if(!$debug){
+			foreach ($lang_individual_weekly as $language => $alias) {
+				//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend!
+				$content = $app->trans->getBRUT('api', 19, 4, array(), $language);
 				$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
 				$inform->send();
-			*/
-		}
-		foreach ($lang_team_daily as $language => $alias) {
-			//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
-			$content = $app->trans->getBRUT('api', 19, 1, array(), $language);
-			//It generates to many notifications for the user
-			/*
+			}
+			foreach ($lang_individual_daily as $language => $alias) {
+				//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
+				$content = $app->trans->getBRUT('api', 19, 3, array(), $language);
 				$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
 				$inform->send();
-			*/
+			}
+			foreach ($lang_team_weekly as $language => $alias) {
+				//Your weekly progress update is here! See how the team did last week and what's coming this week.
+				$content = $app->trans->getBRUT('api', 19, 2, array(), $language);
+				//It generates to many notifications for the user
+				/*
+					$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
+					$inform->send();
+				*/
+			}
+			foreach ($lang_team_daily as $language => $alias) {
+				//Check out the daily team progress! Your Project Activity summaries have arrived. Go team!
+				$content = $app->trans->getBRUT('api', 19, 1, array(), $language);
+				//It generates to many notifications for the user
+				/*
+					$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
+					$inform->send();
+				*/
+			}
 		}
 
 
