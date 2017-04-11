@@ -333,8 +333,8 @@ class Files extends ModelLincko {
 		return parent::toVisible();
 	}
 
-	public function setCompression($value=true){
-		$this->imagecompressed = (bool) $value;
+	public function setCompression($value = true){
+		$this->imagecompressed = $value;
 	}
 
 	public function setOrientation(){
@@ -499,24 +499,17 @@ class Files extends ModelLincko {
 				$this->progress = 100;
 				$this->puid = $app->lincko->data['uid'];
 				$source = $this->tmp_name;
-				if($this->category=='image'){
+				if($this->category=='image'){	
 					$orientation = $this->setOrientation();
 					$src = WideImage::load($this->tmp_name);
-					copy($this->tmp_name, '/glusterfs/.lincko.cafe/back/share/slim.api/dev/evan/public'.$this->link);
 					$this->width = $src->getWidth();
 					$this->height = $src->getHeight();
 					$modify = false;
 					$resize = false;
 					$compression = 90;
+
+
 					if($this->ori_type == 'image/jpeg' || $this->ori_type == 'image/png') {
-						if($this->orientation!=1){
-							$modify = true;
-							//For a jpeg we check if there is any orientation, if yes we rotate and overwrite
-							if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
-							if($orientation[1]){ $src = $src->flip(); } //Flip up/down
-							if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
-							$this->orientation = 1;
-						}
 						if($this->ori_type == 'image/jpeg'){
 							exec("identify -format '%Q' \"$source\" 2>&1 ", $tablo, $error);
 							if(!$error && is_numeric($tablo[0]) && $tablo[0]>0){
@@ -533,9 +526,24 @@ class Files extends ModelLincko {
 								}
 							}
 						}
+						if($this->orientation!=1){
+							$modify = true;
+							//For a jpeg we check if there is any orientation, if yes we rotate and overwrite
+							if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
+							if($orientation[1]){ $src = $src->flip(); } //Flip up/down
+							if($orientation[2]){ 
+							
+								if(!$this->imagecompressed){
+									$src = $src->rotate($orientation[2]); 
+								}
+							} //Rotation
+							$this->orientation = 1;
+						}
+
 						$this->width = $src->getWidth();
 						$this->height = $src->getHeight();
 					}
+
 					if($modify){
 						if($this->ori_type == 'image/png'){
 							$src = $src->saveToFile($folder_ori->getPath().$this->link.'.png');
@@ -549,23 +557,30 @@ class Files extends ModelLincko {
 						copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					}
 					$folder_thu = new Folders;
+					
 					$folder_thu->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/thumbnail/');
 					try {
 						$src = WideImage::load($this->tmp_name);
 						$src = $src->resize(256, 256, 'inside', 'any');
 						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
-						if($orientation[2]){ $src = $src->rotate($orientation[2]); } //Rotation
+						if($orientation[2]){ 
+							if(!$this->imagecompressed){
+								$src = $src->rotate($orientation[2]); 
+							}
+						} //Rotation
 
 						$has_transparency = false;
 						//For PNG, check if we have any transparent pixel, if yes we do keep PNG format;
 						if($this->ori_type == 'image/png'){
+
 							$im = $src->getHandle();
 							$width = $src->getWidth();
 							$height = $src->getHeight();
 							for($x = 0; $x < $width; $x++){
 								for($y = 0; $y < $height; $y++) {
 									$alpha = (imagecolorat($im,$x,$y) & 0x7F000000) >> 24;
+
 									if($alpha > 0){
 										$has_transparency = true;
 										break 2;

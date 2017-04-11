@@ -205,6 +205,8 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$app = $this->app;
 		$this->setFields();
 		$form = $this->form;
+
+		\libs\Watch::php($form, '$form', __FILE__, __LINE__, false, false, true);
 		$lastvisit = time();
 
 		$failmsg = $app->trans->getBRUT('api', 14, 1)."\n"; //File upload failed.
@@ -234,6 +236,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$errfield = 'comment';
 		}
 		else if(isset($_FILES)){
+
 			foreach ($_FILES as $file => $fileArray) {
 				if(is_array($fileArray['tmp_name'])){
 					foreach ($fileArray['tmp_name'] as $j => $value) {
@@ -250,7 +253,21 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 							if(property_exists($form, 'comment')){ $model->comment = $form->comment; } //Optional
 							if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
-							if(isset($form->precompress)){ $model->setCompression($form->precompress); } //Optional
+							if(isset($form->precompress)){ 
+								if($form->precompress == "true")
+								{
+									$form->precompress = true;
+								}
+								else if($form->precompress == "false")
+								{
+									$form->precompress = false;
+								}
+								else
+								{
+									$form->precompress = true;
+								}
+								$model->setCompression($form->precompress); 
+							} //Optional
 							$model->pivots_format($form, false);
 							if($model->getParentAccess() && $model->save()){
 								$success = true;
@@ -274,7 +291,21 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 						if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 						if(property_exists($form, 'comment')){ $model->comment = $form->comment; } //Optional
 						if(isset($form->version_of)){ $model->version_of = $form->version_of; } //Optional
-						if(isset($form->precompress)){ $model->setCompression($form->precompress); } //Optional
+						if(isset($form->precompress)){ 
+							if($form->precompress == "true")
+							{
+								$form->precompress = true;
+							}
+							else if($form->precompress == "false")
+							{
+								$form->precompress = false;
+							}
+							else
+							{
+								$form->precompress = true;
+							}
+							$model->setCompression($form->precompress); 
+						} //Optional
 						$model->pivots_format($form, false);
 						if($model->getParentAccess() && $model->save()){
 							$success = true;
