@@ -137,6 +137,7 @@ class Files extends ModelLincko {
 	protected $imagequalitysize = '1920'; //1GB => 3,500 pictures
 	protected $imagequalitycomp = '80';
 	protected $imagecompressed = false;
+	protected $realorientation = true;
 
 	protected $videoquality = 1; //[0]480p / [1]720p / [2]1080p
 
@@ -337,6 +338,10 @@ class Files extends ModelLincko {
 		$this->imagecompressed = $value;
 	}
 
+	public function setRealOrientation($value = true){
+		$this->realorientation = $value;
+	}
+
 	public function setOrientation(){
 		$orientation = 1;
 		$flip_x = false;
@@ -532,8 +537,8 @@ class Files extends ModelLincko {
 							if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 							if($orientation[1]){ $src = $src->flip(); } //Flip up/down
 							if($orientation[2]){ 
-							
-								if(!$this->imagecompressed){
+								if($this->realorientation)
+								{
 									$src = $src->rotate($orientation[2]); 
 								}
 							} //Rotation
@@ -565,7 +570,8 @@ class Files extends ModelLincko {
 						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
 						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
 						if($orientation[2]){ 
-							if(!$this->imagecompressed){
+							if($this->realorientation)
+							{
 								$src = $src->rotate($orientation[2]); 
 							}
 						} //Rotation
