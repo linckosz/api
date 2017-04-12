@@ -668,7 +668,14 @@ class CheckAccess extends \Slim\Middleware {
 						$app->lincko->data['lastvisit_enabled'] = false; //Disable lastvisit because we cannot get all items from uploading (security feature)
 						$this->checkAPI();
 						if(isset($post['http_code_ok']) && $post['http_code_ok']){
-							$data->http_code_ok = (bool) $post['http_code_ok'];
+							$data->http_code_ok = true;
+							if(is_bool($post['http_code_ok'])){
+								$data->http_code_ok = $post['http_code_ok'];
+							} else if($post['http_code_ok']==='true'){
+								$data->http_code_ok = true;
+							} else if($post['http_code_ok']==='false'){
+								$data->http_code_ok = false;
+							}
 						}
 						if($user = Users::Where('username_sha1', $username_sha1)->first(array('id'))){
 							$app->lincko->data['uid'] = $user->id;
