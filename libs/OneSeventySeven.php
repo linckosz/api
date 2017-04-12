@@ -3,6 +3,7 @@
 namespace libs;
 
 use \Exception;
+use \Slim\Http\Util;
 
 class OneSeventySeven {
 
@@ -115,14 +116,29 @@ class OneSeventySeven {
 			//Re/create the cookie
 			if(!empty(self::$cookies)){
 				$_SESSION['one_seventy_seven'] = self::$cookies;
-				$app->setCookie('one_seventy_seven', json_encode(self::$cookies));
+				//Do no use " $app->setCookie('one_seventy_seven', json_encode(self::$cookies)); " avoid cookie issue that keep its status accross non-ssl and ssl site and different subdomains
+				$json = self::encodeSecureCookie(json_encode(self::$cookies), $app->lincko->cookies_lifetime);
+				setcookie('one_seventy_seven', $json, $app->lincko->cookies_lifetime, '/', '.'.$app->lincko->domain);
 			} else {
 				unset($_SESSION['one_seventy_seven']);
 				$app->deleteCookie('one_seventy_seven');
+				setcookie('one_seventy_seven', null, time()-3600, '/', '.'.$app->lincko->domain);
 				self::$first = true;
 			}
 		}
 		return true;
+	}
+
+	public static function encodeSecureCookie($data, $expire){
+		$app = \Slim\Slim::getInstance();
+		$data = Util::encodeSecureCookie(
+			$data,
+			$expire,
+			$app->config('cookies.secret_key'),
+			$app->config('cookies.cipher'),
+			$app->config('cookies.cipher_mode')
+		);
+		return $data;
 	}
 
 }
