@@ -275,8 +275,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 									else if($form->real_orientation === "false"){
 										$form->real_orientation = false;
 									}
-									else
-									{
+									else{
 										$form->real_orientation = true;
 									}
 								}
@@ -328,8 +327,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 								else if($form->real_orientation === "false"){
 									$form->real_orientation = false;
 								}
-								else
-								{
+								else{
 									$form->real_orientation = true;
 								}
 							}

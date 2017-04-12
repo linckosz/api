@@ -533,14 +533,11 @@ class Files extends ModelLincko {
 						}
 						if($this->orientation!=1){
 							$modify = true;
+							if($this->realorientation){
 							//For a jpeg we check if there is any orientation, if yes we rotate and overwrite
-							if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
-							if($orientation[1]){ $src = $src->flip(); } //Flip up/down
-							if($orientation[2]){ 
-								if($this->realorientation)
-								{
-									$src = $src->rotate($orientation[2]); 
-								}
+								if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
+								if($orientation[1]){ $src = $src->flip(); } //Flip up/down
+								if($orientation[2]){ $src = $src->rotate($orientation[2]); }
 							} //Rotation
 							$this->orientation = 1;
 						}
@@ -567,13 +564,10 @@ class Files extends ModelLincko {
 					try {
 						$src = WideImage::load($this->tmp_name);
 						$src = $src->resize(256, 256, 'inside', 'any');
-						if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
-						if($orientation[1]){ $src = $src->flip(); } //Flip up/down
-						if($orientation[2]){ 
-							if($this->realorientation)
-							{
-								$src = $src->rotate($orientation[2]); 
-							}
+						if($this->realorientation){
+							if($orientation[0]){ $src = $src->mirror(); } //Mirror left/right
+							if($orientation[1]){ $src = $src->flip(); } //Flip up/down
+							if($orientation[2]){ $src = $src->rotate($orientation[2]); }
 						} //Rotation
 
 						$has_transparency = false;
