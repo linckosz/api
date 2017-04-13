@@ -86,6 +86,9 @@ class ControllerChat extends Controller {
 				$form->parent_id = 0;
 			}
 		}
+		if(isset($form->style) && is_numeric($form->style)){
+			$form->style = (int) $form->style;
+		}
 		if(isset($form->title) && is_string($form->title)){
 			$form->title = trim(STR::break_line_conv(STR::br2space($form->title),' '));
 			if(strlen($form->title)==0){
@@ -121,6 +124,10 @@ class ControllerChat extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
 			$errfield = 'title';
 		}
+		else if(isset($form->style) && !Tasks::validNumeric($form->style, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'style';
+		}
 		else if($model = new Chats()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_type = $form->parent_type;
@@ -136,8 +143,15 @@ class ControllerChat extends Controller {
 				}
 			}
 			$save = true;
+			if(isset($form->style)){ //Optional
+				if($form->style == 1 && Chats::Where('created_by', $app->lincko->data['uid'])->where('style', 1)->get()){
+					$save = false;
+				} else {
+					$model->style = $form->style;
+				}
+			}
 			if(isset($form->single)){ //Optional, create single user chat
-
+				$model->style = 0; //Style must be default
 				$toid = $form->single;
 				$sql = Chats::whereHas('users', function($query) use ($toid) {
 					$app = \Slim\Slim::getInstance();

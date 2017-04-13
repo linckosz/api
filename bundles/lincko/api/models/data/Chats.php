@@ -27,6 +27,7 @@ class Chats extends ModelLincko {
 		'deleted_at',
 		'title',
 		'single',
+		'style',
 		'_parent',
 		'_spaces',
 		'_perm',
@@ -66,6 +67,7 @@ class Chats extends ModelLincko {
 
 	protected $model_integer = array(
 		'fav',
+		'style',
 	);
 
 	protected static $allow_role = true;
@@ -111,6 +113,7 @@ class Chats extends ModelLincko {
 			   (isset($form->id) && !self::validNumeric($form->id, true))
 			|| (isset($form->parent_type) && !self::validType($form->parent_type, true))
 			|| (isset($form->parent_id) && !self::validNumeric($form->parent_id, true))
+			|| (isset($form->style) && !self::validNumeric($form->style, true))
 			|| (isset($form->title) && !self::validTitle($form->title, true))
 		){
 			return false;
