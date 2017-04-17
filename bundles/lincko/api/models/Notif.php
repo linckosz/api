@@ -13,6 +13,8 @@ class Notif {
 	const APP = '38e30d8c93c0ef79d9dc5cc4';
 	const MASTER = '063defc2edb491bf32aff53f'; 
 
+	protected $apns = false;
+
 	public function __construct(){
 		$app = ModelLincko::getApp();
 		if(is_null(self::$client)){
@@ -21,9 +23,11 @@ class Notif {
 			if($app->lincko->domain=='lincko.com'){
 				$app_code = '38e30d8c93c0ef79d9dc5cc4';
 				$mas_code = '063defc2edb491bf32aff53f';
+				$this->apns = true;
 			} else if($app->lincko->domain=='lincko.co'){
 				$app_code = 'b57110bb7423f931b724b89a';
 				$mas_code = '361d3819757ba6ead9c576b9';
+				$this->apns = true;
 			} else if($app->lincko->domain=='lincko.cafe'){
 				$app_code = '1b42af48ae182f42dcbbd16c';
 				$mas_code = '86bf90ebc1a69c43a7aa1d7e';
@@ -46,7 +50,7 @@ class Notif {
 
 		$response->iosNotification($notif['title'].":\n".$msg, $notif);
 		$response->options(array(
-			'apns_production' => true,
+			'apns_production' => $this->apns,
 		));
 		$response->androidNotification($msg, $notif, 2);
 		//Setup default for winPhone
