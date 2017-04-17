@@ -335,10 +335,22 @@ class Tasks extends ModelLincko {
 			}
 		}
 
-		if($key == 'start' || $key == 'duration'){
-			$duedate = Carbon::createFromFormat('Y-m-d H:i:s', $this->start);
-			$duedate->second = $duedate->second + $this->duration;
-			$parameters['dd'] = $duedate->timestamp;
+		if($key == 'start'){
+			if(!is_null($old) && !is_null($this->duration)){
+				$duedate = Carbon::createFromFormat('Y-m-d H:i:s', $old);
+				$duedate->second = $duedate->second + $this->duration;
+				$parameters['dd'] = $duedate->timestamp;
+			} else {
+				$parameters['dd'] = null;
+			}
+		} else if($key == 'duration'){
+			if(!is_null($old) && !is_null($this->start)){
+				$duedate = Carbon::createFromFormat('Y-m-d H:i:s', $this->start);
+				$duedate->second = $duedate->second + $old;
+				$parameters['dd'] = $duedate->timestamp;
+			} else {
+				$parameters['dd'] = null;
+			}
 		}
 
 		if($history = parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id)){

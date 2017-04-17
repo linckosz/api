@@ -144,10 +144,23 @@ class ControllerChat extends Controller {
 			}
 			$save = true;
 			if(isset($form->style)){ //Optional
-				if($form->style == 1 && Chats::Where('created_by', $app->lincko->data['uid'])->where('style', 1)->get()){
+				if($form->style == 1){
+					//Only allow support at workspace level
+					if($app->lincko->data['workspace_id']<=0){
+						$model->parent_type = null;
+						$model->parent_id = 0;
+					} else {
+						$model->parent_type = 'workspaces';
+						$model->parent_id = $app->lincko->data['workspace_id'];
+					}
+				}
+				if($form->style == 1 && Chats::Where('created_by', $app->lincko->data['uid'])->where('style', 1)->where('parent_type', $model->parent_type)->where('parent_id', $model->parent_id)->get()){
 					$save = false;
 				} else {
 					$model->style = $form->style;
+					if($model->style == 1){
+						unset($form->single);
+					}
 				}
 			}
 			if(isset($form->single)){ //Optional, create single user chat
