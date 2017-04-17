@@ -103,6 +103,8 @@ class ControllerMessage extends Controller {
 		$form = $this->form;
 		$lastvisit = time();
 
+	
+
 		$failmsg = $app->trans->getBRUT('api', 11, 1)."\n"; //Message creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';

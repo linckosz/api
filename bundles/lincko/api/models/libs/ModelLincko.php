@@ -259,7 +259,7 @@ abstract class ModelLincko extends Model {
 		if(!$return){
 			$app = ModelLincko::getApp();
 			$app->lincko->data['fields_not_valid'][] = preg_replace('/^valid/ui', '', $function, 1);
-		}
+		}		
 		return $return;
 	}
 

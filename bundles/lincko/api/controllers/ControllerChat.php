@@ -112,6 +112,7 @@ class ControllerChat extends Controller {
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
 
+
 		if(!isset($form->parent_type) || !Chats::validType($form->parent_type)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
 			$errfield = 'parent_type';
@@ -124,7 +125,7 @@ class ControllerChat extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
 			$errfield = 'title';
 		}
-		else if(isset($form->style) && !Tasks::validNumeric($form->style, true)){ //Optional
+		else if(isset($form->style) && !Chats::validNumeric($form->style, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
 			$errfield = 'style';
 		}
@@ -154,7 +155,7 @@ class ControllerChat extends Controller {
 						$model->parent_id = $app->lincko->data['workspace_id'];
 					}
 				}
-				if($form->style == 1 && Chats::Where('created_by', $app->lincko->data['uid'])->where('style', 1)->where('parent_type', $model->parent_type)->where('parent_id', $model->parent_id)->get()){
+				if($form->style == 1 && Chats::Where('created_by', $app->lincko->data['uid'])->where('style', 1)->where('parent_type', $model->parent_type)->where('parent_id', $model->parent_id)->first()){
 					$save = false;
 				} else {
 					$model->style = $form->style;
@@ -193,6 +194,7 @@ class ControllerChat extends Controller {
 						->where('parent_id', $app->lincko->data['workspace_id']);
 				}
 
+				
 				$count = $sql->count();
 				if($count>0){
 					$save = false;
@@ -215,6 +217,7 @@ class ControllerChat extends Controller {
 			} else {
 				$model->pivots_format($form, false);
 			}
+			
 			if($save && $model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 13, 2)); //Discussion group created.
 				$data = new Data();
