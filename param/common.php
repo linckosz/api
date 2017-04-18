@@ -143,6 +143,7 @@ $app->lincko->email->FromName = $app->lincko->title.' team';
 $app->lincko->email->Port = 587;
 $app->lincko->email->Host = 'service1';
 $app->lincko->email->List = array();
+$app->lincko->email->Support = '';
 
 //Translator parameters
 //brunoocto@gmail.com / m*m*3*
@@ -168,6 +169,7 @@ $app->lincko->data = array(
 //Messages to be sent along with rendering
 $app->lincko->flash = array();
 
+
 //Integration data
 $app->lincko->integration = new \stdClass;
 $app->lincko->integration->wechat = array(
@@ -180,7 +182,9 @@ if($app->lincko->domain=='lincko.cafe'){
 	$app->lincko->integration->wechat['public_appid'] = 'wx1d84f13b1addb1ba'; //Sandbox (evan)
 	$app->lincko->integration->wechat['public_secretapp'] = 'c35d9afab164b528d927db8cb0c394a1'; //Sandbox (evan)
 	$app->lincko->integration->wechat['dev_appid'] = 'aaaaaaaaaaaaaaaaaaaaa'; //Not available
-	$app->lincko->integration->wechat['dev_secretapp'] = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'; //Not available
+	$app->lincko->integration->wechat['dev_secretapp'] = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';//Not available 
+
+	$app->lincko->email->Support = 'lin0018@163.com';
 } else if($app->lincko->domain=='lincko.co'){
 	$app->lincko->integration->wechat['public_appid'] = 'wxb315b38a8267ad72'; //Sandbox (bruno)
 	$app->lincko->integration->wechat['public_secretapp'] = 'e0a658f9d2b907ddb4bd61c3827542da'; //Sandbox (bruno)
@@ -188,12 +192,17 @@ if($app->lincko->domain=='lincko.cafe'){
 	//$app->lincko->integration->wechat['public_secretapp'] = '03fab389a36166cd1f75a2c94f5257a0'; //Official
 	$app->lincko->integration->wechat['dev_appid'] = 'wxafd8adb6683d8914'; //Official
 	$app->lincko->integration->wechat['dev_secretapp'] = '1fd24f7296c069dccb3aedc9914e2b9e'; //Official
+
+	$app->lincko->email->Support = 'lin0018@163.com';
 } else if($app->lincko->domain=='lincko.com'){
 	$app->lincko->integration->wechat['public_appid'] = 'wx268709cdc1a8e280'; //Official
 	$app->lincko->integration->wechat['public_secretapp'] = '03fab389a36166cd1f75a2c94f5257a0'; //Official
 	$app->lincko->integration->wechat['dev_appid'] = 'wx8f20e5f247408c94'; //Official
 	$app->lincko->integration->wechat['dev_secretapp'] = 'c088e2b2e3c690c6570f875ce0505d19'; //Official
+
+	$app->lincko->email->Support = 'lin0018@163.com';
 }
+
 
 if(isset($_SERVER['LINCKO_BACK']) && !empty($_SERVER['LINCKO_BACK'])){
 	$app->lincko->data['lincko_back'] = $_SERVER['LINCKO_BACK'].'.';

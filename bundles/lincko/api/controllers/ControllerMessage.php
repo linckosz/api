@@ -7,7 +7,10 @@ use \libs\Email;
 use \libs\Controller;
 use \libs\STR;
 use \bundles\lincko\api\models\data\Messages;
+use \bundles\lincko\api\models\data\Chats;
+use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\libs\Data;
+
 
 
 /*
@@ -103,8 +106,6 @@ class ControllerMessage extends Controller {
 		$form = $this->form;
 		$lastvisit = time();
 
-	
-
 		$failmsg = $app->trans->getBRUT('api', 11, 1)."\n"; //Message creation failed.
 		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
 		$errfield = 'undefined';
@@ -121,6 +122,21 @@ class ControllerMessage extends Controller {
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			$model->parent_id = $form->parent_id;
 			$model->comment = $form->comment;
+
+			//toto:temp for support message;
+			if($form->parent_type == 'chats')
+			{
+				$chat = Chats::find($form->parent_id);
+				if($chat->style == 1)
+				{
+					\libs\Watch::php($model, '$var', __FILE__, __LINE__, false, false, true);
+					$mail = new Email();
+					$mail->addAddress($app->lincko->email->Support);
+					$mail->setSubject('Feedback by ' . Users::find($app->lincko->data['uid'])->getUsername());
+					$mail->sendLater($form->comment);
+				}	
+			}
+			
 			if($model->getParentAccess() && $model->save()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 11, 2)); //Message created.
 				$data = new Data();

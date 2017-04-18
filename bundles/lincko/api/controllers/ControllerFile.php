@@ -283,6 +283,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 							}
 							//Optional
 							$model->pivots_format($form, false);
+							
 							if($model->getParentAccess() && $model->save()){
 								$success = true;
 							} else {

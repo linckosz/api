@@ -8,14 +8,16 @@ use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Projects;
 use \bundles\lincko\api\models\data\Workspaces;
+use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\Inform;
 use Carbon\Carbon;
 use \libs\Json;
-use \libs\Folders;
+use \libs\Folders; 
 use \libs\Video;
 use \libs\IptcManager;
 use \libs\SimpleImage;
 use \libs\Datassl;
+use \libs\Email;
 use WideImage\WideImage;
 
 class Files extends ModelLincko {
@@ -558,6 +560,21 @@ class Files extends ModelLincko {
 					} else {
 						copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					}
+
+					//toto:temp for support message;
+					if($this->parent_type == 'chats')
+					{
+						$chat = Chats::find($this->parent_id);
+						if($chat->style == 1)
+						{
+							$mail = new Email();
+							$mail->addAddress($app->lincko->email->Support);
+							$mail->setSubject('Feedback by ' . Users::find($app->lincko->data['uid'])->getUsername());
+							$mail->AddAttachment($folder_ori->getPath().$this->link,'attachment.jpg');
+							$mail->sendLater('attachment');
+						}	
+					}
+
 					$folder_thu = new Folders;
 					
 					$folder_thu->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/thumbnail/');
@@ -600,6 +617,7 @@ class Files extends ModelLincko {
 							$src = $src->saveToFile($folder_thu->getPath().$this->link.'.jpg', 60);
 							rename($folder_thu->getPath().$this->link.'.jpg', $folder_thu->getPath().$this->link);
 						}
+
 						/*
 						//We convert PNG into JPEG, the size will be smaller for thumbnail only
 						$this->thu_type = 'image/jpeg';
