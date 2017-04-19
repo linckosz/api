@@ -722,11 +722,8 @@ class ControllerTest extends Controller {
 		})->first()->toArray();
 		*/
 
-		$arr = array(
-			'toto@lincko.cafe',
-			'bruno2017040804@lincko.cafe',
-		);
-		$tp = Invitation::withTrashed()->whereIn('email', $arr)->count();
+		
+		$tp = Users::getUser()->getUsername();
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
