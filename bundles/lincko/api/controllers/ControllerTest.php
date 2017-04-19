@@ -721,7 +721,6 @@ class ControllerTest extends Controller {
 			->where('super', 1);
 		})->first()->toArray();
 		*/
-
 		
 		$tp = Users::getUser()->getUsername();
 
