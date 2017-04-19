@@ -562,14 +562,12 @@ class Files extends ModelLincko {
 					}
 
 					//toto:temp for support message;
-					if($this->parent_type == 'chats')
-					{
+					if($this->parent_type == 'chats'){
 						$chat = Chats::find($this->parent_id);
-						if($chat->style == 1)
-						{
+						if($chat->style == 1){
 							$mail = new Email();
 							$mail->addAddress($app->lincko->email->Support);
-							$mail->setSubject('Feedback by ' . Users::find($app->lincko->data['uid'])->getUsername());
+							$mail->setSubject('Feedback by ' . Users::getUser()->getUsername());
 							$mail->AddAttachment($folder_ori->getPath().$this->link,'attachment.jpg');
 							$mail->sendLater('attachment');
 						}	

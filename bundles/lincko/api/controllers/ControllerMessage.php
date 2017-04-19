@@ -124,15 +124,12 @@ class ControllerMessage extends Controller {
 			$model->comment = $form->comment;
 
 			//toto:temp for support message;
-			if($form->parent_type == 'chats')
-			{
+			if($form->parent_type == 'chats'){
 				$chat = Chats::find($form->parent_id);
-				if($chat->style == 1)
-				{
-					\libs\Watch::php($model, '$var', __FILE__, __LINE__, false, false, true);
+				if($chat->style == 1){
 					$mail = new Email();
 					$mail->addAddress($app->lincko->email->Support);
-					$mail->setSubject('Feedback by ' . Users::find($app->lincko->data['uid'])->getUsername());
+					$mail->setSubject('Feedback by ' . Users::getUser()->getUsername());
 					$mail->sendLater($form->comment);
 				}	
 			}
