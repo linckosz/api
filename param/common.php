@@ -193,14 +193,14 @@ if($app->lincko->domain=='lincko.cafe'){
 	$app->lincko->integration->wechat['dev_appid'] = 'wxafd8adb6683d8914'; //Official
 	$app->lincko->integration->wechat['dev_secretapp'] = '1fd24f7296c069dccb3aedc9914e2b9e'; //Official
 
-	$app->lincko->email->Support = 'lin0018@163.com';
+	$app->lincko->email->Support = 'support@lincko.cafe';
 } else if($app->lincko->domain=='lincko.com'){
 	$app->lincko->integration->wechat['public_appid'] = 'wx268709cdc1a8e280'; //Official
 	$app->lincko->integration->wechat['public_secretapp'] = '03fab389a36166cd1f75a2c94f5257a0'; //Official
 	$app->lincko->integration->wechat['dev_appid'] = 'wx8f20e5f247408c94'; //Official
 	$app->lincko->integration->wechat['dev_secretapp'] = 'c088e2b2e3c690c6570f875ce0505d19'; //Official
 
-	$app->lincko->email->Support = 'lin0018@163.com';
+	$app->lincko->email->Support = 'support@lincko.cafe';
 }
 
 
