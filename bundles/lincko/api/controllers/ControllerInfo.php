@@ -711,6 +711,7 @@ class ControllerInfo extends Controller {
 		$info_os[$announcement_str] = array();
 		$info_device[$announcement_str] = array();
 		$info_platform[$announcement_str] = array();
+		$info_all[$announcement_str] = array();
 
 		$date_gap[$announcement_str] = array('2000-01-01', '2017-02-08');
 
@@ -742,6 +743,7 @@ class ControllerInfo extends Controller {
 			$info_os[$year_week] = array();
 			$info_device[$year_week] = array();
 			$info_platform[$year_week] = array();
+			$info_all[$year_week] = array();
 
 			$date_gap[$year_week] = array($week_start->format('Y-m-d'), $week_end->format('Y-m-d'));
 			$week->addDay(1); //Must be dily to cover week offset
@@ -917,13 +919,27 @@ class ControllerInfo extends Controller {
 		//Reorganize the data to be draw
 		echo '<tr style="text-align:center;background-color:#F6FFF6;color:#979797">';
 		echo '<td style="text-align:left;">Method</td>';
+		$total_start = false;
+		$total_end = false;
 		foreach ($date_gap as $week => $array) {
+			if(!$total_start){
+				$total_start = $array[0]; //Get the first date
+			}
+			$total_end = $array[1]; //Get the last date
 			echo '<td
 				style="cursor:pointer;"
 				onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/list_users/'.$array[0].'/'.$array[1].'/\', \'_top\');"
 			>'.$week.'</td>';
 		}
-		echo '<td style="font-weight: bold;">Total</td>';
+
+		if($total_start && $total_end){
+			echo '<td style="cursor:pointer;font-weight:bold;"
+				onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/list_users/'.$total_start.'/'.$total_end.'/\', \'_top\');"
+			>Total</td>';
+		} else {
+			echo '<td style="font-weight: bold;">Total</td>';
+		}
+
 		echo '</tr>';
 		foreach ($accounts_fields as $title) {
 			$total = 0;
