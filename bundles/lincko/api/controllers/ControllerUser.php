@@ -361,7 +361,7 @@ class ControllerUser extends Controller {
 				if($json->sex==2){ $user->gender = 1; } //Female
 				$translation = new Translation;
 				$translation->getList('default');
-				if($language = $translation->setLanguage($json->language)){
+				if(isset($json->language) && $language = $translation->setLanguage($json->language)){
 					$user->language = $language;
 				}
 			}

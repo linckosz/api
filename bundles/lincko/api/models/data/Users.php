@@ -829,7 +829,9 @@ class Users extends ModelLincko {
 		$app = ModelLincko::getApp();
 		$save = parent::pivots_format($form, $history_save);
 		$keep_item = array();
-		$keep_item['users'][$app->lincko->data['uid']] = true;
+		if(isset($app->lincko->data['uid'])){
+			$keep_item['users'][$app->lincko->data['uid']] = true;
+		}
 		if(isset($this->pivots_var->usersLinked)){ //Delete user contact
 			foreach ($this->pivots_var->usersLinked as $users_id => $column_list) {
 				foreach ($column_list as $column => $value) {

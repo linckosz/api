@@ -721,8 +721,6 @@ class ControllerTest extends Controller {
 			->where('super', 1);
 		})->first()->toArray();
 		*/
-		
-		$tp = Users::getUser()->getUsername();
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

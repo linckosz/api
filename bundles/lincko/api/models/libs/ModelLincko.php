@@ -2419,6 +2419,15 @@ abstract class ModelLincko extends Model {
 
 		//$parent
 		if(!self::$save_skipper && $parent){
+			//Save noticed if Chats or Projects
+			if($parent->getTable()=='chats' || $parent->getTable=='projects'){
+				$pivots = new \stdClass;
+				$pivots->{'users>noticed'} = new \stdClass;
+				$pivots->{'users>noticed'}->{$app->lincko->data['uid']} = time();
+				$parent->pivots_format($pivots, false);
+				$parent->forceSaving();
+				$parent->pivots_save();
+			}
 			$users_tables = $parent->touchUpdateAt($users_tables, false, true);
 		}
 
@@ -2830,6 +2839,7 @@ abstract class ModelLincko extends Model {
 					$class = $this::getClass($type);
 					//if($model = $class::getModel($type_id, true, $force_access)){ //This give some issue of invitation (link, codem or auto items)
 					if($model = $class::getModel($type_id, true, true)){
+						$dependencies_visible = $model::getDependenciesVisible();
 						foreach ($column_list as $column => $result) {
 							$loop = 10; //do 10 tries at the most
 							retry:
@@ -2876,7 +2886,9 @@ abstract class ModelLincko extends Model {
 													}
 												}
 												$touch = true;
-												$users_tables = $model->touchUpdateAt($users_tables, false, true);
+												if(count($dependencies_visible)>0 && isset($dependencies_visible[$this->getTable()])){
+													$users_tables = $model->touchUpdateAt($users_tables, false, true);
+												}
 												if($history_save){
 													$parameters = array();
 													if($type=='users'){
@@ -2914,7 +2926,9 @@ abstract class ModelLincko extends Model {
 											}
 										}
 										$touch = true;
-										$users_tables = $model->touchUpdateAt($users_tables, false, true);
+										if(count($dependencies_visible)>0 && isset($dependencies_visible[$this->getTable()])){
+											$users_tables = $model->touchUpdateAt($users_tables, false, true);
+										}
 										if($history_save){
 											$parameters = array();
 											if($type=='users'){
