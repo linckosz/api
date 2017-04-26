@@ -76,7 +76,7 @@ class Notif {
 			'title' => $title,
 			'badge' => '+1',
 			'build_id' => 2,
-			'content-available' => true,
+			'content-available' => false,
 			'mutable-available' => true,
 			'_open_page' => 'winPage',
 		);
