@@ -756,7 +756,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				}
 			}
 		}
-		
 		if($access){
 			Workspaces::getSFTP();
 			$content_type = 'application/force-download';
@@ -781,6 +780,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/mp4.png';
 					$path_xsend = false;
 					$name = 'converting.png';
+				} else if($file->category=='voice'){
+					$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/voice/'.$file->link;
+					$path_xsend = '/protected_files/'.$puid.'/voice/'.$file->link;
 				}
 				if(is_file($path) && filesize($path)!==false){
 					//note that the root and internal redirect paths are concatenated.
@@ -788,7 +790,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					header('Content-Description: File Transfer');
 					header('Content-Type: attachment/force-download;');
 					header('Content-Transfer-Encoding: binary');
-					//header('Content-Type: application/octet-stream'); //toto => test for ios
 					$content_type = $file->ori_type;
 					header('Content-Type: '.$content_type.';');
 					header('Content-Disposition: attachment; filename="'.$name.'"');
@@ -820,6 +821,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 					$path_xsend = '/protected_files/'.$puid.'/'.$file->link;
 					if($file->category=='video'){
 						$path_xsend = '/protected_videos/'.$puid.'/'.$file->link;
+					} else if($file->category=='voice'){
+						$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/voice/'.$file->link;
+						$path_xsend = '/protected_files/'.$puid.'/voice/'.$file->link;
 					}
 					$content_type = $file->ori_type;
 				}
@@ -1019,6 +1023,48 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/unavailable.png';
 		WideImage::load($path)->output('png');
 		return exit(0);
+	}
+
+	public function voice_post(){
+		$app = $this->app;
+		$this->setFields();
+		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 11, 1)."\n"; //Message creation failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		if(!isset($form->parent_type) || !Files::validType($form->parent_type)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
+			$errfield = 'parent_type';
+		}
+		else if(!isset($form->parent_id) || !Files::validNumeric($form->parent_id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
+			$errfield = 'parent_id';
+		}
+		else if(!isset($form->data) || !Files::validTextNotEmpty($form->data)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
+			$errfield = 'data';
+		}
+		else if($model = new Files()){
+			$model->name = 'msg.mp3';
+			$model->category = 'voice';
+			$model->tmp_name = base64_decode($form->data);
+			$model->parent_type = $form->parent_type;
+			$model->parent_id = $form->parent_id;
+			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
+			$model->pivots_format($form, false);
+			if($model->getParentAccess() && $model->save()){
+				$msg = array('msg' => $app->trans->getBRUT('api', 11, 2)); //Message created.
+				$data = new Data();
+				$data->dataUpdateConfirmation($msg, 201, false, $lastvisit, false);
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
 	}
 
 }

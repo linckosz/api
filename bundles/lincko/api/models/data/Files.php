@@ -93,6 +93,7 @@ class Files extends ModelLincko {
 		'_' => array(true, 902), //[{un}] modified a file
 		'name' => array(true, 903), //[{un}] changed a file name
 		'comment' => array(true, 904), //[{un}] modified a file description
+		'created_voice' => array(true, 951), //[{un}] sent a voice message
 		'pivot_users_access_0' => array(true, 996), //[{un}] blocked [{cun}]'s access to a file
 		'pivot_users_access_1' => array(true, 997), //[{un}] authorized [{cun}]'s access to a file
 		'_restore' => array(true, 998), //[{un}] restored a file
@@ -479,13 +480,22 @@ class Files extends ModelLincko {
 		}
 		return true;
 	}
+
+	public function getHistoryCreationCode(&$items=false){
+		if($this->category=='voice'){
+			return static::$archive['created_voice'][1];
+		}
+		return parent::getHistoryCreationCode($items);
+	}
 	
 	public function save(array $options = array()){
 		$app = ModelLincko::getApp();
 		$new = false;
 		if(!$this->id){ //Only copy a file for new items
-			if($this->error!=0 || !$this->fileformat()){
-				return false;
+			if($this->category!='voice'){
+				if($this->error!=0 || !$this->fileformat()){
+					return false;
+				}
 			}
 			if($this->size > 1000000000){
 				$msg = $app->trans->getBRUT('api', 3, 7); //File too large
@@ -514,8 +524,6 @@ class Files extends ModelLincko {
 					$modify = false;
 					$resize = false;
 					$compression = 90;
-
-
 					if($this->ori_type == 'image/jpeg' || $this->ori_type == 'image/png') {
 						if($this->ori_type == 'image/jpeg'){
 							exec("identify -format '%Q' \"$source\" 2>&1 ", $tablo, $error);
@@ -655,6 +663,13 @@ class Files extends ModelLincko {
 					$info = $video->getInfo();
 					$this->width = $info['width_new'];
 					$this->height = $info['height_new'];
+				} else if($this->category=='voice'){
+					$this->ori_type = 'audio/mp3';
+					$this->ori_ext = 'mp3';
+					$folder_voice = new Folders;
+					$folder_voice->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/voice/');
+					file_put_contents($folder_voice->getPath().$this->link, $source);
+					$this->size = filesize($folder_voice->getPath().$this->link);
 				} else {
 					copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					//No thumbnail for other kind of files

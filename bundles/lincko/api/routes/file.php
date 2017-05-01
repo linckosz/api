@@ -37,6 +37,12 @@ $app->group('/file', function () use ($app) {
 	)
 	->name('file_restore'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/voice',
+		'\bundles\lincko\api\controllers\ControllerFile:voice'.$app->lincko->method_suffix
+	)
+	->name('file_voice'.$app->lincko->method_suffix);
+
 	$app->map(
 		'/result',
 		'\bundles\lincko\api\controllers\ControllerFile:result'
