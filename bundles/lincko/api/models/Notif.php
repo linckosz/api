@@ -27,7 +27,6 @@ class Notif {
 			} else if($app->lincko->domain=='lincko.co'){
 				$app_code = 'b57110bb7423f931b724b89a';
 				$mas_code = '361d3819757ba6ead9c576b9';
-				$this->apns = true;
 			} else if($app->lincko->domain=='lincko.cafe'){
 				$app_code = '1b42af48ae182f42dcbbd16c';
 				$mas_code = '86bf90ebc1a69c43a7aa1d7e';
