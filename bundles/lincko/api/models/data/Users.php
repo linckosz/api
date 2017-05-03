@@ -57,12 +57,14 @@ class Users extends ModelLincko {
 		'username',
 		'firstname',
 		'lastname',
+		'email',
 	);
 
 	protected static $prefix_fields = array(
 		'username' => '-username',
 		'firstname' => '-firstname',
 		'lastname' => '-lastname',
+		'email' => '-email',
 	);
 
 	protected static $hide_extra = array(
@@ -91,19 +93,19 @@ class Users extends ModelLincko {
 
 	protected static $archive = array(
 		'created_at' => array(true, 601), //[{un}] joined @@title~~
-		'_' => array(true, 602), //[{un}] modified [{hh}] profile
-			'username' => array(false, 602), //[{un}] modified [{hh}] profile
-			'firstname' => array(false, 602), //[{un}] modified [{hh}] profile
-			'lastname' => array(false, 602), //[{un}] modified [{hh}] profile
-			'gender' => array(false, 602), //[{un}] modified [{hh}] profile
-		'email' => array(true, 602), //[{un}] modified [{hh}] profile
-			'timeoffset' => array(false, 602), //[{un}] modified [{hh}] profile
-			'resume' => array(false, 602), //[{un}] modified [{hh}] profile
+		'_' => array(true, 602), //[{un}] modified his profile
+			'username' => array(false, 602), //[{un}] modified his profile
+			'firstname' => array(false, 602), //[{un}] modified his profile
+			'lastname' => array(false, 602), //[{un}] modified his profile
+			'gender' => array(false, 602), //[{un}] modified his profile
+		'email' => array(true, 602), //[{un}] modified his profile
+			'timeoffset' => array(false, 602), //[{un}] modified his profile
+			'resume' => array(false, 602), //[{un}] modified his profile
 		'pivot_users_invitation_1' => array(true, 695), //[{un}] has invited [{cun}]
-		'pivot_users_access_0' => array(true, 696), //[{un}] blocked [{cun}]'s access to [{hh}] profile
-		'pivot_users_access_1' => array(true, 697), //[{un}] authorized [{cun}]'s access to [{hh}] profile
-		'_restore' => array(true, 698), //[{un}] restored [{hh}] profile
-		'_delete' => array(true, 699), //[{un}] deleted [{hh}] profile
+		'pivot_users_access_0' => array(true, 696), //[{un}] blocked [{cun}]'s access to his profile
+		'pivot_users_access_1' => array(true, 697), //[{un}] authorized [{cun}]'s access to his profile
+		'_restore' => array(true, 698), //[{un}] restored his profile
+		'_delete' => array(true, 699), //[{un}] deleted his profile
 	);
 
 	protected $model_integer = array(
@@ -147,7 +149,7 @@ class Users extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'users_x_chats', 'users_id', 'chats_id')->withPivot('access', 'fav');
 	}
 
-	//One(Users) to Many(comments)
+	//One(Users) to Many(Comments)
 	public function comments(){
 		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'created_by');
 	}
@@ -175,6 +177,11 @@ class Users extends ModelLincko {
 	//Many(Users) to Many(Spaces)
 	public function spaces(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Spaces', 'users_x_spaces', 'users_id', 'spaces_id')->withPivot('access', 'fav', 'hide');
+	}
+
+	//One(Users) to Many(Namecards)
+	public function namecards(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Namecards', 'users_id');
 	}
 
 	//Many(Users) to Many(Users)
@@ -332,7 +339,7 @@ class Users extends ModelLincko {
 		$this->_invitation = false;
 		if(self::$invitation_list===false){
 			self::$invitation_list = array();
-			if($theUser = $this->getUser()){
+			if($theUser = self::getUser()){
 				if($contacts = $theUser->users){
 					foreach ($contacts as $key => $value) {
 						self::$invitation_list[$value->id] = (boolean) $value->pivot->invitation;
@@ -417,7 +424,6 @@ class Users extends ModelLincko {
 	}
 
 	public function setHistory($key=null, $new=null, $old=null, array $parameters = array(), $pivot_type=null, $pivot_id=null){
-		$parameters['hh'] = $this->get_HisHer();
 		return parent::setHistory($key, $new, $old, $parameters, $pivot_type, $pivot_id);
 	}
 
@@ -725,7 +731,7 @@ class Users extends ModelLincko {
 				$temp->party = 'lincko';
 			}
 			$temp->pending = $this->setPending();
-		} else {
+		} else if(!$this->contactsVisibility){
 			//Do not show email for all other users
 			$temp->email = '';
 		}
@@ -748,7 +754,7 @@ class Users extends ModelLincko {
 				$model->party = 'lincko';
 			}
 			$model->pending = $this->setPending();
-		} else {
+		} else if(!$this->contactsVisibility){
 			//Do not show email for all other users
 			$model->email = '';
 		}
@@ -765,7 +771,7 @@ class Users extends ModelLincko {
 				$this->party = 'lincko';
 			}
 			$this->pending = $this->setPending();
-		} else {
+		} else if(!$this->contactsVisibility){
 			//Do not show email for all other users
 			$this->email = '';
 		}

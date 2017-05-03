@@ -529,10 +529,10 @@ class ControllerInfo extends Controller {
 				echo '<tr>';
 				echo '<td>#'.$total.'</td>';
 				$link = 'https://'.$app->lincko->data['lincko_back'].'file.'.$app->lincko->domain.':8443/file/profile/'.$app->lincko->data['workspace_id'].'/'.$user->id.'?'.intval($user->profile_pic);
-				echo '<td style="text-align:center;"><img style="height:32px;cursor:pointer;" src="'.$link.'" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->id.'\', \'_top\');" /></td>';
+				echo '<td style="text-align:center;"><img style="height:32px;cursor:pointer;" src="'.$link.'" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->id.'\', \'_blank\');" /></td>';
 				echo '<td>'.$user->id.'</td>';
 				if(is_numeric($user->linked_to)){
-					echo '<td style="cursor:pointer;background-color:#FFFAE6;text-align:center;" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->linked_to.'\', \'_top\');" >'.$user->linked_to.'</td>';
+					echo '<td style="cursor:pointer;background-color:#FFFAE6;text-align:center;" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->linked_to.'\', \'_blank\');" >'.$user->linked_to.'</td>';
 				} else {
 					echo '<td></td>';
 				}
@@ -928,13 +928,13 @@ class ControllerInfo extends Controller {
 			$total_end = $array[1]; //Get the last date
 			echo '<td
 				style="cursor:pointer;"
-				onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/list_users/'.$array[0].'/'.$array[1].'/\', \'_top\');"
+				onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/list_users/'.$array[0].'/'.$array[1].'/\', \'_blank\');"
 			>'.$week.'</td>';
 		}
 
 		if($total_start && $total_end){
 			echo '<td style="cursor:pointer;font-weight:bold;"
-				onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/list_users/'.$total_start.'/'.$total_end.'/\', \'_top\');"
+				onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/list_users/'.$total_start.'/'.$total_end.'/\', \'_blank\');"
 			>Total</td>';
 		} else {
 			echo '<td style="font-weight: bold;">Total</td>';

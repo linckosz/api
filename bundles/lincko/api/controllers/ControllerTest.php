@@ -35,6 +35,7 @@ use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Settings;
 use \bundles\lincko\api\models\data\Spaces;
 use \bundles\lincko\api\models\data\Messages;
+use \bundles\lincko\api\models\data\Namecards;
 use GeoIp2\Database\Reader;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
@@ -721,6 +722,10 @@ class ControllerTest extends Controller {
 			->where('super', 1);
 		})->first()->toArray();
 		*/
+
+		//$tp = Projects::find(4082)->clone();
+
+		$tp = Roles::find(2)->toVisible();
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

@@ -65,7 +65,7 @@ abstract class ModelLincko extends Model {
 	//Help to add prefix +/- for front end search engine
 	protected static $prefix_fields = array();
 
-	//Fields that should not be recorded into extra because we can grab them from model directly (makes databse lighter)
+	//Fields that should not be recorded into extra because we can grab them from model directly (makes database lighter)
 	protected static $hide_extra = array();
 
 	protected $name_code = 0;
@@ -978,6 +978,7 @@ abstract class ModelLincko extends Model {
 						if(empty($perm_new)){
 							$perm_new = new \stdClass;
 						}
+						//_perm = array( RCUD , roles_id )
 						$perm_new->$users_id = array(
 							(int)max($perm_owner, $perm_super, $perm_single, $perm_role),
 							(int)$role_id,

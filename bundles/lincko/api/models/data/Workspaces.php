@@ -26,6 +26,7 @@ class Workspaces extends ModelLincko {
 		'name',
 		'domain',
 		'url',
+		'_users',
 		'_parent',
 		'_perm',
 	);
@@ -74,6 +75,10 @@ class Workspaces extends ModelLincko {
 
 	protected static $workspace = false;
 
+	protected static $dependencies_visible = array(
+		'users' => array('users_x_workspaces', array('super')),
+	);
+
 ////////////////////////////////////////////
 
 	//Many(Workspaces) to Many(Users)
@@ -84,6 +89,11 @@ class Workspaces extends ModelLincko {
 	//One(Workspaces) to Many(Projects)
 	public function projects(){
 		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Projects', 'parent_id');
+	}
+
+	//One(Workspaces) to Many(Namecards)
+	public function namecards(){
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Namecards', 'parent_id');
 	}
 
 	//Many(Roles) to Many Poly (Users)

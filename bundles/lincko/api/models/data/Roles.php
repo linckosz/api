@@ -65,6 +65,7 @@ class Roles extends ModelLincko {
 		'perm_chats',
 		'perm_comments',
 		'perm_spaces',
+		'perm_namecards',
 		'parent_id',
 		'roles_id',
 		'single',
@@ -110,6 +111,10 @@ class Roles extends ModelLincko {
 			|| (isset($form->perm_tasks) && !self::validRCUD($form->perm_tasks, true))
 			|| (isset($form->perm_notes) && !self::validRCUD($form->perm_notes, true))
 			|| (isset($form->perm_files) && !self::validRCUD($form->perm_files, true))
+			|| (isset($form->perm_chats) && !self::validRCUD($form->perm_chats, true))
+			|| (isset($form->perm_comments) && !self::validRCUD($form->perm_comments, true))
+			|| (isset($form->perm_spaces) && !self::validRCUD($form->perm_spaces, true))
+			|| (isset($form->perm_namecards) && !self::validRCUD($form->perm_namecards, true))
 		){
 			return false;
 		}

@@ -550,7 +550,7 @@ class ControllerUser extends Controller {
 		$errfield = 'undefined';
 
 		if(!isset($form->id) || !Users::validNumeric($form->id)){ //Required
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 38); //We could not validate the user ID.
 			$errfield = 'id';
 		}
 		else if($model = Users::find($form->id)){
