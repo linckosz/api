@@ -216,7 +216,6 @@ class Files extends ModelLincko {
 			|| (isset($form->parent_type) && !self::validType($form->parent_type, true))
 			|| (isset($form->parent_id) && !self::validNumeric($form->parent_id, true))
 			|| (isset($form->name) && !self::validTitle($form->name, true))
-			|| (isset($form->comment) && !self::validText($form->comment, true))
 		){
 			return false;
 		}

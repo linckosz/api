@@ -230,10 +230,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 18); //We could not validate the name format: - 104 characters max
 			$errfield = 'name';
 		}
-		else if(isset($form->comment) && !Files::validText($form->comment, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
-			$errfield = 'comment';
-		}
 		else if(isset($_FILES)){
 			foreach ($_FILES as $file => $fileArray) {
 				if(is_array($fileArray['tmp_name'])){
@@ -431,10 +427,6 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		else if(isset($form->name) && !Files::validChar($form->name, true)){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 18); //We could not validate the name format: - 104 characters max
 			$errfield = 'name';
-		}
-		else if(isset($form->comment) && !Files::validText($form->comment, true)){ //Optional
-			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
-			$errfield = 'comment';
 		}
 		else if($model = Files::find($form->id)){
 			if(isset($form->fav)){ $model->fav = $form->fav; } //Optional
