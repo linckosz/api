@@ -675,7 +675,7 @@ class Files extends ModelLincko {
 					file_put_contents($folder_voice->getPath().$this->link, $source);
 					$this->size = filesize($folder_voice->getPath().$this->link);
 					//Calculate the duration
-					$this->comment = round(8*$this->size/48000);
+					$this->comment = ''.round(8*$this->size/48000);
 				} else {
 					copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					//No thumbnail for other kind of files
