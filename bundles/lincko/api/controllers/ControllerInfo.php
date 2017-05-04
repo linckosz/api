@@ -505,8 +505,8 @@ class ControllerInfo extends Controller {
 					if($action->action==-1){
 						$nbr_logs[$action->users_id]++;
 					}
-					if($last_activity[$item->created_by] < $action->created_at){
-						$last_activity[$item->created_by] = $action->created_at;
+					if($last_activity[$action->users_id] < $action->created_at){
+						$last_activity[$action->users_id] = $action->created_at;
 					}
 				}
 			}
