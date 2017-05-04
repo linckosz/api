@@ -473,7 +473,11 @@ class Files extends ModelLincko {
 						}
 						$content .= ":\n ".$this->name;
 					}
-					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+					if($this->category=='voice' || $parent->getTable()=='chats'){
+						$inform = new Inform($title, $content, false, $alias, $parent, array(), array('email')); //Exclude email
+					} else {
+						$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+					}
 					$inform->send();
 				}
 			}
@@ -670,6 +674,20 @@ class Files extends ModelLincko {
 					$folder_voice->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/voice/');
 					file_put_contents($folder_voice->getPath().$this->link, $source);
 					$this->size = filesize($folder_voice->getPath().$this->link);
+					//Calculate the duration
+					$this->duration = round(8*$this->size/48000);
+					\libs\Watch::php($this->duration, '$duration', __FILE__, __LINE__, false, false, true);
+					$ffprobe = '/usr/bin/ffprobe';
+					$source = $folder_voice->getPath().$this->link;
+					exec("$ffprobe -show_streams \"$source\" 2>&1", $tablo, $result);
+					$regdur = "/\b\W*duration=(\d|\d+\.\d+)\b/Ui"; //$matches[1]
+					\libs\Watch::php($tablo, '$tablo', __FILE__, __LINE__, false, false, true);
+					foreach($tablo as $i => $value) {
+						if(preg_match($regdur, $tablo[$i], $matches)){
+							$this->duration = floatval($matches[1]);
+							\libs\Watch::php($this->duration, '$duration', __FILE__, __LINE__, false, false, true);
+						}
+					}
 				} else {
 					copy($this->tmp_name, $folder_ori->getPath().$this->link);
 					//No thumbnail for other kind of files
