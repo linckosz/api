@@ -96,6 +96,7 @@ $app->lincko->publicPath = $app->lincko->path.'/public';
 $app->lincko->jsonException = true;
 
 $app->lincko->enableSession = false;
+$app->lincko->session = array(); //Used to edit and keep some session variable value before session_start command
 
 //Each device has a fingerprint
 $app->lincko->fingerprint = 'nofingerprint';

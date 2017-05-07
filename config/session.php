@@ -132,6 +132,10 @@ class Handler {
 		ini_set('session.serialize_handler', 'php_serialize');
 		ini_set("session.cookie_domain", '.'.$app->lincko->domain); //same session id across sub-domain
 		session_start();
+		//Overwrite with previous Session data
+		foreach ($app->lincko->session as $key => $value) {
+			$_SESSION[$key] = $value;
+		}
 		$GLOBALS['unset_sess'] = $_SESSION; //Keep track of old status of Session
 	}
 

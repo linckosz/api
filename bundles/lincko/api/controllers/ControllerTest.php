@@ -725,7 +725,7 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::find(4082)->clone();
 
-		$tp = Roles::find(2)->toVisible();
+		$tp = Workspaces::find(7)->setPerm();
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);

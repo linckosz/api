@@ -734,12 +734,13 @@ abstract class ModelLincko extends Model {
 						//setup manager role for root object by default
 						if(!isset($tree_roles_id[$table_name][$users_id][$model->id]) && !$model->_parent[0]){
 							//Do not set at 0 (viewer), if not chats won't allow file uploading
-							$tree_roles_id[$table_name][$users_id][$model->id] = 2; //Manager
+							$tree_roles_id[$table_name][$users_id][$model->id] = 0; //Manager
 						}
 					}
 				}
 			}
 		}
+		//\libs\Watch::php($tree_roles_id, '$tree_roles_id', __FILE__, __LINE__, false, false, true);
 
 		//Descendant tree with IDs
 		${$this->getTable().'_'.$this->id} = new \stdClass;
@@ -772,6 +773,8 @@ abstract class ModelLincko extends Model {
 		$root_0 = new \stdClass;
 		$root_0->{$root->getTable()} = new \stdClass;
 		$root_0->{$root->getTable()}->{$root->id} = ${$root->getTable().'_'.$root->id};
+
+		//\libs\Watch::php($root_0, '$root_0', __FILE__, __LINE__, false, false, true);
 
 		$root_uid = array();
 		//Build the tree per user

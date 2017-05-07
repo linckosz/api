@@ -240,6 +240,27 @@ class CheckAccess extends \Slim\Middleware {
 		return $app->lincko->data['uid'] = false;
 	}
 
+	//Give automatically access to a workspacce
+	protected function enterWorkspace(){
+		$app = $this->app;
+		$data = $this->data;
+		if(isset($data->data->workspace_access_code) && strlen($data->data->workspace_access_code)>0 && isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
+			$app->lincko->flash['unset_workspace_access_code'] = true;
+			if($workspace = Workspaces::Where('open', $data->data->workspace_access_code)->whereNotNull('open')->first(array('id', 'url'))){
+				$pivot = new \stdClass;
+				$pivot->{'workspaces>access'} = new \stdClass;
+				$pivot->{'workspaces>access'}->{$workspace->id} = true;
+				$user = Users::getUser();
+				$user->workspace = $workspace->url;
+				$user->givePivotAccess(true);
+				$user->pivots_format($pivot);
+				$user->givePivotAccess(false);
+				$user->forceSaving();
+				$user->save();
+			}
+		}
+	}
+
 	protected function setUserLanguage(){
 		$app = $this->app;
 		if(isset($app->lincko->data['uid']) && $app->lincko->data['uid']!==false){
@@ -474,6 +495,7 @@ class CheckAccess extends \Slim\Middleware {
 
 		if($valid){
 			$this->setUserId();
+			$this->enterWorkspace();
 			$this->setUserLanguage();
 			$this->inviteSomeone();
 			$this->checkInvitation();
@@ -520,13 +542,11 @@ class CheckAccess extends \Slim\Middleware {
 			if(empty($data->workspace)){ //Shared workspace
 				$app->lincko->data['workspace'] = '';
 				$app->lincko->data['workspace_id'] = 0;
-				//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 				return true;
 			} else {
 				if($workspace = Workspaces::where('url', $data->workspace)->first()){
 					$app->lincko->data['workspace'] = $workspace->url;
 					$app->lincko->data['workspace_id'] = $workspace->id;
-					//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 					$workspace = $this->setWorkspaceConnection($workspace);
 					if($workspace->checkAccess(false)){
 						return true;
@@ -540,7 +560,6 @@ class CheckAccess extends \Slim\Middleware {
 		}
 		$app->lincko->data['workspace'] = '';
 		$app->lincko->data['workspace_id'] = (new Workspaces)->getWorkspaceID();
-		//$_SESSION['workspace'] = $app->lincko->data['workspace_id'];
 		return false;
 	}
 
