@@ -468,7 +468,7 @@ class Users extends ModelLincko {
 				$return = parent::save($options);
 				$app->lincko->data['uid'] = $this->id;
 				$app->lincko->data['username'] = $this->username;
-				//We first login to shared worksace, which does not need to set a role permission, since everyone is an administrator (but not super)
+				//We first login to shared workspace, which does not need to set a role permission, since everyone is an administrator (but not super)
 				$app->lincko->data['workspace'] = '';
 				$app->lincko->data['workspace_id'] = 0;
 				//$db->commit();

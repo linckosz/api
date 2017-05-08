@@ -214,6 +214,7 @@ if(isset($_SERVER['LINCKO_BACK']) && !empty($_SERVER['LINCKO_BACK'])){
 ////////////////////////////////////
 
 $app->lincko->data['workspace_id'] = 0; //Share workspace by default
+$app->lincko->data['workspace_default_role'] = 2; //Give manager role by default to all users in shared workspace
 $app->lincko->data['create_user'] = false; //True if we want to be able to authorize the user creation (this is set to true by the framework)
 $app->lincko->data['allow_create_user'] = true; //True if we want to be able to authorize the user creation (this is set to true by the developper, upper level)
 $app->lincko->data['need_invitation'] = false; //At true, we force new user to be invited by someone, at false anyone get register

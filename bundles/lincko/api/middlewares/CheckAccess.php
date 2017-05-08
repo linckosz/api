@@ -547,6 +547,7 @@ class CheckAccess extends \Slim\Middleware {
 				if($workspace = Workspaces::where('url', $data->workspace)->first()){
 					$app->lincko->data['workspace'] = $workspace->url;
 					$app->lincko->data['workspace_id'] = $workspace->id;
+					$app->lincko->data['workspace_default_role'] = $workspace->default_role;
 					$workspace = $this->setWorkspaceConnection($workspace);
 					if($workspace->checkAccess(false)){
 						return true;

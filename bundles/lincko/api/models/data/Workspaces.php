@@ -26,6 +26,7 @@ class Workspaces extends ModelLincko {
 		'name',
 		'domain',
 		'url',
+		'default_role',
 		'_users',
 		'_parent',
 		'_perm',
@@ -37,6 +38,11 @@ class Workspaces extends ModelLincko {
 		'temp_id',
 		'name',
 		'url',
+		'default_role',
+	);
+
+	protected $model_integer = array(
+		'default_role',
 	);
 
 	protected $contactsLock = true; //Do not allow to delete users from contact list
