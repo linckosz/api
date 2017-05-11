@@ -733,7 +733,7 @@ abstract class ModelLincko extends Model {
 						$tree_owner[$table_name][$users_id][$model->id] = $model->getPermissionOwner($users_id);
 						//setup manager role for root object by default
 						if(!isset($tree_roles_id[$table_name][$users_id][$model->id]) && !$model->_parent[0]){
-							//Do not set at 0 (viewer), if not chats won't allow file uploading
+							//Do not set at 3 (viewer), if not chats won't allow file uploading
 							$tree_roles_id[$table_name][$users_id][$model->id] = $app->lincko->data['workspace_default_role']; //Manager for shared workspace by default, other workspaces are viewer by default
 						}
 					}
@@ -967,12 +967,12 @@ abstract class ModelLincko extends Model {
 						} else if(isset($tree_role[$table_name][$users_id][$id])){
 							$perm_role = $tree_role[$table_name][$users_id][$id];
 						}
-						$role_id = 0; //tree_role
+						$role_id = 3; //tree_role (viewer: 3)
 						if(isset($tree_roles_id[$table_name][$users_id][$id])){
 							$role_id = $tree_roles_id[$table_name][$users_id][$id];
 						}
 						if(!isset($all['roles'][$role_id])){
-							$role_id = 0; //tree_role
+							$role_id = 3; //tree_role (viewer: 3)
 							$perm_role = 0; //If the role is not register we set to viewer
 						}
 						if(empty($perm_new)){
@@ -3024,12 +3024,22 @@ abstract class ModelLincko extends Model {
 	public function setRolePivotValue($users_id, $roles_id=null, $single=null, $history=true){
 		$app = ModelLincko::getApp();
 
-		//We don't allow non-administrator to modify user permission
-		if(static::getWorkspaceSuper() == 0){
-			$this::errorMsg('No super permission');
+		//We don't allow to modify user permission if the user do not have grant permission, but always allow for super users
+		$grant = false;
+		if(static::getWorkspaceSuper()){
+			$grant = true;
+		} else if($pivot = $this->getRolePivotValue($app->lincko->data['uid'])){
+			if($pivot[1] && $role = Roles::getModel($pivot[1])){
+				$grant = $role->perm_grant;
+			}
+		}
+
+		if(!$grant){
+			$this::errorMsg('No grant permission');
 			$this->checkPermissionAllow(4);
 			return false;
 		}
+
 		//We don't record if the model doesn't exists in the database
 		if(!isset($this->id)){
 			$this::errorMsg('The model does not exists');

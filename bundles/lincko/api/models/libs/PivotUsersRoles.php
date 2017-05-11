@@ -110,7 +110,7 @@ class PivotUsersRoles extends Model {
 			if($access!=1){
 				$access = 0;
 			}
-			if(!is_numeric($roles_id) || $roles_id<1){
+			if(!is_numeric($roles_id) || $roles_id<0){
 				$roles_id = null;
 			}
 			if(!is_numeric($single) || $single<0 || $single>3){

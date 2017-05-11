@@ -103,6 +103,12 @@ class ControllerUser extends Controller {
 		if(isset($form->id) && is_numeric($form->id)){
 			$form->id = (int) $form->id;
 		}
+		if(isset($form->role_id) && is_numeric($form->role_id)){
+			$form->role_id = (int) $form->role_id;
+		}
+		if(isset($form->rcud) && is_numeric($form->rcud)){
+			$form->rcud = (int) $form->rcud;
+		}
 		if(isset($form->temp_id) && is_string($form->temp_id)){
 			$form->temp_id = trim($form->temp_id);
 		}
