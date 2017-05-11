@@ -108,4 +108,10 @@ $app->group('/user', function () use ($app) {
 	)
 	->name('user_workspace'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/role',
+		'\bundles\lincko\api\controllers\ControllerUser:role'.$app->lincko->method_suffix
+	)
+	->name('user_role'.$app->lincko->method_suffix);
+
 });

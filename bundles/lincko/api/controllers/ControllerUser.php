@@ -1169,4 +1169,53 @@ class ControllerUser extends Controller {
 		return false;
 	}
 
+	public function role_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 15, 5)."\n"; //Account update failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 5); //You are not allowed to edit the server data.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Users::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 27); //We could not validate the user account ID.
+			$errfield = 'id';
+		}
+		else if(!isset($form->parent_type) || !Users::validChar($form->parent_type)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
+			$errfield = 'parent_type';
+		}
+		else if(!isset($form->parent_id) || !Users::validNumeric($form->parent_id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
+			$errfield = 'parent_id';
+		}
+		else if(isset($form->role_id) && !Users::validNumeric($form->role_id, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'role_id';
+		}
+		else if(isset($form->rcud) && !Users::validRCUD($form->rcud, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 16); //We could not validate the user permission.
+			$errfield = 'rcud';
+		}
+		else if($user = Users::getModel($form->id)){
+			$role_id = null;
+			$rcud = null;
+			if(isset($form->role_id)){ $role_id = $form->role_id; } //Optional
+			if(isset($form->rcud)){ $rcud = $form->rcud; } //Optional
+			$class = Users::getClass($form->parent_type);
+			if($class && $model = $class::getModel($form->parent_id)){
+				if($model->setRolePivotValue($user->id, $role_id, null, true)){
+					$msg = array('msg' => $app->trans->getBRUT('api', 15, 6)); //Account information updated.
+					$data = new Data();
+					$data->dataUpdateConfirmation($msg, 200, false, $lastvisit);
+					return true;
+				}
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 }

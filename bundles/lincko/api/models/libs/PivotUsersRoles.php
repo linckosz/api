@@ -99,27 +99,43 @@ class PivotUsersRoles extends Model {
 	//Be careful, a user can lock himself by this command, and noone else can unlock him if none previously with higher role
 	public static function setMyRole($item, $roles_id=null, $single=null, $access=1){
 		$app = ModelLincko::getApp();
-		$role = self::Where('users_id', $app->lincko->data['uid'])->where('parent_type', $item->getTable())->where('parent_id', $item->id)->first();
-		if(!$role){
-			$role = new self;
-			$role->users_id = $app->lincko->data['uid'];
-			$role->parent_type = $item->getTable();
-			$role->parent_id = $item->id;
-		}
+		self::setRole($app->lincko->data['uid'], $item, $roles_id, $single, $access);
+	}
 
-		if($access!=1){
-			$access = 0;
+	public static function setRole($users_id, $item, $roles_id=null, $single=null, $access=1){
+		$app = ModelLincko::getApp();
+		if($workspace = Workspaces::getModel($app->lincko->data['workspace_id'])){
+			$parent_type = $item->getTable();
+			$parent_id = $item->id;
+			if($access!=1){
+				$access = 0;
+			}
+			if(!is_numeric($roles_id) || $roles_id<1){
+				$roles_id = null;
+			}
+			if(!is_numeric($single) || $single<0 || $single>3){
+				$single = null;
+			}
+			$role = self::Where('users_id', $users_id)->where('parent_type', $parent_type)->where('parent_id', $parent_id)->first();
+			if(!$role){
+				return self::insert([
+					'users_id' => $users_id,
+					'parent_type' => $parent_type,
+					'parent_id' => $parent_id,
+					'access' => $access,
+					'roles_id' => $roles_id,
+					'single' => $single
+				]);
+			} else {
+				$query = self::Where('users_id', $users_id)->where('parent_type', $parent_type)->where('parent_id', $parent_id);
+				return $query->update([
+					'access' => $access,
+					'roles_id' => $roles_id,
+					'single' => $single
+				]);
+			}
 		}
-		if(!is_numeric($roles_id) || $roles_id<1){
-			$roles_id = null;
-		}
-		if(!is_numeric($single) || $single<0 || $single>3){
-			$single = null;
-		}
-		$role->access = $access;
-		$role->roles_id = $roles_id;
-		$role->single = $single;
-		return $role->save();
+		return false;
 	}
 
 }

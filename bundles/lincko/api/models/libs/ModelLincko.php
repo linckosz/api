@@ -1464,14 +1464,18 @@ abstract class ModelLincko extends Model {
 			Users::getQuery()->update(['force_schema' => $timestamp]);
 			usleep(rand(30000, 35000)); //30ms
 		}
-		//Force to rebuild all extra
-		$models = Data::getModels();
-		$time = (new Users)->freshTimestamp();
-		foreach ($models as $table => $class) {
-			//Force to recalculate all extra
-			if(in_array('extra', $class::getColumns())){
-				$class::WhereNotNull('extra')->getQuery()->update(['updated_at' => $time, 'extra' => null]);
-				usleep(rand(30000, 35000)); //30ms
+
+		//ATTENTION => Dangerous, can freeze the backend code, too heavy!
+		if(false && Users::amIadmin()){
+			//Force to rebuild all extra
+			$models = Data::getModels();
+			$time = (new Users)->freshTimestamp();
+			foreach ($models as $table => $class) {
+				//Force to recalculate all extra
+				if(in_array('extra', $class::getColumns())){
+					$class::WhereNotNull('extra')->getQuery()->update(['updated_at' => $time, 'extra' => null]);
+					usleep(rand(30000, 35000)); //30ms
+				}
 			}
 		}
 		return true;
@@ -3032,7 +3036,12 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 		$return = false;
-		$pivot = $this->getRolePivotValue($users_id);
+		$roles_id_old = null;
+		$single_old = null;
+		if($pivot = $this->getRolePivotValue($users_id)){
+			$roles_id_old = $pivot[1];
+			$single_old = $pivot[2];
+		}
 
 		//We cannot modify own's permission
 		if(!$this->new_model && $users_id == $app->lincko->data['uid']){
@@ -3046,59 +3055,32 @@ abstract class ModelLincko extends Model {
 			return false;
 		}
 
-		//If the pivot doesn't exist, we exit
-		$user = $this->rolesUsers();
-		if($user === false || !method_exists($user,'updateExistingPivot') || !method_exists($user,'attach')){
-			$this::errorMsg('Method issue');
-			return false;
-		}
-
-		$roles_id_old = $pivot[1];
-		$single_old = $pivot[2];
 		if(!$this::$allow_role){
 			$roles_id = null;
 		}
 		if(!$this::$allow_single){
 			$single = null;
 		}
-		if($pivot[0]){
-			if($roles_id_old != $roles_id || $single_old != $single){
-				//Modify a line
-				$user->updateExistingPivot($users_id, array('roles_id' => $roles_id, 'single' => $single));
-				if($history){
-					if($roles_id_old != $roles_id){
-						$value = $roles_id;
-						$value_old = $roles_id_old;
-					}
-					if($single_old != $single){
-						$value = $single;
-						$value_old = $single_old;
-					}
-					$this->setHistory('_', $value, $value_old, array('cun' => Users::find($users_id)->username));
-					$this->touchUpdateAt();
-				}
-				$return = true;
-			}
-		} else if($roles_id!=null || $single!=null){
-			//Create a new line
-			$user->attach($users_id, array('roles_id' => $roles_id, 'single' => $single));
+
+		if($roles_id_old != $roles_id || $single_old != $single){
+			PivotUsersRoles::setRole($users_id, $this, $roles_id, $single);
 			if($history){
 				if($roles_id_old != $roles_id){
-						$value = $roles_id;
-						$value_old = $roles_id_old;
-					}
-					if($single_old != $single){
-						$value = $single;
-						$value_old = $single_old;
-					}
+					$value = $roles_id;
+					$value_old = $roles_id_old;
+				}
+				if($single_old != $single){
+					$value = $single;
+					$value_old = $single_old;
+				}
 				$this->setHistory('_', $value, $value_old, array('cun' => Users::find($users_id)->username));
 				$this->touchUpdateAt();
 			}
 			$return = true;
 		}
+		
 		if($return){
-			//Force all linked users to reupload the full data
-			self::setForceReset(true);
+			$this->setPerm();
 		}
 		
 		//Do not change anything, it's the same
