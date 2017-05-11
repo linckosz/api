@@ -467,6 +467,9 @@ class Files extends ModelLincko {
 					$content = $this->name;
 					if($this->category=='voice'){
 						$content = $app->trans->getBRUT('data', 1, 951, array(), $language); //[{un}] sent a voice message
+						foreach ($param as $search => $replace) {
+							$content = str_replace('[{'.$search.'}]', $replace, $content);
+						}
 					} else if($type!='chats' || !isset($parent->single) || !$parent->single){
 						$content = $app->trans->getBRUT('data', 1, 901, array(), $language); //[{un}] uploaded a file
 						foreach ($param as $search => $replace) {
