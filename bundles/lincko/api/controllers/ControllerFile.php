@@ -468,9 +468,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if(!isset($form->id) || !Files::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 30); //We could not validate the file ID.
 			$errfield = 'id';
-		}
-
-		if($model = Files::find($form->id)){
+		} else if($model = Files::find($form->id)){
 			if($model->delete()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 14, 8)); //File deleted.
 				$data = new Data();
@@ -505,9 +503,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if(!isset($form->id) || !Files::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 30); //We could not validate the file ID.
 			$errfield = 'id';
-		}
-
-		if($model = Files::onlyTrashed()->find($form->id)){
+		} else if($model = Files::onlyTrashed()->find($form->id)){
 			if($model->restore()){
 				$msg = array('msg' => $app->trans->getBRUT('api', 14, 21)); //File restored.
 				$data = new Data();
