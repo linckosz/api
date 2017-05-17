@@ -28,8 +28,8 @@ class ControllerTranslation extends Controller {
 		}
 		$form = $data->data;
 		if(isset($form->text)){
-			$translator = new \libs\OnlineTranslator(true);
-			$msg = $translator->autoTranslate($form->text);
+			$translator = new \libs\OnlineTranslator();
+			$msg = $translator->translate($form->text);
 			$app->render(200, array('msg' => $msg,));
 		} else {
 			$msg = $app->trans->getBRUT('api', 2, 6); //No text found to be translated
