@@ -147,7 +147,7 @@ $app->lincko->email->List = array();
 $app->lincko->email->Support = '';
 
 //Translator parameters
-//brmicrosoft@lincko.com/ lin**2**5**@#
+//microsoft@lincko.com/ lin**2**5**@#
 $app->lincko->translator = array(
 	'text_key1' => '8b5032784084462c97cfe442cf489577',
 );

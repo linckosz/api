@@ -40,6 +40,11 @@ class Namecards extends ModelLincko {
 		'username' => '-username',
 		'firstname' => '-firstname',
 		'lastname' => '-lastname',
+		'email' => '-email',
+		'address' => '-address',
+		'phone' => '-phone',
+		'business' => '-business',
+		'additional' => '-additional',
 	);
 
 	protected static $hide_extra = array(
