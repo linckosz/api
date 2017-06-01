@@ -208,6 +208,10 @@ abstract class ModelLincko extends Model {
 		return self::$data;
 	}
 
+	public static function getPrefixFields(){
+		return static::$prefix_fields;
+	}
+
 	public static function getPivotUsersSuffix(){
 		return static::$pivot_users_suffix;
 	}
@@ -2382,6 +2386,34 @@ abstract class ModelLincko extends Model {
 		if(!$this->force_save && count($dirty)<=0){
 			return true;
 		}
+
+		if(in_array('search', $columns)){
+			$search = null;
+			$decode_search = false;
+			foreach($dirty as $key => $value) {
+				if(isset($this::$prefix_fields[$key])){
+					if(!$decode_search){
+						$decode_search = true;
+						$search = json_decode($this->search);
+					}
+					$compress = false;
+					if(!empty($this->$key)){
+						$compress = STR::searchString($this->$key);
+					}
+					if(!empty($compress)){
+						if(!is_object($search)){
+							$search = new \stdClass;
+						}
+						$search->{$this::$prefix_fields[$key]} = $compress;
+					} else if(is_object($search)){
+						unset($search->{$this::$prefix_fields[$key]});
+					}
+				}
+			}
+			if(!is_null($search)){
+				$this->search = json_encode($search);
+			}
+		}
 		
 		$change_parent = false;
 		if(isset($dirty['parent_type']) || isset($dirty['parent_id'])){
@@ -2756,12 +2788,22 @@ abstract class ModelLincko extends Model {
 					if($extra = json_encode($bindings, JSON_UNESCAPED_UNICODE)){
 						usleep(rand(30000, 35000)); //Give 30ms before anyking of update
 						$loop = 10; //do 10 tries at the most
+						//$retry = false;
 						while($loop && $loop>0){
 							try {
+								/*
+								if($retry){
+									//We need to recheck the status of current model, if not the extra may be wrong (previous issue when "title update + archive project + deadlock on update")
+									$model = $this::withTrashed()->find($this->id);
+									$bindings = $model->toVisible();
+									$extra = json_encode($bindings, JSON_UNESCAPED_UNICODE);
+								}
+								*/
 								$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
 								$loop = false;
 							} catch (\Exception $e) {
 								\libs\Watch::php(true, 'extraEncode => Do not worry about this deadlock issue, it will be retried in a loop', __FILE__, __LINE__, true);
+								//$retry = true;
 								$loop--;
 								if($loop<=0){
 									$loop = false;

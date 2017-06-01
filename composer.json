@@ -15,6 +15,7 @@
         "endroid/qrcode": "1.*",
         "mongodb/mongodb": "*",
         "geoip2/geoip2": "2.*",
-        "hbattat/verifyemail": "*"
+        "hbattat/verifyemail": "*",
+        "overtrue/pinyin": "3.*"
     }
 }

@@ -45,6 +45,7 @@ class Users extends ModelLincko {
 		'integration',
 		'pending',
 		'party',
+		'search',
 		'_parent',
 		'_lock',
 		'_visible',
@@ -79,6 +80,7 @@ class Users extends ModelLincko {
 		'integration',
 		'pending',
 		'party',
+		'search',
 	);
 
 	protected $contactsLock = false; //By default do not lock the user

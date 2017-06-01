@@ -38,6 +38,7 @@ class Projects extends ModelLincko {
 		'public',
 		'personal_private',
 		'resume',
+		'search',
 		'_parent',
 		'_perm',
 	);
@@ -54,6 +55,7 @@ class Projects extends ModelLincko {
 		'title',
 		'description',
 		'viewed_by',
+		'search',
 	);
 
 	protected $name_code = 400;

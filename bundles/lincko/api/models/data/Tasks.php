@@ -38,6 +38,7 @@ class Tasks extends ModelLincko {
 		'locked_fp',
 		'title',
 		'comment',
+		'search',
 		'duration', //A negative value means there is no due date
 		'fixed',
 		'approved',
@@ -68,6 +69,7 @@ class Tasks extends ModelLincko {
 		'temp_id',
 		'title',
 		'comment',
+		'search',
 		'viewed_by',
 		'locked_by',
 		'locked_fp',
@@ -430,8 +432,11 @@ class Tasks extends ModelLincko {
 			->whereIn('users_id', $users_accept)
 			->where('access', 1)
 			->where(function ($query) use ($history){
-				$query = $query
-				->where('approver', 1);
+				$query = $query->orWhere('tasks_id', -1);
+				if(isset($history->attribute) && $history->attribute!='pivot_users_approver'){
+					$query = $query
+					->orWhere('approver', 1);
+				}
 				if(isset($history->attribute) && $history->attribute!='pivot_users_in_charge'){
 					$query = $query
 					->orWhere('in_charge', 1);
@@ -488,6 +493,7 @@ class Tasks extends ModelLincko {
 					if(empty($alias)){
 						continue;
 					}
+
 					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
 					$inform->send();
 				}
@@ -521,6 +527,32 @@ class Tasks extends ModelLincko {
 					//Need to continue to code
 				}
 			*/
+		}
+		if(!isset($this->id)){
+			$approver = false;
+			$pivots = new \stdClass;
+			$pivots->{'users>approver'} = new \stdClass;
+			if(isset($this->pivots_var->users)){
+				foreach ($this->pivots_var->users as $users_id => $user) {
+					if(isset($user->approver) && $user->approver){
+						//There is already one approver setup
+						$approver = true;
+						break;
+					}
+				}
+				if(!$approver){
+					foreach ($this->pivots_var->users as $users_id => $user) {
+						if(isset($user->in_charge) && $user->in_charge){
+							$approver = true;
+							$pivots->{'users>approver'}->$users_id = true;
+						}
+					}
+				}
+			}
+			if(!$approver){
+				$pivots->{'users>approver'}->{$app->lincko->data['uid']} = true;
+			}
+			$this->pivots_format($pivots, false);
 		}
 		$projects = Projects::getModel($this->parent_id);
 		if($projects && $projects->personal_private == $app->lincko->data['uid']){

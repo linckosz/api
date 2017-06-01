@@ -32,6 +32,7 @@ class Namecards extends ModelLincko {
 		'additional',
 		'linkedin',
 		'workspaces_id',
+		'search',
 	);
 
 	// CUSTOMIZATION //
@@ -59,6 +60,7 @@ class Namecards extends ModelLincko {
 		'additional',
 		'linkedin',
 		'workspaces_id',
+		'search',
 	);
 
 	protected $name_code = 1100;

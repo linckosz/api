@@ -55,6 +55,7 @@ class Files extends ModelLincko {
 		'progress',
 		'error',
 		'sha',
+		'search',
 		'_parent',
 		'_tasks',
 		'_notes',
@@ -77,6 +78,7 @@ class Files extends ModelLincko {
 		'name',
 		'category',
 		'comment',
+		'search',
 		'ori_type',
 		'ori_ext',
 		'thu_type',
@@ -146,11 +148,13 @@ class Files extends ModelLincko {
 
 	//public $category = 'file'; //Store in file by default
 	protected static $list_categories = array(
+		//Note: because compilation of ffmpeg fails with webm support, we considerate it as a file
+
 		'image' => array('image/bmp', 'image/x-windows-bmp', 'image/gif', 'image/jpeg', 'image/pjpeg', 'image/png', 'image/vnd.wap.wbmp'),
 
-		'video' => array('application/asx', 'application/vnd.ms-asf', 'application/vnd.rn-realmedia', 'application/vnd.rn-realmedia-vbr', 'application/x-mplayer2', 'application/x-pn-mpg', 'application/x-troff-msvideo', 'content/unknown', 'image/mov', 'image/mpg', 'video/3gpp', 'video/avi', 'video/dvd', 'video/mp4', 'video/mp4v-es', 'video/mpeg', 'video/mpeg2', 'video/mpg', 'video/msvideo', 'video/quicktime', 'video/xmpg2', 'video/x-flv', 'flv-application/octet-stream', 'video/x-m4v', 'video/x-matroska', 'video/x-mpeg', 'video/x-mpeg2a', 'video/x-mpg', 'video/x-msvideo', 'video/x-ms-asf', 'video/x-ms-asf-plugin', 'video/x-ms-wm', 'video/x-ms-wmv', 'video/x-ms-wmx', 'video/x-quicktime', 'video/webm', 'video/x-sgi-movie'),
+		'video' => array('application/asx', 'application/vnd.ms-asf', 'application/vnd.rn-realmedia', 'application/vnd.rn-realmedia-vbr', 'application/x-mplayer2', 'application/x-pn-mpg', 'application/x-troff-msvideo', 'content/unknown', 'image/mov', 'image/mpg', 'video/3gpp', 'video/avi', 'video/dvd', 'video/mp4', 'video/mp4v-es', 'video/mpeg', 'video/mpeg2', 'video/mpg', 'video/msvideo', 'video/quicktime', 'video/xmpg2', 'video/x-flv', 'flv-application/octet-stream', 'video/x-m4v', 'video/x-matroska', 'video/x-mpeg', 'video/x-mpeg2a', 'video/x-mpg', 'video/x-msvideo', 'video/x-ms-asf', 'video/x-ms-asf-plugin', 'video/x-ms-wm', 'video/x-ms-wmv', 'video/x-ms-wmx', 'video/x-quicktime', /*'video/webm',*/ 'video/x-sgi-movie'),
 
-		'audio' => array('audio/3gpp', 'audio/aiff', 'audio/x-aiff', 'audio/asf', 'audio/avi', 'audio/mp3', 'audio/mp4', 'audio/mpeg', 'audio/vnd.rn-realaudio', 'audio/midi', 'audio/x-midi', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpeg', 'audio/x-mpeg', 'audio/x-pm-realaudio-plugin', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/wav', 'audio/x-wav', 'audio/webm', 'audio/ogg'),
+		'audio' => array('audio/3gpp', 'audio/aiff', 'audio/x-aiff', 'audio/asf', 'audio/avi', 'audio/mp3', 'audio/mp4', 'audio/mpeg', 'audio/vnd.rn-realaudio', 'audio/midi', 'audio/x-midi', 'audio/mpeg3', 'audio/x-mpeg3', 'audio/mpeg', 'audio/x-mpeg', 'audio/x-pm-realaudio-plugin', 'audio/x-pn-realaudio', 'audio/x-realaudio', 'audio/wav', 'audio/x-wav', /*'audio/webm',*/ 'audio/ogg'),
 	);
 
 ////////////////////////////////////////////
@@ -524,7 +528,7 @@ class Files extends ModelLincko {
 				$this->progress = 100;
 				$this->puid = $app->lincko->data['uid'];
 				$source = $this->tmp_name;
-				if($this->category=='image'){	
+				if($this->category=='image'){
 					$orientation = $this->setOrientation();
 					$src = WideImage::load($this->tmp_name);
 					$this->width = $src->getWidth();

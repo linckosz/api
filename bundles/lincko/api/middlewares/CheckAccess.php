@@ -145,7 +145,7 @@ class CheckAccess extends \Slim\Middleware {
 					$pivot->{'users>access'} = new \stdClass;
 					$pivot->{'users>access'}->{$host->id} = true;
 					$app->lincko->data['invitation_code'] = true;
-					Action::record(-9); //Accept invitation by url code
+					Action::record(-9, $host->id); //Accept invitation by url code
 					//If gave access to some items
 					$items = new \stdClass;
 					if($invitation_models){

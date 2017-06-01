@@ -725,11 +725,57 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::find(4082)->clone();
 
-		$tp = Workspaces::find(7)->setPerm();
+		//$str = 'a你好你好你好吗抑郁开始降低烧烤h Dés 吗抑郁开始降低烧烤 吗抑郁开始降低烧烤吗抑郁开始降低烧烤';
+		//$tp = STR::searchString($str);
+
+		//$tp = strlen('é');
+		//$tp = Roles::withTrashed()->get();
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+
+
+		/*
+		//----------------------------------------
+		\time_checkpoint('start build search');
+		//Reinitialize all search fields
+		set_time_limit(4*3600); //Set to 4 hours workload at the most
+		$models = Data::getModels();
+		$time = (new Users)->freshTimestamp();
+		foreach ($models as $table => $class) {
+			$nbr = 0;
+			$prefix = $class::getPrefixFields();
+			if(count($prefix)>0 && in_array('search', $class::getColumns())){
+				$items = $class::withTrashed()->get();
+				foreach ($items as $item) {
+					if(!is_null($item->search)){
+						continue;
+					}
+					$search = null;
+					foreach($prefix as $key => $value) {
+						$compress = false;
+						if(!empty($item->$key)){
+							$compress = STR::searchString($item->$key);
+						}
+						if(!empty($compress)){
+							if(!is_object($search)){
+								$search = new \stdClass;
+							}
+							$search->{$prefix[$key]} = $compress;
+						}
+					}
+					if(!is_null($search)){
+						$item->search = json_encode($search);
+						$item->brutSave();
+						$nbr++;
+					}
+				}
+			}
+			\time_checkpoint($class.' => '.$nbr);
+		}
+		\time_checkpoint('end build search');
+		*/
 
 
 		/*

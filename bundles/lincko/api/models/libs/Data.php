@@ -1021,6 +1021,9 @@ class Data {
 					} else if(isset($temp->temp_id) && $temp->temp_id==''){
 						unset($result_bis->$uid->$table_name->$id->temp_id);
 					}
+					if(isset($result_bis->$uid->$table_name->$id->search)){
+						$result_bis->$uid->$table_name->$id->search = json_decode($result_bis->$uid->$table_name->$id->search);
+					}
 					//Because of ios bug Json parser cannot handle a certain number of ] (a swiss report I forgot the link)
 					$result_bis->$uid->$table_name->$id = json_decode(json_encode($temp, JSON_FORCE_OBJECT));
 				}
