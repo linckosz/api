@@ -95,6 +95,15 @@ $app->group('/file', function () use ($app) {
 	->name('file_profile_get');
 
 	$app->get(
+		'/workspace/:workspace',
+		'\bundles\lincko\api\controllers\ControllerFile:workspace_get'
+	)
+	->conditions(array(
+		'workspace' => '\d+',
+	))
+	->name('file_workspace_get');
+
+	$app->get(
 		'/link_from_qrcode/:workspace/:sha(/:mini)',
 		'\bundles\lincko\api\controllers\ControllerFile:link_from_qrcode_get'
 	)

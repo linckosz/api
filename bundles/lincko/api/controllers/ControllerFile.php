@@ -623,7 +623,7 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 
 		if($user && $id = $user->profile_pic){
 			$file = Files::withTrashed()->find($id);
-			Workspaces::getSFTP();			
+			Workspaces::getSFTP();
 			if($file && $file->category=='image'){
 				$puid = $file->created_by;
 				if(!is_null($file->puid)){
@@ -663,6 +663,77 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		}
 		
 		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/user.png';
+		$timestamp = filemtime($path); 
+		$gmt_mtime = gmdate('r', $timestamp);
+		header('Last-Modified: '.$gmt_mtime);
+		header('Expires: '.gmdate(DATE_RFC1123,time()+3000000)); //About 1 month
+		header('ETag: "'.md5($timestamp.$path).'"');
+		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+			if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmt_mtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($timestamp.$path)) {
+				header('HTTP/1.1 304 Not Modified');
+				return exit(0);
+			}
+		}
+		$src = WideImage::load($path);
+		$white = $src->allocateColor(255, 255, 255);
+		$src = $src->resizeCanvas($width, $height, 'center', 'center', $white);
+		$src->output('png');
+		
+		return exit(0);
+	}
+
+	public function workspace_get($workspace){
+		$app = $this->app;
+		ob_clean();
+		flush();
+		$width = 200;
+		$height = 200;
+		$scale = false;
+		$access = false;
+		$workspace = Workspaces::withTrashed()->find($workspace);
+		
+		if($workspace && $id = $workspace->cus_logo){
+			$file = Files::withTrashed()->find($id);
+			Workspaces::getSFTP();
+			if($file && $file->category=='image'){
+				$puid = $file->created_by;
+				if(!is_null($file->puid)){
+					$puid = $file->puid;
+				}
+				$path = $app->lincko->filePathPrefix.$file->server_path.'/'.$puid.'/'.$file->link;
+				$path_xsend = '/protected_files/'.$puid.'/'.$file->link;
+				$name = pathinfo($path, PATHINFO_FILENAME).'.'.$file->ori_thu;
+				$content_type = $file->thu_type;
+				if(is_file($path) && filesize($path)!==false){
+					//http://stackoverflow.com/questions/2000715/answering-http-if-modified-since-and-http-if-none-match-in-php/2015665#2015665
+					$timestamp = filemtime($path); 
+					$gmt_mtime = gmdate('r', $timestamp);
+					header('Last-Modified: '.$gmt_mtime);
+					header('Expires: '.gmdate(DATE_RFC1123,time()+16000000)); //About 6 months cached
+					header('ETag: "'.md5($timestamp.$path).'"');
+					if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+						if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmt_mtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($timestamp.$path)) {
+							header('HTTP/1.1 304 Not Modified');
+							return exit(0);
+						}
+					}
+					header('Content-Type: '.$content_type.';');
+					header('Content-Disposition: inline; filename="'.$name.'"');
+					header('Pragma: public');
+					$size = filesize($path);
+					header('Content-Length: '.$size);
+					header('Content-Range: bytes 0-'.($size-1).'/'.$size);
+					if(!$app->lincko->data['remote'] && $path_xsend){
+						header('X-Accel-Redirect: '.$path_xsend);
+					} else {
+						readfile($path);
+					}
+					return exit(0);
+				}
+			}
+		}
+		
+		$path = $app->lincko->path.'/bundles/lincko/api/public/images/generic/neutral.png';
 		$timestamp = filemtime($path); 
 		$gmt_mtime = gmdate('r', $timestamp);
 		header('Last-Modified: '.$gmt_mtime);

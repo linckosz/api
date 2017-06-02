@@ -109,7 +109,7 @@ class Files extends ModelLincko {
 		'users', 'chats', 'projects' are hardly attached
 		'tasks', 'notes', 'comments' are softly attached, meaning that the file will be attached to the parent project but will be given the dependency to the tasks or note
 	*/
-	protected static $parent_list = array('users', 'chats', 'projects');
+	protected static $parent_list = array('workspaces', 'users', 'chats', 'projects');
 	protected static $parent_list_soft = array('tasks', 'notes', 'comments'); //toto => adding 'comments' makes it crash, they disapear
 
 	protected $model_integer = array(
@@ -706,6 +706,18 @@ class Files extends ModelLincko {
 			$user = Users::getUser();
 			$user->profile_pic = $this->id;
 			$user->save();
+		}
+		
+		if(
+			   isset($dirty['parent_type'])
+			&& isset($dirty['parent_id'])
+			&& $dirty['parent_type'] == 'workspaces'
+			&& $dirty['parent_id'] == $app->lincko->data['workspace_id']
+		){ //Change profile picture
+			if($workspace = Workspaces::getWorkspace()){
+				$workspace->cus_logo = $this->id;
+				$workspace->save();
+			}
 		}
 
 		if($new && $this->category=='video'){

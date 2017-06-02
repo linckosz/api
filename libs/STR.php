@@ -145,9 +145,7 @@ class STR {
 		$text = explode(' ', $text);
 		$text = array_unique($text);
 		$text_bis = array();
-		
 		foreach ($text as $key => $value) {
-			$text_bis[] = $value;
 			$temp = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value); //remove accents
 			if($temp != $value){
 				if(preg_match('/[a-z0-9]+/u', $temp)){
@@ -156,6 +154,7 @@ class STR {
 					$text_bis[] = implode('', $pinyin->convert($value));
 				}
 			}
+			$text_bis[] = $value; //Place it at the end like that the pinyin is in the front, it's easier for abc order
 		}
 		$text_bis = array_unique($text_bis);
 		$text = implode(' ', $text_bis);

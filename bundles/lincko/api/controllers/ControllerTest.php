@@ -74,6 +74,7 @@ class ControllerTest extends Controller {
 		$db->enableQueryLog();
 		$db_api = Capsule::connection('api');
 		$db_api->enableQueryLog();
+		$app->lincko->time_record = true; //Display timing
 		$tp = null;
 
 		//\libs\Watch::php(Users::getUser()->toJson(),'$user', __FILE__, __LINE__);
@@ -736,7 +737,7 @@ class ControllerTest extends Controller {
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
-		/*
+		
 		//----------------------------------------
 		\time_checkpoint('start build search');
 		//Reinitialize all search fields
@@ -767,7 +768,7 @@ class ControllerTest extends Controller {
 					}
 					if(!is_null($search)){
 						$item->search = json_encode($search);
-						$item->brutSave();
+						$item::withTrashed()->where('id', $item->id)->getQuery()->update(['search' => json_encode($search)]);
 						$nbr++;
 					}
 				}
@@ -775,7 +776,7 @@ class ControllerTest extends Controller {
 			\time_checkpoint($class.' => '.$nbr);
 		}
 		\time_checkpoint('end build search');
-		*/
+		
 
 
 		/*

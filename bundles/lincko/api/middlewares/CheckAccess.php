@@ -717,6 +717,7 @@ class CheckAccess extends \Slim\Middleware {
 					   $route == 'file_open_get' && preg_match("/^\/file\/(\d+)\/([=\d\w]+?)\/(link|thumbnail|download)\/(\d+)\/.+$/ui", $resourceUri, $matches)
 					|| $route == 'file_qrcode_get' && preg_match("/^\/file\/(\d+)\/([\d\w]+?)\/(qrcode)\/(\d+)\/.+$/ui", $resourceUri, $matches)
 					|| $route == 'file_profile_get' && preg_match("/^\/file\/profile\/(\d+)\/(\d+)$/ui", $resourceUri, $matches)
+					|| $route == 'file_workspace_get' && preg_match("/^\/file\/workspace\/(\d+)$/ui", $resourceUri, $matches)
 					|| $route == 'file_link_from_qrcode_get' && preg_match("/^\/file\/link_from_qrcode\/(\d+)\/([\d\w]+?)\/([\d\w]+?)$/ui", $resourceUri, $matches)
 					|| $route == 'file_onboarding_get' && preg_match("/^\/file\/onboarding\/(\d+)\/(\d+)\.mp4$/ui", $resourceUri, $matches)
 					|| $route == 'file_project_qrcode_get' && preg_match("/^\/file\/project_qrcode\/(\d+)\/(\d+)\/.+\.png$/ui", $resourceUri, $matches)
