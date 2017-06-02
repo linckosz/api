@@ -161,6 +161,7 @@ class STR {
 		if($text == $text_ori){
 			$text = false; //Note: For some small content, it may search through some html tags, we better to use .text() on front
 		}
+		$text = trim($text);
 		return $text;
 	}
 
