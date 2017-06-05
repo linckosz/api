@@ -43,6 +43,10 @@ class CheckAccess extends \Slim\Middleware {
 		if(isset($this->data->data) && !is_object($this->data->data)){
 			$this->data->data = (object) $this->data->data;
 		}
+		//Set front subdomain
+		if(isset($this->data->subdomain) && !empty($this->data->subdomain)){
+			$app->lincko->data['subdomain'] = $this->data->subdomain;
+		}
 		ModelLincko::setData($this->data);
 		return true;
 	}
@@ -808,6 +812,12 @@ class CheckAccess extends \Slim\Middleware {
 
 		} else {
 			return $this->next->call();
+		}
+
+		//Reset the default workspace to Null
+		if($signout && $user = Users::getUser()){
+			$user->workspace = null;
+			$user->save();
 		}
 
 		$json = new Json($msg, $error, $status, $signout, $resignin);

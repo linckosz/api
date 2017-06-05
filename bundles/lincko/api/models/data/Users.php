@@ -243,13 +243,16 @@ class Users extends ModelLincko {
 					//->with('usersLinked') //It affects heavily speed performance
 					->whereHas('usersLinked', function ($query) {
 						$app = ModelLincko::getApp();
-						$query
-						->where('users_id', $app->lincko->data['uid'])
-						->where(function ($query) {
-							$query
-							->where('access', 1)
-							->orWhere('invitation', 1);
-						});
+						$query = $query->where('users_id', $app->lincko->data['uid']);
+						if($app->lincko->data['workspace_id']==0){ //Invitation appear only for shared workspace
+							$query = $query->where(function ($query) {
+								$query
+								->where('access', 1)
+								->orWhere('invitation', 1);
+							});
+						} else {
+							$query = $query->where('access', 1);
+						}
 					})
 					->orWhere('users.id', $app->lincko->data['uid']);
 				} else {
@@ -339,25 +342,27 @@ class Users extends ModelLincko {
 	public function setInvitation(){
 		$app = ModelLincko::getApp();
 		$this->_invitation = false;
-		if(self::$invitation_list===false){
-			self::$invitation_list = array();
-			if($theUser = self::getUser()){
-				if($contacts = $theUser->users){
-					foreach ($contacts as $key => $value) {
-						self::$invitation_list[$value->id] = (boolean) $value->pivot->invitation;
+		if($app->lincko->data['workspace_id']==0){ //Invitation is true only on shared workspace
+			if(self::$invitation_list===false){
+				self::$invitation_list = array();
+				if($theUser = self::getUser()){
+					if($contacts = $theUser->users){
+						foreach ($contacts as $key => $value) {
+							self::$invitation_list[$value->id] = (boolean) $value->pivot->invitation;
+						}
 					}
 				}
 			}
-		}
-		if(!isset(self::$invitation_list[$this->id])){
-			self::$invitation_list[$this->id] = false;
-		}
-		$this->_invitation = self::$invitation_list[$this->id];
-		if($this->_invitation){
-			$this->contactsVisibility = false;
-			if(!isset(self::$contacts_list[$this->id])){ self::$contacts_list[$this->id] = array(); }
-			$this->_lock = self::$contacts_list[$this->id][0] = false;
-			$this->_visible = self::$contacts_list[$this->id][1] = false;
+			if(!isset(self::$invitation_list[$this->id])){
+				self::$invitation_list[$this->id] = false;
+			}
+			$this->_invitation = self::$invitation_list[$this->id];
+			if($this->_invitation){
+				$this->contactsVisibility = false;
+				if(!isset(self::$contacts_list[$this->id])){ self::$contacts_list[$this->id] = array(); }
+				$this->_lock = self::$contacts_list[$this->id][0] = false;
+				$this->_visible = self::$contacts_list[$this->id][1] = false;
+			}
 		}
 		return $this->_invitation;
 	}
@@ -809,16 +814,18 @@ class Users extends ModelLincko {
 	public function setPending(){
 		$app = ModelLincko::getApp();
 		$pending = null;
-		if($this->id == $app->lincko->data['uid']){
-			$pending = new \stdClass;
-			$users = Users::whereHas('users', function($query) {
-				$app = ModelLincko::getApp();
-				$uid = $app->lincko->data['uid'];
-				$query->where('users_id_link', $uid)->where('access', 0)->where('invitation', 1);
-			})->get(array('id', 'username', 'profile_pic'));
-			foreach ($users as $user) {
-				if($user->id != $app->lincko->data['uid']){
-					$pending->{$user->id} = array($user->username, $user->profile_pic);
+		if($app->lincko->data['workspace_id']==0){ //Pending invitation is only true in shared workspace
+			if($this->id == $app->lincko->data['uid']){
+				$pending = new \stdClass;
+				$users = Users::whereHas('users', function($query) {
+					$app = ModelLincko::getApp();
+					$uid = $app->lincko->data['uid'];
+					$query->where('users_id_link', $uid)->where('access', 0)->where('invitation', 1);
+				})->get(array('id', 'username', 'profile_pic'));
+				foreach ($users as $user) {
+					if($user->id != $app->lincko->data['uid']){
+						$pending->{$user->id} = array($user->username, $user->profile_pic);
+					}
 				}
 			}
 		}
@@ -1063,7 +1070,7 @@ class Users extends ModelLincko {
 					$guest->forceGiveAccess(2);
 					$guest->save();
 
-					$link = 'https://'.$workspace->url.'.'.$app->lincko->domain;
+					$link = 'https://'.$app->lincko->data['subdomain'].$app->lincko->domain;
 					
 					$content_array = array(
 						'username_guest' => $username_guest,
@@ -1137,7 +1144,7 @@ class Users extends ModelLincko {
 
 			$user->forceSaving();
 			$user->save();
-			$link = 'https://'.$app->lincko->domain;
+			$link = 'https://'.$app->lincko->data['subdomain'].$app->lincko->domain;
 
 			$title = $app->trans->getBRUT('api', 1002, 1); //New Lincko collaboration request
 			$content_array = array(

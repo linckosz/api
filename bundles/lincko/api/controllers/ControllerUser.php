@@ -513,7 +513,7 @@ class ControllerUser extends Controller {
 				$onboarding->next(10101); //initialize the onboarding process
 
 				//Send congrat email
-				$link = 'https://'.$app->lincko->domain;
+				$link = 'https://'.$app->lincko->data['subdomain'].$app->lincko->domain;
 				$title = $app->trans->getBRUT('api', 1003, 1); //Congratulations on joining Lincko!
 				$content_array = array(
 					'mail_username' => $user->username,
@@ -940,7 +940,7 @@ class ControllerUser extends Controller {
 					$invitation->save();
 
 					$code = $invitation->code;
-					$link = 'https://'.$app->lincko->domain.'/invitation/'.$code;
+					$link = 'https://'.$app->lincko->data['subdomain'].$app->lincko->domain.'/invitation/'.$code;
 					$title = $app->trans->getBRUT('api', 1001, 1); //Your invitation to join Lincko
 					$content_array = array(
 						'mail_username' => $username,
@@ -1096,7 +1096,7 @@ class ControllerUser extends Controller {
 						$user_log->code_try = 0;
 						if($user_log->save()){
 							$title = $app->trans->getBRUT('api', 1005, 1); //Password reset - Confirmation
-							$link = 'https://'.$app->lincko->domain;
+							$link = 'https://'.$app->lincko->data['subdomain'].$app->lincko->domain;
 							$content_array = array(
 								'mail_username' => $user->username,
 								'mail_link' => $link,

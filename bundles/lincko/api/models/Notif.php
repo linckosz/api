@@ -80,7 +80,7 @@ class Notif {
 			'_open_page' => 'winPage',
 		);
 		if($item){
-			$domain = $_SERVER['REQUEST_SCHEME'].'://'.$app->lincko->domain;
+			$domain = $_SERVER['REQUEST_SCHEME'].'://'.$app->lincko->data['subdomain'].$app->lincko->domain;
 			$url = 'javascript:app_generic_state.openItem(false, \''.$domain.'/#'.$item->getTable().'-'.base64_encode($item->id).'\');';
 			$notif['extras'] = array(
 				'url' => $url,

@@ -161,6 +161,7 @@ $app->lincko->translation = array(
 //Some generic data for twig
 $app->lincko->data = array(
 	'domain' => $app->lincko->domain,
+	'subdomain' => $app->lincko->domain,
 	'lincko_back' => '',
 	'title' => $app->lincko->title,
 	'workspace' => '',
@@ -206,6 +207,7 @@ if($app->lincko->domain=='lincko.cafe'){
 
 if(isset($_SERVER['LINCKO_BACK']) && !empty($_SERVER['LINCKO_BACK'])){
 	$app->lincko->data['lincko_back'] = $_SERVER['LINCKO_BACK'].'.';
+	$app->lincko->data['subdomain'] = $app->lincko->data['lincko_back'];
 }
 
 ////////////////////////////////////

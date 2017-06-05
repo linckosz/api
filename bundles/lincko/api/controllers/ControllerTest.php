@@ -731,13 +731,14 @@ class ControllerTest extends Controller {
 
 		//$tp = strlen('é');
 		//$tp = Roles::withTrashed()->get();
+		$tp = $app->lincko;
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
-		
+		/*
 		//----------------------------------------
 		\time_checkpoint('start build search');
 		//Reinitialize all search fields
@@ -767,7 +768,6 @@ class ControllerTest extends Controller {
 						}
 					}
 					if(!is_null($search)){
-						$item->search = json_encode($search);
 						$item::withTrashed()->where('id', $item->id)->getQuery()->update(['search' => json_encode($search)]);
 						$nbr++;
 					}
@@ -776,7 +776,7 @@ class ControllerTest extends Controller {
 			\time_checkpoint($class.' => '.$nbr);
 		}
 		\time_checkpoint('end build search');
-		
+		*/
 
 
 		/*

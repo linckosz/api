@@ -158,7 +158,7 @@ class Inform {
 		//Add item link if any
 		if($this->item){
 			$content = '[ '.$this->title." ]\n"
-				.$app->lincko->domain.'/#'.$this->item->getTable().'-'.$this->item->id."\n"
+				.$app->lincko->data['subdomain'].$app->lincko->domain.'/#'.$this->item->getTable().'-'.$this->item->id."\n"
 				.$this->content_text;
 		} else {
 			$content = '[ '.$this->title." ]\n".$this->content_text;
