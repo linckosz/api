@@ -46,6 +46,7 @@ class Namecards extends ModelLincko {
 		'phone' => '-phone',
 		'business' => '-business',
 		'additional' => '-additional',
+		'linkedin' => '-linkedin',
 	);
 
 	protected static $hide_extra = array(
