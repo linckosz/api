@@ -91,7 +91,7 @@ class Namecards extends ModelLincko {
 	protected static $allow_role = true;
 
 	protected static $permission_sheet = array(
-		0, //[RC] owner
+		2, //[RC] owner
 		2, //[RCUD] max allow || super
 	);
 
