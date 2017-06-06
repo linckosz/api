@@ -156,7 +156,7 @@ class Namecards extends ModelLincko {
 			if($this->parent_id==$app->lincko->data['uid']){
 				$this->forceGiveAccess(2); //Allow editing
 			}
-		} else if(self::getWorkspaceSuper($app->lincko->data['uid'])){
+		} else if(self::getWorkspaceAdmin($app->lincko->data['uid'])){
 			$this->forceGiveAccess(2); //Allow editing
 		}
 		$return = parent::save($options);

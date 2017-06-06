@@ -2082,7 +2082,7 @@ abstract class ModelLincko extends Model {
 			return true;
 		} else if(isset(static::$permission_super[$users_id])){
 			return static::$permission_super[$users_id];
-		} else if($workspace = Workspaces::find($app->lincko->data['workspace_id'])){ //This insure to return 0 at shared workspace
+		} else if($app->lincko->data['workspace_id']>0 && $workspace = Workspaces::find($app->lincko->data['workspace_id'])){ //This insure to return 0 at shared workspace
 			$pivot = $workspace->getUserPivotValue('super', $users_id);
 			if($pivot[0]){
 				$super = (int) $pivot[1];
@@ -2090,6 +2090,20 @@ abstract class ModelLincko extends Model {
 		}
 		static::$permission_super[$users_id] = $super;
 		return $super;
+	}
+
+	public static function getWorkspaceAdmin($users_id=false){
+		$app = ModelLincko::getApp();
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
+		if($app->lincko->data['workspace_id']>0 && $workspace = Workspaces::find($app->lincko->data['workspace_id'])){
+			$pivot = $workspace->getRolePivotValue($users_id);
+			if($pivot[0] && $pivot[1]==1){ //Administrator
+				return true;
+			}
+		}
+		return static::getWorkspaceSuper();
 	}
 
 	public static function getPermissionSheet(){

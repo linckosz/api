@@ -731,7 +731,10 @@ class ControllerTest extends Controller {
 
 		//$tp = strlen('é');
 		//$tp = Roles::withTrashed()->get();
-		$tp = $app->lincko;
+		//$tp = $app->lincko;
+
+		$tp = Namecards::find(6);
+		//$tp = $tp->checkPermissionAllow('edit');
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
