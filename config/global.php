@@ -9,10 +9,13 @@ function time_checkpoint($msg=''){
 			$app->lincko->time_record = $milliseconds;
 			$app->lincko->time_start = $milliseconds;
 		}
-		$detail = ($milliseconds-$app->lincko->time_record) . "ms to reach this point\n" . ($milliseconds-$app->lincko->time_start)  . "ms in total";
+		$diff = $milliseconds-$app->lincko->time_record;
+		$detail = $diff . "ms to reach this point\n" . ($milliseconds-$app->lincko->time_start)  . "ms in total";
 		\libs\Watch::php( $detail , 'Checkpoint: '.$msg, __FILE__, __LINE__, false, false, true);
 		$app->lincko->time_record = $milliseconds;
+		return $diff;
 	}
+	return false;
 }
 
 function my_autoload($pClassName){
@@ -20,6 +23,7 @@ function my_autoload($pClassName){
 	$pClassName = str_replace('\\', '/', $pClassName);
 	if(file_exists($app->lincko->path.'/'.$pClassName.'.php')){
 		include_once($app->lincko->path.'/'.$pClassName.'.php');
+		//time_checkpoint($pClassName.'.php');
 	}
 }
 

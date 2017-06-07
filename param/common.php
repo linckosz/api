@@ -207,7 +207,9 @@ if($app->lincko->domain=='lincko.cafe'){
 
 if(isset($_SERVER['LINCKO_BACK']) && !empty($_SERVER['LINCKO_BACK'])){
 	$app->lincko->data['lincko_back'] = $_SERVER['LINCKO_BACK'].'.';
-	$app->lincko->data['subdomain'] = $app->lincko->data['lincko_back'];
+	if($app->lincko->domain!='lincko.com' && $app->lincko->domain!='lincko.co'){
+		$app->lincko->data['subdomain'] = $app->lincko->data['lincko_back'];
+	}
 }
 
 ////////////////////////////////////
