@@ -733,15 +733,22 @@ class ControllerTest extends Controller {
 		//$tp = Roles::withTrashed()->get();
 		//$tp = $app->lincko;
 
-		$tp = Namecards::find(6);
+		//$tp = Namecards::find(6);
 		//$tp = $tp->checkPermissionAllow('edit');
+		/*
+		if($tp = Workspaces::getWorkspace()){
+			\time_checkpoint('start');
+			$tp->setPerm();
+			\time_checkpoint('end');
+		}
+		*/
 
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
-		/*
+		
 		//----------------------------------------
 		\time_checkpoint('start build search');
 		//Reinitialize all search fields
@@ -755,7 +762,7 @@ class ControllerTest extends Controller {
 				$items = $class::withTrashed()->get();
 				foreach ($items as $item) {
 					if(!is_null($item->search)){
-						continue;
+						//continue;
 					}
 					$search = null;
 					foreach($prefix as $key => $value) {
@@ -779,7 +786,7 @@ class ControllerTest extends Controller {
 			\time_checkpoint($class.' => '.$nbr);
 		}
 		\time_checkpoint('end build search');
-		*/
+		
 
 
 		/*

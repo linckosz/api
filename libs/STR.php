@@ -132,7 +132,7 @@ class STR {
 	}
 
 	public static function searchString($text){
-		$pinyin = new Pinyin();
+		$pinyin_lib = new Pinyin();
 		$text = strip_tags($text);
 		$text = trim($text);
 		$text = strtolower($text);
@@ -140,38 +140,44 @@ class STR {
 		$text_ori = $text;
 		$text = html_entity_decode($text);
 		$text = preg_replace('/\p{P}/u', ' ', $text);
-		$text = preg_replace('/(\p{Han})/u', ' $1 ', $text); //Espace chinese characters
 		$text = preg_replace('/\s\s+/u', ' ', $text);
 		$text = explode(' ', $text);
 		$text = array_unique($text);
 		$text_bis = array();
+		$text_orig = array(); //original char is merged to the end
 		foreach ($text as $key => $value) {
 			$temp = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value); //remove accents
+			echo($temp.' remove accents<br>');
 			if($temp != $value){
 				if(preg_match('/[a-z0-9]+/u', $temp)){
 					$text_bis[] = $temp;
+					$text_orig[] = $value;
 				} else if(preg_match('/(\p{Han})/u', $value)){
-					$text_bis[] = implode('', $pinyin->convert($value));
+					//convert to pinyin first, then split hanzi into separate char
+					$value_pinyin = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', pinyin($value));
+					if(strlen($value_pinyin) < 1){ //if error, fall back to old pinyin lib
+						\libs\Watch::php(true, 'pinyin ext failed', __FILE__, __LINE__, true);
+						$value_pinyin = implode('', $pinyin_lib->convert($value));
+					}
+					$text_bis[] = $value_pinyin;
+					$value = preg_replace('/(\p{Han})/u', ' $1 ', $value);
+					$text_orig = array_merge($text_orig, explode(' ', $value));
+				} else {
+					$text_orig[] = $value;
 				}
+			} else {
+				$text_bis[] = $value; //Place it at the end like that the pinyin is in the front, it's easier for abc order
 			}
-			$text_bis[] = $value; //Place it at the end like that the pinyin is in the front, it's easier for abc order
 		}
 		$text_bis = array_unique($text_bis);
-		$text = implode(' ', $text_bis);
+		$text_orig = array_unique($text_orig);
+		$text = implode(' ', array_merge($text_bis, $text_orig));
 		if($text == $text_ori){
 			$text = false; //Note: For some small content, it may search through some html tags, we better to use .text() on front
 		}
 		$text = trim($text);
 		return $text;
 	}
-
-
-
-
-
-
-
-
 
 
 
