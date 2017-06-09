@@ -1019,7 +1019,6 @@ class Users extends ModelLincko {
 						$pivots->{'workspaces>access'} = new \stdClass;
 					}
 					$pivots->{'workspaces>access'}->{$app->lincko->data['workspace_id']} = 1;
-
 					$invitation_models = json_decode($data->invite_access);
 					if($invitation_models){
 						foreach ($invitation_models as $table => $list) {
