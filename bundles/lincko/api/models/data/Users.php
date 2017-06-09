@@ -1013,16 +1013,8 @@ class Users extends ModelLincko {
 			$username_guest = $guest->username;
 			$pivots = new \stdClass;
 			if($app->lincko->data['workspace_id']>0){
-				//If we are inside a workspace, we give immediate access if the user has the workspace edition right only
-				$workspace = Workspaces::whereHas('users', function ($query){
-					$app = \Slim\Slim::getInstance();
-					$query
-					->where('workspaces_id', $app->lincko->data['workspace_id'])
-					->where('users_id', $app->lincko->data['uid'])
-					->where('access', 1)
-					->where('super', 1);
-				})->first();
-				if($workspace){
+				$workspace = Workspaces::getWorkspace();
+				if($workspace && $workspace->checkPermissionAllow('edit')){
 					if(!isset($pivots->{'workspaces>access'})){
 						$pivots->{'workspaces>access'} = new \stdClass;
 					}
