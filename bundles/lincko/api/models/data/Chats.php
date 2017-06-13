@@ -27,7 +27,7 @@ class Chats extends ModelLincko {
 		'deleted_at',
 		'title',
 		'single',
-		'style', //0:normal / 1:feedback
+		'style', //0:normal / 1:feedback / 2:alert
 		'_parent',
 		'_spaces',
 		'_perm',

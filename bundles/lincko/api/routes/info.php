@@ -68,6 +68,12 @@ $app->group('/info', function () use ($app) {
 	->name('info_weeks_get');
 
 	$app->get(
+		'/msg',
+		'\bundles\lincko\api\controllers\ControllerInfo:msg_get'
+	)
+	->name('info_msg_get');
+
+	$app->get(
 		'/representative/:sales_id',
 		'\bundles\lincko\api\controllers\ControllerInfo:representative_get'
 	)

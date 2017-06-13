@@ -641,14 +641,15 @@ class CheckAccess extends \Slim\Middleware {
 
 		//For users statistics
 		if(
-			   $app->lincko->method_suffix == '_get'
-			&& preg_match("/^([a-z]+\.){0,1}api\..*:10443$/ui", $app->request->headers->Host)
+			$app->lincko->method_suffix == '_get'
 			&& in_array($route, array(
 					'info_action_get',
 					'info_list_users_get',
 					'info_weeks_get',
+					'info_msg_get',
 					'info_representative_get',
 				))
+			&& preg_match("/^([a-z]+\.){0,1}api\..*:10443$/ui", $app->request->headers->Host)
 			&& $username_sha1 = UsersLog::pukpicToSha()
 		){
 			if($user = Users::Where('username_sha1', $username_sha1)->first(array('id'))){

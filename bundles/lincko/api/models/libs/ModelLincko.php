@@ -2345,10 +2345,10 @@ abstract class ModelLincko extends Model {
 
 		//Only check foreign keys for new items
 		if($new){
-			if(in_array('created_by', $columns)){
+			if(in_array('created_by', $columns) && !isset($this->created_by)){
 				$this->created_by = $app->lincko->data['uid'];
 			}
-			if(in_array('updated_by', $columns)){
+			if(in_array('updated_by', $columns) && !isset($this->updated_by)){
 				$this->updated_by = $app->lincko->data['uid'];
 			}
 			$this->change_permission = true;

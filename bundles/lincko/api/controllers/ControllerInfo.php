@@ -2,6 +2,7 @@
 
 namespace bundles\lincko\api\controllers;
 
+use \libs\Json;
 use \libs\Controller;
 use \libs\Folders;
 use \libs\Datassl;
@@ -9,6 +10,9 @@ use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\libs\Action;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\data\Users;
+use \bundles\lincko\api\models\data\Projects;
+use \bundles\lincko\api\models\data\Chats;
+use \bundles\lincko\api\models\data\Messages;
 use \bundles\lincko\api\models\data\Files;
 use \bundles\lincko\api\models\data\Workspaces;
 use Carbon\Carbon;
@@ -321,6 +325,79 @@ class ControllerInfo extends Controller {
 		return exit(0);
 	}
 
+	public function msg_get(){
+		$app = $this->app;
+		if(!Users::amIadmin()){
+			return false;
+		}
+		set_time_limit(3600); //Set to 1 hour workload at the most
+		proc_nice(10);
+		$result = false;
+		$data = false;
+		if($data = $app->request->get()){
+			$data = json_decode(json_encode($data, JSON_FORCE_OBJECT)); //Force to object convertion
+			if(
+				   isset($data->textarea)
+				&& is_string($data->textarea)
+				&& strlen($data->textarea)>0
+				&& isset($data->users)
+				&& is_object($data->users)
+				&& !empty($data->users)
+			){
+				$arr = array_unique((array) $data->users);
+				foreach ($arr as $users_id) {
+					if($personal_project = Projects::getPersonal($users_id)){
+						$chat = Chats::whereHas('users', function($query) use ($users_id) {
+							$app = \Slim\Slim::getInstance();
+							$query
+							->where('users_x_chats.users_id', $users_id)
+							->where('users_x_chats.single', 0);
+						})
+						->where('parent_type', 'projects')
+						->where('parent_id', $personal_project->id)
+						->where('single', 0)
+						->first();
+						if(!$chat){
+							$pivots = new \stdClass;
+							$pivots->{'users>access'} = new \stdClass;
+							$pivots->{'users>access'}->{$users_id} = true;
+							$pivots->{'users>access'}->{'0'} = true;
+							$pivots->{'users>single'} = new \stdClass;
+							$pivots->{'users>single'}->{$users_id} = 0;
+							$pivots->{'users>single'}->{'0'} = $users_id;
+							$chat = new Chats;
+							$chat->forceGiveAccess();
+							$chat->saveHistory(false);
+							$chat->created_by = 0;
+							$chat->updated_by = 0;
+							$chat->single = 0;
+							$chat->style = 2;
+							$chat->parent_type = 'projects';
+							$chat->parent_id = $personal_project->id;
+							$chat->title = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+							$chat->pivots_format($pivots, false);
+							$chat->save();
+						}
+						if($chat){
+							$message = new Messages;
+							$message->forceGiveAccess();
+							$message->saveHistory(false);
+							$message->created_by = 0;
+							$message->parent_id = $chat->id;
+							$message->comment = $data->textarea;
+							if($message->save()){
+								$result = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		proc_nice(0);
+		echo $data->callback.'('.$result.')';
+		return exit(0);
+	}
+
 	public function list_users_get($from, $to, $users_id=false){
 		$app = $this->app;
 		if(!Users::amIadmin()){
@@ -362,6 +439,60 @@ class ControllerInfo extends Controller {
 			echo "<br />\n";
 		}
 
+		echo '
+			<script src="/scripts/libs/jquery-1.12.0.min.js" type="text/javascript"></script>
+			<script>
+				var nbr_msg = 1;
+				var send_form = function(){
+					$("#form_info").text("");
+					var param = {};
+					param["textarea"] = $("#form_textarea").val();
+					param["users"] = [];
+					$("[name=msg]").each(function(){
+						if(this.checked){
+							param["users"].push(this.value);
+						}
+					});
+					if(!param["textarea"]){
+						$("#form_info").text("No text!");
+						return false;
+					}
+					if(param["users"].length==0){
+						$("#form_info").text("No user selected!");
+						return false;
+					}
+					$.ajax({
+						url: "/info/msg",
+						type: "GET",
+						data: param,
+						contentType: "application/json; charset=UTF-8",
+						dataType: "jsonp",
+						success: function(){
+							var txt = "Message ["+nbr_msg+"] sent to users: ";
+							nbr_msg++;
+							for(var i in param["users"]){
+								txt = txt + param["users"][i] + " / ";
+							}
+							$("#form_info").text(txt);
+							$("[name=msg]").each(function(){
+								this.checked = false;
+							});
+							$("#form_textarea").val("");
+						},
+						error: function(){
+							$("#form_info").text("error...");
+						},
+					});
+				}
+			</script>
+			<textarea id="form_textarea" rows="4" cols="50"></textarea>
+			<br />
+			<input type="button" onclick="send_form();" value="send message" />
+			<br />
+			<div id="form_info" style="max-width:70%;white-space:normal;"></div>
+		';
+		echo "<br />\n<br />\n<br />\n";
+
 		$from = Carbon::createFromFormat('Y-m-d', $from)->startOfDay();
 		$to = Carbon::createFromFormat('Y-m-d', $to)->endOfDay();
 		
@@ -378,6 +509,7 @@ class ControllerInfo extends Controller {
 				<td>item</td>
 				<td>Profile</td>
 				<td>id</td>
+				<td>MSG</td>
 				<td>Lincked to</td>
 				<td>Username</td>
 				<td>Firstname</td>
@@ -531,6 +663,7 @@ class ControllerInfo extends Controller {
 				$link = 'https://'.$app->lincko->data['lincko_back'].'file.'.$app->lincko->domain.':8443/file/profile/'.$app->lincko->data['workspace_id'].'/'.$user->id.'?'.intval($user->profile_pic);
 				echo '<td style="text-align:center;"><img style="height:32px;cursor:pointer;" src="'.$link.'" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->id.'\', \'_blank\');" /></td>';
 				echo '<td>'.$user->id.'</td>';
+				echo '<td><input type="checkbox" name="msg" value="'.$user->id.'" /></td>';
 				if(is_numeric($user->linked_to)){
 					echo '<td style="cursor:pointer;background-color:#FFFAE6;text-align:center;" onclick="window.open(\'https://'.$app->lincko->data['lincko_back'].'api.'.$app->lincko->domain.':10443/info/action/'.$user->linked_to.'\', \'_blank\');" >'.$user->linked_to.'</td>';
 				} else {

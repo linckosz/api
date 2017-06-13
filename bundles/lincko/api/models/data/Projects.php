@@ -433,9 +433,12 @@ class Projects extends ModelLincko {
 		return false;
 	}
 
-	public static function getPersonal(){
+	public static function getPersonal($users_id=false){
 		$app = ModelLincko::getApp();
-		return self::where('personal_private', $app->lincko->data['uid'])->first();
+		if(!$users_id){
+			$users_id = $app->lincko->data['uid'];
+		}
+		return self::where('personal_private', $users_id)->first();
 	}
 
 	public function pivots_format($form, $history_save=true){

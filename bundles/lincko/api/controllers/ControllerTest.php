@@ -743,6 +743,51 @@ class ControllerTest extends Controller {
 		}
 		*/
 
+		/*
+		$users_id = $app->lincko->data['uid'];
+		if($personal_project = Projects::getPersonal($users_id)){
+			$chat = Chats::whereHas('users', function($query) use ($users_id) {
+				$app = \Slim\Slim::getInstance();
+				$query
+				->where('users_x_chats.users_id', $users_id)
+				->where('users_x_chats.single', 0);
+			})
+			->where('parent_type', 'projects')
+			->where('parent_id', $personal_project->id)
+			->where('single', 0)
+			->first();
+			if(!$chat){
+				$pivots = new \stdClass;
+				$pivots->{'users>access'} = new \stdClass;
+				$pivots->{'users>access'}->{$users_id} = true;
+				$pivots->{'users>access'}->{'0'} = true;
+				$pivots->{'users>single'} = new \stdClass;
+				$pivots->{'users>single'}->{$users_id} = 0;
+				$pivots->{'users>single'}->{'0'} = $users_id;
+				$chat = new Chats;
+				$chat->saveHistory(false);
+				$chat->created_by = 0;
+				$chat->updated_by = 0;
+				$chat->single = 0;
+				$chat->style = 0;
+				$chat->parent_type = 'projects';
+				$chat->parent_id = $personal_project->id;
+				$chat->title = $app->trans->getBRUT('api', 0, 11); //LinckoBot
+				$chat->pivots_format($pivots, false);
+				$chat->save();
+			}
+			if($chat){
+				$message = new Messages;
+				$message->saveHistory(false);
+				$message->created_by = 0;
+				$message->parent_id = $chat->id;
+				$message->comment = 'test';
+				$message->save();
+			}
+		}
+		*/
+			
+
 		//Display mysql requests
 		//\libs\Watch::php( $db->getQueryLog() , 'QueryLog', __FILE__, __LINE__, false, false, true);
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
