@@ -2805,19 +2805,33 @@ abstract class ModelLincko extends Model {
 						//$retry = false;
 						while($loop && $loop>0){
 							try {
-								/*
+								
 								if($retry){
+									$rebuilt = false;
 									//We need to recheck the status of current model, if not the extra may be wrong (previous issue when "title update + archive project + deadlock on update")
-									$model = $this::withTrashed()->find($this->id);
-									$bindings = $model->toVisible();
-									$extra = json_encode($bindings, JSON_UNESCAPED_UNICODE);
+									if($model = $this::withTrashed()->find($this->id)){
+										if($extra_new = json_decode($model->extra)){
+											if($extra_current = json_decode($extra)){
+												$dirty = $this->getDirty();
+												foreach ($dirty as $key => $value) {
+													if(isset($extra_current->$key)){
+														$rebuilt = true;
+														$extra_new->$key = $extra_current->$key;
+													}
+												}
+												if($rebuilt){
+													$extra = json_encode($extra_new);
+												}
+											}
+										}
+									}
 								}
-								*/
+								
 								$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
 								$loop = false;
 							} catch (\Exception $e) {
 								\libs\Watch::php(true, 'extraEncode => Do not worry about this deadlock issue, it will be retried in a loop', __FILE__, __LINE__, true);
-								//$retry = true;
+								$retry = true;
 								$loop--;
 								if($loop<=0){
 									$loop = false;
