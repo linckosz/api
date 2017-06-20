@@ -484,6 +484,13 @@ class ControllerInfo extends Controller {
 						},
 					});
 				}
+				var check_all = false;
+				var switch_all = function(){
+					$("[name=msg]").each(function(){
+						this.checked = !check_all;
+					});
+					check_all = !check_all;
+				};
 			</script>
 			<textarea id="form_textarea" rows="4" cols="50"></textarea>
 			<br />
@@ -509,7 +516,7 @@ class ControllerInfo extends Controller {
 				<td>item</td>
 				<td>Profile</td>
 				<td>id</td>
-				<td>MSG</td>
+				<td><span onclick="switch_all();" style="cursor:pointer;">MSG</span></td>
 				<td>Lincked to</td>
 				<td>Username</td>
 				<td>Firstname</td>
