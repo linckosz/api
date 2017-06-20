@@ -31,7 +31,7 @@ class File {
 		}
 	}
 
-	public static function getGroupLatest($name, $files){
+	public static function getGroupLatest($name, $files, $content=false){
 		if(empty($name) || empty($files)){
 			return '';
 		}
@@ -53,12 +53,16 @@ class File {
 			if(!is_file($_SERVER['DOCUMENT_ROOT'].$fast || $time > filemtime($_SERVER['DOCUMENT_ROOT'].$fast))){
 				$folder = new Folders;
 				$folder->createPath($_SERVER['DOCUMENT_ROOT'].'/lincko/_group', 0770);
-				$output = fopen($_SERVER['DOCUMENT_ROOT'].$fast, 'w');
+				$str = '';
 				foreach ($files as $file) {
-					fwrite($output, file_get_contents($_SERVER['DOCUMENT_ROOT'].$file).PHP_EOL);
+					$str .= file_get_contents($_SERVER['DOCUMENT_ROOT'].$file).PHP_EOL;
 				}
+				$output = fopen($_SERVER['DOCUMENT_ROOT'].$fast, 'w');
+				fwrite($output, $str);
 				fclose($output);
-				
+			}
+			if($content){
+				return $str;
 			}
 			return $fast.'?'.filemtime($_SERVER['DOCUMENT_ROOT'].$fast);
 		}
