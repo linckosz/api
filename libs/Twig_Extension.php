@@ -28,6 +28,10 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 		return File::getLatest($file);
 	}
 
+	public function get_Grouplatest($name, $group){
+		return File::getGroupLatest($name, $group);
+	}
+
 	//Get the translation
 	public function get_Trans($bundle, $category, $phrase, $type = NULL, array $data = array()){
 		$app = \Slim\Slim::getInstance();
@@ -117,6 +121,7 @@ class Twig_Extension extends \Slim\Views\TwigExtension {
 				new \Twig_SimpleFunction('_require', array($this, 'get_Require'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_trans', array($this, 'get_Trans'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_filelatest', array($this, 'get_Filelatest'), array('is_safe' => array('html'))),
+				new \Twig_SimpleFunction('_grouplatest', array($this, 'get_Grouplatest'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_languages', array($this, 'get_Languages'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_languages_short', array($this, 'get_Languages_short'), array('is_safe' => array('html'))),
 				new \Twig_SimpleFunction('_language', array($this, 'get_Language'), array('is_safe' => array('html'))),

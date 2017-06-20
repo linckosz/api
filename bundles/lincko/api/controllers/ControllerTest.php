@@ -786,6 +786,8 @@ class ControllerTest extends Controller {
 			}
 		}
 		*/
+
+		//Data::getTrees();
 			
 
 		//Display mysql requests

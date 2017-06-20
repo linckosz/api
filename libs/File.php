@@ -31,4 +31,38 @@ class File {
 		}
 	}
 
+	public static function getGroupLatest($name, $files){
+		if(empty($name) || empty($files)){
+			return '';
+		}
+		if(!is_array($files) && is_string($files)){
+			$files = array($files);
+		}
+		if(is_array($files)){
+			$time = 0;
+			foreach ($files as $file) {
+				if(is_file($_SERVER['DOCUMENT_ROOT'].$file)){
+					$filemtime = filemtime($_SERVER['DOCUMENT_ROOT'].$file);
+					if($filemtime > $time){
+						$time = $filemtime;
+					}
+				}
+			}
+			$create = true;
+			$fast = '/lincko/_group/'.$name;
+			if(!is_file($_SERVER['DOCUMENT_ROOT'].$fast || $time > filemtime($_SERVER['DOCUMENT_ROOT'].$fast))){
+				$folder = new Folders;
+				$folder->createPath($_SERVER['DOCUMENT_ROOT'].'/lincko/_group', 0770);
+				$output = fopen($_SERVER['DOCUMENT_ROOT'].$fast, 'w');
+				foreach ($files as $file) {
+					fwrite($output, file_get_contents($_SERVER['DOCUMENT_ROOT'].$file).PHP_EOL);
+				}
+				fclose($output);
+				
+			}
+			return $fast.'?'.filemtime($_SERVER['DOCUMENT_ROOT'].$fast);
+		}
+		return '';
+	}
+
 }
