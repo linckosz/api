@@ -161,7 +161,7 @@ $app->lincko->translation = array(
 //Some generic data for twig
 $app->lincko->data = array(
 	'domain' => $app->lincko->domain,
-	'subdomain' => $app->lincko->domain,
+	'subdomain' => '',
 	'lincko_back' => '',
 	'title' => $app->lincko->title,
 	'workspace' => '',
