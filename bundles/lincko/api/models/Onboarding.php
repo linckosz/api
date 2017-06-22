@@ -193,6 +193,40 @@ class Onboarding {
 				}
 			}
 			Updates::informUsers($users_tables);
+
+			//Assign tasks to the user
+			$task_pivot = new \stdClass;
+			$task_pivot->{'users>in_charge'} = new \stdClass;
+			$task_pivot->{'users>in_charge'}->{$app->lincko->data['uid']} = true;
+			$task_pivot->{'users>approver'} = new \stdClass;
+			$task_pivot->{'users>approver'}->{$app->lincko->data['uid']} = true;
+
+			//Projects::saveSkipper(true);
+
+			$users_tables = array();
+			$users_tables[$app->lincko->data['uid']] = array();
+			foreach ($links as $table => $list) {
+				if($table=='tasks'){
+					$users_tables[$app->lincko->data['uid']][$table] = true;
+					foreach ($list as $id) {
+						if($class = Projects::getClass($table)){
+							if($item = $class::withTrashed()->find($id)){
+								//Assign tasks
+								$item->pivots_format($task_pivot, false);
+								$item->saveHistory(false);
+								$item->save();
+							}
+						}
+					}
+				}
+			}
+			Projects::saveSkipper(false);
+			$project_new->setPerm();
+			$users_tables = $project_new->touchUpdateAt($users_tables, false, true);
+			Updates::informUsers($users_tables);
+
+			/*
+			//For some users, the setPerm was empty
 			$url = $app->environment['slim.url_scheme'].'://'.$app->request->headers->Host.'/onboarding/monkeyking';
 			$data = json_encode($this->json);
 			$ch = curl_init();
@@ -232,6 +266,7 @@ class Onboarding {
 			}
 
 			@curl_close($ch);
+			*/
 		}
 		return true;
 	}
