@@ -2830,7 +2830,8 @@ abstract class ModelLincko extends Model {
 								$this::where('id', $this->id)->getQuery()->update(['extra' => $extra]);
 								$loop = false;
 							} catch (\Exception $e) {
-								\libs\Watch::php(true, 'extraEncode => Do not worry about this deadlock issue, it will be retried in a loop', __FILE__, __LINE__, true);
+								//\libs\Watch::php(true, 'extraEncode => Do not worry about this deadlock issue, it will be retried in a loop', __FILE__, __LINE__, true);
+								//toto => This is encounter many times every hour, must be optimized
 								$retry = true;
 								$loop--;
 								if($loop<=0){

@@ -208,15 +208,12 @@ class Onboarding {
 			foreach ($links as $table => $list) {
 				if($table=='tasks'){
 					$users_tables[$app->lincko->data['uid']][$table] = true;
-					foreach ($list as $id) {
-						if($class = Projects::getClass($table)){
-							if($item = $class::withTrashed()->find($id)){
-								//Assign tasks
-								$item->pivots_format($task_pivot, false);
-								$item->saveHistory(false);
-								$item->save();
-							}
-						}
+					foreach ($list as $item) {
+						//Assign tasks
+						$item->forceGiveAccess(true);
+						$item->pivots_format($task_pivot, false);
+						$item->saveHistory(false);
+						$item->save();
 					}
 				}
 			}
