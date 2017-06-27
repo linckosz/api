@@ -539,6 +539,13 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$uid = $app->lincko->data['uid'];
 		$user = Users::find($uid);
 		$url = $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_HOST'].'/uid/'.Datassl::encrypt($user->id, 'invitation');
+		$customized = false;
+		if($get = $app->request->get()){
+			if(isset($get['guest_access'])){
+				$url .= '_'.$get['guest_access'];
+				$customized = true;
+			}
+		}
 		$timestamp = $user->created_at->timestamp; 
 		$gmt_mtime = gmdate('r', $timestamp);
 		header('Last-Modified: '.$gmt_mtime);
@@ -561,32 +568,34 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		$exists = false;
 		$basename = $_SERVER['REQUEST_SCHEME'].'-'.$_SERVER['SERVER_HOST'].'-';
 
-		if($user->profile_pic>0 && $file = Files::withTrashed()->find($user->profile_pic)){
-			$path = $folder->getPath().$basename.$user->profile_pic.'.png';
-			$puid = $file->created_by;
-			if(!is_null($file->puid)){
-				$puid = $file->puid;
-			}
-			$thumbnail = $server_path_full.'/'.$puid.'/thumbnail/'.$file->link;
-			if(is_file($path)){
-				$exists = true;
-			} else if(is_file($thumbnail)){
-				//Generate the qrcode picture
-				$mini = $folder->getPath().$basename.$user->profile_pic.'_mini.png';
-				$src = WideImage::load($thumbnail);
-				$src = $src->resize(144, 144, 'outside', 'any');
-				$src = $src->crop("center", "middle", 144, 144);
-				$src = $src->roundCorners(24, null, 2);
-				$src = $src->saveToFile($mini, 9, PNG_NO_FILTER);
-				$qrCode
-					->setLogo($mini)
-					->setLogoSize(144)
-				;
-			}
-		} else {
-			$path = $folder->getPath().$basename.'qrcode.png';
-			if(is_file($path)){
-				$exists = true;
+		if(!$customized){
+			if($user->profile_pic>0 && $file = Files::withTrashed()->find($user->profile_pic)){
+				$path = $folder->getPath().$basename.$user->profile_pic.'.png';
+				$puid = $file->created_by;
+				if(!is_null($file->puid)){
+					$puid = $file->puid;
+				}
+				$thumbnail = $server_path_full.'/'.$puid.'/thumbnail/'.$file->link;
+				if(is_file($path)){
+					$exists = true;
+				} else if(is_file($thumbnail)){
+					//Generate the qrcode picture
+					$mini = $folder->getPath().$basename.$user->profile_pic.'_mini.png';
+					$src = WideImage::load($thumbnail);
+					$src = $src->resize(144, 144, 'outside', 'any');
+					$src = $src->crop("center", "middle", 144, 144);
+					$src = $src->roundCorners(24, null, 2);
+					$src = $src->saveToFile($mini, 9, PNG_NO_FILTER);
+					$qrCode
+						->setLogo($mini)
+						->setLogoSize(144)
+					;
+				}
+			} else {
+				$path = $folder->getPath().$basename.'qrcode.png';
+				if(is_file($path)){
+					$exists = true;
+				}
 			}
 		}
 		
@@ -602,7 +611,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 				->setImageType(QrCode::IMAGE_TYPE_PNG)
 			;
 			header('Content-Type: '.$qrCode->getContentType());
-			$qrCode->save($path);
+			if(!$customized){
+				$qrCode->save($path);
+			}
 			$qrCode->render();
 		} else {
 			WideImage::load($path)->output('png');

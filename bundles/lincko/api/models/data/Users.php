@@ -824,7 +824,7 @@ class Users extends ModelLincko {
 				})->get(array('id', 'username', 'profile_pic'));
 				foreach ($users as $user) {
 					if($user->id != $app->lincko->data['uid']){
-						$pending->{$user->id} = array($user->username, $user->profile_pic);
+						$pending->{$user->id} = array($user->username, $user->profile_pic, $user->id);
 					}
 				}
 			}
@@ -987,8 +987,9 @@ class Users extends ModelLincko {
 		$app = ModelLincko::getApp();
 		$invite = false;
 		$app->lincko->flash['unset_user_code'] = true;
+		$app->lincko->flash['unset_guest_access'] = true;
 		if(isset($data->user_code) && $user_code = Datassl::decrypt($data->user_code, 'invitation')){
-			if($guest = Users::find($user_code)){
+			if($user_code>1 && $guest = Users::find($user_code)){
 				$invite = self::inviteSomeone($guest, $data);
 				Action::record(-8, $user_code); //Invite by external scan / paste url
 			}

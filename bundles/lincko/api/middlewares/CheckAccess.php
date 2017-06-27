@@ -106,6 +106,7 @@ class CheckAccess extends \Slim\Middleware {
 				$invitation->code = null;
 				$invitation->used = true;
 				$invitation->models = null;
+				$invitation->email = null;
 				$invitation->save();
 
 				//Convert Invitation into users_x_users request
@@ -223,6 +224,7 @@ class CheckAccess extends \Slim\Middleware {
 						$invit->code = null;
 						$invit->used = true;
 						$invit->models = null;
+						$invit->email = null;
 						$invit->save();
 					}
 				}

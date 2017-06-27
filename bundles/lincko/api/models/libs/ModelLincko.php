@@ -2454,7 +2454,7 @@ abstract class ModelLincko extends Model {
 			usleep(rand(30000, 35000)); //30ms
 			if($new){
 				$this->new_model = true;
-				if($this->getTable()=='users'){
+				if($this->getTable()=='users' && (!isset($app->lincko->data['uid']) || !$app->lincko->data['uid'])){
 					$app->lincko->data['uid'] = $this->id;
 				}
 			}
