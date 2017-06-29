@@ -2,8 +2,6 @@
 
 namespace bundles\lincko\api\middlewares;
 
-use \libs\Datassl;
-
 //This class help to add information manually if we need (debug purpose)
 class JsonApiView extends \JsonApiView {
 	public function render($status=200, $data = NULL) {

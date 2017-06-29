@@ -131,6 +131,7 @@ class Handler {
 		ini_set('session.auto_start', '1');
 		ini_set('session.serialize_handler', 'php_serialize');
 		ini_set("session.cookie_domain", '.'.$app->lincko->domain); //same session id across sub-domain
+		//ini_set('session.gc_divisor', '1'); //This help to _clean() immediatly teh session table if need, if not it using probability of 1/1000.
 		session_start();
 		//Overwrite with previous Session data
 		foreach ($app->lincko->session as $key => $value) {

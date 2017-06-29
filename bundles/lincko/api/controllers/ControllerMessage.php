@@ -129,7 +129,7 @@ class ControllerMessage extends Controller {
 				if($chat->style == 1){
 					$mail = new Email();
 					$mail->addAddress($app->lincko->email->Support);
-					$mail->setSubject('Feedback by ' . Users::getUser()->getUsername());
+					$mail->setSubject('Feedback by ' . Users::getUser()->getUsername() . ' ['.$app->lincko->data['uid'].']');
 					$mail->sendLater($form->comment);
 				}	
 			}

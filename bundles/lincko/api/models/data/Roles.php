@@ -201,4 +201,11 @@ class Roles extends ModelLincko {
 		return $return;
 	}
 
+	public function checkAccess($show_msg=true){
+		if(isset($this->shared) && $this->shared){ //Because shared ones do not have _perm setup
+			$this->accessibility = (bool) true;
+		}
+		return parent::checkAccess($show_msg);
+	}
+
 }
