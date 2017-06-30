@@ -313,6 +313,78 @@ class ControllerNote extends Controller {
 		return false;
 	}
 
+	public function clone_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 10, 7)."\n"; //Note deletion failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
+			$errfield = 'id';
+		} else if($model = Notes::getModel($form->id)){
+			if($model->clone()){
+
+				//Setup dependencies
+				$pivots = new \stdClass;
+				$save = false;
+
+				//files => link
+				$items = $model->files;
+				foreach ($items as $item) {
+					$pivot = $item->pivot;
+					$attributes = $pivot->toArray();
+					foreach ($attributes as $key => $value) {
+						if($key=='notes_id' || $key=='files_id'){
+							continue;
+						}
+						if(!isset($pivots->{'files>'.$key})){
+							$pivots->{'files>'.$key} = new \stdClass;
+						}
+						$pivots->{'files>'.$key}->{$item->id} = $value;
+						$save = true;
+					}
+				}
+
+				//tasks => link
+				$items = $model->tasks;
+				foreach ($items as $item) {
+					$pivot = $item->pivot;
+					$attributes = $pivot->toArray();
+					foreach ($attributes as $key => $value) {
+						if($key=='notes_id' || $key=='tasks_id'){
+							continue;
+						}
+						if(!isset($pivots->{'tasks>'.$key})){
+							$pivots->{'tasks>'.$key} = new \stdClass;
+						}
+						$pivots->{'tasks>'.$key}->{$item->id} = $value;
+						$save = true;
+					}
+				}
+
+				if($save){
+					$clone->forceGiveAccess();
+					$clone->saveHistory(false);
+					$clone->pivots_format($pivots, false);
+					$clone->save();
+				}
+
+				$msg = array('msg' => $app->trans->getBRUT('api', 10, 13)); //Note copied.
+				$data = new Data();
+				$schema = $data->getSchema();
+				$data->dataUpdateConfirmation($msg, 200, true, $lastvisit, true, $schema);
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 	public function lock_start_post(){
 		$app = $this->app;
 		$form = $this->form;

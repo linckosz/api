@@ -36,6 +36,12 @@ $app->group('/note', function () use ($app) {
 	)
 	->name('note_restore'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/clone',
+		'\bundles\lincko\api\controllers\ControllerNote:clone'.$app->lincko->method_suffix
+	)
+	->name('note_clone'.$app->lincko->method_suffix);
+
 	$app->group('/lock', function () use ($app) {
 
 		$app->post(

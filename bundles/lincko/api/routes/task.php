@@ -36,6 +36,12 @@ $app->group('/task', function () use ($app) {
 	)
 	->name('task_restore'.$app->lincko->method_suffix);
 
+	$app->post(
+		'/clone',
+		'\bundles\lincko\api\controllers\ControllerTask:clone'.$app->lincko->method_suffix
+	)
+	->name('task_clone'.$app->lincko->method_suffix);
+
 	$app->group('/lock', function () use ($app) {
 
 		$app->post(

@@ -524,6 +524,79 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		return false;
 	}
 
+	public function clone_post(){
+		$app = $this->app;
+		$this->setFields();
+		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Files::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 30); //We could not validate the file ID.
+			$errfield = 'id';
+		} else if($model = Files::getModel($form->id)){
+			if($model->clone()){
+
+				//Setup dependencies
+				$pivots = new \stdClass;
+				$save = false;
+
+				//tasks => link
+				$items = $model->tasks;
+				foreach ($items as $item) {
+					$pivot = $item->pivot;
+					$attributes = $pivot->toArray();
+					foreach ($attributes as $key => $value) {
+						if($key=='files_id' || $key=='tasks_id'){
+							continue;
+						}
+						if(!isset($pivots->{'tasks>'.$key})){
+							$pivots->{'tasks>'.$key} = new \stdClass;
+						}
+						$pivots->{'tasks>'.$key}->{$item->id} = $value;
+						$save = true;
+					}
+				}
+
+				//notes => link
+				$items = $model->notes;
+				foreach ($items as $item) {
+					$pivot = $item->pivot;
+					$attributes = $pivot->toArray();
+					foreach ($attributes as $key => $value) {
+						if($key=='files_id' || $key=='notes_id'){
+							continue;
+						}
+						if(!isset($pivots->{'notes>'.$key})){
+							$pivots->{'notes>'.$key} = new \stdClass;
+						}
+						$pivots->{'notes>'.$key}->{$item->id} = $value;
+						$save = true;
+					}
+				}
+
+				if($save){
+					$clone->forceGiveAccess();
+					$clone->saveHistory(false);
+					$clone->pivots_format($pivots, false);
+					$clone->save();
+				}
+
+				$msg = array('msg' => $app->trans->getBRUT('api', 14, 13)); //File copied.
+				$data = new Data();
+				$schema = $data->getSchema();
+				$data->dataUpdateConfirmation($msg, 200, true, $lastvisit, true, $schema);
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 	//This is used for third party software, it's more secured
 	public function open_post($sha, $type, $id){
 		$app = $this->app;

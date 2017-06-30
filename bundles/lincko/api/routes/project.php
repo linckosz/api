@@ -37,6 +37,12 @@ $app->group('/project', function () use ($app) {
 	->name('project_restore'.$app->lincko->method_suffix);
 
 	$app->post(
+		'/clone',
+		'\bundles\lincko\api\controllers\ControllerProject:clone'.$app->lincko->method_suffix
+	)
+	->name('project_clone'.$app->lincko->method_suffix);
+
+	$app->post(
 		'/my_project',
 		'\bundles\lincko\api\controllers\ControllerProject:my_project'.$app->lincko->method_suffix
 	)

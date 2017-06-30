@@ -423,6 +423,103 @@ class ControllerTask extends Controller {
 		return false;
 	}
 
+	public function clone_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
+			$errfield = 'id';
+		} else if($model = Tasks::getModel($form->id)){
+			if($clone = $model->clone()){
+
+				//Setup dependencies
+				$pivots = new \stdClass;
+				$save = false;
+
+				//tasksdown (=subtasks) => clone
+				$items = $model->tasksdown;
+				foreach ($items as $item) {
+					$pivot = $item->pivot;
+					$attributes = $pivot->toArray();
+					if($item = $item->clone()){
+						foreach ($attributes as $key => $value) {
+							if($key=='tasks_id' || $key=='tasks_id_sub'){
+								continue;
+							}
+							if(!isset($pivots->{'tasksdown>'.$key})){
+								$pivots->{'tasksdown>'.$key} = new \stdClass;
+							}
+							$pivots->{'tasksdown>'.$key}->{$item->id} = $value;
+							$save = true;
+						}
+					}
+				}
+				if($save){
+					$clone->forceGiveAccess();
+					$clone->saveHistory(false);
+					$clone->pivots_format($pivots, false);
+					$clone->save();
+				}
+
+				//files => link
+				$items = $model->files;
+				foreach ($items as $item) {
+					$pivot = $item->pivot;
+					$attributes = $pivot->toArray();
+					foreach ($attributes as $key => $value) {
+						if($key=='tasks_id' || $key=='files_id'){
+							continue;
+						}
+						if(!isset($pivots->{'files>'.$key})){
+							$pivots->{'files>'.$key} = new \stdClass;
+						}
+						$pivots->{'files>'.$key}->{$item->id} = $value;
+						$save = true;
+					}
+				}
+
+				//notes => link
+				$items = $model->notes;
+				foreach ($items as $item) {
+					$pivot = $item->pivot;
+					$attributes = $pivot->toArray();
+					foreach ($attributes as $key => $value) {
+						if($key=='tasks_id' || $key=='notes_id'){
+							continue;
+						}
+						if(!isset($pivots->{'notes>'.$key})){
+							$pivots->{'notes>'.$key} = new \stdClass;
+						}
+						$pivots->{'notes>'.$key}->{$item->id} = $value;
+						$save = true;
+					}
+				}
+
+				if($save){
+					$clone->forceGiveAccess();
+					$clone->saveHistory(false);
+					$clone->pivots_format($pivots, false);
+					$clone->save();
+				}
+
+				$msg = array('msg' => $app->trans->getBRUT('api', 9, 13)); //Task copied.
+				$data = new Data();
+				$schema = $data->getSchema();
+				$data->dataUpdateConfirmation($msg, 200, true, $lastvisit, true, $schema);
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 	public function lock_start_post(){
 		$app = $this->app;
 		$form = $this->form;

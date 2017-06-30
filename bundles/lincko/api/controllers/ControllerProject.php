@@ -353,6 +353,32 @@ class ControllerProject extends Controller {
 		return false;
 	}
 
+	public function clone_post(){
+		$app = $this->app;
+		$form = $this->form;
+		$lastvisit = time();
+
+		$failmsg = $app->trans->getBRUT('api', 0, 10)."\n"; //Operation failed.
+		$errmsg = $failmsg.$app->trans->getBRUT('api', 0, 7); //Please try again.
+		$errfield = 'undefined';
+
+		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
+			$errfield = 'id';
+		} else if($model = Projects::getModel($form->id)){
+			if($model->clone()){
+				$msg = array('msg' => $app->trans->getBRUT('api', 12, 13)); //Project copied.
+				$data = new Data();
+				$schema = $data->getSchema();
+				$data->dataUpdateConfirmation($msg, 200, true, $lastvisit, true, $schema);
+				return true;
+			}
+		}
+
+		$app->render(401, array('show' => true, 'msg' => array('msg' => $errmsg, 'field' => $errfield), 'error' => true));
+		return false;
+	}
+
 	public function my_project_get(){
 		$app = $this->app;
 		$form = $this->form;

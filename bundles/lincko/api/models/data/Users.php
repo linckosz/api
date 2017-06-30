@@ -400,7 +400,7 @@ class Users extends ModelLincko {
 		if($user->admin){
 			return true;
 		}
-		self::errorMsg('You are not an Lincko developper');
+		self::errorMsg('You are not a Lincko developper');
 		return false;
 	}
 
