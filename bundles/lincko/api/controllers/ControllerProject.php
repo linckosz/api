@@ -366,7 +366,9 @@ class ControllerProject extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
 			$errfield = 'id';
 		} else if($model = Projects::getModel($form->id)){
-			if($model->clone()){
+			if($clone = $model->clone()){
+				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
+				$clone->save();
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 13)); //Project copied.
 				$data = new Data();
 				$schema = $data->getSchema();

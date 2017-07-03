@@ -326,7 +326,8 @@ class ControllerNote extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
 		} else if($model = Notes::getModel($form->id)){
-			if($model->clone()){
+			if($clone = $model->clone()){
+				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
 
 				//Setup dependencies
 				$pivots = new \stdClass;
@@ -345,23 +346,6 @@ class ControllerNote extends Controller {
 							$pivots->{'files>'.$key} = new \stdClass;
 						}
 						$pivots->{'files>'.$key}->{$item->id} = $value;
-						$save = true;
-					}
-				}
-
-				//tasks => link
-				$items = $model->tasks;
-				foreach ($items as $item) {
-					$pivot = $item->pivot;
-					$attributes = $pivot->toArray();
-					foreach ($attributes as $key => $value) {
-						if($key=='notes_id' || $key=='tasks_id'){
-							continue;
-						}
-						if(!isset($pivots->{'tasks>'.$key})){
-							$pivots->{'tasks>'.$key} = new \stdClass;
-						}
-						$pivots->{'tasks>'.$key}->{$item->id} = $value;
 						$save = true;
 					}
 				}

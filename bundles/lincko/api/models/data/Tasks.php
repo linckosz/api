@@ -193,11 +193,6 @@ class Tasks extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_tasks', 'tasks_id', 'users_id')->withPivot('access', 'in_charge', 'approver');
 	}
 
-	//One(Tasks) to Many(Comments)
-	public function comments(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'tasks', 'id', 'parent_id');
-	}
-
 	//Many(Tasks) to Many(Files)
 	public function files(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'tasks_x_files', 'tasks_id', 'files_id')->withPivot('access');
@@ -612,7 +607,7 @@ class Tasks extends ModelLincko {
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
-			return array(null, $links);
+			return null;
 		}
 		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];

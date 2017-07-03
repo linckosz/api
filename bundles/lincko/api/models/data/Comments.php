@@ -100,11 +100,6 @@ class Comments extends ModelLincko {
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Users', 'created_by');
 	}
 
-	//One(Users) to Many(comments)
-	public function comments(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'parent_id');
-	}
-
 	//Many(comments) to Many(Workspaces)
 	public function workspaces(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Workspaces', 'comments', 'id', 'parent_id');
@@ -257,7 +252,7 @@ class Comments extends ModelLincko {
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
-			return array(null, $links);
+			return null;
 		}
 		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];

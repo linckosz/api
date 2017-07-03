@@ -113,11 +113,6 @@ class Projects extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_projects', 'projects_id', 'users_id')->withPivot('access', 'fav', 'silence', 'noticed');
 	}
 
-	//One(Projects) to Many(Comments)
-	public function comments(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'projects', 'id', 'parent_id');
-	}
-
 	//Many(Projects) to One(Workspaces)
 	public function workspaces(){
 		return $this->belongsTo('\\bundles\\lincko\\api\\models\\data\\Workspaces', 'parent_id');
@@ -486,7 +481,7 @@ class Projects extends ModelLincko {
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
-			return array(null, $links);
+			return null;
 		}
 		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];

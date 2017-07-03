@@ -232,7 +232,7 @@ abstract class ModelLincko extends Model {
 
 	//One(?) to Many(Comments)
 	public function comments(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'parent_id')->where('parent_type', $this->getTable());
+		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'parent_id')->where('comments.parent_type', $this->getTable());
 	}
 
 	//Many(Roles) to Many Poly (Users)
@@ -2298,7 +2298,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
-		return array(null, $links);
+		return null;
 	}
 
 	public function import($user){

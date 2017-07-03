@@ -437,6 +437,7 @@ class ControllerTask extends Controller {
 			$errfield = 'id';
 		} else if($model = Tasks::getModel($form->id)){
 			if($clone = $model->clone()){
+				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
 
 				//Setup dependencies
 				$pivots = new \stdClass;

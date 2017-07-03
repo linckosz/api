@@ -788,6 +788,10 @@ class ControllerTest extends Controller {
 		*/
 
 		//Data::getTrees();
+
+		//$tp = Files::find(30540);
+
+		//$tp = $tp->comments->toArray();
 		
 
 		//Display mysql requests

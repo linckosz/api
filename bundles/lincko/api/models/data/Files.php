@@ -182,11 +182,6 @@ class Files extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Notes', 'notes_x_files', 'files_id', 'notes_id')->withPivot('access', 'fav');
 	}
 
-	//One(Files) to Many(Comments)
-	public function comments(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'files', 'id', 'parent_id');
-	}
-
 	//Many(Files) to Many(Comments)
 	public function Depcomments(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'comments_x_files', 'files_id', 'comments_id')->withPivot('access');
@@ -885,7 +880,7 @@ class Files extends ModelLincko {
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
-			return array(null, $links);
+			return null;
 		}
 		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];
@@ -893,13 +888,29 @@ class Files extends ModelLincko {
 			$offset = $this->created_at->diffInSeconds();
 		}
 
-		//Skip file versioning and files that are not part of a project
-		if($this->version!=0 || $this->parent_type!='projects'){
-			return array(null, $links);
+		//We only allow to attach clone files to the project itself
+		$parent_type = 'projects';
+		$parent_id = false;
+		if($this->parent_type!='projects'){
+			$model = $this;
+			while($model = $model->getParent()){
+				if($model->getTable()=='projects'){
+					$parent_id = $model->id;
+					break;
+				}
+			}
+			if(!$parent_id){
+				return null;
+			}
 		}
 
 		$clone = $this->replicate();
 		$clone->forceGiveAccess();
+		
+		if($parent_id){
+			$clone->parent_type = 'projects';
+			$clone->parent_id = $parent_id;
+		}
 
 		$clone->created_by = $uid;
 		if(!is_null($clone->deleted_by)){ $clone->deleted_by = $uid; }

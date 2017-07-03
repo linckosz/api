@@ -154,11 +154,6 @@ class Users extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Chats', 'users_x_chats', 'users_id', 'chats_id')->withPivot('access', 'fav');
 	}
 
-	//One(Users) to Many(Comments)
-	public function comments(){
-		return $this->hasMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'created_by');
-	}
-
 	//Many(Users) to Many(Workspaces)
 	public function workspaces(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Workspaces', 'users_x_workspaces', 'users_id', 'workspaces_id')->withPivot('access', 'super');

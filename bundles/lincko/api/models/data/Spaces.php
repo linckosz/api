@@ -248,7 +248,7 @@ class Spaces extends ModelLincko {
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
-			return array(null, $links);
+			return null;
 		}
 		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];

@@ -120,11 +120,6 @@ class Notes extends ModelLincko {
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Users', 'users_x_notes', 'notes_id', 'users_id')->withPivot('access', 'fav');
 	}
 
-	//One(Notes) to Many(Comments)
-	public function comments(){
-		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Comments', 'notes', 'id', 'parent_id');
-	}
-
 	//Many(Notes) to Many(Files)
 	public function files(){
 		return $this->belongsToMany('\\bundles\\lincko\\api\\models\\data\\Files', 'notes_x_files', 'notes_id', 'files_id')->withPivot('access', 'fav');
@@ -227,7 +222,7 @@ class Notes extends ModelLincko {
 	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
-			return array(null, $links);
+			return null;
 		}
 		$app = ModelLincko::getApp();
 		$uid = $app->lincko->data['uid'];

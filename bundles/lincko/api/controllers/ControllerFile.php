@@ -538,53 +538,9 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 30); //We could not validate the file ID.
 			$errfield = 'id';
 		} else if($model = Files::getModel($form->id)){
-			if($model->clone()){
-
-				//Setup dependencies
-				$pivots = new \stdClass;
-				$save = false;
-
-				//tasks => link
-				$items = $model->tasks;
-				foreach ($items as $item) {
-					$pivot = $item->pivot;
-					$attributes = $pivot->toArray();
-					foreach ($attributes as $key => $value) {
-						if($key=='files_id' || $key=='tasks_id'){
-							continue;
-						}
-						if(!isset($pivots->{'tasks>'.$key})){
-							$pivots->{'tasks>'.$key} = new \stdClass;
-						}
-						$pivots->{'tasks>'.$key}->{$item->id} = $value;
-						$save = true;
-					}
-				}
-
-				//notes => link
-				$items = $model->notes;
-				foreach ($items as $item) {
-					$pivot = $item->pivot;
-					$attributes = $pivot->toArray();
-					foreach ($attributes as $key => $value) {
-						if($key=='files_id' || $key=='notes_id'){
-							continue;
-						}
-						if(!isset($pivots->{'notes>'.$key})){
-							$pivots->{'notes>'.$key} = new \stdClass;
-						}
-						$pivots->{'notes>'.$key}->{$item->id} = $value;
-						$save = true;
-					}
-				}
-
-				if($save){
-					$clone->forceGiveAccess();
-					$clone->saveHistory(false);
-					$clone->pivots_format($pivots, false);
-					$clone->save();
-				}
-
+			if($clone = $model->clone()){
+				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
+				$clone->save();
 				$msg = array('msg' => $app->trans->getBRUT('api', 14, 13)); //File copied.
 				$data = new Data();
 				$schema = $data->getSchema();
