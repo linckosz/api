@@ -38,6 +38,7 @@ class Users extends ModelLincko {
 		'firstname',
 		'lastname',
 		'gender',
+		'styling',
 		'profile_pic',
 		'timeoffset',
 		'resume',
@@ -77,6 +78,7 @@ class Users extends ModelLincko {
 		'firstname',
 		'lastname',
 		'email',
+		'styling',
 		'integration',
 		'pending',
 		'party',
@@ -100,6 +102,7 @@ class Users extends ModelLincko {
 			'firstname' => array(false, 602), //[{un}] modified his profile
 			'lastname' => array(false, 602), //[{un}] modified his profile
 			'gender' => array(false, 602), //[{un}] modified his profile
+			'styling' => array(false, 602), //[{un}] modified his profile
 		'email' => array(true, 602), //[{un}] modified his profile
 			'timeoffset' => array(false, 602), //[{un}] modified his profile
 			'resume' => array(false, 602), //[{un}] modified his profile
@@ -217,6 +220,7 @@ class Users extends ModelLincko {
 			|| (isset($form->firstname) && !self::validChar($form->firstname, true))
 			|| (isset($form->lastname) && !self::validChar($form->lastname, true))
 			|| (isset($form->gender) && !self::validBoolean($form->gender, true))
+			|| (isset($form->styling) && !self::validNumeric($form->styling, true))
 			|| (isset($form->timeoffset) && !self::validNumeric($form->timeoffset, true))
 			|| (isset($form->resume) && !self::validNumeric($form->resume, true))
 		){
@@ -456,6 +460,7 @@ class Users extends ModelLincko {
 		$app = ModelLincko::getApp();
 		$return = null;
 		if(isset($this->id)){
+			$app->lincko->flash['styling'] = $this->styling;
 			$return = parent::save($options);
 		} else {
 			if(isset($this->timeoffset) && !isset($this->resume)){
@@ -597,7 +602,7 @@ class Users extends ModelLincko {
 			Authorization::Where('sha', $import_user->username_sha1)->delete();
 
 			//Import fulfilled fields
-			$fulfilled = array('email', 'firstname', 'lastname', 'profile_pic');
+			$fulfilled = array('email', 'firstname', 'lastname', 'styling', 'profile_pic');
 			$save = false;
 			foreach ($fulfilled as $field) {
 				if(empty($this->$field) && !empty($import_user->$field)){

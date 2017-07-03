@@ -127,6 +127,9 @@ class ControllerUser extends Controller {
 		if(isset($form->gender)){
 			$form->gender = (int) boolval($form->gender);
 		}
+		if(isset($form->styling)){
+			$form->styling = (int) $form->styling;
+		}
 		if(isset($form->profile_pic)){
 			if(is_numeric($form->profile_pic)){
 				$form->profile_pic = (int) $form->profile_pic;
@@ -218,6 +221,10 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 21); //We could not validate the gender.
 			$errfield = 'gender';
 		}
+		else if(isset($form->styling) && !Users::validNumeric($form->styling, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'styling';
+		}
 		else if($model = new Users()){
 			if(isset($form->temp_id)){ $model->temp_id = $form->temp_id; } //Optional
 			if(isset($form->email)){ $model->email = $form->email; } //Optional
@@ -225,6 +232,7 @@ class ControllerUser extends Controller {
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
+			if(isset($form->styling)){ $model->styling = $form->styling; } //Optional
 			if(property_exists($form, 'profile_pic')){ $model->profile_pic = $form->profile_pic; } //Optional
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
@@ -611,11 +619,16 @@ class ControllerUser extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 21); //We could not validate the gender.
 			$errfield = 'gender';
 		}
+		else if(isset($form->styling) && !Users::validNumeric($form->styling, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'styling';
+		}
 		else if($model = Users::find($form->id)){
 			if(isset($form->username)){ $model->username = $form->username; } //Optional
 			if(isset($form->firstname)){ $model->firstname = $form->firstname; } //Optional
 			if(isset($form->lastname)){ $model->lastname = $form->lastname; } //Optional
 			if(isset($form->gender)){ $model->gender = $form->gender; } //Optional
+			if(isset($form->styling)){ $model->styling = $form->styling; } //Optional
 			if(property_exists($form, 'profile_pic')){ $model->profile_pic = $form->profile_pic; } //Optional
 			if(isset($form->timeoffset)){ $model->timeoffset = $form->timeoffset; } //Optional
 			if(isset($form->resume)){ $model->resume = $form->resume; } //Optional
