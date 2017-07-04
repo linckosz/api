@@ -511,9 +511,9 @@ class Projects extends ModelLincko {
 
 		//Increment new project "A title copy(1)" => "A title copy(2)"
 		$title = trim($this->title);
-		if(preg_match("/^.+\[(\d+)\]$/ui", $title, $matches)){
+		if(preg_match("/^.+\((\d+)\)$/ui", $title, $matches)){
 			$i = intval($matches[1])+1;
-			$clone->title = preg_replace("/^(.*)(\(\d+\)$/ui", '${1}('.$i.')', $title);
+			$clone->title = preg_replace("/^(.*)\((\d+)\)$/ui", '${1}('.$i.')', $title);
 		} else {
 			$clone->title = $title.' '.$app->trans->getBRUT('api', 5, 3).'(1)'; //copy
 		}

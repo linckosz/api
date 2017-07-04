@@ -812,9 +812,14 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::find(4462)->tasks()->withTrashed()->get()->toArray();
 
-		$tp = Data::getItemsDesc(array('tasks'));
-
-		//$tp = Chats::getParentListGet();
+		$title = 'test copy(1)';
+		if(preg_match("/^.+\((\d+)\)$/ui", $title, $matches)){
+			\libs\Watch::php( $matches, '$matches', __FILE__, __LINE__, false, false, true);
+			$i = intval($matches[1])+1;
+			$tp = preg_replace("/^(.*)\((\d+)\)$/ui", '${1}('.$i.')', $title);
+		} else {
+			$tp = 'no';
+		}
 		
 
 		//Display mysql requests
