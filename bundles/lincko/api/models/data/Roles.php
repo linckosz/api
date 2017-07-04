@@ -54,6 +54,7 @@ class Roles extends ModelLincko {
 	);
 
 	protected static $parent_list = 'workspaces';
+	protected static $parent_list_get = array();
 
 	protected $model_integer = array(
 		'perm_all',

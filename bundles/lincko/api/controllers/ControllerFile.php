@@ -537,9 +537,25 @@ document.body.innerText=document.body.textContent=decodeURIComponent(window.loca
 		if(!isset($form->id) || !Files::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 30); //We could not validate the file ID.
 			$errfield = 'id';
-		} else if($model = Files::getModel($form->id)){
+		}
+		else if(isset($form->parent_id) && !Files::validNumeric($form->parent_id, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
+			$errfield = 'parent_id';
+		}
+		else if(isset($form->parent_type) && !Files::validType($form->parent_type, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 7); //We could not validate the parent type.
+			$errfield = 'parent_type';
+		}
+		else if(isset($form->name) && !Files::validChar($form->name, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 18); //We could not validate the name format: - 104 characters max
+			$errfield = 'name';
+		}
+		else if($model = Files::getModel($form->id)){
 			if($clone = $model->clone()){
 				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
+				if(isset($form->parent_id)){ $clone->parent_id = $form->parent_id; } //Optional
+				if(isset($form->parent_type)){ $clone->parent_type = $form->parent_type; } //Optional
+				if(isset($form->name)){ $clone->name = $form->name; } //Optional
 				$clone->save();
 				$msg = array('msg' => $app->trans->getBRUT('api', 14, 13)); //File copied.
 				$data = new Data();

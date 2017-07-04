@@ -787,11 +787,34 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		//Data::getTrees();
+		
+		//\time_checkpoint('ok1');
+		/*
+		$tp = Data::getTrees(
+			false,
+			//array('comments'),
+			false,
+			//1499091244
+			1499095433
+		);
+		*/
+		//$tp1 = Data::getTrees(false, 2);
+		//\time_checkpoint('ok3');
 
-		//$tp = Files::find(30540);
+		//$tp = Comments::where('_perm', 'LIKE', '%"'.$app->lincko->data['uid'].'"%')->get();
 
-		//$tp = $tp->comments->toArray();
+		/*
+		$tp = array();
+		foreach ($tp1 as $key => $value) {
+			$tp[$key] = count($value);
+		}
+		*/
+
+		//$tp = Projects::find(4462)->tasks()->withTrashed()->get()->toArray();
+
+		$tp = Data::getItemsDesc(array('tasks'));
+
+		//$tp = Chats::getParentListGet();
 		
 
 		//Display mysql requests

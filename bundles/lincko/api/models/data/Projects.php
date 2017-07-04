@@ -82,6 +82,7 @@ class Projects extends ModelLincko {
 	protected static $history_xdiff = array('description');
 
 	protected static $parent_list = 'workspaces';
+	protected static $parent_list_get = array();
 
 	protected $model_integer = array(
 		'fav',
@@ -478,7 +479,7 @@ class Projects extends ModelLincko {
 		return parent::setPerm();
 	}
 
-	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array('comments', 'chats')){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
 			return null;
@@ -505,20 +506,18 @@ class Projects extends ModelLincko {
 		$clone->personal_private = null;
 		$clone->viewed_by = '';
 		$clone->_perm = '';
-		$clone->title = trim($this->title).' ['.$app->trans->getBRUT('api', 5, 3).']'; //copy
 		$clone->resume = 0;
 		$clone->extra = null;
 
-		/*
-		//Increment new project "A title [1]" => "A title [2]"
+		//Increment new project "A title copy(1)" => "A title copy(2)"
 		$title = trim($this->title);
 		if(preg_match("/^.+\[(\d+)\]$/ui", $title, $matches)){
 			$i = intval($matches[1])+1;
-			$clone->title = preg_replace("/^(.*)(\[\d+\])$/ui", '${1}['.$i.']', $title);
+			$clone->title = preg_replace("/^(.*)(\(\d+\)$/ui", '${1}('.$i.')', $title);
 		} else {
-			$clone->title = $title.' [1]';
+			$clone->title = $title.' '.$app->trans->getBRUT('api', 5, 3).'(1)'; //copy
 		}
-		*/
+		//$clone->title = trim($this->title).' ['.$app->trans->getBRUT('api', 5, 3).']'; //copy
 
 		$clone->saveHistory(false);
 		$clone->save();
@@ -570,7 +569,7 @@ class Projects extends ModelLincko {
 
 
 		//Clone spaces (no dependencies)
-		if(!isset($exclude_links['spaces'])){
+		if(!in_array('spaces', $exclude_links)){
 			$attributes = array(
 				'parent_type' => 'projects',
 				'parent_id' => $clone->id,
@@ -583,7 +582,7 @@ class Projects extends ModelLincko {
 		}
 
 		//Clone chats (spaces)
-		if(!isset($exclude_links['chats'])){
+		if(!in_array('chats', $exclude_links)){
 			$attributes = array(
 				'parent_type' => 'projects',
 				'parent_id' => $clone->id,
@@ -596,7 +595,7 @@ class Projects extends ModelLincko {
 		}
 
 		//Clone files (spaces)
-		if(!isset($exclude_links['files'])){
+		if(!in_array('files', $exclude_links)){
 			$attributes = array(
 				'parent_type' => 'projects',
 				'parent_id' => $clone->id,
@@ -609,7 +608,7 @@ class Projects extends ModelLincko {
 		}
 
 		//Clone notes (spaces, files)
-		if(!isset($exclude_links['notes'])){
+		if(!in_array('notes', $exclude_links)){
 			$attributes = array(
 				'parent_id' => $clone->id,
 			);
@@ -621,19 +620,33 @@ class Projects extends ModelLincko {
 		}
 
 		//Clone tasks (spaces, files)
-		if(!isset($exclude_links['tasks'])){
+		if(!in_array('tasks', $exclude_links)){
 			$attributes = array(
 				'parent_id' => $clone->id,
 			);
 			if($tasks = $this->tasks){
 				foreach ($tasks as $task) {
-					$task->clone($offset, $attributes, $links);
+					$tasksups = $task->tasksup()->withTrashed()->get();
+					$get = false;
+					if($tasksups->count()==0){
+						$get = true;
+					} else {
+						foreach ($tasksups as $tasksup) {
+							if($tasksup->deleted_at == null){
+								$get = true;
+								break;
+							}
+						}
+					}
+					if($get){
+						$task->clone($offset, $attributes, $links);
+					}
 				}
 			}
 		}
 		
 		//Clone comments (projects)
-		if(!isset($exclude_links['comments'])){
+		if(!in_array('comments', $exclude_links)){
 			$attributes = array(
 				'parent_type' => 'projects',
 				'parent_id' => $clone->id,
@@ -644,6 +657,10 @@ class Projects extends ModelLincko {
 				}
 			}
 		}
+
+		//This insure to not display earlier history
+		sleep(1);
+		$clone->created_at = (new \DateTime)->format('Y-m-d H:i:s');
 
 		return $clone; //$link is directly modified as parameter &$link
 	}

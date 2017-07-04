@@ -365,9 +365,20 @@ class ControllerProject extends Controller {
 		if(!isset($form->id) || !Projects::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the project ID.
 			$errfield = 'id';
-		} else if($model = Projects::getModel($form->id)){
+		}
+		else if(isset($form->title) && !Projects::validTitle($form->title, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
+			$errfield = 'title';
+		}
+		else if(isset($form->description) && !Projects::validText($form->description, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
+			$errfield = 'description';
+		}
+		else if($model = Projects::getModel($form->id)){
 			if($clone = $model->clone()){
 				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
+				if(isset($form->title)){ $clone->title = $form->title; } //Optional
+				if(isset($form->description)){ $clone->description = $form->description; } //Optional
 				$clone->save();
 				$msg = array('msg' => $app->trans->getBRUT('api', 12, 13)); //Project copied.
 				$data = new Data();

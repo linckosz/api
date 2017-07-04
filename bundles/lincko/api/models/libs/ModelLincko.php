@@ -123,6 +123,7 @@ abstract class ModelLincko extends Model {
 
 	//Tell which parent role to check if the model doesn't have one, for example Tasks will check Projects if Tasks doesn't have role permission.
 	protected static $parent_list = null;
+	protected static $parent_list_get = null; //An array that must include all parent needed to use getItems. At null, we take the same as $parent_list (NOTE: may need to update over the time for each model!)
 	protected static $parent_list_soft = null;
 
 	//Keep a record of children tree structure
@@ -385,7 +386,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	public static function getHasPerm(){
-		return self::$has_perm;
+		return static::$has_perm;
 	}
 
 	public function getChildrenTree($item=true){
@@ -1362,6 +1363,24 @@ abstract class ModelLincko extends Model {
 
 	public static function getParentList(){
 		return static::$parent_list;
+	}
+
+	public static function getParentListGet(){
+		$parent_list_get = array();
+		if(is_array(static::$parent_list_get)){
+		 	$parent_list_get = static::$parent_list_get;
+		} else if(is_null(static::$parent_list_get)){
+			$parent_list_get = static::$parent_list;
+		}
+		if(!is_array($parent_list_get)){
+			$parent_list_get = array($parent_list_get);
+		}
+		foreach ($parent_list_get as $key => $value) {
+			if(empty($value)){
+				unset($parent_list_get[$key]);
+			}
+		}
+		return $parent_list_get;
 	}
 
 	public static function getParentListSoft(){

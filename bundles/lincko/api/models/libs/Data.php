@@ -77,10 +77,13 @@ class Data {
 		$app = ModelLincko::getApp();
 		self::setDeleteTempId($delete_temp_id); //We keep temp_id usually at creation (set to false)
 		if($app->lincko->data['lastvisit_enabled'] && $lastvisit && $this->setLastVisit()){
+
+			//toto => we should work on $app->lincko->data['lastvisit'] to avoid having getLatest doubling the items downloaded
+
 			$msg = array_merge(
 				array(
 					'msg' => $app->trans->getBRUT('api', 8888, 9), //You got the latest updates.
-					'lastvisit' => $app->lincko->data['lastvisit'], //Make sure that setLastvisit is time()-1
+					'lastvisit' => $app->lincko->data['lastvisit'], //Make sure that setLastvisit is time()-1 in common.php
 					'partial' => $this->getLatest(),
 					'schema' => $schema,
 				),
@@ -199,7 +202,7 @@ class Data {
 				}
 			}
 			//Organize by priority
-			$priority = array('users', 'workspaces', 'settings', 'projects', 'roles', 'chats', 'messages', 'files', 'notes', 'tasks', 'comments', 'spaces');
+			$priority = array('users', 'workspaces', 'namecards', 'settings', 'projects', 'roles', 'chats', 'messages', 'files', 'notes', 'tasks', 'comments', 'spaces');
 			self::$models = array();
 			foreach ($priority as $table_name) {
 				if(isset($classes[$table_name])){
@@ -212,19 +215,47 @@ class Data {
 		return self::$models;
 	}
 
-	//IMPORTANT => be carefull how to use, if $list_tp is ['chats', 'files', 'comments'], it will not return a chats that belongs to a projects because 'projects' is not included. Make sure that parents are included to avoid strange results
-	public static function getTrees($list_tp=false, $field=false){
-		if($list_tp===false || !is_array($list_tp)){
+	public static function getItemsDesc($list = array()){
+		$list_models = array();
+		if(empty($list)){
 			$list_models = self::getModels();
 		} else {
+			$checked = array();
 			$tp = self::getModels();
-			$list_models = array();
-			foreach ($list_tp as $table_name) {
+			foreach ($list as $table_name) {
 				if(isset($tp[$table_name])){
 					$list_models[$table_name] = $tp[$table_name];
 				}
 			}
+			foreach ($list_models as $table_name => $class) {
+				if($list_get = $class::getParentListGet()){
+					if(!empty($list_get)){
+						foreach ($list_get as $key => $table_name_bis) {
+							if(isset($list_models[$table_name_bis])){
+								unset($list_get[$key]);
+							}
+						}
+						if(!empty($list_get) && $tp_models = self::getItemsDesc($list_get)){
+							foreach ($tp_models as $table_name_bis => $class_bis) {
+								$list_models[$table_name_bis] = $class_bis;
+							}
+						}
+					}
+				}
+			}
 		}
+		return $list_models;
+	}
+
+	//IMPORTANT => be carefull how to use, if $list_tp is ['chats', 'files', 'comments'], it will not return a chats that belongs to a projects because 'projects' is not included. Make sure that parents are included to avoid strange results
+	public static function getTrees($list_tp=false, $field=false, $lastvisit=0){
+		$app = ModelLincko::getApp();
+
+		$list_models = self::getItemsDesc($list_tp);
+
+		//convert lastvisit into date
+		$lastvisit = (new \DateTime('@'.$lastvisit))->format('Y-m-d H:i:s');
+
 		$tree_scan = array();
 		$tree_desc = new \stdClass;
 		$tree_id = array();
@@ -293,16 +324,6 @@ class Data {
 				return $tree_desc;
 			}
 
-			/*
-			//toto => don't use models, it generates deadlocks
-			$models = array();
-			if($temp = Models::getItems(array_flip($list_models), true)){
-				foreach ($temp as $value) {
-					$models[$value->type] = array_filter( explode(';', $value->list), 'strlen' );
-				}
-			}
-			*/
-
 			// Get all ID with parent dependencies
 			$loop = true;
 			$tree_tp = $tree_scan;
@@ -334,19 +355,25 @@ class Data {
 							while($nested){ //$nested is used for element that are linked to each others
 								$nested = false;
 								$break = false;
+
+								$class::enableTrashGlobal(true);
+								//$result_bis = $class::getItems($list, true);
+								//$query = $class::getItems($list, false)->where('updated_at', '>=', $lastvisit);
+								//$result_bis = $query->get();
+
+								//$query = $class::where('updated_at', '>=', $lastvisit)->get();
+								//\libs\Watch::php($class::getHasPerm(), $class, __FILE__, __LINE__, false, false, true);
 								/*
-								//toto => don't use models, it generates deadlocks
-								if(isset($models[$key]) && count($models[$key])>0){ //toto => Models has an issue when plus a single ID and the row doesn't exists yet, it will ignore previous IDs
-									$result_bis = $class::withTrashed()->whereIn('id', $models[$key])->get(); //toto => It seems that it's slower that the jointure, need to be confirmed with heavy database
-									$break = true; //We force to exit because the list of IDs already contain all IDs
+								if(false && $class::getHasPerm()){
+									//$result_bis = $class::withTrashed()->where('updated_at', '>=', $lastvisit)->where('_perm', 'LIKE', '%"'.$app->lincko->data['uid'].'"%')->get();
+									$result_bis = $class::withTrashed()->where('_perm', 'LIKE', '%"'.$app->lincko->data['uid'].'"%')->get();
 								} else {
-									$class::enableTrashGlobal(true);
+									//$result_bis = $class::getItems($list, false)->where('updated_at', '>=', $lastvisit)->get();
 									$result_bis = $class::getItems($list, true);
-									$class::enableTrashGlobal(false);
 								}
 								*/
-								$class::enableTrashGlobal(true);
 								$result_bis = $class::getItems($list, true);
+
 								$class::enableTrashGlobal(false);
 								if(isset($result->$key)){
 									$result->$key = $result->$key->merge($result_bis);
@@ -521,7 +548,7 @@ class Data {
 				return null;
 			} else if(isset($this->partial) && isset($this->partial->$uid)){
 				foreach ($this->partial->$uid as $table => $value) {
-					$updates[$table] = true;
+					$updates[$table] = $table;
 				}
 			}
 			if($arr = Updates::find($uid)){
@@ -529,7 +556,7 @@ class Data {
 					if(isset($arr->{$table})){
 						$time = new \DateTime($arr->{$table});
 						if($time >= $this->lastvisit_object){
-							$updates[$table] = true;
+							$updates[$table] = $table;
 						}	
 					}
 				}
@@ -542,87 +569,86 @@ class Data {
 
 		//---OK---
 		//MEDIUM CPU hunger
-		//$tp = $this::getTrees(array('tasks', 'projects', 'users'));
-		$tp = $this::getTrees();
+		$tp = $this::getTrees($updates);
+		//$tp = $this::getTrees();
 		$tree_scan = $tp[0];
 		$tree_desc = $tp[1];
 		$tree_id = $tp[2];
 		$result = $tp[3];
 		unset($tp);
 
-		//---OK---
 		$users = array();
-		foreach ($result as $models) {
-			foreach ($models as $model) {
-				//toto => MEDIUM CPU hunger
-				$users = array_merge($users, $model->setContacts());
-			}
-		}
-
-		//---OK---
 		$visible = array();
+		$tree_access = array();
+
 		if(isset($tree_id['users'])){
+			//---OK---
+			foreach ($result as $models) {
+				foreach ($models as $model) {
+					//toto => MEDIUM CPU hunger
+					if(!isset($model->updated_by) || $model->updated_by >= $this->lastvisit){
+						$users = array_merge($users, $model->setContacts());
+					}
+				}
+			}
+
+			//---OK---
 			$visible = $tree_id['users'];
 			$users = array_merge($tree_id['users'], $users);
-		}
 
-		//---OK---
-		foreach ($users as $users_id) {
-			if(isset($tree_id['users'])){
+			//---OK---
+			foreach ($users as $users_id) {
 				$tree_id['users'][$users_id] = $users_id;
 			}
-		}
-	
-		//---OK---
-		$tree_access = array();
-		foreach ($result as $type => $models) {
-			if($type!='users'){ //We can exclude users, we should not include the contact list, and users oject doesn't have _perm column too
-				foreach ($models as $model) {
-					if(isset($model->_perm)){
-						if($perm = json_decode($model->_perm)){
-							foreach ($perm as $users_id => $value) {
-								$tree_access[$type][$users_id][$model->id] = true;
+		
+			//---OK---
+			foreach ($result as $type => $models) {
+				if($type!='users'){ //We can exclude users, we should not include the contact list, and users oject doesn't have _perm column too
+					foreach ($models as $model) {
+						if(isset($model->_perm)){
+							if($perm = json_decode($model->_perm)){
+								foreach ($perm as $users_id => $value) {
+									$tree_access[$type][$users_id][$model->id] = true;
+								}
 							}
 						}
 					}
 				}
 			}
-		}
-
-		//---OK---
-		//Get the list of all users that have access
-		foreach ($tree_access as $type => $type_list) {
-			foreach ($type_list as $users_id => $value) {
-				if(isset($tree_id['users'])){
+		
+			//---OK---
+			//Get the list of all users that have access
+			foreach ($tree_access as $type => $type_list) {
+				foreach ($type_list as $users_id => $value) {
 					$tree_id['users'][$users_id] = $users_id;
 				}
 			}
-		}
-		
-		//---OK---
-		$result->users = Users::getUsersContacts($tree_id['users'], $visible);
 
-		//---OK---
-		$users = array();
-		$users['users'] = $tree_id['users'];
-		$users_access = $this::getAccesses($users); //Check if at least other users have access (since we narrow to users only, the calulation is light)
-		foreach ($users_access as $type => $type_list) {
-			foreach ($type_list as $users_id => $models) {
-				foreach ($models as $id => $value) {
-					$tree_access[$type][$users_id][$id] = true;
+			//---OK---
+			$result->users = Users::getUsersContacts($tree_id['users'], $visible);
+
+			//---OK---
+			$users = array();
+			$users['users'] = $tree_id['users'];
+			$users_access = $this::getAccesses($users); //Check if at least other users have access (since we narrow to users only, the calulation is light)
+			foreach ($users_access as $type => $type_list) {
+				foreach ($type_list as $users_id => $models) {
+					foreach ($models as $id => $value) {
+						$tree_access[$type][$users_id][$id] = true;
+					}
 				}
 			}
-		}
 
-		//---OK---
-		//Get files of profile pcitures
-		if($profiles = Files::getProfilePics($tree_id['users'])->get()){
-			if(isset($result->files)){
-				foreach ($profiles as $model) {
-					$result->files[] = $model;
+			//---OK---
+			//Get files of profile pcitures
+			if($profiles = Files::getProfilePics($tree_id['users'])->get()){
+				if(isset($result->files)){
+					foreach ($profiles as $model) {
+						$result->files[] = $model;
+					}
+				} else {
+					$result->files = $profiles;
 				}
-			} else {
-				$result->files = $profiles;
 			}
 		}
 		
@@ -783,42 +809,44 @@ class Data {
 			//---OK---
 			//For _users to fulfill with default for all users (it's slightly different than $dependencies which only get existing links, it does not default)
 			//toto => need to follow closely over time to make sure that replacing "$result_bis->$uid" by "result_no_extra" does not affect anything (_users)
-			foreach ($result_no_extra as $table_name => $models) {
-				if(!isset($dependencies[$table_name])){
-					continue;
-				}
-				$class = $list_models[$table_name];
-				$default = false;
-				$default_list = array();
-				if(isset($class::getDependenciesVisible()['users'])){
-					$default = $class::filterPivotAccessGetDefault();
-					foreach ($tree_id['users'] as $key => $value) {
-						$default_list[$key] = $default;
+			if(isset($tree_id['users'])){
+				foreach ($result_no_extra as $table_name => $models) {
+					if(!isset($dependencies[$table_name])){
+						continue;
 					}
-				}
-				foreach ($models as $id => $model) {
-					$deps = array();
-					if(isset($dependencies[$table_name][$id]['_users'])){
-						$deps = (array) $dependencies[$table_name][$id]['_users'];
-					}
-					$default_full = array();
-					foreach ($default_list as $users_id => $value) {
-						if(isset($tree_access[$table_name][$users_id][$id])){
-							if(isset($deps[$users_id])){
-								$arr = (array) $deps[$users_id];
-								if(isset($arr['access']) && !$arr['access']){
-									if(isset($result_bis->$uid->$table_name->$id->_perm)){
-										unset($result_bis->$uid->$table_name->$id->_perm->$users_id);
-									}
-									continue; //Skip recording non accessed users
-								}
-								$default_full[$users_id] = $arr;
-							} else {
-								$default_full[$users_id] = $default_list[$users_id];
-							}
+					$class = $list_models[$table_name];
+					$default = false;
+					$default_list = array();
+					if(isset($class::getDependenciesVisible()['users'])){
+						$default = $class::filterPivotAccessGetDefault();
+						foreach ($tree_id['users'] as $key => $value) {
+							$default_list[$key] = $default;
 						}
 					}
-					$result_bis->$uid->$table_name->$id->_users = (object) $default_full;
+					foreach ($models as $id => $model) {
+						$deps = array();
+						if(isset($dependencies[$table_name][$id]['_users'])){
+							$deps = (array) $dependencies[$table_name][$id]['_users'];
+						}
+						$default_full = array();
+						foreach ($default_list as $users_id => $value) {
+							if(isset($tree_access[$table_name][$users_id][$id])){
+								if(isset($deps[$users_id])){
+									$arr = (array) $deps[$users_id];
+									if(isset($arr['access']) && !$arr['access']){
+										if(isset($result_bis->$uid->$table_name->$id->_perm)){
+											unset($result_bis->$uid->$table_name->$id->_perm->$users_id);
+										}
+										continue; //Skip recording non accessed users
+									}
+									$default_full[$users_id] = $arr;
+								} else {
+									$default_full[$users_id] = $default_list[$users_id];
+								}
+							}
+						}
+						$result_bis->$uid->$table_name->$id->_users = (object) $default_full;
+					}
 				}
 			}
 

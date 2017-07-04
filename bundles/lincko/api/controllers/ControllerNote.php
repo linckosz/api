@@ -325,9 +325,25 @@ class ControllerNote extends Controller {
 		if(!isset($form->id) || !Notes::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 14); //We could not validate the note ID.
 			$errfield = 'id';
-		} else if($model = Notes::getModel($form->id)){
+		}
+		else if(isset($form->parent_id) && !Notes::validNumeric($form->parent_id, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
+			$errfield = 'parent_id';
+		}
+		else if(isset($form->title) && !Notes::validTitle($form->title, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
+			$errfield = 'title';
+		}
+		else if(isset($form->comment) && !Notes::validText($form->comment, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
+			$errfield = 'comment';
+		}
+		else if($model = Notes::getModel($form->id)){
 			if($clone = $model->clone()){
 				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
+				if(isset($form->parent_id)){ $clone->parent_id = $form->parent_id; } //Optional
+				if(isset($form->title)){ $clone->title = $form->title; } //Optional
+				if(isset($form->comment)){ $clone->comment = $form->comment; } //Optional
 
 				//Setup dependencies
 				$pivots = new \stdClass;

@@ -877,7 +877,7 @@ class Files extends ModelLincko {
 		}
 	}
 
-	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array('comments'=>true)){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
 			return null;
@@ -935,7 +935,7 @@ class Files extends ModelLincko {
 		$dependencies_visible = $clone::getDependenciesVisible();
 		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
-			if(!isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+			if(!in_array($dep, $exclude_pivots) && isset($dependencies_visible[$dep][1])){
 				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
 					continue;
 				}
@@ -973,7 +973,7 @@ class Files extends ModelLincko {
 		}
 
 		//Clone comments (no dependencies)
-		if(!isset($exclude_links['comments'])){
+		if(!in_array('comments', $exclude_links)){
 			$attributes = array(
 				'parent_type' => 'files',
 				'parent_id' => $clone->id,

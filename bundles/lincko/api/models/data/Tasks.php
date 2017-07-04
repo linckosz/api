@@ -126,6 +126,7 @@ class Tasks extends ModelLincko {
 	);
 
 	protected static $parent_list = 'projects';
+	protected static $parent_list_get = array('projects', 'users');
 
 	protected $model_timestamp = array(
 		'approved_at',
@@ -604,7 +605,7 @@ class Tasks extends ModelLincko {
 		return parent::toVisible();
 	}
 
-	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array()){
+	public function clone($offset=false, $attributes=array(), &$links=array(), $exclude_pivots=array('users'), $exclude_links=array('comments')){
 		//Skip if it already exists
 		if(isset($links[$this->getTable()][$this->id])){
 			return null;
@@ -642,7 +643,7 @@ class Tasks extends ModelLincko {
 		$dependencies_visible = $clone::getDependenciesVisible();
 		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
-			if(!isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+			if(!in_array($dep, $exclude_pivots) && isset($dependencies_visible[$dep][1])){
 				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
 					continue;
 				}
@@ -721,7 +722,7 @@ class Tasks extends ModelLincko {
 		}
 
 		//Clone comments (files)
-		if(!isset($exclude_links['comments'])){
+		if(!in_array('comments', $exclude_links)){
 			$attributes = array(
 				'parent_type' => 'tasks',
 				'parent_id' => $clone->id,
@@ -732,21 +733,6 @@ class Tasks extends ModelLincko {
 				}
 			}
 		}
-
-/*
-		//Build gant links
-		if($tasks = $this->tasksdown){
-			foreach ($tasks as $task) {
-				
-			}
-		}
-		if($tasks = $this->tasksup){
-			foreach ($tasks as $task) {
-				
-			}
-		}
-*/
-		
 
 		return $clone; //$link is directly modified as parameter &$link
 	}

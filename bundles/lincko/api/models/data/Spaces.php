@@ -71,6 +71,7 @@ class Spaces extends ModelLincko {
 	);
 
 	protected static $parent_list = 'projects';
+	protected static $parent_list_get = array('projects', 'users');
 
 	protected $model_boolean = array(
 		'tasks',
@@ -277,7 +278,7 @@ class Spaces extends ModelLincko {
 		$dependencies_visible = $clone::getDependenciesVisible();
 		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
-			if(!isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+			if(!in_array($dep, $exclude_pivots) && isset($dependencies_visible[$dep][1])){
 				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
 					continue;
 				}

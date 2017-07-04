@@ -66,6 +66,8 @@ class Workspaces extends ModelLincko {
 		'_delete' => array(true, 399), //[{un}] deleted the workspace
 	);
 
+	protected static $parent_list_get = array('users');
+
 	protected static $allow_role = true;
 
 	//Turn true for paid account only the time the account is created

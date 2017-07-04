@@ -435,9 +435,60 @@ class ControllerTask extends Controller {
 		if(!isset($form->id) || !Tasks::validNumeric($form->id)){ //Required
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 5); //We could not validate the task ID.
 			$errfield = 'id';
-		} else if($model = Tasks::getModel($form->id)){
+		}
+		else if(isset($form->parent_id) && !Tasks::validNumeric($form->parent_id, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
+			$errfield = 'parent_id';
+		}
+		else if(isset($form->title) && !Tasks::validTitle($form->title, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 2); //We could not validate the title format: - 200 characters max
+			$errfield = 'title';
+		}
+		else if(isset($form->comment) && !Tasks::validText($form->comment, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 3); //We could not validate the comment format: - Cannot be empty
+			$errfield = 'comment';
+		}
+		else if(isset($form->start) && !Tasks::validDate($form->start, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 22); //We could not validate the date format: - Timestamp
+			$errfield = 'start';
+		}
+		else if(isset($form->duration) && !Tasks::validNumeric($form->duration, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 23); //We could not validate the duration format: - Seconds
+			$errfield = 'duration';
+		}
+		else if(isset($form->fixed) && !Tasks::validBoolean($form->fixed, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'fixed';
+		}
+		else if(isset($form->approved) && !Tasks::validBoolean($form->approved, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'approved';
+		}
+		else if(isset($form->status) && !Tasks::validNumeric($form->status, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 25); //We could not validate the format: - Integer
+			$errfield = 'status';
+		}
+		else if(isset($form->progress) && !Tasks::validProgress($form->progress, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 26); //We could not validate the format: - Pourcentage
+			$errfield = 'progress';
+		}
+		else if(isset($form->milestone) && !Tasks::validBoolean($form->milestone, true)){ //Optional
+			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 24); //We could not validate the format: - Boolean
+			$errfield = 'milestone';
+		}
+		else if($model = Tasks::getModel($form->id)){
 			if($clone = $model->clone()){
 				if(isset($form->temp_id)){ $clone->temp_id = $form->temp_id; } //Optional
+				if(isset($form->parent_id)){ $clone->parent_id = $form->parent_id; } //Optional
+				if(isset($form->title)){ $clone->title = $form->title; } //Optional
+				if(isset($form->comment)){ $clone->comment = $form->comment; } //Optional
+				if(property_exists($form, 'start')){ $clone->start = $form->start; } //Optional
+				if(isset($form->duration)){ $clone->duration = $form->duration; } //Optional
+				if(isset($form->fixed)){ $clone->fixed = $form->fixed; } //Optional
+				if(isset($form->approved)){ $clone->approved = $form->approved; } //Optional
+				if(isset($form->status)){ $clone->status = $form->status; } //Optional
+				if(isset($form->progress)){ $clone->progress = $form->progress; } //Optional
+				if(isset($form->milestone)){ $clone->milestone = $form->milestone; } //Optional
 
 				//Setup dependencies
 				$pivots = new \stdClass;

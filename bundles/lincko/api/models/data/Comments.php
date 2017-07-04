@@ -71,7 +71,7 @@ class Comments extends ModelLincko {
 
 	protected static $history_xdiff = array('comment');
 
-	protected static $parent_list = array('users', 'comments', 'workspaces', 'projects', 'tasks', 'notes', 'files');
+	protected static $parent_list = array('comments', 'projects', 'tasks', 'notes', 'files');
 
 	protected $model_integer = array(
 		'recalled_by',
@@ -282,7 +282,7 @@ class Comments extends ModelLincko {
 		$dependencies_visible = $clone::getDependenciesVisible();
 		$extra = $this->extraDecode();
 		foreach ($dependencies_visible as $dep => $value) {
-			if(!isset($exclude_links[$dep]) && isset($dependencies_visible[$dep][1])){
+			if(!in_array($dep, $exclude_pivots) && isset($dependencies_visible[$dep][1])){
 				if($extra && (!isset($extra->{'_'.$dep}) || empty($extra->{'_'.$dep}))){
 					continue;
 				}
@@ -320,7 +320,7 @@ class Comments extends ModelLincko {
 		}
 
 		//Clone comments (no dependencies)
-		if(!isset($exclude_links['comments'])){
+		if(!in_array('comments', $exclude_links)){
 			$attributes = array(
 				'parent_type' => 'comments',
 				'parent_id' => $clone->id,
