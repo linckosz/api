@@ -120,7 +120,7 @@ class Namecards extends ModelLincko {
 			   (isset($form->id) && !self::validNumeric($form->id, true))
 			|| (isset($form->parent_id) && !self::validNumeric($form->parent_id, true))
 			|| (isset($form->username) && !self::validChar($form->username, true) && !self::validTextNotEmpty($form->username, true))
-			|| (isset($form->email) && !self::validEmail($form->email, true))
+			|| (isset($form->email) && ($form->email!='' && !self::validEmail($form->email, true)))
 			|| (isset($form->firstname) && !self::validChar($form->firstname, true))
 			|| (isset($form->lastname) && !self::validChar($form->lastname, true))
 			|| (isset($form->phone) && !self::validChar($form->phone, true))

@@ -94,7 +94,7 @@ class ControllerNamecard extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 6); //We could not validate the parent ID.
 			$errfield = 'parent_id';
 		}
-		else if(isset($form->email) && !Namecards::validEmail($form->email)){ //Optional
+		else if(isset($form->email) && ($form->email!='' && !Namecards::validEmail($form->email))){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
 			$errfield = 'email';
 		}
@@ -186,7 +186,7 @@ class ControllerNamecard extends Controller {
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 4); //We could not validate the Namecard ID.
 			$errfield = 'id';
 		}
-		else if(isset($form->email) && !Namecards::validEmail($form->email)){ //Optional
+		else if(isset($form->email) && ($form->email!='' && !Namecards::validEmail($form->email))){ //Optional
 			$errmsg = $failmsg.$app->trans->getBRUT('api', 8, 11); //We could not validate the Email address format: - {name}@{domain}.{ext} - 191 characters maxi
 			$errfield = 'email';
 		}
