@@ -253,6 +253,14 @@ class Data {
 
 		$list_models = self::getItemsDesc($list_tp);
 
+		//Must include all items without _perm
+		$models = self::getModels();
+		foreach ($models as $table_name => $class) {
+			if(!$class::getHasPerm()){
+				$list_models[$table_name] = $class;
+			}
+		}
+
 		//convert lastvisit into date
 		$lastvisit = (new \DateTime('@'.$lastvisit))->format('Y-m-d H:i:s');
 

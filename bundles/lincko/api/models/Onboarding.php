@@ -363,6 +363,14 @@ class Onboarding {
 			$this->resetOnboarding();
 
 			//Create a project
+			/*
+				toto => 
+				The idea is to immediatly prepare an onboarding project (field "onboard" at 1 if available),
+				Then, once the user click on start, we manually:
+					- Add a pivot for the user
+					- Add string in each _perm with default value (don't run setPerm)
+					- Add string in extra for _perm (don't null extra)
+			*/
 			if(!$this->getOnboarding('projects', 1)){
 				if($project_ori = Projects::find($clone_id)){
 
@@ -374,16 +382,16 @@ class Onboarding {
 
 					Projects::saveSkipper(true);
 					$links = array();
-					$project_new = $project_ori->clone(false, array(), $links);
+					$project_new = $project_ori->clone(false, array(), $links); //7s
 					Projects::saveSkipper(false);
 					$project_new->title = $project_ori->title;
 					$project_new->pivots_format($pivot, false);
 					$project_new->saveHistory(false);
-					$project_new->save();
+					$project_new->save(); //1s
 					$this->setOnboarding($project_new, 1);
 
 					//Send the request in another thread
-					$this->asyncMonkeyKing($project_new, $links);
+					$this->asyncMonkeyKing($project_new, $links); //8s
 
 					//Insure the sequence is running
 					$this->runOnboarding(1, true);
