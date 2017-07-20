@@ -490,7 +490,7 @@ class Tasks extends ModelLincko {
 						continue;
 					}
 
-					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email', 'socket')); //Exclude email
 					$inform->send();
 				}
 			}

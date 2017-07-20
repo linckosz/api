@@ -17,6 +17,7 @@ class Inform {
 		'email' => false,
 		'mobile' => false,
 		'wechat' => false,
+		'socket' => false,
 	);
 
 	protected $title = '[Lincko]';
@@ -30,6 +31,8 @@ class Inform {
 	protected $item = false;
 
 	protected $sha = array();
+
+	protected $username_sha1 = array();
 
 	public function __construct($title, $content, $annex=false, $sha, $item=false, array $include=array(), array $exclude=array()){
 		$app = ModelLincko::getApp();
@@ -83,6 +86,7 @@ class Inform {
 		if($users = UsersLog::WhereIn('username_sha1', $sha)->where('notify', 1)->get(array('username_sha1', 'party', 'party_id'))){
 			foreach ($users as $user) {
 				if(isset($usernames[$user->username_sha1])){
+					$this->username_sha1[$user->username_sha1] = $user->username_sha1;
 					$party = $user->party;
 					$party_id = $user->party_id;
 					if(empty($party)){
@@ -131,6 +135,16 @@ class Inform {
 				}
 			}
 		}
+	}
+
+	//Quicker Response to user (websocket)
+	protected function send_socket(){
+		$msg = '{"show":true, "msg":"websocket working", "error":false, "status":200}';
+		$users_list =  $this->username_sha1;
+
+			//Send the message to the nodejs here
+		
+		return true;
 	}
 
 	protected function send_wechat(){

@@ -1681,13 +1681,13 @@ class Data {
 			foreach ($lang_individual_weekly as $language => $alias) {
 				//What a week! Check out what you did last week and what next week has in store. But don't forget to enjoy the weekend!
 				$content = $app->trans->getBRUT('api', 19, 4, array(), $language);
-				$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
+				$inform = new Inform($title, $content, false, $alias, false, array(), array('email', 'socket')); //Exclude email
 				$inform->send();
 			}
 			foreach ($lang_individual_daily as $language => $alias) {
 				//Want to see what you did today and what's coming tomorrow. Your daily update from the LinckoBot has arrived.
 				$content = $app->trans->getBRUT('api', 19, 3, array(), $language);
-				$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
+				$inform = new Inform($title, $content, false, $alias, false, array(), array('email', 'socket')); //Exclude email
 				$inform->send();
 			}
 			foreach ($lang_team_weekly as $language => $alias) {
@@ -1695,7 +1695,7 @@ class Data {
 				$content = $app->trans->getBRUT('api', 19, 2, array(), $language);
 				//It generates to many notifications for the user
 				/*
-					$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
+					$inform = new Inform($title, $content, false, $alias, false, array(), array('email', 'socket')); //Exclude email
 					$inform->send();
 				*/
 			}
@@ -1704,7 +1704,7 @@ class Data {
 				$content = $app->trans->getBRUT('api', 19, 1, array(), $language);
 				//It generates to many notifications for the user
 				/*
-					$inform = new Inform($title, $content, false, $alias, false, array(), array('email')); //Exclude email
+					$inform = new Inform($title, $content, false, $alias, false, array(), array('email', 'socket')); //Exclude email
 					$inform->send();
 				*/
 			}

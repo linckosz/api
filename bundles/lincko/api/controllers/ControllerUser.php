@@ -398,12 +398,12 @@ class ControllerUser extends Controller {
 			if(!empty($data->party)){
 				$prefix = $data->party.'.';
 			}
-			$user->internal_email = $prefix.md5(uniqid());
+			$user->internal_email = $prefix.md5(uniqid('', true));
 			$username_sha1 = sha1($user->internal_email);
 			$username_sha1 = substr($username_sha1, 0, 20);
 			while(Users::Where('internal_email', $user->internal_email)->orWhere('username_sha1', $username_sha1)->first()){
 				usleep(10000);
-				$user->internal_email = $prefix.md5(uniqid());
+				$user->internal_email = $prefix.md5(uniqid('', true));
 				$username_sha1 = sha1($user->internal_email);
 				$username_sha1 = substr($username_sha1, 0, 20);
 			}
@@ -412,10 +412,10 @@ class ControllerUser extends Controller {
 
 
 			$users_log = new UsersLog;
-			$log = md5(uniqid());
+			$log = md5(uniqid('', true));
 			while(UsersLog::Where('log', $log)->first(array('log'))){
 				usleep(10000);
-				$log = md5(uniqid());
+				$log = md5(uniqid('', true));
 			}
 			$users_log->log = $log;
 			$users_log->party = $data->party;
@@ -529,10 +529,10 @@ class ControllerUser extends Controller {
 				);
 				if(empty($users_log->party) && Users::validEmail($users_log->party_id)){
 					$content = $app->trans->getBRUT('api', 1003, 2, $content_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
-					$inform = new Inform($title, $content, false, $user->getSha(), false, array('email'));
+					$inform = new Inform($title, $content, false, $user->getSha(), false, array('email', 'socket'));
 				} else {
 					$content = $app->trans->getBRUT('api', 1003, 3); //We are currently in Beta and are hoping to get a lot of feedback to make...
-					$inform = new Inform($title, $content, false, $user->getSha(), false, array($users_log->party), array('email')); //Make sure we exclude email
+					$inform = new Inform($title, $content, false, $user->getSha(), false, array($users_log->party), array('email', 'socket')); //Make sure we exclude email
 				}
 				$inform->send();
 
@@ -966,7 +966,7 @@ class ControllerUser extends Controller {
 							$form->email => mb_strstr($form->email, '@', true),
 						),
 					);
-					$inform = new Inform($title, $content, $annex, array(), false, array('email'));
+					$inform = new Inform($title, $content, $annex, array(), false, array('email', 'socket'));
 					$inform->send($manual);
 
 					$data = true;
@@ -1059,7 +1059,7 @@ class ControllerUser extends Controller {
 
 					$inform_email = new Inform($title_email, $content_email, false, $user->getSha(), false, array('email')); //Only email
 					$inform_email->send();
-					$inform_other = new Inform($title_other, $content_other, false, $user->getSha(), false, array(), array('email')); //Exclude email
+					$inform_other = new Inform($title_other, $content_other, false, $user->getSha(), false, array(), array('email', 'socket')); //Exclude email
 					$inform_other->send();
 
 					$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
@@ -1115,7 +1115,7 @@ class ControllerUser extends Controller {
 								'mail_link' => $link,
 							);
 							$content = $app->trans->getBRUT('api', 1005, 2, $content_array); //You have successfully reset your password. You can now signin.
-							$inform = new Inform($title, $content, false, $user->getSha());
+							$inform = new Inform($title, $content, false, $user->getSha(), false, array('socket'));
 							$inform->send();
 							
 							$authorize = $user_log->getAuthorize($data);

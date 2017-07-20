@@ -812,14 +812,16 @@ class ControllerTest extends Controller {
 
 		//$tp = Projects::find(4462)->tasks()->withTrashed()->get()->toArray();
 
-		$title = 'test copy(1)';
-		if(preg_match("/^.+\((\d+)\)$/ui", $title, $matches)){
-			\libs\Watch::php( $matches, '$matches', __FILE__, __LINE__, false, false, true);
-			$i = intval($matches[1])+1;
-			$tp = preg_replace("/^(.*)\((\d+)\)$/ui", '${1}('.$i.')', $title);
-		} else {
-			$tp = 'no';
-		}
+		
+		$tp = uniqid();
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		$tp = uniqid('abc');
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		$tp = uniqid('', true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		$tp = uniqid('abc', true);
+		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		
 		
 
 		//Display mysql requests
@@ -881,7 +883,7 @@ class ControllerTest extends Controller {
 				//\libs\Watch::php( $log->id, '$log', __FILE__, __LINE__, false, false, true);
 				usleep(100000);
 				$log->party_id = $user->email;
-				$log->log = md5(uniqid());
+				$log->log = md5(uniqid('', true));
 				$log->save();
 			}
 		}

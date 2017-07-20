@@ -477,9 +477,9 @@ class Files extends ModelLincko {
 						$content .= ":\n ".$this->name;
 					}
 					if($this->category=='voice' || $parent->getTable()=='chats'){
-						$inform = new Inform($title, $content, false, $alias, $parent, array(), array('email')); //Exclude email
+						$inform = new Inform($title, $content, false, $alias, $parent, array(), array('email', 'socket')); //Exclude email
 					} else {
-						$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+						$inform = new Inform($title, $content, false, $alias, $this, array(), array('email', 'socket')); //Exclude email
 					}
 					$inform->send();
 				}
@@ -515,7 +515,7 @@ class Files extends ModelLincko {
 				$this->server_path = $app->lincko->filePath;
 				$server_path_full = $app->lincko->filePathPrefix.$app->lincko->filePath;
 				$this->setCategory();
-				$this->link = md5(uniqid());
+				$this->link = md5(uniqid('', true));
 				$folder_ori = new Folders;
 				$folder_ori->createPath($server_path_full.'/'.$app->lincko->data['uid'].'/');
 				$this->thu_type = null;

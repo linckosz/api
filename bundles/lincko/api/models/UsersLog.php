@@ -150,7 +150,7 @@ class UsersLog extends Model {
 			}
 			//Warning: $authorization->public_key will reset to empty value after save because it's a primary value
 			$public_key = $authorization->public_key = $sha1;
-			$private_key = $authorization->private_key = md5(uniqid());
+			$private_key = $authorization->private_key = md5(uniqid('', true));
 			$authorization->fingerprint = $data->fingerprint;
 			$user = Users::where('username_sha1', $users_log->username_sha1)->first(array('id', 'username', 'workspace', 'styling'));
 			$authorization->sha = $users_log->username_sha1;
@@ -202,10 +202,10 @@ class UsersLog extends Model {
 		//If the second credential information does not exists, we attach a new one
 		if(!$model){
 			$model = $this->replicate();
-			$log = md5(uniqid());
+			$log = md5(uniqid('', true));
 			while($log != $this->log && UsersLog::Where('log', $log)->first(array('log'))){
 				usleep(10000);
-				$log = md5(uniqid());
+				$log = md5(uniqid('', true));
 			}
 			$model->log = $log;
 			$model->party = $party;

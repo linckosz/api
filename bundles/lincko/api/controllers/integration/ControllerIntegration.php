@@ -252,10 +252,10 @@ class ControllerIntegration extends Controller {
 	public function setcode_get(){
 		$app = $this->app;
 		Integration::clean();
-		$code = substr(md5(uniqid()), 0, 8);
+		$code = substr(md5(uniqid('', true)), 0, 8);
 		while(Integration::find($code)){
 			usleep(10000);
-			$code = substr(md5(uniqid()), 0, 8);
+			$code = substr(md5(uniqid('', true)), 0, 8);
 		}
 
 		$integration = new Integration;
@@ -277,10 +277,10 @@ class ControllerIntegration extends Controller {
 		Integration::clean();
 		ob_clean();
 		flush();
-		$code = substr(md5(uniqid()), 0, 8);
+		$code = substr(md5(uniqid('', true)), 0, 8);
 		while(Integration::find($code)){
 			usleep(10000);
-			$code = substr(md5(uniqid()), 0, 8);
+			$code = substr(md5(uniqid('', true)), 0, 8);
 		}
 
 		$integration = new Integration;
