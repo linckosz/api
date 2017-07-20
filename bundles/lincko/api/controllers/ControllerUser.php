@@ -529,10 +529,10 @@ class ControllerUser extends Controller {
 				);
 				if(empty($users_log->party) && Users::validEmail($users_log->party_id)){
 					$content = $app->trans->getBRUT('api', 1003, 2, $content_array); //Congratulations on joining Lincko. Here’s a link to help you start using Lincko and get on with your journey....
-					$inform = new Inform($title, $content, false, $user->getSha(), false, array('email', 'socket'));
+					$inform = new Inform($title, $content, false, $user->getSha(), false, array('email'));
 				} else {
 					$content = $app->trans->getBRUT('api', 1003, 3); //We are currently in Beta and are hoping to get a lot of feedback to make...
-					$inform = new Inform($title, $content, false, $user->getSha(), false, array($users_log->party), array('email', 'socket')); //Make sure we exclude email
+					$inform = new Inform($title, $content, false, $user->getSha(), false, array($users_log->party), array('email')); //Make sure we exclude email
 				}
 				$inform->send();
 
@@ -966,7 +966,7 @@ class ControllerUser extends Controller {
 							$form->email => mb_strstr($form->email, '@', true),
 						),
 					);
-					$inform = new Inform($title, $content, $annex, array(), false, array('email', 'socket'));
+					$inform = new Inform($title, $content, $annex, array(), false, array('email'));
 					$inform->send($manual);
 
 					$data = true;
@@ -1115,7 +1115,7 @@ class ControllerUser extends Controller {
 								'mail_link' => $link,
 							);
 							$content = $app->trans->getBRUT('api', 1005, 2, $content_array); //You have successfully reset your password. You can now signin.
-							$inform = new Inform($title, $content, false, $user->getSha(), false, array('socket'));
+							$inform = new Inform($title, $content, false, $user->getSha(), false, array());
 							$inform->send();
 							
 							$authorize = $user_log->getAuthorize($data);

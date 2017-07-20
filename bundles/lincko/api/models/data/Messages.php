@@ -325,17 +325,17 @@ class Messages extends ModelLincko {
 				$title = $parent->title;
 				$content = $sender.': '.$this->comment;
 			}
+			$alias = array();
 			foreach ($users as $value) {
 				if($value->users_id != $this->created_by && $value->users_id != $app->lincko->data['uid']){
 					$user = Users::find($value->users_id);
-					$alias = array($value->users_id => $user->getSha());
-					unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
-					if(empty($alias)){
-						continue;
-					}
-					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
-					$inform->send();
+					$alias[$value->users_id] = $user->getSha();
 				}
+			}
+			unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
+			if(!empty($alias)){
+				$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
+				$inform->send();
 			}
 		}
 		return true;

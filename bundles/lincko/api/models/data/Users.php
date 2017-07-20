@@ -1073,7 +1073,7 @@ class Users extends ModelLincko {
 					);
 					$title = $app->trans->getBRUT('api', 1006, 1, $content_array); //You joined @@w_name~~ workspace
 					$content = $app->trans->getBRUT('api', 1006, 2, $content_array); //@@mail_username~~ let you join @@w_name~~ workspace.
-					$inform = new Inform($title, $content, false, $guest->getSha(), $guest, array('socket'));
+					$inform = new Inform($title, $content, false, $guest->getSha(), $guest, array());
 					$inform->send();
 
 					$msg = $app->trans->getBRUT('api', 8, 37, $content_array); //@@username_guest~~ is now part of @@w_name~~ workspace.
@@ -1145,7 +1145,7 @@ class Users extends ModelLincko {
 				'mail_link' => $link,
 			);
 			$content = $app->trans->getBRUT('api', 1002, 2, $content_array); //You have a new collaboration request!<br><br>@@mail_username~~ has invited you to collaborate together using Lincko.
-			$inform = new Inform($title, $content, false, $guest->getSha(), $guest, array('socket'));
+			$inform = new Inform($title, $content, false, $guest->getSha(), $guest, array());
 			$inform->send();
 		} else if($pivot && $pivot->access){ //toto => I am not sure why it's here, we should never match that condition (inviting someone that is already in the contact list)
 			\libs\Watch::php('Not sure how we can arrive here, should be not possible but it happened already', 'Users::inviteSomeone', __FILE__, __LINE__, true);

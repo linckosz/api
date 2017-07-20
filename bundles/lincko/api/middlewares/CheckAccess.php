@@ -213,7 +213,7 @@ class CheckAccess extends \Slim\Middleware {
 						'mail_username' => $user->username,
 					);
 					$content = $app->trans->getBRUT('api', 1004, 6, $content_array); //@@mail_username~~ accepted your invitation.
-					$inform = new Inform($title, $content, false, $host->getSha(), false, array('socket'));
+					$inform = new Inform($title, $content, false, $host->getSha(), false, array());
 					$inform->send();
 				}
 

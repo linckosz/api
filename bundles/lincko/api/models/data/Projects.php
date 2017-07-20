@@ -170,12 +170,14 @@ class Projects extends ModelLincko {
 	public function pushNotif($new=false, $history=false){
 		$app = ModelLincko::getApp();
 
-		//Only display about moving tasks
-		if(
-			   !$history
-			|| ($history && $history->code!=405 && $history->code!=406)
-		){
-			return false;
+		if(!$new){
+			//Only display about moving tasks
+			if(
+				   !$history
+				|| ($history && $history->code!=405 && $history->code!=406)
+			){
+				return false;
+			}
 		}
 		if($this->updated_by==0){
 			return false;
@@ -199,49 +201,46 @@ class Projects extends ModelLincko {
 				$sender = Users::find($this->updated_by)->getUsername();
 			}
 			$title = $this->title;
+			$target = $this;
 			$param = array('un' => $sender);
 			if($history && isset($history->parameters)){
 				if($json = json_decode($history->parameters)){
 					foreach ($json as $key => $value) {
 						$param[$key] = $value;
 					}
+					if(isset($json->tid) && ($history->code==405 || $history->code==406)){
+						if($task = Tasks::find($json->tid)){
+							$target = $task;
+						}
+					}
 				}
 			}
+			$info_lang = array();
 			foreach ($users as $value) {
 				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
 					$user = Users::find($value->users_id);
-					$alias = array($value->users_id => $user->getSha());
 					$language = $user->getLanguage();
-					$delete_user = true;
-					if($history){
-						$content = $app->trans->getBRUT('data', 1, $history->code, array(), $language);
-					} else if($new){
-						$content = $app->trans->getBRUT('data', 1, 401, array(), $language); //[{un}] created a new project
-					} else {
-						continue;
-					}
-					foreach ($param as $search => $replace) {
-						$content = str_replace('[{'.$search.'}]', $replace, $content);
-					}
-					if($delete_user){
-						unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
-					}
-					if(empty($alias)){
-						continue;
-					}
-					$target = $this;
-					if($history && ($history->code==405 || $history->code==406)){
-						if(isset($history->parameters)){
-							if($json = json_decode($history->parameters)){
-								if(isset($json->tid)){
-									if($task = Tasks::find($json->tid)){
-										$target = $task;
-									}
-								}
-							}
+					if(!isset($info_lang[$language])){
+						if($history){
+							$content = $app->trans->getBRUT('data', 1, $history->code, array(), $language);
+						} else if($new){
+							$content = $app->trans->getBRUT('data', 1, 401, array(), $language); //[{un}] created a new project
+						} else {
+							continue;
 						}
+						foreach ($param as $search => $replace) {
+							$content = str_replace('[{'.$search.'}]', $replace, $content);
+						}
+						$info_lang[$language] = array(array(), $content);
 					}
-					$inform = new Inform($title, $content, false, $alias, $target, array(), array('email', 'socket')); //Exclude email
+					$info_lang[$language][0][$value->users_id] = $user->getSha();
+				}
+			}
+			if(!empty($info_lang)){
+				foreach ($info_lang as $value) {
+					$alias = $value[0];
+					$content = $value[1];
+					$inform = new Inform($title, $content, false, $alias, $target, array(), array('email')); //Exclude email
 					$inform->send();
 				}
 			}

@@ -464,33 +464,39 @@ class Tasks extends ModelLincko {
 					}
 				}
 			}
+			$info_lang = array();
 			foreach ($users as $value) {
 				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
 					$user = Users::find($value->users_id);
-					$alias = array($value->users_id => $user->getSha());
 					$language = $user->getLanguage();
-					$delete_user = true;
-					if($history){
-						$content = $app->trans->getBRUT('data', 1, $history->code, array(), $language);
-					} else if($new){
-						$content = $app->trans->getBRUT('data', 1, 501, array(), $language); //[{un}] created a new task
-					} else {
-						continue;
-					}
-					foreach ($param as $search => $replace) {
-						$content = str_replace('[{'.$search.'}]', $replace, $content);
-						if($search=='pvid' && $replace==$app->lincko->data['uid'] && ($history->code==551 || $history->code==552)){
-							$delete_user = false;
+					if(!isset($info_lang[$language])){
+						$delete_user = true;
+						if($history){
+							$content = $app->trans->getBRUT('data', 1, $history->code, array(), $language);
+						} else if($new){
+							$content = $app->trans->getBRUT('data', 1, 501, array(), $language); //[{un}] created a new task
+						} else {
+							continue;
 						}
+						foreach ($param as $search => $replace) {
+							$content = str_replace('[{'.$search.'}]', $replace, $content);
+							if($search=='pvid' && $replace!=$app->lincko->data['uid'] && ($history->code==551 || $history->code==552)){
+								$delete_user = false;
+							}
+						}
+						if($delete_user){
+							continue;
+						}
+						$info_lang[$language] = array(array(), $content);
 					}
-					if($delete_user){
-						unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
-					}
-					if(empty($alias)){
-						continue;
-					}
-
-					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email', 'socket')); //Exclude email
+					$info_lang[$language][0][$value->users_id] = $user->getSha();
+				}
+			}
+			if(!empty($info_lang)){
+				foreach ($info_lang as $value) {
+					$alias = $value[0];
+					$content = $value[1];
+					$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
 					$inform->send();
 				}
 			}

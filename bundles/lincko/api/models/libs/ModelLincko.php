@@ -2672,7 +2672,7 @@ abstract class ModelLincko extends Model {
 	}
 
 	/*
-		Note: The following information are note built in this method, but are necessary to outup a element Read:
+		Note: The following information are not built in this method, but are necessary to outup a element Read:
 			- _parent: array(0,1)
 			- _"dependencies"
 			- _perm

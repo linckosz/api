@@ -454,36 +454,43 @@ class Files extends ModelLincko {
 			} else {
 				$title = $parent->title;
 			}
+			$info_lang = array();
 			foreach ($users as $value) {
 				if($value->users_id != $this->updated_by && $value->users_id != $app->lincko->data['uid']){
 					$user = Users::find($value->users_id);
-					$alias = array($value->users_id => $user->getSha());
-					unset($alias[$app->lincko->data['uid']]); //Exclude the user itself
-					if(empty($alias)){
-						continue;
-					}
 					$language = $user->getLanguage();
-					$content = $this->name;
-					if($this->category=='voice'){
-						$content = $app->trans->getBRUT('data', 1, 951, array(), $language); //[{un}] sent a voice message
-						foreach ($param as $search => $replace) {
-							$content = str_replace('[{'.$search.'}]', $replace, $content);
+					if(!isset($info_lang[$language])){
+						$content = $this->name;
+						if($this->category=='voice'){
+							$content = $app->trans->getBRUT('data', 1, 951, array(), $language); //[{un}] sent a voice message
+							foreach ($param as $search => $replace) {
+								$content = str_replace('[{'.$search.'}]', $replace, $content);
+							}
+						} else if($type!='chats' || !isset($parent->single) || !$parent->single){
+							$content = $app->trans->getBRUT('data', 1, 901, array(), $language); //[{un}] uploaded a file
+							foreach ($param as $search => $replace) {
+								$content = str_replace('[{'.$search.'}]', $replace, $content);
+							}
+							$content .= ":\n ".$this->name;
 						}
-					} else if($type!='chats' || !isset($parent->single) || !$parent->single){
-						$content = $app->trans->getBRUT('data', 1, 901, array(), $language); //[{un}] uploaded a file
-						foreach ($param as $search => $replace) {
-							$content = str_replace('[{'.$search.'}]', $replace, $content);
-						}
-						$content .= ":\n ".$this->name;
+						$info_lang[$language] = array(array(), $content);
 					}
+					$info_lang[$language][0][$value->users_id] = $user->getSha();
+				}
+			}
+			if(!empty($info_lang)){
+				foreach ($info_lang as $value) {
+					$alias = $value[0];
+					$content = $value[1];
 					if($this->category=='voice' || $parent->getTable()=='chats'){
-						$inform = new Inform($title, $content, false, $alias, $parent, array(), array('email', 'socket')); //Exclude email
+						$inform = new Inform($title, $content, false, $alias, $parent, array(), array('email')); //Exclude email
 					} else {
-						$inform = new Inform($title, $content, false, $alias, $this, array(), array('email', 'socket')); //Exclude email
+						$inform = new Inform($title, $content, false, $alias, $this, array(), array('email')); //Exclude email
 					}
 					$inform->send();
 				}
 			}
+
 		}
 		return true;
 	}

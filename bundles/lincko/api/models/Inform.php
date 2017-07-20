@@ -141,6 +141,18 @@ class Inform {
 	protected function send_socket(){
 		$msg = '{"show":true, "msg":"websocket working", "error":false, "status":200}';
 		$users_list =  $this->username_sha1;
+		$item = false;
+		if($this->item){
+			$item = $this->item->toVisible();
+			unset($item->viewed_by);
+			foreach ($item as $key => $value) {
+				if(strpos($key, '_')===0){
+					unset($item->$key);
+				}
+			}
+			$item->_parent = $this->item->setParentAttributes();
+		}
+		\libs\Watch::php($item, $msg, __FILE__, __LINE__, false, false, true);
 
 			//Send the message to the nodejs here
 		
