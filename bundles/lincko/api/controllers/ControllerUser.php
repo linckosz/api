@@ -968,6 +968,17 @@ class ControllerUser extends Controller {
 					);
 					$inform = new Inform($title, $content, $annex, array(), false, array('email'));
 					$inform->send($manual);
+					if(isset($form->users_id)){
+						$users_list = array(
+							$user->id => $user->id,
+							$form->users_id => $form->users_id,
+						);
+						Inform::prepare_socket($user, $users_list);
+						$partial = new \stdClass;
+						$partial->users = new \stdClass;
+						$partial->users->{$user->id} = false;
+						Inform::socket($partial);
+					}
 
 					$data = true;
 					$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
@@ -977,6 +988,18 @@ class ControllerUser extends Controller {
 			} else if($form->exists && isset($form->users_id)){
 				if($guest = Users::find($form->users_id)){
 					if(Users::inviteSomeone($guest, $form)){
+						if(isset($form->users_id)){
+							$user = Users::getUser();
+							$users_list = array(
+								$user->id => $user->id,
+								$form->users_id => $form->users_id,
+							);
+							Inform::prepare_socket($user, $users_list);
+							$partial = new \stdClass;
+							$partial->users = new \stdClass;
+							$partial->users->{$user->id} = false;
+							Inform::socket($partial);
+						}
 						$data = true;
 						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
 						$app->render(200, array('msg' => array('msg' => $msg, 'data' => $data)));

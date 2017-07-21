@@ -215,6 +215,15 @@ class CheckAccess extends \Slim\Middleware {
 					$content = $app->trans->getBRUT('api', 1004, 6, $content_array); //@@mail_username~~ accepted your invitation.
 					$inform = new Inform($title, $content, false, $host->getSha(), false, array());
 					$inform->send();
+					$users_list = array(
+						$user->id => $user->id,
+						$host->id => $host->id,
+					);
+					Inform::prepare_socket($user, $users_list);
+					$partial = new \stdClass;
+					$partial->users = new \stdClass;
+					$partial->users->{$user->id} = false;
+					Inform::socket($partial);
 				}
 
 				if($invitations){

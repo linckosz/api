@@ -2554,6 +2554,8 @@ abstract class ModelLincko extends Model {
 		$this->save_history = true; //Reenable the history record
 
 		if(!self::$save_skipper){
+			$users_list = $users_tables;
+			unset($users_list[$app->lincko->data['uid']]);
 			Inform::prepare_socket($this, $users_tables);
 			$this->pushNotif($new, $history);
 		}

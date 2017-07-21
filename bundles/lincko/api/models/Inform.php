@@ -151,9 +151,7 @@ class Inform {
 				self::$list_socket[$table][$item->id] = array();
 			}
 			foreach ($users_list as $users_id => $list) {
-				if($users_id != $app->lincko->data['uid']){
-					self::$list_socket[$table][$item->id][$users_id] = $users_id;
-				}
+				self::$list_socket[$table][$item->id][$users_id] = $users_id;
 			}
 		}
 		return true;
@@ -183,8 +181,10 @@ class Inform {
 						}
 
 						$item = new \stdClass;
-						$item->$table = new \stdClass;
-						$item->$table->$id = $partial->$table->$id;
+						if($partial->$table->$id && is_object($partial->$table->$id)){
+							$item->$table = new \stdClass;
+							$item->$table->$id = $partial->$table->$id;
+						}
 						$msg = new \stdClass;
 						$msg->show = false;
 						$msg->error = false;
