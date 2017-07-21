@@ -141,7 +141,6 @@ class Inform {
 	//Quicker Response to user (websocket)
 	//The sending is postpone to the end od Data.php to make sure the object is well formatted (which can avoid some JS unstabilities)
 	public static function prepare_socket($item, $users_list){
-		\libs\Watch::php($users_list, '$users_list', __FILE__, __LINE__, false, false, true);
 		$app = ModelLincko::getApp();
 		if($item){
 			$table = $item->getTable();
@@ -195,7 +194,7 @@ class Inform {
 
 						if(!empty($users_list)){
 							$data = new \stdClass;
-							$data->sha = $users_list;
+							$data->uid = $users_list;
 							$data->msgToFront = $msg;
 							$ch = curl_init();
 							curl_setopt($ch, CURLOPT_URL, 'http://' . $app->lincko->socket . '/');
@@ -211,7 +210,7 @@ class Inform {
 						if(!empty($users_list_kicked)){
 							$msg->msg = false;
 							$data = new \stdClass;
-							$data->sha = $users_list_kicked;
+							$data->uid = $users_list_kicked;
 							$data->msgToFront = $msg;
 							$ch = curl_init();
 							curl_setopt($ch, CURLOPT_URL, 'http://' . $app->lincko->socket . '/');
