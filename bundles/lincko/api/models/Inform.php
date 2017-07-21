@@ -17,7 +17,6 @@ class Inform {
 		'email' => false,
 		'mobile' => false,
 		'wechat' => false,
-		'socket' => false,
 	);
 
 	protected $title = '[Lincko]';
@@ -34,7 +33,7 @@ class Inform {
 
 	protected $username_sha1 = array();
 
-	protected static $list = array();
+	protected static $list_socket = array();
 
 	public function __construct($title, $content, $annex=false, $sha, $item=false, array $include=array(), array $exclude=array()){
 		$app = ModelLincko::getApp();
@@ -141,17 +140,21 @@ class Inform {
 
 	//Quicker Response to user (websocket)
 	//The sending is postpone to the end od Data.php to make sure the object is well formatted (which can avoid some JS unstabilities)
-	protected function send_socket(){
-		if($this->item){
-			$table = $this->item->getTable();
-			if(!isset(self::$list[$table])){
-				self::$list[$table] = array();
+	public static function prepare_socket($item, $users_list){
+		\libs\Watch::php($users_list, '$users_list', __FILE__, __LINE__, false, false, true);
+		$app = ModelLincko::getApp();
+		if($item){
+			$table = $item->getTable();
+			if(!isset(self::$list_socket[$table])){
+				self::$list_socket[$table] = array();
 			}
-			if(!isset(self::$list[$table])){
-				self::$list[$table][$this->item->id] = array();
+			if(!isset(self::$list_socket[$table][$item->id])){
+				self::$list_socket[$table][$item->id] = array();
 			}
-			foreach ($this->username_sha1 as $value) {
-				self::$list[$table][$this->item->id][$value] = $value;
+			foreach ($users_list as $users_id => $list) {
+				if($users_id != $app->lincko->data['uid']){
+					self::$list_socket[$table][$item->id][$users_id] = $users_id;
+				}
 			}
 		}
 		return true;
@@ -159,10 +162,27 @@ class Inform {
 
 	//We use a pointer as parameter to speed up the process and limit memory used, just make sure we don't modify $partial here, just read it
 	public static function socket(&$partial){
-		foreach (self::$list as $table => $table_list) {
+		$app = ModelLincko::getApp();
+		foreach (self::$list_socket as $table => $table_list) {
 			if(isset($partial->$table)){
-				foreach ($table_list as $id => $users_list) {
+				foreach ($table_list as $id => $array) {
 					if(isset($partial->$table->$id)){
+						$users_list = $array;
+						$users_list_kicked = array();
+						//Make sure we include also new members because prepare is using all stake
+						if(isset($partial->$table->$id->_perm) && is_object($partial->$table->$id->_perm)){
+							//Do not send item to the users kicked, but force to launch getlest
+							foreach ($users_list as $users_id => $value) {
+								if(!isset($partial->$table->$id->_perm->$users_id)){
+									$users_list_kicked[$users_id] = $users_id;
+								}
+							}
+							$users_list = array();
+							foreach ($partial->$table->$id->_perm as $users_id => $value) {
+								$users_list[$users_id] = $users_id;
+							}
+						}
+
 						$item = new \stdClass;
 						$item->$table = new \stdClass;
 						$item->$table->$id = $partial->$table->$id;
@@ -172,39 +192,37 @@ class Inform {
 						$msg->status = 200;
 						$msg->msg = $item;
 						$msg->info = 'getlatest';
-						//$msg = json_encode($msg, JSON_FORCE_OBJECT);
-						//send your nodejs here
-						//\libs\Watch::php($users_list, '$users_list', __FILE__, __LINE__, false, false, true);
-						//\libs\Watch::php($msg, '$msg', __FILE__, __LINE__, false, false, true);
 
+						if(!empty($users_list)){
+							$data = new \stdClass;
+							$data->sha = $users_list;
+							$data->msgToFront = $msg;
+							$ch = curl_init();
+							curl_setopt($ch, CURLOPT_URL, 'http://' . $app->lincko->socket . '/');
+							curl_setopt($ch, CURLOPT_POST, true);
+							curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data, JSON_FORCE_OBJECT));
+							curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+							curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+							curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=UTF-8')); 
+							curl_exec($ch);   
+							curl_close($ch);
+						}
 
-						// $array = array();
-						// foreach($users_list as $key => $value){
-						// 	array_push($array, $value);
-						// }
-
-						$data = new \stdClass;
-						$data->sha = $users_list;
-						//$data->msgToFront = new \stdClass;
-						$data->msgToFront = $msg;
-						\libs\Watch::php($data, '$data', __FILE__, __LINE__, false, false, true);
-						$data = json_encode($data, JSON_FORCE_OBJECT);
-						
-						//$data = '{"sha":' . json_encode($array) . ',"msgToFront": { "msg": { "msg":"websocket", "error":false, "status":200, "info":"getlatest"}}}';
-						//\libs\Watch::php(json_encode($data), '$var', __FILE__, __LINE__, false, false, true);
-						//Send the message to the nodejs here
-						$ch = curl_init();
-				        //$app->lincko->socket 'http://192.168.1.110:7000/'
-				        $app = ModelLincko::getApp();
-				        curl_setopt($ch, CURLOPT_URL, 'http://' . $app->lincko->socket . '/');     
-				        curl_setopt($ch, CURLOPT_POST, true);
-				        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);     
-				        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-				        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
-				        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=UTF-8')); 
-				        curl_exec($ch);   
-				        curl_close($ch);
-
+						if(!empty($users_list_kicked)){
+							$msg->msg = false;
+							$data = new \stdClass;
+							$data->sha = $users_list_kicked;
+							$data->msgToFront = $msg;
+							$ch = curl_init();
+							curl_setopt($ch, CURLOPT_URL, 'http://' . $app->lincko->socket . '/');
+							curl_setopt($ch, CURLOPT_POST, true);
+							curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data, JSON_FORCE_OBJECT));
+							curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+							curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+							curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=UTF-8')); 
+							curl_exec($ch);   
+							curl_close($ch);
+						}
 					}
 				}
 			}

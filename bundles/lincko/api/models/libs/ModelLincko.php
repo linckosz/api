@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Builder as Schema;
 
+use \bundles\lincko\api\models\Inform;
 use \bundles\lincko\api\models\libs\Data;
 use \bundles\lincko\api\models\libs\History;
 use \bundles\lincko\api\models\libs\Updates;
@@ -2553,6 +2554,7 @@ abstract class ModelLincko extends Model {
 		$this->save_history = true; //Reenable the history record
 
 		if(!self::$save_skipper){
+			Inform::prepare_socket($this, $users_tables);
 			$this->pushNotif($new, $history);
 		}
 

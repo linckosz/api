@@ -1059,7 +1059,7 @@ class ControllerUser extends Controller {
 
 					$inform_email = new Inform($title_email, $content_email, false, $user->getSha(), false, array('email')); //Only email
 					$inform_email->send();
-					$inform_other = new Inform($title_other, $content_other, false, $user->getSha(), false, array(), array('email', 'socket')); //Exclude email
+					$inform_other = new Inform($title_other, $content_other, false, $user->getSha(), false, array(), array('email')); //Exclude email
 					$inform_other->send();
 
 					$msg = $app->trans->getBRUT('api', 15, 33); //You will receive an email with a Code.
