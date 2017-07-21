@@ -1067,6 +1067,10 @@ class Data {
 			}
 		}
 
+		if(isset($result_bis->$uid)){
+			Inform::socket($result_bis->$uid);
+		}
+
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);
 		//\libs\Watch::php( $db->getQueryLog() ,'QueryLog', __FILE__, __LINE__, false, false, true);
 		return $result_bis;

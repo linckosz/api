@@ -34,6 +34,8 @@ class Inform {
 
 	protected $username_sha1 = array();
 
+	protected static $list = array();
+
 	public function __construct($title, $content, $annex=false, $sha, $item=false, array $include=array(), array $exclude=array()){
 		$app = ModelLincko::getApp();
 		if(gettype($sha)=='string'){
@@ -138,25 +140,46 @@ class Inform {
 	}
 
 	//Quicker Response to user (websocket)
+	//The sending is postpone to the end od Data.php to make sure the object is well formatted (which can avoid some JS unstabilities)
 	protected function send_socket(){
-		$msg = '{"show":true, "msg":"websocket working", "error":false, "status":200}';
-		$users_list =  $this->username_sha1;
-		$item = false;
 		if($this->item){
-			$item = $this->item->toVisible();
-			unset($item->viewed_by);
-			foreach ($item as $key => $value) {
-				if(strpos($key, '_')===0){
-					unset($item->$key);
+			$table = $this->item->getTable();
+			if(!isset(self::$list[$table])){
+				self::$list[$table] = array();
+			}
+			if(!isset(self::$list[$table])){
+				self::$list[$table][$this->item->id] = array();
+			}
+			foreach ($this->username_sha1 as $value) {
+				self::$list[$table][$this->item->id][$value] = $value;
+			}
+		}
+		return true;
+	}
+
+	//We use a pointer as parameter to speed up the process and limit memory used, just make sure we don't modify $partial here, just read it
+	public static function socket(&$partial){
+		foreach (self::$list as $table => $table_list) {
+			if(isset($partial->$table)){
+				foreach ($table_list as $id => $users_list) {
+					if(isset($partial->$table->$id)){
+						$item = new \stdClass;
+						$item->$table = new \stdClass;
+						$item->$table->$id = $partial->$table->$id;
+						$msg = new \stdClass;
+						$msg->show = false;
+						$msg->error = false;
+						$msg->status = 200;
+						$msg->msg = $item;
+						$msg->info = 'websocket';
+						$msg = json_encode($msg, JSON_FORCE_OBJECT);
+						//send your nodejs here
+						\libs\Watch::php($users_list, '$users_list', __FILE__, __LINE__, false, false, true);
+						\libs\Watch::php($msg, '$msg', __FILE__, __LINE__, false, false, true);
+					}
 				}
 			}
-			$item->_parent = $this->item->setParentAttributes();
 		}
-		\libs\Watch::php($item, $msg, __FILE__, __LINE__, false, false, true);
-
-			//Send the message to the nodejs here
-		
-		return true;
 	}
 
 	protected function send_wechat(){
