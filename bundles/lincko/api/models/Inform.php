@@ -171,11 +171,40 @@ class Inform {
 						$msg->error = false;
 						$msg->status = 200;
 						$msg->msg = $item;
-						$msg->info = 'websocket';
-						$msg = json_encode($msg, JSON_FORCE_OBJECT);
+						$msg->info = 'getlatest';
+						//$msg = json_encode($msg, JSON_FORCE_OBJECT);
 						//send your nodejs here
-						\libs\Watch::php($users_list, '$users_list', __FILE__, __LINE__, false, false, true);
-						\libs\Watch::php($msg, '$msg', __FILE__, __LINE__, false, false, true);
+						//\libs\Watch::php($users_list, '$users_list', __FILE__, __LINE__, false, false, true);
+						//\libs\Watch::php($msg, '$msg', __FILE__, __LINE__, false, false, true);
+
+
+						// $array = array();
+						// foreach($users_list as $key => $value){
+						// 	array_push($array, $value);
+						// }
+
+						$data = new \stdClass;
+						$data->sha = $users_list;
+						//$data->msgToFront = new \stdClass;
+						$data->msgToFront = $msg;
+						\libs\Watch::php($data, '$data', __FILE__, __LINE__, false, false, true);
+						$data = json_encode($data, JSON_FORCE_OBJECT);
+						
+						//$data = '{"sha":' . json_encode($array) . ',"msgToFront": { "msg": { "msg":"websocket", "error":false, "status":200, "info":"getlatest"}}}';
+						//\libs\Watch::php(json_encode($data), '$var', __FILE__, __LINE__, false, false, true);
+						//Send the message to the nodejs here
+						$ch = curl_init();
+				        //$app->lincko->socket 'http://192.168.1.110:7000/'
+				        $app = ModelLincko::getApp();
+				        curl_setopt($ch, CURLOPT_URL, 'http://' . $app->lincko->socket . '/');     
+				        curl_setopt($ch, CURLOPT_POST, true);
+				        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);     
+				        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+				        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+				        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=UTF-8')); 
+				        curl_exec($ch);   
+				        curl_close($ch);
+
 					}
 				}
 			}
