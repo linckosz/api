@@ -2642,7 +2642,7 @@ abstract class ModelLincko extends Model {
 		if(isset($this->deleted_at) && isset($this->attributes) && array_key_exists('deleted_at', $this->attributes)){
 			$save = false;
 			if(array_key_exists('deleted_by', $this->attributes)){
-				$this->deleted_at = null;
+				$this->deleted_by = null;
 				$this->setHistory('_restore');
 				$save = true;
 			}

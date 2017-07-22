@@ -9,7 +9,7 @@ $path = $app->lincko->path;
 
 ob_clean();
 flush();
-$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8"');
 
 echo '<div style="font-family:monospace;font-size: 13px;">';
 echo "<br />\n";

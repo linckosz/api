@@ -89,7 +89,7 @@ class ControllerInfo extends Controller {
 		ob_clean();
 		flush();
 		Workspaces::getSFTP();
-		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8"');
 
 		$from = $to = Carbon::now()->format('Y-m-d');
 		$this->list_users_get($from, $to, $users_id);
@@ -191,7 +191,7 @@ class ControllerInfo extends Controller {
 		$week_offset = self::getWeekOffset();
 		ob_clean();
 		flush();
-		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8"');
 		echo '<div style="font-family:monospace;font-size: 13px;">';
 
 		echo '
@@ -409,7 +409,7 @@ class ControllerInfo extends Controller {
 		flush();
 		Workspaces::getSFTP();
 		if(!$users_id){
-			$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+			$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8"');
 		}
 		echo '<div style="font-family:monospace;font-size: 13px;">';
 		echo '
@@ -794,7 +794,7 @@ class ControllerInfo extends Controller {
 		Workspaces::getSFTP();
 		self::setFirstWeekDay(6); //Start week on Satuday
 		$week_offset = self::getWeekOffset();
-		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8"');
 		echo '<div style="font-family:monospace;font-size: 13px;">';
 
 		echo '

@@ -41,7 +41,7 @@ class ControllerFile extends Controller {
 
 	public function result(){
 		$app = $this->app;
-		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8');
+		$app->response->headers->set('Content-Type', 'content="text/html; charset=UTF-8"');
 		ob_clean();
 		echo '
 <!DOCTYPE html>
