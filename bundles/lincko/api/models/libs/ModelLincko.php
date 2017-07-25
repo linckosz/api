@@ -2556,7 +2556,7 @@ abstract class ModelLincko extends Model {
 		if(!self::$save_skipper){
 			$users_list = $users_tables;
 			unset($users_list[$app->lincko->data['uid']]);
-			Inform::prepare_socket($this, $users_tables);
+			Inform::prepare_socket($this, $users_list);
 			$this->pushNotif($new, $history);
 		}
 
