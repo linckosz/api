@@ -1068,7 +1068,7 @@ class Data {
 		}
 
 		if(isset($result_bis->$uid)){
-			Inform::socket($result_bis->$uid);
+			Inform::socket($result_bis->$uid, ModelLincko::getForceLatest());
 		}
 
 		//\libs\Watch::php($result_bis, '$result_bis', __FILE__, __LINE__, false, false, true);

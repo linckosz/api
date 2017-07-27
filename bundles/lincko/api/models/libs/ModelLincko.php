@@ -186,6 +186,9 @@ abstract class ModelLincko extends Model {
 	//From pivot table, at true it accepts only access at 1, at false it rejects access at 0 but include parent at access at 1
 	protected static $access_accept = true;
 
+	//Accelerate to get some informaton
+	protected static $force_latest = false;
+
 	//Vraiable used to pass some values through scopes
 	protected $var = array();
 
@@ -216,6 +219,14 @@ abstract class ModelLincko extends Model {
 
 	public static function getPivotUsersSuffix(){
 		return static::$pivot_users_suffix;
+	}
+
+	public static function setForceLatest($force=true){
+		self::$force_latest = (bool) $force;
+	}
+
+	public static function getForceLatest(){
+		return self::$force_latest;
 	}
 
 	//No need to abstract it, but need to redefined for the Models that use it

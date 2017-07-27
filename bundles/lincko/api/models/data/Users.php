@@ -837,6 +837,7 @@ class Users extends ModelLincko {
 	}
 
 	public function givePivotAccess($access=true){
+		ModelLincko::setForceLatest();
 		$this->keep_all_pivots = (bool) $access;
 	}
 
