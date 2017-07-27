@@ -182,8 +182,10 @@ class Inform {
 
 						$item = new \stdClass;
 						if($partial->$table->$id && is_object($partial->$table->$id)){
-							$item->$table = new \stdClass;
-							$item->$table->$id = $partial->$table->$id;
+							if($table!='users'){ //Exclude Users because of invitation process issue
+								$item->$table = new \stdClass;
+								$item->$table->$id = $partial->$table->$id;
+							}
 						}
 						$msg = new \stdClass;
 						$msg->show = false;
