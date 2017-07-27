@@ -810,17 +810,7 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		//$tp = Projects::find(4462)->tasks()->withTrashed()->get()->toArray();
-
-		
-		$tp = uniqid();
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
-		$tp = uniqid('abc');
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
-		$tp = uniqid('', true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
-		$tp = uniqid('abc', true);
-		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
+		$tp = Files::withTrashed()->where('id', 21525)->get(array('id'));
 		
 		
 

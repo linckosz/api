@@ -158,7 +158,7 @@ class Inform {
 	}
 
 	//We use a pointer as parameter to speed up the process and limit memory used, just make sure we don't modify $partial here, just read it
-	public static function socket(&$partial){
+	public static function socket(&$partial, $force=false){
 		$app = ModelLincko::getApp();
 		foreach (self::$list_socket as $table => $table_list) {
 			if(isset($partial->$table)){
@@ -191,6 +191,9 @@ class Inform {
 						$msg->status = 200;
 						$msg->msg = $item;
 						$msg->info = 'getlatest';
+						if($force){
+							$msg->info = 'forcelatest';
+						}
 
 						if(!empty($users_list)){
 							$data = new \stdClass;

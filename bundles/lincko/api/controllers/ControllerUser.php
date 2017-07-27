@@ -977,7 +977,7 @@ class ControllerUser extends Controller {
 						$partial = new \stdClass;
 						$partial->users = new \stdClass;
 						$partial->users->{$user->id} = false;
-						Inform::socket($partial);
+						Inform::socket($partial, true);
 					}
 
 					$data = true;
@@ -998,7 +998,7 @@ class ControllerUser extends Controller {
 							$partial = new \stdClass;
 							$partial->users = new \stdClass;
 							$partial->users->{$user->id} = false;
-							Inform::socket($partial);
+							Inform::socket($partial, true);
 						}
 						$data = true;
 						$msg = $app->trans->getBRUT('api', 15, 26); //Invitation sent
