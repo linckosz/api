@@ -935,6 +935,7 @@ class Users extends ModelLincko {
 						} else {
 							$this->pivots_var->usersLinked->$users_id->access = array(false, true);
 						}
+						ModelLincko::setForceLatest();
 						Users::find($users_id)->touchUpdateAt();
 					}
 				}
