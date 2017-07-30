@@ -940,15 +940,19 @@ class Data {
 					}
 				}
 
+				
+				$rec_hist = array();
 				//We need to keep history in the model to keep cache capability
 				$result_bis->$uid->_history = new \stdClass;
 				foreach ($result_bis->$uid as $table_name => $models) {
+					if($table_name=='namecards'){
+						continue;
+					}
 					if(strpos($table_name, '_')!==0){ //Skip everything which is not a model list
 						foreach ($models as $id => $model) {
-							$i = 1;
-							if(is_object($model) && isset($model->history)){
-								if(isset($history_root[$table_name][$id])){
-									$root_hist = $history_root[$table_name][$id][0].'-'.$history_root[$table_name][$id][1];
+							if(isset($history_root[$table_name][$id])){
+								$root_hist = $history_root[$table_name][$id][0].'-'.$history_root[$table_name][$id][1];
+								if(is_object($model) && isset($model->history)){
 									foreach ($model->history as $hist_id => $hist) {
 										//Only keep invitation for users
 										if($history_root[$table_name][$id][0]=='users' && $hist->cod!='697'){
@@ -965,9 +969,53 @@ class Data {
 											$result_bis->$uid->_history->$root_hist = new \stdClass;
 										}
 										$result_bis->$uid->_history->$root_hist->$hist_id = $hist;
+										if(!isset($rec_hist[$root_hist])){ $rec_hist[$root_hist] = array(); }
+										$rec_hist[$root_hist][] = $hist->timestamp;
 									}
+									unset($model->history);
 								}
-								unset($model->history);
+								//Add creation
+								if(isset($model->histcode) && $table_name!='namecards' && $table_name!='users'){
+									$hist_id = $table_name.$id;
+									$hist = new \stdClass;
+									$hist->att = 'created_at';
+									$hist->by = $model->created_by;
+									$hist->cod = $model->histcode;
+									$hist->id = $id;
+									$hist->timestamp = $model->created_at;
+									$hist->type = $table_name;
+									if(!isset($result_bis->$uid->_history->$root_hist)){
+										$result_bis->$uid->_history->$root_hist = new \stdClass;
+									}
+									$result_bis->$uid->_history->$root_hist->$hist_id = $hist;
+									if(!isset($rec_hist[$root_hist])){ $rec_hist[$root_hist] = array(); }
+									$rec_hist[$root_hist][] = $hist->timestamp;
+								}
+							}
+						}
+					}
+				}
+
+				//Clean history size
+				$min_hist_items = 20;
+				$time_hist_limit = time()-(3600*24*31); //limit to 1 month if the limit of 20 if reached
+				foreach ($result_bis->$uid->_history as $root_hist => $hists) {
+					if(count($rec_hist[$root_hist])>20){
+						rsort($rec_hist[$root_hist]);
+						$i = 0;
+						$timestamp_limit = false;
+						foreach ($rec_hist[$root_hist] as $timestamp) {
+							if($i>$min_hist_items && $timestamp<$time_hist_limit){
+								$timestamp_limit = $timestamp;
+								break;
+							}
+							$i++;
+						}
+						if($timestamp_limit){
+							foreach ($hists as $hist_id => $hist) {
+								if($hist->timestamp < $timestamp_limit){
+									unset($result_bis->$uid->_history->$root_hist->$hist_id);
+								}
 							}
 						}
 					}

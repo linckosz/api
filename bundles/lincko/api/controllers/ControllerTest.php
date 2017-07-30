@@ -810,7 +810,8 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		$tp = Files::withTrashed()->where('id', 21525)->get(array('id'));
+		$tp = array(1,3,5,4,5,4,2,1);
+		rsort($tp);
 		
 		
 
