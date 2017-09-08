@@ -316,7 +316,7 @@ class CheckAccess extends \Slim\Middleware {
 			}
 			$db_pwd = Datassl::decrypt_smp($workspace->db_pwd);
 
-			$capsule = $app->lincko->data['capsule'];
+			$capsule = $app->lincko->data_capsule;
 			$app->lincko->databases['client'] = array(
 				'driver' => 'mysql',
 				'host' => $db_host,

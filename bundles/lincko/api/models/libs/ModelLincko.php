@@ -2514,6 +2514,7 @@ abstract class ModelLincko extends Model {
 				$parent->pivots_save();
 			}
 			$users_tables = $parent->touchUpdateAt($users_tables, false, true);
+			//$users_tables = $parent->getUsersTable($users_tables);
 		}
 
 		//In case it change the parent (project), we move all dependencies (only if admin of the project)

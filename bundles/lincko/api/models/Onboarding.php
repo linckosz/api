@@ -338,7 +338,8 @@ class Onboarding {
 
 			$translation = new Translation;
 			$translation->getList('default');
-			$default_lang = $translation->getDefaultLanguage();
+			//$default_lang = $translation->getDefaultLanguage(); //toto => certainly need to chnage to setLanguage() to solve onboarding language issue
+			$default_lang = $translation->setLanguage();
 
 			$clone_id = -1;
 			if($app->lincko->domain=='lincko.com'){

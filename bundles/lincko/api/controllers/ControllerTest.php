@@ -810,9 +810,11 @@ class ControllerTest extends Controller {
 		}
 		*/
 
-		$tp = array(1,3,5,4,5,4,2,1);
-		rsort($tp);
-		
+		$result = new \stdClass;
+		$result->b = null;
+
+		\libs\Watch::php( isset($result->b), '$isset', __FILE__, __LINE__, false, false, true);
+		\libs\Watch::php( is_null($result->b), '$is_null', __FILE__, __LINE__, false, false, true);
 		
 
 		//Display mysql requests
