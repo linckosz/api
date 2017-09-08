@@ -809,12 +809,6 @@ class ControllerTest extends Controller {
 			$tp[$key] = count($value);
 		}
 		*/
-
-		$result = new \stdClass;
-		$result->b = null;
-
-		\libs\Watch::php( isset($result->b), '$isset', __FILE__, __LINE__, false, false, true);
-		\libs\Watch::php( is_null($result->b), '$is_null', __FILE__, __LINE__, false, false, true);
 		
 
 		//Display mysql requests
