@@ -815,7 +815,7 @@ class ControllerTest extends Controller {
 		\libs\Watch::php( $tp, '$tp', __FILE__, __LINE__, false, false, true);
 
 
-		
+		/*
 		//Correct user contact list
 		$access = array();
 		$error = array();
@@ -850,7 +850,7 @@ class ControllerTest extends Controller {
 				}
 			}
 		}
-		
+		*/
 
 		/*
 		//----------------------------------------
