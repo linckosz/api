@@ -10,6 +10,7 @@ use \bundles\lincko\api\models\Inform;
 use \bundles\lincko\api\models\libs\ModelLincko;
 use \bundles\lincko\api\models\libs\Updates;
 use \bundles\lincko\api\models\libs\Models;
+use \bundles\lincko\api\models\libs\PivotUsers;
 use \bundles\lincko\api\models\data\Users;
 use \bundles\lincko\api\models\data\Workspaces;
 use \bundles\lincko\api\models\data\Projects;
@@ -1762,6 +1763,7 @@ class Data {
 			}
 		}
 
+		self::resetContacts();
 
 		//Force all user to update their schema
 		if($comments_update){
@@ -1771,6 +1773,43 @@ class Data {
 		if(function_exists('proc_nice')){proc_nice(0);}
 		//\libs\Watch::php( Capsule::connection($app->lincko->data['database_data'])->getQueryLog() ,'QueryLog', __FILE__, __LINE__, false, false, true);
 		return true;
+	}
+
+	public static function resetContacts(){
+		//Correct user contact list
+		$access = array();
+		$error = array();
+		$all = (new PivotUsers(array('users')))->get()->toArray();
+		foreach ($all as $user) {
+			if($user['access']){
+				if(!isset($access[$user['users_id']])){
+					$access[$user['users_id']] = array();
+				}
+				$access[$user['users_id']][$user['users_id_link']] = true;
+			}
+		}
+		foreach ($access as $users_id => $list) {
+			foreach ($list as $users_id_link => $value) {
+				if(!isset($access[$users_id_link]) || !isset($access[$users_id_link][$users_id])){
+					if(!isset($error[$users_id_link])){
+						$error[$users_id_link] = array();
+					}
+					$error[$users_id_link][$users_id] = true;
+				}
+			}
+		}
+		foreach ($error as $users_id => $list) {
+			foreach ($list as $users_id_link => $value) {
+				$exists = (new PivotUsers(array('users')))->where('users_id', $users_id)->Where('users_id_link', $users_id_link)->update(array('access' => 1));
+				if(!$exists){
+					$new = (new PivotUsers(array('users')));
+					$new->users_id = $users_id;
+					$new->users_id_link = $users_id_link;
+					$new->access = true;
+					$new->save();
+				}
+			}
+		}
 	}
 
 }
