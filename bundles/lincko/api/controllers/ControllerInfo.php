@@ -397,7 +397,7 @@ class ControllerInfo extends Controller {
 				$mail->addAddress($app->lincko->email->Support);
 				$subject = 'Weekboard reply by ';
 				$mail->setSubject($subject . Users::getUser()->getUsername() . ' ['.$app->lincko->data['uid'].']');
-				$mail->sendLater(var_export($datavar_export($b, true)var_export($b, true), true));
+				$mail->sendLater(var_export($data, true), true));
 			}
 		}
 		proc_nice(0);
