@@ -109,7 +109,9 @@ $msg
 			}
 		}
 		
-		if(isset($_SERVER) && isset($_SERVER['REMOTE_ADDR'])){
+		if(isset($_COOKIE) && isset($_COOKIE['ip'])){
+			$errip = $_COOKIE['ip'];
+		} else if(isset($_SERVER) && isset($_SERVER['REMOTE_ADDR'])){
 			$errip = $_SERVER['REMOTE_ADDR'];
 		} else {
 			$errip = $app->request->getIp();

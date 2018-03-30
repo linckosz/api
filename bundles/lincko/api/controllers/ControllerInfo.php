@@ -6,6 +6,7 @@ use \libs\Json;
 use \libs\Controller;
 use \libs\Folders;
 use \libs\Datassl;
+use \libs\Email;
 use \bundles\lincko\api\models\UsersLog;
 use \bundles\lincko\api\models\libs\Action;
 use \bundles\lincko\api\models\libs\Data;
@@ -391,6 +392,12 @@ class ControllerInfo extends Controller {
 						}
 					}
 				}
+				//Send email to ourelf for record
+				$mail = new Email();
+				$mail->addAddress($app->lincko->email->Support);
+				$subject = 'Weekboard reply by ';
+				$mail->setSubject($subject . Users::getUser()->getUsername() . ' ['.$app->lincko->data['uid'].']');
+				$mail->sendLater(var_export($datavar_export($b, true)var_export($b, true), true));
 			}
 		}
 		proc_nice(0);

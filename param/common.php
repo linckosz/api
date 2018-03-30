@@ -144,7 +144,7 @@ $app->lincko->email->FromName = $app->lincko->title.' team';
 $app->lincko->email->Port = 587;
 $app->lincko->email->Host = 'service1';
 $app->lincko->email->List = array();
-$app->lincko->email->Support = 'support@lincko.cafe';
+$app->lincko->email->Support = 'brunoocto@gmail.com'; //For an unknown reason I cannot send email from lincko.com to lincko.com from PHP, but it works from a client
 
 //Translator parameters
 //microsoft@lincko.com/ lin**2**5**@#
