@@ -51,4 +51,13 @@ class Email extends \PHPMailer {
 		return true;
 	}
 
+	//Send Email immediatly
+	public function sendNow($mail_template){
+		$this->msgHTML($mail_template);
+		$html = new \Html2Text\Html2Text($mail_template);
+		$this->AltBody = $html->getText();
+		$this->send();
+		return true;
+	}
+
 }
