@@ -1260,4 +1260,18 @@ class ControllerUser extends Controller {
 		return false;
 	}
 
+	//Tell (logs) how many times a user has logged to Lincko, and (last) the last mtime he logged
+	public function connection_post(){
+		$app = $this->app;
+		$data = $this->data;
+		$logs = Action::Where('users_id', $data->data->uid)->where('action', -1)->count();
+		$last_log = Action::Where('users_id', $data->data->uid)->where('action', -1)->orderBy('id', 'desc')->first();
+		if($logs && $last_log){
+			$app->render(200, array('msg' => array('logs' => $logs, 'last' => $last_log->created_at)));
+		} else {
+			$app->render(200, array('msg' => 'no record'));
+		}
+		return true;
+	}
+
 }

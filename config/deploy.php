@@ -60,11 +60,7 @@ $app->get('/get/:ip/:hostname/:deployment/:sub/:git', function ($ip = null, $hos
 	$data = json_encode(array(
 		'translation' => $list,
 		'deployment' => $deployment,
-		'git' => $version->version$app->post(
-		'/role',
-		'\bundles\lincko\api\controllers\ControllerUser:role'.$app->lincko->method_suffix
-	)
-	->name('user_role'.$app->lincko->method_suffix);,
+		'git' => $version->version,
 	));
 	$ch = curl_init($ip.':8888/update');
 	curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');

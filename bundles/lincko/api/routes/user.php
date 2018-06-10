@@ -115,12 +115,9 @@ $app->group('/user', function () use ($app) {
 	->name('user_role'.$app->lincko->method_suffix);
 
 	$app->post(
-		'/connection/:uid',
+		'/connection',
 		'\bundles\lincko\api\controllers\ControllerUser:connection'.$app->lincko->method_suffix
 	)
-	->conditions(array(
-		'uid' => '\d+',
-	))
 	->name('user_connection'.$app->lincko->method_suffix);
 
 });
